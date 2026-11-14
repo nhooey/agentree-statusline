@@ -504,6 +504,7 @@ export function treeOf(st: Settings, fig: Dict, rows: BandRows,
     mainProgress: typeof doc?.main_progress === "string"
       ? doc.main_progress : "",
     turnPhase: running ? E_PHASE_RUN : E_PHASE_END,
+    turnPrompt: tr.user_text,
     agents: shown ? { tasks: (doc.tasks ?? []) as TreeTask[],
       limits: decodeLimits(fig.limits), now,
       turnStart: running ? tr.turn_s || null : null } : null,

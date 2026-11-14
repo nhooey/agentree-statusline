@@ -126,9 +126,10 @@ every row.
   are `├─` `╰─` `│`, branching at the middle of the cell, three columns a
   depth.
 - **The label.** Its kind glyph and state circle (🟢 🟡 ⚫, ✅ once
-  finished), its counts, its name, then its latest progress update, the
-  line a thread writes between tool calls, dimmed, while it works or
-  waits; an idle or finished thread shows its name alone. The label takes
+  finished), its counts, its name, then the first line of the last text
+  the thread wrote, dimmed: its progress update while it works, its
+  final answer once it has ended. 🎤's name is followed by the prompt
+  typed last, under `chat.prompt`. The label takes
   the columns the figures leave and is cut with `…`, so on a narrow
   terminal the update shrinks first and no figure moves. The path
   `chat.progress` hides the update.

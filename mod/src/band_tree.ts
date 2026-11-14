@@ -27,8 +27,8 @@
 // Pure: the rows' figures come in built (band.ts), and the agents as the
 // document's prepared tasks (subagent_tasks.ts).
 import {
-  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MORE, E_PHASE_END, E_PHASE_PAUSE,
-  E_PHASE_RUN, E_SESS, E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
+  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MORE, E_SESS,
+  E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
   E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_EFF_HIGH, E_IDLE, MAG_DUR_S,
 } from "./spec.ts";
 import { durFmt, magDim, padVal } from "./formatting.ts";
@@ -41,7 +41,7 @@ import { squash } from "./claude_records.ts";
 import { renderCost, renderTokens } from "./claude_render.ts";
 import type { Limits } from "./claude_sources.ts";
 import {
-  agentCells, agentElapsed, agentLabel, agentState, inheritedEtas,
+  agentCells, agentElapsed, agentLabel, inheritedEtas,
   parked, renderAgentCache, renderAgentDiff, renderAgentLimit, renderAgentRate,
   renderAgentSplit, renderInbox, runningParents, treeShape,
 } from "./claude_subagent_render.ts";
@@ -68,8 +68,8 @@ export type TreeAgents = {
  * the band's, null where the place or the phase leaves one out; their
  * labels are drawn here again.  `mainPhase` and `turnPhase` are their
  * state circles, `mainInbox` the messages queued for the main thread,
- * `mainProgress` its latest progress update, drawn only while it works or
- * waits.  `cap` is the most subagent rows drawn, and `folds` the folds
+ * `mainProgress` the first line of the last text it wrote, and
+ * `turnPrompt` the prompt typed last, drawn after 🎤's name.  `cap` is the most subagent rows drawn, and `folds` the folds
  * kept, by key.  `repo` is the repository's address on GitHub, which 📦 🌿
  * 🔀 link to; null or absent, they link nowhere. */
 export type TreeInput = {
@@ -81,6 +81,7 @@ export type TreeInput = {
   readonly mainInbox: number;
   readonly mainProgress: string;
   readonly turnPhase: string;
+  readonly turnPrompt?: string;
   readonly agents: TreeAgents | null;
   readonly cap: number;
   readonly folds?: Folds;
@@ -150,11 +151,11 @@ function pressing(pieces: readonly Piece[], press: Press): Piece[] {
     spans: p.spans.map((s) => pressed(s, press)) }));
 }
 
-/** The progress update's piece: two blanks then the text, dimmed, under
- * the path `chat.progress`; none for no text. */
-function progressPiece(text: string): Piece[] {
+/** A thread's text after its name: two blanks then the text, dimmed,
+ * under `path`, `chat.progress` by default; none for no text. */
+function progressPiece(text: string, path = "chat.progress"): Piece[] {
   const t = squash(text).trim();
-  return t ? [{ path: "chat.progress",
+  return t ? [{ path,
     spans: [span("  "), span(t, null, true)], drop: 0 }] : [];
 }
 
@@ -216,7 +217,8 @@ export function treeRows(st: Settings, inp: TreeInput,
   const turn: Node[] = inp.turn ? [{ folded: false, kids: [],
     row: { ...inp.turn, label: pressing([
       headPiece(st, E_TURN, inp.turnPhase),
-      { path: "name.label", spans: [span("turn", "F_BLU")], drop: 0 }],
+      { path: "name.label", spans: [span("turn", "F_BLU")], drop: 0 },
+      ...progressPiece(inp.turnPrompt ?? "", "chat.prompt")],
     { kind: "view", agent: null, row: "turn" }) } }]
     : [];
   const top: Node[] = [];
@@ -231,8 +233,7 @@ export function treeRows(st: Settings, inp: TreeInput,
           spans: [...renderInbox(inp.mainInbox), span(" ")], drop: 0 }]
           : []),
         { path: "name.label", spans: [span("main", "F_BLU")], drop: 0 },
-        ...(inp.mainPhase === E_PHASE_END ? []
-          : progressPiece(inp.mainProgress))],
+        ...progressPiece(inp.mainProgress)],
       { kind: "view", agent: null }) } });
   } else top.push(...turn, ...agents);
   const out: Row[] = [];
@@ -336,14 +337,11 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     const t = byId.get(id)!;
     const waitingOn = busy.has(id);
     const eta: Eta | false = etas.has(id) ? etas.get(id)! : false;
-    const [phase] = agentState(String(t.task.status ?? ""), t.usage,
-      waitingOn);
-    const working = phase === E_PHASE_RUN || phase === E_PHASE_PAUSE;
     // 👶🏻 on a folded row: every agent hidden under it.
     return { scope: "agent",
       label: pressing([...agentLabel(st, t.task, t.usage, t.meta, waitingOn,
         shut(id) ? under(id).length : 0, 0, null, true),
-      ...(working ? progressPiece(t.progress) : [])],
+      ...progressPiece(t.progress)],
       { kind: "view", agent: id }),
       cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
         a.now, eta, waitingOn) };
