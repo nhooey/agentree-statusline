@@ -26,12 +26,14 @@ export const UNBOLD = "\x1b[22m";          // 22 (bold off) and not 0 (all
 /** What a press on a span of the band's tree does, the mod's alone: a
  * `fold` toggles the fold kept under `key`, folded where none is kept if
  * `shut`; a `view` switches the transcript to the agent `agent`, or to the
- * main conversation for null; a `link` opens `href`.  `at`, where given,
+ * main conversation for null, `row` naming the row it is pressed from where
+ * two rows switch to the same one; a `link` opens `href`.  `at`, where given,
  * is the part of the span's text that presses, as code points from and
  * to; the rest of it presses nothing.  Absent, all of it presses. */
 export type Press = (
   | { readonly kind: "fold"; readonly key: string; readonly shut: boolean }
-  | { readonly kind: "view"; readonly agent: string | null }
+  | { readonly kind: "view"; readonly agent: string | null;
+      readonly row?: string }
   | { readonly kind: "link"; readonly href: string }
 ) & { readonly at?: readonly [number, number] };
 

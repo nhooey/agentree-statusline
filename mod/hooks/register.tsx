@@ -632,7 +632,7 @@ function runsOf(spans: readonly Span[]): { press?: Press; spans: Span[] }[] {
 function pressKey(p: Press | undefined): string {
   if (!p) return ''
   if (p.kind === 'fold') return 'fold:' + p.key
-  if (p.kind === 'view') return 'view:' + (p.agent ?? 'main')
+  if (p.kind === 'view') return 'view:' + (p.row ?? p.agent ?? 'main')
   return 'link:' + p.href
 }
 

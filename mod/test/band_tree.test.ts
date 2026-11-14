@@ -154,21 +154,61 @@ function tree(id: string, over: Partial<TreeInput> = {},
     .trimEnd());
 }
 
-test("the tree draws 🎮 with the workspace, then 🎤, then 🧵 main and " +
-  "its agents, each line three columns a level", () => {
+/** Each line's tree line: what stands before its first kind glyph. */
+function heads(lines: readonly string[]): string[] {
+  return lines.map((l) => l.slice(0, l.search(/[🎮🧵🎤🎩🔍🔩]/u)));
+}
+
+test("the tree draws 🎮 with the workspace, then 🧵 main, and under it " +
+  "🎤 then its agents, each line three columns a level", () => {
   const lines = tree("03-tree@220");
-  const heads = lines.map((l) => l.slice(0, l.search(/[🎮🧵🎤🎩🔍🔩]/u)));
-  assert.deepEqual(heads, ["⊟ ", "├─ ", "╰⊟ ", "   ├⊟ ", "   │  ├─ ",
-    "   │  ╰⊟ ", "   │     ╰⊟ ", "   │        ╰─ ", "   ╰─ "]);
+  assert.deepEqual(heads(lines), ["⊟ ", "╰⊟ ", "   ├─ ", "   ├⊟ ",
+    "   │  ├─ ", "   │  ╰⊟ ", "   │     ╰⊟ ", "   │        ╰─ ",
+    "   ╰─ "]);
   assert.match(lines[0], /^⊟ 🎮 📦repo 🌿main  🔀#38/u);
-  assert.match(lines[1], /^├─ 🎤🟢 turn$/u);
-  assert.match(lines[2], /^╰⊟ 🧵🟢 main  Checking the binary/u);
+  assert.match(lines[1], /^╰⊟ 🧵🟢 main  Checking the binary/u);
+  assert.match(lines[2], /^   ├─ 🎤🟢 turn$/u);
 });
 
-test("without 🧵 main, 🎤 is the root's last child", () => {
+test("🎤 alone under 🧵 main gives 🧵 a fold mark", () => {
+  const lines = tree("03-tree@220", { agents: null });
+  assert.deepEqual(heads(lines), ["⊟ ", "╰⊟ ", "   ╰─ "]);
+  assert.match(lines[2], /^   ╰─ 🎤🟢 turn$/u);
+});
+
+test("🧵 main folded hides 🎤 with its agents", () => {
+  for (const agents of [undefined, null]) {
+    const lines = tree("03-tree@220", { folds: { main: true },
+      ...(agents === null ? { agents } : {}) });
+    assert.equal(lines.length, 2);
+    assert.match(lines[1], /^╰⊞ 🧵🟢 main  Checking the binary$/u);
+    assert.ok(!lines.some((l) => l.includes("🎤")));
+  }
+});
+
+test("with no turn open, 🧵 main draws as before", () => {
+  const bare = tree("03-tree@220", { turn: null, agents: null });
+  assert.deepEqual(heads(bare), ["⊟ ", "╰─ "]);
+  const lines = tree("03-tree@220", { turn: null });
+  assert.deepEqual(heads(lines).slice(0, 3), ["⊟ ", "╰⊟ ", "   ├⊟ "]);
+  assert.ok(!lines.some((l) => l.includes("🎤")));
+});
+
+test("without 🧵 main, 🎤 is the root's child, before the agents", () => {
   const lines = tree("03-tree@220", { main: null, agents: null });
-  assert.deepEqual(lines.map((l) => l.slice(0, l.search(/[🎮🎤]/u))),
-    ["⊟ ", "╰─ "]);
+  assert.deepEqual(heads(lines), ["⊟ ", "╰─ "]);
+  const agents = tree("03-tree@220", { main: null });
+  assert.deepEqual(heads(agents).slice(0, 3), ["⊟ ", "├─ ", "├⊟ "]);
+  assert.match(agents[1], /^├─ 🎤🟢 turn$/u);
+});
+
+test("without 🎮, 🧵 main stands at the top with 🎤 under it", () => {
+  const lines = tree("03-tree@220", { session: null, agents: null });
+  assert.deepEqual(heads(lines), ["⊟ ", "╰─ "]);
+  assert.match(lines[0], /^⊟ 🧵🟢 main/u);
+  const bare = tree("03-tree@220", { session: null, main: null,
+    agents: null });
+  assert.deepEqual(bare.map((l) => l.slice(0, 2)), ["🎤"]);
 });
 
 test("every figure keeps its column on every row of the tree", () => {
@@ -336,16 +376,18 @@ function pressesOf(r: Row): string[] {
 }
 
 test("every row with children presses its fold, under its key, with its " +
-  "default, and every agent's label and 🧵's switch the view", () => {
+  "default, and every agent's label, 🧵's and 🎤's switch the view", () => {
   const rows = treeOfCase("03-tree@220", { cap: 2 });
   const marks = rows.map((r) => pressesOf(r).filter((p) =>
     p.startsWith("fold:")));
-  assert.deepEqual(marks, [["fold:session:false"], [], ["fold:main:false"],
+  assert.deepEqual(marks, [["fold:session:false"], ["fold:main:false"], [],
     ["fold:t1:false"], [], ["fold:t1/more:true"], ["fold:main/more:true"]]);
   const views = rows.map((r) => pressesOf(r).filter((p) =>
     p.startsWith("view:")));
-  assert.deepEqual(views, [[], [], ["view:main"], ["view:t1"], ["view:t2"],
-    [], []]);
+  assert.deepEqual(views, [[], ["view:main"], ["view:main"], ["view:t1"],
+    ["view:t2"], [], []]);
+  // 🎤's press is on its label alone: it has no fold.
+  assert.deepEqual(pressesOf(rows[2]), ["view:main"]);
   // The press is on the mark alone, not the line's bars before it.
   assert.deepEqual(rows[5].label[0].spans.map((s) => pressedText(s)),
     ["⊞"]);
@@ -370,8 +412,8 @@ test("🎮 and 🧵 fold everything under them", () => {
   assert.equal(root.length, 1);
   assert.match(root[0], /^⊞ 🎮/u);
   const main = tree("03-tree@220", { folds: { main: true } });
-  assert.equal(main.length, 3);
-  assert.match(main[2], /^╰⊞ 🧵🟢 main/u);
+  assert.equal(main.length, 2);
+  assert.match(main[1], /^╰⊞ 🧵🟢 main/u);
 });
 
 test("an opened … N more lists its agents under it, and an opened ✅ N " +

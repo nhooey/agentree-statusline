@@ -12,15 +12,15 @@ sessions at a glance.
 
 Drawn by the `usage-band` mod in [`mod/`](mod/README.md), one scope a row.
 Above the prompt, the session's threads as a tree: 🎮 the session at its
-root, 🎤 the turn while it runs, then 🧵 the main thread with the
-subagents it started under it; under Claude Code's own footer line, the 💳
+root, then 🧵 the main thread with, under it, 🎤 its turn while it runs
+and the subagents it started; under Claude Code's own footer line, the 💳
 account, just over the agent panel, whose rows Claude Code draws itself.
 Here the two places are drawn together, the prompt between them left out:
 
 ```
   ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ├─ 🎤🟢 turn               🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-  ╰⊟ 🧵🟢 main  Checking     🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main  Checking t…  🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤🟢 turn            🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
      ├─ 🎩🟢 Clover          🤖O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍🟢 Marigold  Run…  🤖O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥🟢 Willow          🤖H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
@@ -42,7 +42,7 @@ Read these three first:
 | 🎮 | the mark, then 📦 🌿 🔀 | the main thread and every agent | above the prompt, the tree's root |
 | 🧵 | the mark, its state, 📨 with the messages waiting for its next turn, `main` and its latest progress update | the main thread alone | above the prompt, under 🎮 |
 | subagents | each one's head, name and latest progress update | each subagent alone | above the prompt, under the thread that started it; between turns, those running or paused |
-| 🎤 | the mark and its state | the turn | above the prompt, last, while a turn runs |
+| 🎤 | the mark and its state | the turn | above the prompt, under 🧵, first, while a turn runs |
 | 💳 | 📁 Directory · 🎨 Style · 💳 Account · 🔋 🪫 Windows · 🔜 Resets · 📅 Date · 🕐 Clock | the account and where the session works | under the footer line |
 
 Each row's place is `rows` in the
