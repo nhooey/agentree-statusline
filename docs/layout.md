@@ -68,8 +68,8 @@ tests/fixtures/figures/status/01-baseline@196.json --cols 160 --part above
 
 ```
   ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ├─ 🎤🟢 turn               🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-  ╰─ 🧵🟢 main               🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main               🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤🟢 turn            🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
 ```
 
 and, past the prompt, under the footer line (the same with `--part
@@ -100,10 +100,10 @@ as the mod ships:
 | 🎮 `session` | the session: the main thread and every agent, summed; on its label, where the session works | above the prompt, the tree's root | always |
 | 🧵 `agent` | the main thread alone, before any agent's figures are added | above the prompt, under 🎮 | always |
 | `subagents` | each subagent alone | above the prompt, under the thread that started it | always; between turns, those running or paused |
-| 🎤 `turn` | the turn: what it has cost so far | above the prompt, under 🎮, first | while a turn runs |
+| 🎤 `turn` | the turn: what it has cost so far | above the prompt, under 🧵, first | while a turn runs |
 
-Above the prompt the rows are [a tree](#the-tree): 🎮, then 🎤, then 🧵
-and the subagents under it. Under the footer line they stand in one
+Above the prompt the rows are [a tree](#the-tree): 🎮, then 🧵, and under
+it 🎤 and the subagents. Under the footer line they stand in one
 order, whatever the places: 💳, 🎤, 🧵, 🎮, the lowest just over Claude
 Code's agent panel. The subagents are drawn in the tree alone, and their
 place is always above the prompt. When the turn ends, 🎤 becomes
@@ -159,19 +159,22 @@ whether a survey held the band when it was drawn.
 ### The tree
 
 Above the prompt the rows are a tree of the session's threads: 🎮 the
-root, with where the session works (📦 🌿 🔀) on its label; under it 🎤
-the turn first, then 🧵 main, the main thread, last; under 🧵 the
-subagents it started, each under the thread that started it, in the order
-they started. The receipt stamps 🎤 then 🧵, and the tree stacks them the
-same way.
+root, with where the session works (📦 🌿 🔀) on its label; under it 🧵
+main, the main thread; under 🧵 first 🎤, the turn the main thread is
+working, then the subagents it started, each under the thread that
+started it, in the order they started. 🎤 is a leaf: it folds away
+with 🧵, and is not a subagent row, so the cap does not count it.
+Between turns 🎤 is gone, and 🧵 has a fold mark only while
+subagents hang under it. The receipt and the rows under the footer line
+keep their own order, 🎤 then 🧵.
 With three subagents running and four more folded past a cap of 3 (the
 render above with `--agents 01-mixed@220 --cap 3 --progress "Checking the
 binary, then the changelog" --cols 200`):
 
 ```
   ⊟ 🎮 📦repo 🌿golden-clean                                                          💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ├─ 🎤🟢 turn                                                       🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
   ╰⊟ 🧵🟢 main  Checking the binary, then the changelog              🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤🟢 turn                                                    🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
      ├─ 🎩🟢 Clover                                                  🤖O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍🟢 Marigold  Running the suite                             🤖O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥🟢 Willow                                                  🤖H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
@@ -185,7 +188,8 @@ binary, then the changelog" --cols 200`):
 - **The fold marks.** A row with children has `⊟` (opened) or `⊞`
   (folded) in place of its `─`, 🎮's before its label; a click on the mark
   folds or opens its row. A folded agent keeps its own figures and draws
-  👶🏻 and how many agents are hidden under it. The grouped rows below
+  👶🏻 and how many agents are hidden under it; 🧵 folded hides 🎤 with
+  its agents. The grouped rows below
   start folded and every other row opened; opened, `… N more` lists the
   agents past the cap and `✅ N done` the agents that ended.
 - **The fold state.** Each row stays as it was left for the rest of the
@@ -196,8 +200,9 @@ binary, then the changelog" --cols 200`):
   takes a fold it never had; 🎮's and 🧵's last the session.
 - **The clicks.** A click on an agent's label (its kind, name and progress
   update) switches the transcript to that agent, as Claude Code's tasks
-  list does, and one on 🧵 main's goes back to the main conversation.
-  🎤, 🎮 and the grouped rows have no label click. On 🎮's label 📦 the
+  list does, and one on 🧵 main's or 🎤 turn's goes back to the main
+  conversation, since the turn is the main thread's. 🎮 and the grouped
+  rows have no label click. On 🎮's label 📦 the
   project, 🌿 the branch and 🔀 the pull request link to them on GitHub,
   when the `origin` remote is on GitHub; otherwise they are plain text.
   The clickable parts are drawn as before, with no hotkeys and no
@@ -233,8 +238,9 @@ the mod ships `"always"`. Between turns only the running and paused
 subagents are drawn, with no `✅ N done`: the turn's receipt holds the
 ones that ended ([Between turns](#between-turns)). Their `place` is
 always `"above"`. With 🎮 placed under the footer
-line the tree has no root, and its top rows are 🎤 and 🧵; with 🧵 placed
-there, the subagents hang from 🎮.
+line the tree has no root, and 🧵 is its top row, with 🎤 under it; with
+🧵 placed there, 🎤 and then the subagents hang from 🎮, and with both
+placed there, 🎤 and the subagents stand at the top.
 
 ### The grid
 
@@ -390,8 +396,8 @@ rows under it, with the prompt between them left out (`--part above`, then
 
 ```
   ⊟ 🎮 📦repo 🌿golde…  💰 35                🧩▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
-  ├─ 🎤🟢 turn          💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
-  ╰─ 🧵🟢 main          💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main          💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤🟢 turn       💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
                               💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -400,8 +406,8 @@ At 80:
 
 ```
   ⊟ 🎮 📦repo 🌿golden-c…  💰 35                ⌛9.3h  🔋 3.8٪   🪫 8.45٪
-  ├─ 🎤🟢 turn             💰6.4   🧠-42k  -4٪  ⌛  8m  🔋 1.2٪   🪫 1.56٪
-  ╰─ 🧵🟢 main             💰 35   🧠115k  11٪  ⌛9.3h  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main             💰 35   🧠115k  11٪  ⌛9.3h  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤🟢 turn          💰6.4   🧠-42k  -4٪  ⌛  8m  🔋 1.2٪   🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
           💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -488,8 +494,8 @@ the footer line:
 
 ```
   ⊟ 🎮 📦repo 🌿golden-clean                                       💰 35            🧩▴2.7M ▾841k  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🪫 8.45٪
-  ├─ 🎤🟢 turn                                    🤖O⁵🏃  🛫 200   💰6.4   🧠- 42k  🧩▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
-  ╰─ 🧵🟢 main                                    🤖O⁵🏃  🤖   3m  💰 35   🧠 115k  🧩▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
+  ╰⊟ 🧵🟢 main                                    🤖O⁵🏃  🤖   3m  💰 35   🧠 115k  🧩▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
+     ╰─ 🎤🟢 turn                                 🤖O⁵🏃  🛫 200   💰6.4   🧠- 42k  🧩▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                                     💳 🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -1011,8 +1017,8 @@ own line (`--part above --rows` set so, `--right-edge 5`):
 ```
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
   ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ├─ 🎤🟢 turn               🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-  ╰─ 🧵🟢 main               🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main               🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤🟢 turn            🤖O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
 ```
 
 ### The footer's tail

@@ -1,9 +1,11 @@
 // The band's tree of threads above the prompt.
 //
 // agents/plans/one-panel-port.md, "The band's tree", has the design.  🎮
-// the session is the root, its label the workspace; 🎤 the turn and 🧵 the
-// main thread are its children, in that order, and each subagent hangs
-// under the thread that started it, in the order they started.  Every row
+// the session is the root, its label the workspace; 🧵 the main thread is
+// its child, and under 🧵 come 🎤, the main thread's turn, first, then
+// each subagent under the thread that started it, in the order they
+// started.  🎤 is a leaf and counts against no cap;
+// where 🧵 is not drawn, 🎤 and the subagents hang from 🎮.  Every row
 // is a row of the one grid (grid.ts): the hierarchy is in the label
 // alone, as `├─` `╰─` `│` lines three columns a level, so every figure
 // keeps its column on every row.
@@ -18,8 +20,8 @@
 // opened.
 //
 // The spans carry what a press on them does (Press): a fold mark toggles
-// its row's fold, an agent's label switches the transcript to it and 🧵
-// main's to the main conversation, and on 🎮's label 📦 🌿 🔀 link to the
+// its row's fold, an agent's label switches the transcript to it, and 🧵
+// main's and 🎤 turn's to the main conversation, and on 🎮's label 📦 🌿 🔀 link to the
 // repository on GitHub, where its address is known.
 //
 // Pure: the rows' figures come in built (band.ts), and the agents as the
@@ -202,24 +204,27 @@ function drawNode(n: Node, lasts: readonly boolean[], out: Row[]): void {
   if (!n.folded) walk(n.kids, lasts, out);
 }
 
-/** The tree's rows, top to bottom, under `hide`: 🎮, then 🎤, then 🧵 and
- * its subagents, `… N more` and `✅ N done`.  Without 🎮 its children
- * stand at the top; without 🧵 the subagents hang from the root. */
+/** The tree's rows, top to bottom, under `hide`: 🎮, then 🧵 and under
+ * it 🎤, its subagents, `… N more` and `✅ N done`.  Without 🎮 its
+ * children stand at the top; without 🧵, 🎤 and the subagents hang from
+ * the root. */
 export function treeRows(st: Settings, inp: TreeInput,
   hide: readonly string[]): Row[] {
   const folds = inp.folds ?? {};
   const agents = inp.agents !== null && !hidden(hide, "agent")
     ? agentNodes(st, inp.agents, inp.cap, folds) : [];
-  const top: Node[] = [];
-  if (inp.turn) {
-    top.push({ folded: false, kids: [], row: { ...inp.turn, label: [
+  const turn: Node[] = inp.turn ? [{ folded: false, kids: [],
+    row: { ...inp.turn, label: pressing([
       headPiece(st, E_TURN, inp.turnPhase),
-      { path: "name.label", spans: [span("turn", "F_BLU")], drop: 0 }] } });
-  }
+      { path: "name.label", spans: [span("turn", "F_BLU")], drop: 0 }],
+    { kind: "view", agent: null, row: "turn" }) } }]
+    : [];
+  const top: Node[] = [];
   if (inp.main) {
+    const kids = [...turn, ...agents];
     const fold = { key: MAIN_FOLD, shut: false };
-    const folded = agents.length > 0 && foldShut(folds, fold.key, fold.shut);
-    top.push({ folded, kids: folded ? [] : agents, fold,
+    const folded = kids.length > 0 && foldShut(folds, fold.key, fold.shut);
+    top.push({ folded, kids: folded ? [] : kids, fold,
       row: { ...inp.main, label: pressing([
         headPiece(st, E_THREAD, inp.mainPhase),
         ...(inp.mainInbox ? [{ path: "state.inbox",
@@ -229,7 +234,7 @@ export function treeRows(st: Settings, inp: TreeInput,
         ...(inp.mainPhase === E_PHASE_END ? []
           : progressPiece(inp.mainProgress))],
       { kind: "view", agent: null }) } });
-  } else top.push(...agents);
+  } else top.push(...turn, ...agents);
   const out: Row[] = [];
   if (inp.session) {
     const ws = workspacePieces(inp.workspace).filter((p) =>

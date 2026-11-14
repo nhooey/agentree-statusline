@@ -493,7 +493,7 @@ test('a running turn\'s ⌛ counts on while no record is written',
     expect(after).not.toBe(before)
   })
 
-test('each row is drawn in its place: the tree of 🎮, 🎤 and 🧵 above ' +
+test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   'the prompt, 💳 alone under the footer line', async ($, on) => {
   const w = world(on)
   await start($, w, 'terminal', STATUS)
@@ -505,11 +505,11 @@ test('each row is drawn in its place: the tree of 🎮, 🎤 and 🧵 above ' +
     { ...opts, place: 'above', indent: INSET })
   const below = bandLines(BAND_ST, doc, COLS, HIDE,
     { ...opts, place: 'footer', inset: INSET })
-  // 🎮, 🎤, then 🧵 with the fixture's fork, ended this turn, under it.
+  // 🎮, then 🧵, and under it 🎤 and the fixture's fork, ended this turn.
   expect([above.length, below.length]).toEqual([4, 0])
   expect(text(above[0])).toMatch(/^ *⊟ 🎮 📦/u)
-  expect(text(above[1])).toMatch(/^ *├─ 🎤/u)
-  expect(text(above[2])).toMatch(/^ *╰⊟ 🧵/u)
+  expect(text(above[1])).toMatch(/^ *╰⊟ 🧵/u)
+  expect(text(above[2])).toMatch(/^ *   ├─ 🎤/u)
   expect(text(above[3])).toMatch(/^ *   ╰⊞ ✅ 1 done/u)
   expect(await drawnRows(ui.above)).toEqual(expected(above))
   // The 💳 row alone under the footer line, a row of its own by default,
@@ -669,12 +669,12 @@ test('above the prompt the rows are plain, and the band logs its widths ' +
     const band = await $.ui.mount({ plugin: 'usage-band',
       surface: 'terminal', component: 'AbovePrompt', viewport,
       props: { ...BAND, isWorking: true } })
-    // Above the prompt the tree's fold marks and 🧵's label take a
-    // press, each a plain Button with no hotkey; no row under the footer
-    // line takes one.
+    // Above the prompt the tree's fold marks and 🧵's and 🎤's labels
+    // take a press, each a plain Button with no hotkey; no row under the
+    // footer line takes one.
     const buttons = await band.findAll({ type: 'Button' })
     expect(buttons.map((b) => b.key).sort()).toEqual(['fold:main',
-      'fold:main/done', 'fold:session', 'view:main'])
+      'fold:main/done', 'fold:session', 'view:main', 'view:turn'])
     expect(buttons.every((b) => b.props?.plain === true &&
       b.props?.hotkey === undefined)).toBe(true)
     expect(await (await footer($)).findAll({ type: 'Button' })).toEqual([])
@@ -1958,19 +1958,20 @@ test('a press on a fold mark folds its row and opens it again, and the ' +
 })
 
 test('a press on a label switches the transcript to its agent, and 🧵 ' +
-  'main\'s back to the main conversation', async ($, on) => {
+  'main\'s and 🎤 turn\'s back to the main conversation', async ($, on) => {
   const { w, views } = clicking(on, [PARENT, KID])
   await start($, w, 'terminal', STATUS)
   const { band } = await clickBand($, w)
   const keys: string[] = (await band.findAll({ type: 'Button' }))
     .map((b: { key?: string }) => b.key ?? '')
-  // 🎮, 🎤 and the grouped rows have no label to press.
+  // 🎮 and the grouped rows have no label to press.
   expect(keys.filter((k) => k.startsWith('view:')).sort())
-    .toEqual(['view:c1', 'view:main', 'view:p1'])
+    .toEqual(['view:c1', 'view:main', 'view:p1', 'view:turn'])
   await band.press({ key: 'view:c1' })
   await band.press({ key: 'view:main' })
   await band.press({ key: 'view:p1' })
-  expect(views).toEqual([{ agentId: 'c1' }, {}, { agentId: 'p1' }])
+  await band.press({ key: 'view:turn' })
+  expect(views).toEqual([{ agentId: 'c1' }, {}, { agentId: 'p1' }, {}])
 })
 
 test('an agent that ends takes its fold with it, and 🧵\'s grouped row ' +

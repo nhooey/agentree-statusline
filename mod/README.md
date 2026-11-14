@@ -27,8 +27,8 @@ This folder is the mod. `.claude-plugin/plugin.json` names it `usage-band`,
 
 - **The band** above the prompt (`AbovePrompt`), which Claude Code can
   collapse with its `[-]`: the session's threads as a tree, 🎮 the
-  session at its root with where the session works, 🎤 the turn while
-  one runs, then 🧵 the main thread and, under it, the subagents it
+  session at its root with where the session works, then 🧵 the main
+  thread and, under it, 🎤 its turn while one runs and the subagents it
   started (between turns, those still running or paused), each with its
   latest progress update. A click on a row's `⊟` or `⊞` folds or opens
   it, one on a thread's label shows that thread's transcript, and 🎮's

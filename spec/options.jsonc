@@ -470,7 +470,7 @@
               "it is drawn `never`, while a turn is `running` or `always`;",
               "and `transcript`, whether a turn's end stamps it into the",
               "transcript. Above the prompt the rows are a tree, 🎮 the",
-              "root, 🎤, then 🧵 and the subagents under it; under the",
+              "root, then 🧵 with 🎤 and the subagents under it; under the",
               "footer line they go in one order: 💳, 🎤, 🧵, 🎮. The",
               "subagents are always above the prompt and never stamped,",
               "and `always` as shipped: between turns the running and",
