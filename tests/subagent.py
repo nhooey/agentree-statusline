@@ -799,6 +799,10 @@ def run(tmp):
                                (task("c", status="pending"), None,
                                 {"parentAgentId": "p"}, None)])),
           (True, {"p"}))
+    check("a completed agent is parked on an ETA with time left, and "
+          "finished on its 0s sign-off",
+          [sr.parked("completed", e) for e in ((NOW, 60.0), (NOW, 0.0), ())],
+          [True, False, False])
     check("the rate in three characters: rounded to the unit past a thousand",
           [sl.rate_fig(v) for v in (49, 849, 1200, 1700, 9900, 12000, 150000)],
           ["49", "849", "1k", "2k", "10k", "12k", "150k"])
