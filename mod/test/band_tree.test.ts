@@ -15,6 +15,7 @@ import { join, span } from "../src/spans.ts";
 import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";
 import { githubRepo } from "../src/github.ts";
+import { NO_LIMITS } from "../src/claude_sources.ts";
 import { foldAgentBytes, newAgentFold } from "../src/claude_records.ts";
 import type { BgTask } from "../src/claude_records.ts";
 import {
@@ -42,9 +43,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
 const ST = settings({}, true, false, 5);
 const NOW = 1786847000;
-const LIMITS = { session_pct: "15", session_reset: "", session_share: "",
-  weekly_pct: "87", weekly_reset: "", weekly_share: "", session_turn: "",
-  weekly_turn: "", fable_pct: "", fable_reset: "" };
+const LIMITS = { ...NO_LIMITS, session_pct: "15", weekly_pct: "87" };
 
 /** The fixture agents' transcripts, every one under
  * tests/fixtures/transcripts/subagent/. */

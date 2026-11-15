@@ -2957,6 +2957,378 @@
      "resets_at": 1787007000,
      "used_percentage": 87.5
     },
+    "seven_day_cowork": {
+     "duration_seconds": 3600,
+     "used_percentage": 2
+    },
+    "seven_day_opus": {
+     "resets_at": 1786937000,
+     "used_percentage": 30
+    }
+   }
+  },
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1786847400.0,
+       "used_percent": 15.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1787007000.0,
+       "used_percent": 87.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1786937000.0,
+       "used_percent": 30.0
+      },
+      {
+       "duration_seconds": 3600.0,
+       "id": "seven_day_cowork",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "native"
+  },
+  "name": "claude weekly windows (rate_limits, as_of 1786847000)"
+ },
+ {
+  "context": {
+   "as_of": null,
+   "rate_limits": {
+    "five_hour": {
+     "resets_at": 1786847400,
+     "used_percentage": 15
+    },
+    "seven_day": {
+     "resets_at": 1787007000,
+     "used_percentage": 87.5
+    },
+    "seven_day_cowork": {
+     "duration_seconds": 3600,
+     "used_percentage": 2
+    },
+    "seven_day_opus": {
+     "resets_at": 1786937000,
+     "used_percentage": 30
+    }
+   }
+  },
+  "expected": {
+   "account": {},
+   "as_of": null,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1786847400.0,
+       "used_percent": 15.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1787007000.0,
+       "used_percent": 87.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1786937000.0,
+       "used_percent": 30.0
+      },
+      {
+       "duration_seconds": 3600.0,
+       "id": "seven_day_cowork",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "native"
+  },
+  "name": "claude weekly windows (rate_limits, as_of None)"
+ },
+ {
+  "context": {
+   "as_of": 1786847000,
+   "rateLimits": {
+    "five_hour": {
+     "resets_at": 1786847400,
+     "used_percentage": 15
+    },
+    "seven_day": {
+     "resets_at": 1787007000,
+     "used_percentage": 87.5
+    },
+    "seven_day_cowork": {
+     "duration_seconds": 3600,
+     "used_percentage": 2
+    },
+    "seven_day_opus": {
+     "resets_at": 1786937000,
+     "used_percentage": 30
+    }
+   }
+  },
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1786847400.0,
+       "used_percent": 15.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1787007000.0,
+       "used_percent": 87.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1786937000.0,
+       "used_percent": 30.0
+      },
+      {
+       "duration_seconds": 3600.0,
+       "id": "seven_day_cowork",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "native"
+  },
+  "name": "claude weekly windows (rateLimits, as_of 1786847000)"
+ },
+ {
+  "context": {
+   "as_of": null,
+   "rateLimits": {
+    "five_hour": {
+     "resets_at": 1786847400,
+     "used_percentage": 15
+    },
+    "seven_day": {
+     "resets_at": 1787007000,
+     "used_percentage": 87.5
+    },
+    "seven_day_cowork": {
+     "duration_seconds": 3600,
+     "used_percentage": 2
+    },
+    "seven_day_opus": {
+     "resets_at": 1786937000,
+     "used_percentage": 30
+    }
+   }
+  },
+  "expected": {
+   "account": {},
+   "as_of": null,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1786847400.0,
+       "used_percent": 15.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1787007000.0,
+       "used_percent": 87.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1786937000.0,
+       "used_percent": 30.0
+      },
+      {
+       "duration_seconds": 3600.0,
+       "id": "seven_day_cowork",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "native"
+  },
+  "name": "claude weekly windows (rateLimits, as_of None)"
+ },
+ {
+  "context": {
+   "as_of": 1786847000,
+   "quota": {
+    "five_hour": {
+     "resets_at": 1786847400,
+     "used_percentage": 15
+    },
+    "seven_day": {
+     "resets_at": 1787007000,
+     "used_percentage": 87.5
+    },
+    "seven_day_cowork": {
+     "duration_seconds": 3600,
+     "used_percentage": 2
+    },
+    "seven_day_opus": {
+     "resets_at": 1786937000,
+     "used_percentage": 30
+    }
+   }
+  },
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1786847400.0,
+       "used_percent": 15.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1787007000.0,
+       "used_percent": 87.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1786937000.0,
+       "used_percent": 30.0
+      },
+      {
+       "duration_seconds": 3600.0,
+       "id": "seven_day_cowork",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "native"
+  },
+  "name": "claude weekly windows (quota, as_of 1786847000)"
+ },
+ {
+  "context": {
+   "as_of": null,
+   "quota": {
+    "five_hour": {
+     "resets_at": 1786847400,
+     "used_percentage": 15
+    },
+    "seven_day": {
+     "resets_at": 1787007000,
+     "used_percentage": 87.5
+    },
+    "seven_day_cowork": {
+     "duration_seconds": 3600,
+     "used_percentage": 2
+    },
+    "seven_day_opus": {
+     "resets_at": 1786937000,
+     "used_percentage": 30
+    }
+   }
+  },
+  "expected": {
+   "account": {},
+   "as_of": null,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1786847400.0,
+       "used_percent": 15.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1787007000.0,
+       "used_percent": 87.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1786937000.0,
+       "used_percent": 30.0
+      },
+      {
+       "duration_seconds": 3600.0,
+       "id": "seven_day_cowork",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "native"
+  },
+  "name": "claude weekly windows (quota, as_of None)"
+ },
+ {
+  "context": {
+   "as_of": 1786847000,
+   "rate_limits": {
+    "five_hour": {
+     "resets_at": 1786847400,
+     "used_percentage": 15
+    },
+    "seven_day": {
+     "resets_at": 1787007000,
+     "used_percentage": 87.5
+    },
     "seven_day_overage_included": {
      "resets_at": 1786937000,
      "used_percentage": 12.5

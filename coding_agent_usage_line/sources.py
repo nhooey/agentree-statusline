@@ -514,6 +514,16 @@ def openai_admin(start, end, opener=None, failure=None):
 # window a week long that the 💳 row draws apart from the plan's own.
 FABLE_WINDOW = "seven_day_overage_included"
 
+# The other weekly windows the 💳 row can draw after the Fable one, each
+# by its key in the `weekly-windows` option and the `hide` group `plan`,
+# with the window's id.  A seven_day_* window not named here is kept in
+# the reading but drawn nowhere: it has no mark of its own.
+WEEKLY_WINDOWS = (("opus", "seven_day_opus"),
+                  ("sonnet", "seven_day_sonnet"),
+                  ("omelette", "seven_day_omelette"),
+                  ("oauth_apps", "seven_day_oauth_apps"),
+                  ("cowork", "seven_day_cowork"))
+
 
 def oauth_window_names(raw):
     """The plan windows of /api/oauth/usage's answer `raw` to read, in
@@ -614,7 +624,9 @@ def _native_windows(value):
     source_bucket = str(raw.get("limit_id") or raw.get("limitId") or "default")
     aliases = (("five_hour", "five_hour"), ("seven_day", "seven_day"),
                (FABLE_WINDOW, FABLE_WINDOW),
+               *((ident, ident) for _, ident in WEEKLY_WINDOWS),
                ("primary", "primary"), ("secondary", "secondary"))
+    weekly = ("seven_day", FABLE_WINDOW) + tuple(i for _, i in WEEKLY_WINDOWS)
     for key, ident in aliases:
         item = raw.get(key)
         if not isinstance(item, dict): continue
@@ -624,7 +636,7 @@ def _native_windows(value):
         if item.get("window_minutes") is not None and item.get("duration_seconds") is None and item.get("limit_window_seconds") is None:
             number = _number(duration); duration = number * 60 if number is not None else None
         if duration is None and key == "five_hour": duration = 5 * 3600
-        if duration is None and key in ("seven_day", FABLE_WINDOW): duration = 7 * 86400
+        if duration is None and key in weekly: duration = 7 * 86400
         windows.append({"id": ident,
                         "duration_seconds": duration, "used_percent": usage,
                         "resets_at": item.get("resets_at", item.get("reset_at")),

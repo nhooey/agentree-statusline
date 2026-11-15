@@ -22,6 +22,10 @@ import {
 import type {
   ConfigEnv, ConfigFs, FileStat, RecordValue, Rows,
 } from "../src/config.ts";
+import { OPTIONS } from "../src/options_spec.ts";
+import { accountHide } from "../src/band.ts";
+import { WEEKLY_WINDOWS } from "../src/sources.ts";
+import type { WeeklyKey } from "../src/sources.ts";
 
 const CASES = path.join(import.meta.dirname, "..", "..", "tests", "fixtures",
   "config", "cases.json");
@@ -126,7 +130,8 @@ for (const c of cases) {
             if (at) fields[`${name}.${row}.${field}`] = [v, at];
           }
         }
-      } else if (name === "credits") {
+      } else if ((OPTIONS as { [n: string]: { type: string } })[name]?.type
+        === "record") {
         for (const [field, v] of Object.entries(value as RecordValue)) {
           const parts = v !== null && !Array.isArray(v) && typeof v === "object"
             ? Object.entries(v).map(([k, item]) => [`.${k}`, item] as const)
@@ -216,6 +221,34 @@ test("a user file copied from the defaults with one change differs by that " +
     assert.deepEqual(changed, ["hint-inset"]);
     assert.equal(mine.values["hint-inset"], 3);
     assert.equal(mine.layers["right-edge"], "derived");
+  });
+
+test("the other weekly windows stay off under a file's own hide, and a " +
+  "file that turns one on leaves the rest off", async () => {
+    const read = async (text: string) => {
+      const fake: ConfigFs = {
+        stat: async () => ({ kind: "file", size: text.length, mtimeMs: 1 }),
+        read: async () => text, realPath: async (p) => p };
+      const got = await readFile("/u/config.jsonc", fake, DEFAULTS);
+      assert.deepEqual(got.warnings, []);
+      return merge([{ name: "user", path: "/u/config.jsonc", mtimeMs: 1,
+        values: got.values }], [], DEFAULTS);
+    };
+    const windows = (m: { values: { [k: string]: unknown } }) =>
+      m.values["weekly-windows"] as { [key in WeeklyKey]: boolean };
+    const all = WEEKLY_WINDOWS.map(([key]) => "account.plan." + key);
+    // A file's `hide` replaces the defaults' list, and the windows stay off.
+    const hiding = await read('{"hide": ["*.plan.five_hour"]}');
+    assert.deepEqual(hiding.values.hide, ["*.plan.five_hour"]);
+    assert.deepEqual(accountHide(hiding.values.hide as string[],
+      windows(hiding)), ["*.plan.five_hour", ...all]);
+    // One window on: the record merges per field.
+    const opus = await read('{"weekly-windows": {"opus": true}}');
+    assert.deepEqual(windows(opus), { opus: true, sonnet: false,
+      omelette: false, oauth_apps: false, cowork: false });
+    assert.equal(opus.layers["weekly-windows"], "user");
+    assert.deepEqual(accountHide([], windows(opus)),
+      all.filter((p) => p !== "account.plan.opus"));
   });
 
 test("the reader reaches no file and no variable but those it is handed",

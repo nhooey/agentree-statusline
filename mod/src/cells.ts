@@ -17,8 +17,9 @@
 // `now` in the process's TZ, which the edge sets from the document's
 // `clock.tz`, as claude_cost.ts's do.
 import {
-  E_ACCT, E_COST, E_DATE, E_DIR, E_DIRTY, E_FABLE, E_GIT_BAD,
-  E_GIT_OK, E_IDLE, E_NAME, E_PCT, E_PR, E_PROJ, E_RESET, E_SESS, E_SESSION,
+  E_ACCT, E_COST, E_COWORK, E_DATE, E_DIR, E_DIRTY, E_FABLE, E_GIT_BAD,
+  E_GIT_OK, E_IDLE, E_NAME, E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR,
+  E_PROJ, E_RESET, E_SESS, E_SESSION, E_SONNET,
   E_STALE, E_STY, E_THREAD,
   E_TIME, E_TURN, E_TURN_ID, E_WEEK, K, MAG_COST, MAG_DUR_S, TAG_SCOPE,
   TURN_ID_HEX,
@@ -214,17 +215,33 @@ export function untilReset(st: Settings, epoch: number | null,
   return delta <= 0 ? "now" : durFmt(st, delta);
 }
 
+/** A weekly window beside the plan's pair, as the 💳 row draws it after
+ * 🪫: its key in SIDE_MARKS, its share and its reset, each null where it
+ * has none. */
+export type SideWindow = { readonly key: SideKey; readonly pct: number | null;
+  readonly reset: string | null };
+
+/** The weekly windows beside the plan's pair, in the order the 💳 row
+ * draws them, each by its key (its `hide` path's metric, `plan.<key>`,
+ * and its Limits fields' prefix), with its mark and colour: 🦊 the Fable
+ * window, then the others of sources.WEEKLY_WINDOWS. */
+export const SIDE_MARKS = [["fable", E_FABLE, "F_LIM_FABLE"],
+  ["opus", E_OPUS, "F_LIM_OPUS"], ["sonnet", E_SONNET, "F_LIM_SONNET"],
+  ["omelette", E_OMELETTE, "F_LIM_OMELETTE"],
+  ["oauth_apps", E_OAUTH_APPS, "F_LIM_OAUTH_APPS"],
+  ["cowork", E_COWORK, "F_LIM_COWORK"]] as const;
+export type SideKey = typeof SIDE_MARKS[number][0];
+
 /** The plan's two windows as the 💳 row draws them: 🔋 `sess` and 🪫
- * `week`, then 🦊 `fable`, the weekly Fable window, each followed by its
- * 🔜 reset where it has one, under the paths `plan.five_hour`,
- * `plan.week`, `plan.fable` and `plan.reset`; a window with neither a
- * share nor a reset is left out.  With `stale`, how long ago the reading
- * was taken, each share is followed by 🧊 and that.  Each window ends in
- * blanks, which trimLast takes off the last. */
+ * `week`, then each of `side`, the weekly windows beside them, in
+ * SIDE_MARKS' order, each followed by its 🔜 reset where it has one, under
+ * the paths `plan.five_hour`, `plan.week`, `plan.<key>` and `plan.reset`;
+ * a window with neither a share nor a reset is left out.  With `stale`,
+ * how long ago the reading was taken, each share is followed by 🧊 and
+ * that.  Each window ends in blanks, which trimLast takes off the last. */
 export function planPieces(st: Settings, sess: number | null,
   week: number | null, sessReset: string | null, weekReset: string | null,
-  stale: string | null = null, fable: number | null = null,
-  fableReset: string | null = null): Piece[] {
+  stale: string | null = null, side: readonly SideWindow[] = []): Piece[] {
   // Each window whole, its share then its reset, since the row has no
   // figure in the plan columns to sit under: 🔋 15٪ 🔜 6.7m.  Three digits
   // for both, so 🪫 reads 87٪ as 🔋 does, not the 87.0٪ the wider 🪫
@@ -249,7 +266,10 @@ export function planPieces(st: Settings, sess: number | null,
   return [
     ...plan("plan.five_hour", E_SESS, "F_LIM_SESS", sess, sessReset),
     ...plan("plan.week", E_WEEK, "F_LIM_WEEK", week, weekReset),
-    ...plan("plan.fable", E_FABLE, "F_LIM_FABLE", fable, fableReset)];
+    ...SIDE_MARKS.flatMap(([key, mark, colour]) => {
+      const w = side.find((s) => s.key === key);
+      return w ? plan("plan." + key, mark, colour, w.pct, w.reset) : [];
+    })];
 }
 
 /** `pieces` with the blanks after the last one taken off: they would only
@@ -269,16 +289,15 @@ export function trimLast(pieces: readonly Piece[]): Piece[] {
  * then 📅 and 🕐 at the end, which leave first on a narrow terminal.  With
  * `stale`, how long ago the reading was taken, each figure is followed by
  * 🧊 and that: the footer's tail draws in one style, so the mark is in the
- * text.  `fable` and `fableReset` are the weekly Fable window's, drawn
- * after 🪫 where the source has one. */
+ * text.  `side` are the weekly windows beside the plan's pair, 🦊 the
+ * Fable one and the others, drawn after 🪫 where the source has them. */
 export function accountLabel(st: Settings, sess: number | null,
   week: number | null, sessReset: string | null, weekReset: string | null,
   date: string, time: string, stale: string | null = null,
   credits: readonly { kind: string; spans: readonly Span[] }[] = [],
-  fable: number | null = null, fableReset: string | null = null):
-    Piece[] {
+  side: readonly SideWindow[] = []): Piece[] {
   const windows = trimLast(planPieces(st, sess, week, sessReset, weekReset,
-    stale, fable, fableReset));
+    stale, side));
   // The credits after the windows, each leaving before 📅 and 🕐 on a
   // narrow terminal.
   const owed: Piece[] = credits.map((c) => ({ path: "credits." + c.kind,

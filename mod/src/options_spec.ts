@@ -406,6 +406,25 @@ export const OPTIONS = {
     "doc-table": null,
     "doc": "Ask the account's usage endpoint for the plan's windows, the weekly Fable one and the per-model weeks among them, once a minute, as Claude Usage.app does, and draw them under `usage-source` `auto` in place of Claude Code's own reading, which names only the plan's week. One request a minute to api.anthropic.com, sent by Claude Code with the session's own credential (the mod never sees it), and only for a signed-in subscription; see [Usage sources](usage-sources.md).",
   },
+  // A record merges per field across layers, so a file that turns one
+  // window on leaves the others off.  Not entries in the defaults'
+  // `hide`: a file's `hide` replaces that list whole, and would turn
+  // every window on with it.
+  "weekly-windows": {
+    "type": "record",
+    "fields": {
+      "opus": {"type": "bool"},         // 🎼 seven_day_opus
+      "sonnet": {"type": "bool"},       // 🎭 seven_day_sonnet
+      "omelette": {"type": "bool"},     // 🍳 seven_day_omelette
+      "oauth_apps": {"type": "bool"},   // 🔌 seven_day_oauth_apps
+      "cowork": {"type": "bool"},       // 🤝 seven_day_cowork
+    },
+    "ports": ["mod"],
+    "file": true,
+    "flag": null,
+    "doc-table": null,
+    "doc": "The weekly windows the usage source gives beside the plan's week and the Fable one, each drawn on the 💳 row after 🦊 while its field is true: 🎼 `opus`, 🎭 `sonnet`, 🍳 `omelette`, 🔌 `oauth_apps` and 🤝 `cowork`. All are false by default; `hide`'s `account.plan.opus` and the like still hide one that is on.",
+  },
   // A record merges per field across layers; `show` merges per credit,
   // and each list of conditions is replaced whole, as a list is.
   "credits": {
@@ -536,6 +555,13 @@ export type Options = {
   readonly finishedLinger: number;
   readonly accountPlace: "row" | "tail";
   readonly planUsage: boolean;
+  readonly weeklyWindows: {
+    readonly opus: boolean;
+    readonly sonnet: boolean;
+    readonly omelette: boolean;
+    readonly oauth_apps: boolean;
+    readonly cowork: boolean;
+  };
   readonly credits: {
     readonly place: "account" | "none";
     readonly show: { readonly cloud: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly promo: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly prepaid: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly extra: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly passes: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; };

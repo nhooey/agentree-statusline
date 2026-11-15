@@ -445,6 +445,15 @@ def payloads(corpus):
         limits, seven_day_overage_included={
             "used_percentage": 4,
             "resets_at": limits["seven_day"]["resets_at"]}))
+    # The other weekly windows, which the 💳 row draws after 🦊 once the
+    # option weekly-windows turns them on: Opus resetting with the weekly
+    # window, so under 🪫's 🔜, and Sonnet two days after it, with its own.
+    out["weekly-windows"] = case(rate_limits=dict(
+        limits, seven_day_opus={"used_percentage": 30,
+                                "resets_at": limits["seven_day"]["resets_at"]},
+        seven_day_sonnet={"used_percentage": 55.5,
+                          "resets_at": limits["seven_day"]["resets_at"]
+                          + 172800}))
     # The cost fields of 06 are dropped, not set to None; case() cannot spell
     # that inside a nested dict, so it is done here.
     for k in ("total_duration_ms", "total_api_duration_ms"):

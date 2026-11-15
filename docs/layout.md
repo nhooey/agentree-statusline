@@ -134,18 +134,23 @@ label. Then, flush right where the other rows end, what is
 global: 💳 and each window's share, 🔋 the 5-hour and 🪫 the weekly, each
 with 🔜 and the time until it resets, then 🦊 the weekly Fable window
 (Claude Code's `seven_day_overage_included`) where the usage source has
-one, then four blank columns and 📅 and 🕐, the date and time now. 🦊 has
-a 🔜 of its own only where it resets at another time than 🪫; where they
-reset together, 🪫's 🔜 stands for both, `🪫 87٪ 🔜 1.9d  🦊 4٪`, unless 🪫
-is hidden. With no Fable window, nothing is drawn for it. A reading 10 minutes old or more has each share
+one, then the other weekly windows that the option
+[`weekly-windows`](options.md#what-a-file-holds) turns on, all off by
+default: 🎼 `seven_day_opus`, 🎭 `seven_day_sonnet`, 🍳
+`seven_day_omelette`, 🔌 `seven_day_oauth_apps` and 🤝 `seven_day_cowork`,
+in that order; then four blank columns and 📅 and 🕐, the date and time
+now. Each window after 🪫 has a 🔜 of its own only where it resets at
+another time than 🪫; where they reset together, 🪫's 🔜 stands for both,
+`🪫 87٪ 🔜 1.9d  🦊 4٪  🎼 30٪  🎭 56٪ 🔜 3.9d`, unless 🪫 is hidden. A
+window the source does not give is not drawn. A reading 10 minutes old or more has each share
 followed by 🧊 and its age, `🪫 87٪ 🧊3h 🔜 1.9d`, in the text rather than
 a colour, since [the footer's tail](#the-footers-tail) draws in Claude
 Code's one style. It draws nothing in the columns: its figures are the
 plan's own, read from the configured [usage source](usage-sources.md), and
 can include use from other machines, the web and the phone. Both shares
-take three digits, so 🪫 reads `87٪` as 🔋 does, and so does 🦊. Too wide
-for its row, it sheds 🎨, then 🔀, then 📁, then 📅, then 🕐, then the
-windows' 🔜, 🦊's with them, and only then is cut with `…`; the windows
+take three digits, so 🪫 reads `87٪` as 🔋 does, and so does each window
+after it. Too wide for its row, it sheds 🎨, then 🔀, then 📁, then 📅,
+then 🕐, then the windows' 🔜, and only then is cut with `…`; the windows
 themselves are never shed.
 
 No row takes a press: each is plain text, above the prompt, under the
@@ -565,7 +570,7 @@ which take the paths in the option `hide`, from the
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main` (the 🧵 row), `session`, `agent`, and `tag` for the turn tag lines' 🔋 and 🪫 (`tag.plan.five_hour`, `tag.plan.week`; [The turn tags](#the-turn-tags)) |
-| group | `plan` (🔋 🪫 🔜, and 🦊 `fable` on the 💳 row), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
+| group | `plan` (🔋 🪫 🔜, and on the 💳 row 🦊 `fable`, 🎼 `opus`, 🎭 `sonnet`, 🍳 `omelette`, 🔌 `oauth_apps` and 🤝 `cowork`), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
 
 ```
 --hide account                  the 💳 row
@@ -573,6 +578,7 @@ which take the paths in the option `hide`, from the
 --hide turn.time.eta            ⛳ on the 🎤 row only
 --hide account.workspace        📦 🌿 📁 🔀 🎨 on the 💳 row
 --hide account.plan.fable       🦊 and its 🔜 on the 💳 row
+--hide account.plan.opus        🎼 and its 🔜, where weekly-windows turns it on
 --hide session.workspace.name   📛 and the session's name on 🎮
 --hide '*.state.rate'           🛫 everywhere
 --hide '*.chat.progress'        every thread's latest text in the tree
@@ -1060,7 +1066,8 @@ at*.
 
 **Hue is identity and never changes with the value.** Each quantity keeps
 its colour on every row: 🔋 is always green, 🪫 always red and 🦊 always
-the model's purple, whatever their figures say. The one exception is 🎯 (below).
+the model's purple, whatever their figures say; on 💳, 🎼 is teal, 🎭
+pink, 🍳 mint, 🔌 periwinkle and 🤝 cream. The one exception is 🎯 (below).
 
 **Brightness is magnitude.** A figure with no natural ceiling is dim under a
 fixed cut and full strength at or over it:

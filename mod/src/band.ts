@@ -39,10 +39,13 @@ import {
 } from "./figures.ts";
 import { decodeTurn } from "./claude_cost.ts";
 import {
-  CELLS, accountLabel, cacheRate, hms, mainLabel, sessionLabel, turnLabel,
-  untilReset, workspacePieces, ymd,
+  CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, mainLabel, sessionLabel,
+  turnLabel, untilReset, workspacePieces, ymd,
 } from "./cells.ts";
-import type { Workspace } from "./cells.ts";
+import type { SideWindow, Workspace } from "./cells.ts";
+import type { Limits } from "./claude_sources.ts";
+import { WEEKLY_WINDOWS } from "./sources.ts";
+import type { WeeklyKey } from "./sources.ts";
 import { creditCell } from "./credits.ts";
 import { treeRows } from "./band_tree.ts";
 import type { Folds } from "./band_tree.ts";
@@ -296,13 +299,14 @@ export function workspaceOf(fig: Dict, home: string): Workspace {
 // ════════════════════════════════════════════════════════════════════════════
 
 /** 💳: the plan's two windows, `limits.session_pct` and `weekly_pct` as the
- * source gave them, then the weekly Fable window, `limits.fable_pct`,
- * where the source has one, and on the label the time to each reset,
- * `limits.session_reset`, `weekly_reset` and `fable_reset`, then 📅 🕐
- * off `clock.now`.  The Fable window's 🔜 is left out where it is the
- * weekly one's, already drawn after 🪫, unless `weekHidden`.  A reading
- * STALE_MARK_S or more old, by `usage.reading.as_of`, has each figure
- * marked with 🧊 and its age. */
+ * source gave them, then the weekly windows beside them, SIDE_MARKS (the
+ * Fable window, `limits.fable_pct`, and the others, `limits.opus_pct` and
+ * the like), each where the source has it, and on the label the time to
+ * each reset, `limits.session_reset`, `weekly_reset`, `fable_reset` and
+ * the like, then 📅 🕐 off `clock.now`.  A side window's 🔜 is left out
+ * where it is the weekly one's, already drawn after 🪫, unless
+ * `weekHidden`.  A reading STALE_MARK_S or more old, by
+ * `usage.reading.as_of`, has each figure marked with 🧊 and its age. */
 function accountRow(st: Settings, fig: Dict, now: number,
   weekHidden = false): Row {
   const lim = decodeLimits(fig.limits);
@@ -327,16 +331,20 @@ function accountRow(st: Settings, fig: Dict, now: number,
     spans: creditCell(st, d.credit as Dict,
       d.tint as "red" | "amber" | null, owed?.original === true, now) }));
   const week = pct(lim.weekly_pct);
-  const fable = pct(lim.fable_pct);
-  // One 🔜 for the two weekly windows where they reset together: the
-  // weekly one's, while 🪫 is drawn.
-  const shared = !weekHidden && (week !== null || reset("weekly_reset")
-    !== null) && raw.fable_reset !== null &&
-    raw.fable_reset === raw.weekly_reset;
+  const weekDrawn = !weekHidden && (week !== null ||
+    reset("weekly_reset") !== null);
+  // Each side window with a share; one 🔜 for it and the plan's week
+  // where they reset together: the weekly one's, while 🪫 is drawn.
+  const side: SideWindow[] = SIDE_MARKS.flatMap(([key]) => {
+    const v = pct(lim[(key + "_pct") as keyof Limits]);
+    if (v === null) return [];
+    const at = (raw[key + "_reset"] ?? null) as number | null;
+    const shared = weekDrawn && at !== null && at === raw.weekly_reset;
+    return [{ key, pct: v, reset: shared ? null : reset(key + "_reset") }];
+  });
   return { scope: "account", label: accountLabel(st,
     pct(lim.session_pct), week, reset("session_reset"),
-    reset("weekly_reset"), ymd(now), hms(now), stale, credits,
-    fable, fable === null || shared ? null : reset("fable_reset")),
+    reset("weekly_reset"), ymd(now), hms(now), stale, credits, side),
     cells: {} };
 }
 
@@ -606,6 +614,16 @@ export function accountText(st: Settings, fig: Dict,
   hide: readonly string[], home = "", rooted = false): string {
   return accountPieces(st, fig, hide, home, rooted)
     .flatMap((p) => p.spans.map((s) => s.text)).join("").trim();
+}
+
+/** The hide paths the 💳 row is drawn under: `hide`, and
+ * `account.plan.<key>` for each weekly window `windows` (the option
+ * `weekly-windows`) leaves off.  The option, not the defaults' `hide`,
+ * keeps them off, since a file's `hide` replaces that list whole. */
+export function accountHide(hide: readonly string[],
+  windows: { readonly [key in WeeklyKey]: boolean }): string[] {
+  return [...hide, ...WEEKLY_WINDOWS.filter(([key]) => !windows[key])
+    .map(([key]) => "account.plan." + key)];
 }
 
 /** accountText's pieces, in their colours; none under the hide path

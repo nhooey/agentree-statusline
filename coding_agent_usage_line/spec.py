@@ -200,6 +200,22 @@ E_FABLE = "🦊"        # the weekly Fable window consumed, Claude Code's
                       # read share, nor 📜, which reads as a log.
                       # U+1F98A, Emoji_Presentation=Yes, inside EAW_WIDE,
                       # above the U+1F90C split: two columns everywhere.
+# The other weekly windows the usage endpoint reports beside the plan's
+# week, on the 💳 row after 🦊, each off until the option
+# `weekly-windows` turns it on.  Each a picture of its name rather than
+# a container, since none is one of the plan's pair.  All five are
+# Emoji_Presentation=Yes, inside EAW_WIDE: two columns everywhere.
+E_OPUS = "🎼"         # `seven_day_opus`: an opus, a musical score.
+                      # U+1F3BC.
+E_SONNET = "🎭"       # `seven_day_sonnet`: the stage a sonnet's poet
+                      # wrote for.  Not 📜, which reads as a log.
+                      # U+1F3AD.
+E_OMELETTE = "🍳"     # `seven_day_omelette`: the pan.  U+1F373.
+E_OAUTH_APPS = "🔌"   # `seven_day_oauth_apps`: the apps plugged into
+                      # the account.  Not 🔑, which reads as a secret.
+                      # U+1F50C.
+E_COWORK = "🤝"       # `seven_day_cowork`: working together.
+                      # U+1F91D, above the U+1F90C split.
 # The three scopes column 4 reports, widening left to right: what the turn
 # just answered consumed, what this session has consumed, what the account
 # has.  Each MARKS a figure rather than naming a metric, so each is emitted
@@ -520,6 +536,13 @@ F_MSG = "\033[38;2;255;255;255m"           # white, that row's text on
 F_LIM_SESS = F_GRN                         # the 🔋 5-hour row
 F_LIM_WEEK = F_RED                         # the 🪫 weekly row
 F_LIM_FABLE = F_PUR                        # the 🦊 Fable window, on 💳
+# The other weekly windows, on 💳 after 🦊: a hue each, none of the 💳
+# row's own (🔋 green, 🪫 red, 🦊 purple, 📁 blue, 📦 coral, 🔀 🎨 cyan).
+F_LIM_OPUS = F_TUP                         # 🎼 teal
+F_LIM_SONNET = F_TDN                       # 🎭 pink
+F_LIM_OMELETTE = F_RATE                    # 🍳 mint
+F_LIM_OAUTH_APPS = F_PRW                   # 🔌 periwinkle
+F_LIM_COWORK = F_CRM                       # 🤝 cream
 # Column 3's 📖 and 📝 rows, ONE colour for the pair: the cost line's
 # share_half paints these same two figures amber and a quantity keeps its
 # ink across the readouts as it keeps its glyph.  Not one hue per row as the
@@ -1333,9 +1356,20 @@ TAG_SCOPE = "tag"
 # of the label it is.  One renderer draws all three readouts, so one path
 # means the same everywhere.
 HIDE_GROUPS = {
-    "plan": ("five_hour", "week", "fable", "reset"),      # 🔋 🪫, 🦊 on the
-                                                          #  💳 label, and
-                                                          #  their 🔜 there
+    "plan": (
+        "five_hour",
+        "week",
+        "fable",
+        "opus",
+        "sonnet",
+        "omelette",
+        "oauth_apps",
+        "cowork",
+        "reset",
+    ),                                                    # 🔋 🪫, 🦊 🎼 🎭 🍳
+                                                          #  🔌 🤝 on the 💳
+                                                          #  label, and their
+                                                          #  🔜 there
     "cost": ("cost",),                                    # 💰
     "tokens": ("io", "cache"),                            # 🧩 ▴ ▾, 🎯
     "context": ("size", "share"),                         # 🧠, and its ٪
@@ -1438,6 +1472,11 @@ TRUE_COLOURS = {
     "F_LIM_SESS": "\033[38;2;120;200;80m",
     "F_LIM_WEEK": "\033[38;2;255;90;90m",
     "F_LIM_FABLE": "\033[38;2;200;130;255m",
+    "F_LIM_OPUS": "\033[38;2;120;200;220m",
+    "F_LIM_SONNET": "\033[38;2;220;140;200m",
+    "F_LIM_OMELETTE": "\033[38;2;100;225;180m",
+    "F_LIM_OAUTH_APPS": "\033[38;2;140;150;255m",
+    "F_LIM_COWORK": "\033[38;2;211;215;207m",
     "F_SHARE": "\033[38;2;255;200;0m",
     "F_SUM": "\033[38;2;76;76;76m",
     "F_RULE": "\033[38;2;76;76;76m",

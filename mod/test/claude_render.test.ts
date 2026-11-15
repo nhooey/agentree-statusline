@@ -44,7 +44,7 @@ const cases = (JSON.parse(fs.readFileSync(path.join(FIXTURES, "cases.json"),
   "utf-8")).cases as Case[]).filter((c) => c.suite === "status");
 
 test("every status case has its figures and golden", () => {
-  assert.equal(cases.length, 144);
+  assert.equal(cases.length, 145);
 });
 
 test("status goldens, drawn from their figures", () => {

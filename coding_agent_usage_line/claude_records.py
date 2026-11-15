@@ -200,7 +200,8 @@ NO_GIT = Git(False, "", False, "", "", False)
 
 
 class Limits(NamedTuple):
-    """The two plan windows, and the weekly Fable window beside them.  Percentages are strings because a missing figure
+    """The two plan windows, and the weekly Fable window and the other
+    weekly windows beside them.  Percentages are strings because a missing figure
     is the empty string throughout, which is what makes a blank row blank.
 
     They carry whatever precision their source gave them — see _pct_str — and
@@ -223,16 +224,36 @@ class Limits(NamedTuple):
     # by the two plan windows alone.  "" where the source has no such window.
     fable_pct: str = ""
     fable_reset: str = ""
+    # The other weekly windows, sources.WEEKLY_WINDOWS, each `<key>_pct`
+    # and `<key>_reset` as the Fable window's are: no shares, "" where the
+    # source has no such window.
+    opus_pct: str = ""
+    opus_reset: str = ""
+    sonnet_pct: str = ""
+    sonnet_reset: str = ""
+    omelette_pct: str = ""
+    omelette_reset: str = ""
+    oauth_apps_pct: str = ""
+    oauth_apps_reset: str = ""
+    cowork_pct: str = ""
+    cowork_reset: str = ""
 
 
 NO_LIMITS = Limits("", "", "", "", "", "")
 
+# The fields of the weekly windows beside the plan's pair: the Fable one's
+# and the others'.
+SIDE_WINDOW_FIELDS = tuple(f for f in Limits._fields
+                           if f.endswith(("_pct", "_reset")) and
+                           not f.startswith(("session_", "weekly_")))
+
 
 def no_plan(lim: Limits) -> bool:
-    """Whether `lim` holds neither plan window.  The Fable window alone is
-    not a plan reading: the accounting divides by the two plan windows, and
-    the status line's grid draws only them."""
-    return lim._replace(fable_pct="", fable_reset="") == NO_LIMITS
+    """Whether `lim` holds neither plan window.  The Fable window and the
+    other weekly windows alone are not a plan reading: the accounting
+    divides by the two plan windows, and the status line's grid draws only
+    them."""
+    return lim._replace(**dict.fromkeys(SIDE_WINDOW_FIELDS, "")) == NO_LIMITS
 
 
 class CacheShares(NamedTuple):
