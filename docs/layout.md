@@ -662,6 +662,21 @@ row. A turn whose records never land leaves it blank and says why in the
 mod's log ([mod/README.md](../mod/README.md#its-log)). Each turn is stamped
 once.
 
+Some turns end with no closing line, and their receipt is drawn under the
+turn's answer instead, its last block of text, the same rows in the same
+place. Claude Code leaves the line out when it would only repeat the one
+before it, `Waiting for 1 background agent to finish`:
+
+- the turn ends with background agents or dynamic workflows still at
+  work, as many of each as when the turn before ended;
+- no prompt you sent came between the two, so the turn was opened by a
+  task notification, an agent's hand-back or another message the session
+  got;
+- the turn had no token budget and /focus hid none of its messages.
+
+The ctrl+o transcript and `--verbose` draw that line after all; it stays
+blank there, and the receipt stays under the answer.
+
 ### The turn tags
 
 The receipt's last line names the turn it bills, and the prompt that opened

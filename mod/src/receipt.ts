@@ -490,3 +490,81 @@ export function startTag(st: Settings, fig: Dict,
     pctOf(lim.session_pct), pctOf(lim.weekly_pct),
     at === null ? null : ymd(at), at === null ? null : hms(at), hide));
 }
+
+/** What the engine draws to close the turn that took `durationMs`.
+ * `hidden`: whether it leaves its closing line out of the transcript, so
+ * the receipt has no TurnDuration to draw under; `answer`: the turn's last
+ * text block, the AssistantMessage drawn last before that line ("" with
+ * none).  null while `records` hold no turn_duration of that duration.
+ *
+ * Claude Code drops a turn_duration whose pending background agents or
+ * dynamic workflows are more than none and as many as the previous
+ * turn_duration's, with no prompt the person sent in between: the line
+ * would only say again `Waiting for 1 background agent to finish`.  So a
+ * turn a task notification or an agent's hand-back opens while an agent
+ * still runs ends with no closing line.  It drops none with a token
+ * budget or messages hidden by /focus, and none in the ctrl+o transcript
+ * or under --verbose.  A prompt the person sent is a user record that is
+ * no meta, tool result or compact summary, of no origin or a human one,
+ * or a queued_command of theirs.  `records` are read in order, the counts
+ * starting at none where they start. */
+export function closingLine(records: readonly unknown[], durationMs: number):
+  { hidden: boolean; answer: string } | null {
+  let agents = 0;
+  let flows = 0;
+  let answer = "";
+  let found: { hidden: boolean; answer: string } | null = null;
+  for (const rec of records) {
+    if (!rec || typeof rec !== "object") continue;
+    const r = rec as Record<string, unknown>;
+    if (r.isSidechain === true) continue;
+    if (r.type === "system" && r.subtype === "turn_duration") {
+      const a = Number(r.pendingBackgroundAgentCount) || 0;
+      const f = Number(r.pendingWorkflowCount) || 0;
+      const hidden = (a > 0 || f > 0) && a === agents && f === flows &&
+        r.budgetLimit === undefined && !Number(r.briefHiddenCount);
+      agents = a;
+      flows = f;
+      if (r.durationMs === durationMs) found = { hidden, answer };
+      answer = "";
+    } else if (r.type === "user") {
+      if (sentByPerson(r)) [agents, flows] = [0, 0];
+    } else if (r.type === "attachment") {
+      const at = r.attachment as Record<string, unknown> | undefined;
+      if (at?.type === "queued_command" && at.isMeta !== true &&
+        humanOrigin(at.origin ?? (at.commandMode === "task-notification"
+          ? { kind: "task-notification" } : undefined))) {
+        [agents, flows] = [0, 0];
+      }
+    } else if (r.type === "assistant") {
+      const content = (r.message as Record<string, unknown> | undefined)
+        ?.content;
+      if (typeof content === "string" && content.trim()) answer = content;
+      for (const b of Array.isArray(content) ? content : []) {
+        if (b?.type === "text" && typeof b.text === "string" &&
+          b.text.trim()) answer = b.text;
+      }
+    }
+  }
+  return found;
+}
+
+/** Whether a user record is a prompt the person sent, as the engine tells
+ * one when it counts closing lines (closingLine). */
+function sentByPerson(r: Record<string, unknown>): boolean {
+  return r.isMeta !== true && r.toolUseResult === undefined &&
+    r.isCompactSummary !== true && humanOrigin(r.origin);
+}
+
+/** Whether an origin is the person's: none, or `human`. */
+function humanOrigin(origin: unknown): boolean {
+  return origin === undefined || origin === null ||
+    (typeof origin === "object" &&
+      (origin as Record<string, unknown>).kind === "human");
+}
+
+/** An answer's text as its AssistantMessage row and its record are
+ * matched: each run of whitespace one space, trimmed. */
+export function answerText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
