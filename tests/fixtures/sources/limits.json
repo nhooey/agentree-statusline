@@ -1,6 +1,8 @@
 [
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "41",
    "session_reset": "2026-08-16 02:30",
    "session_share": "",
@@ -38,6 +40,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "33.333333",
    "session_reset": "2026-08-16 02:40",
    "session_share": "",
@@ -75,6 +79,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "0.007812",
    "session_reset": "",
    "session_share": "",
@@ -112,6 +118,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "0",
    "session_reset": "1970-01-01 00:00",
    "session_share": "",
@@ -149,6 +157,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -198,6 +208,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "8",
    "session_reset": "1970-01-01 00:00",
    "session_share": "",
@@ -248,6 +260,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -279,6 +293,132 @@
  },
  {
   "expected": {
+   "fable_pct": "12.5",
+   "fable_reset": "2026-08-17 03:23",
+   "session_pct": "41",
+   "session_reset": "2026-08-16 02:30",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "63",
+   "weekly_reset": "2026-08-17 22:50",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": 1786937000,
+       "used_percent": 12.5
+      },
+      {
+       "duration_seconds": 18000,
+       "id": "five_hour",
+       "resets_at": 1786847400,
+       "used_percent": 41
+      },
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day",
+       "resets_at": 1787007000,
+       "used_percent": 63
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "UTC"
+ },
+ {
+  "expected": {
+   "fable_pct": "5",
+   "fable_reset": "",
+   "session_pct": "",
+   "session_reset": "",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "",
+   "weekly_reset": "",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable only",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": null,
+       "used_percent": 5
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "UTC"
+ },
+ {
+  "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
+   "session_pct": "",
+   "session_reset": "",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "9",
+   "weekly_reset": "",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable missing and expired skipped",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": 5,
+       "used_percent": null
+      },
+      {
+       "duration_seconds": 604800,
+       "expired": true,
+       "id": "seven_day_overage_included",
+       "resets_at": 5,
+       "used_percent": 7
+      },
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 9
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "UTC"
+ },
+ {
+  "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -310,6 +450,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -341,6 +483,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -372,6 +516,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -403,6 +549,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -435,6 +583,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -467,6 +617,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -497,6 +649,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -538,6 +692,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -556,6 +712,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -571,6 +729,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -588,6 +748,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "41",
    "session_reset": "2026-08-15 22:30",
    "session_share": "",
@@ -625,6 +787,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "33.333333",
    "session_reset": "2026-08-15 22:40",
    "session_share": "",
@@ -662,6 +826,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "0.007812",
    "session_reset": "",
    "session_share": "",
@@ -699,6 +865,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "0",
    "session_reset": "1969-12-31 19:00",
    "session_share": "",
@@ -736,6 +904,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -785,6 +955,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "8",
    "session_reset": "1969-12-31 19:00",
    "session_share": "",
@@ -835,6 +1007,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -866,6 +1040,132 @@
  },
  {
   "expected": {
+   "fable_pct": "12.5",
+   "fable_reset": "2026-08-16 23:23",
+   "session_pct": "41",
+   "session_reset": "2026-08-15 22:30",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "63",
+   "weekly_reset": "2026-08-17 18:50",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": 1786937000,
+       "used_percent": 12.5
+      },
+      {
+       "duration_seconds": 18000,
+       "id": "five_hour",
+       "resets_at": 1786847400,
+       "used_percent": 41
+      },
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day",
+       "resets_at": 1787007000,
+       "used_percent": 63
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "America/New_York"
+ },
+ {
+  "expected": {
+   "fable_pct": "5",
+   "fable_reset": "",
+   "session_pct": "",
+   "session_reset": "",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "",
+   "weekly_reset": "",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable only",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": null,
+       "used_percent": 5
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "America/New_York"
+ },
+ {
+  "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
+   "session_pct": "",
+   "session_reset": "",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "9",
+   "weekly_reset": "",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable missing and expired skipped",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": 5,
+       "used_percent": null
+      },
+      {
+       "duration_seconds": 604800,
+       "expired": true,
+       "id": "seven_day_overage_included",
+       "resets_at": 5,
+       "used_percent": 7
+      },
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 9
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "America/New_York"
+ },
+ {
+  "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -897,6 +1197,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -928,6 +1230,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -959,6 +1263,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -990,6 +1296,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1022,6 +1330,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -1054,6 +1364,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1084,6 +1396,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1125,6 +1439,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1143,6 +1459,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1158,6 +1476,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1175,6 +1495,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "41",
    "session_reset": "2026-08-16 08:00",
    "session_share": "",
@@ -1212,6 +1534,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "33.333333",
    "session_reset": "2026-08-16 08:10",
    "session_share": "",
@@ -1249,6 +1573,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "0.007812",
    "session_reset": "",
    "session_share": "",
@@ -1286,6 +1612,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "0",
    "session_reset": "1970-01-01 05:30",
    "session_share": "",
@@ -1323,6 +1651,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -1372,6 +1702,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "8",
    "session_reset": "1970-01-01 05:30",
    "session_share": "",
@@ -1422,6 +1754,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1453,6 +1787,132 @@
  },
  {
   "expected": {
+   "fable_pct": "12.5",
+   "fable_reset": "2026-08-17 08:53",
+   "session_pct": "41",
+   "session_reset": "2026-08-16 08:00",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "63",
+   "weekly_reset": "2026-08-18 04:20",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": 1786937000,
+       "used_percent": 12.5
+      },
+      {
+       "duration_seconds": 18000,
+       "id": "five_hour",
+       "resets_at": 1786847400,
+       "used_percent": 41
+      },
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day",
+       "resets_at": 1787007000,
+       "used_percent": 63
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "Asia/Kolkata"
+ },
+ {
+  "expected": {
+   "fable_pct": "5",
+   "fable_reset": "",
+   "session_pct": "",
+   "session_reset": "",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "",
+   "weekly_reset": "",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable only",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": null,
+       "used_percent": 5
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "Asia/Kolkata"
+ },
+ {
+  "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
+   "session_pct": "",
+   "session_reset": "",
+   "session_share": "",
+   "session_turn": "",
+   "weekly_pct": "9",
+   "weekly_reset": "",
+   "weekly_share": "",
+   "weekly_turn": ""
+  },
+  "name": "fable missing and expired skipped",
+  "reading": {
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day_overage_included",
+       "resets_at": 5,
+       "used_percent": null
+      },
+      {
+       "duration_seconds": 604800,
+       "expired": true,
+       "id": "seven_day_overage_included",
+       "resets_at": 5,
+       "used_percent": 7
+      },
+      {
+       "duration_seconds": 604800,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 9
+      }
+     ]
+    }
+   ],
+   "schema_version": 1
+  },
+  "tz": "Asia/Kolkata"
+ },
+ {
+  "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1484,6 +1944,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1515,6 +1977,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -1546,6 +2010,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -1577,6 +2043,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1609,6 +2077,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "1",
    "session_reset": "",
    "session_share": "",
@@ -1641,6 +2111,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1671,6 +2143,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1712,6 +2186,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1730,6 +2206,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",
@@ -1745,6 +2223,8 @@
  },
  {
   "expected": {
+   "fable_pct": "",
+   "fable_reset": "",
    "session_pct": "",
    "session_reset": "",
    "session_share": "",

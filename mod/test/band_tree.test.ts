@@ -43,7 +43,7 @@ const ST = settings({}, true, false, 5);
 const NOW = 1786847000;
 const LIMITS = { session_pct: "15", session_reset: "", session_share: "",
   weekly_pct: "87", weekly_reset: "", weekly_share: "", session_turn: "",
-  weekly_turn: "" };
+  weekly_turn: "", fable_pct: "", fable_reset: "" };
 
 /** The fixture agents' transcripts, every one under
  * tests/fixtures/transcripts/subagent/. */

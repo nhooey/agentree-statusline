@@ -362,6 +362,36 @@ test('a /resume in the running process starts the tick again for the ' +
     expect(JSON.stringify(lastDoc(w))).toContain(resumed)
   })
 
+test('the session\'s rate limits reach the 💳 row, the Fable window ' +
+  'among them, and their kinds are logged once, then as they change',
+  async ($, on) => {
+    const w = world(on)
+    w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+      encoder.encode('{"usage-source": "native"}'))
+    w.usage.rateLimits = [
+      { kind: 'five_hour', percentUsed: 15,
+        resetsAt: '2026-08-16T05:00:00+00:00' },
+      { kind: 'seven_day', percentUsed: 87,
+        resetsAt: '2026-08-18T01:00:00+00:00' },
+      { kind: 'seven_day_overage_included', percentUsed: 12.5,
+        resetsAt: '2026-08-19T01:00:00+00:00' }]
+    await start($, w, 'terminal', STATUS)
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^87/)
+    expect(String(limits.fable_pct)).toMatch(/^12\.5/)
+    expect(limits.fable_reset).toBe(Date.parse('2026-08-19T01:00:00Z') / 1000)
+    const line = 'rate limits: five_hour seven_day seven_day_overage_included'
+    await w.clock.advance(31_000)
+    await settle()
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // The Fable window gone: logged again, and no longer in the document.
+    w.usage.rateLimits = w.usage.rateLimits.slice(0, 2)
+    await w.clock.advance(31_000)
+    await settle()
+    expect(logOf(w)).toContain('rate limits: five_hour seven_day\n')
+    expect((lastDoc(w).limits as Dict).fable_pct).toBe(null)
+  })
+
 test('under auto, with no native reading, the plan comes from the usage ' +
   'endpoint, asked as the session, once per 5 minutes for every session ' +
   'on the account', async ($, on) => {
@@ -373,11 +403,14 @@ test('under auto, with no native reading, the plan comes from the usage ' +
     w.oauth.body = JSON.stringify({
       five_hour: { utilization: 18.0, resets_at: '2026-08-16T05:00:00+00:00' },
       seven_day: { utilization: 24.0, resets_at: '2026-08-18T01:00:00+00:00' },
+      seven_day_overage_included: { utilization: 6.0,
+        resets_at: '2026-08-19T01:00:00+00:00' },
       seven_day_opus: null })
     await start($, w, 'terminal', STATUS)
     expect(w.oauth.asked[0]).toEqual({
       url: 'https://api.anthropic.com/api/oauth/usage', auth: 'test-handle' })
     expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^24/)
+    expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^6/)
     // Read again within the 5 minutes: the cached reading, nothing asked.
     const asked = w.oauth.asked.length
     await w.clock.advance(31_000)

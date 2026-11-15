@@ -183,6 +183,10 @@ def status_cases():
     # The true-colour set, where every case above draws the 256 one.
     case("true-colour-01", "01-baseline", 196, env="true-colour",
          figures="01-baseline")
+    # The weekly Fable window, which only the 💳 row draws; see
+    # gen/status.py.  Last, so no case after them reads it from the cache.
+    case("fable-own-reset", "fable-own-reset", 196)
+    case("fable-shared-reset", "fable-shared-reset", 196)
     return out
 
 

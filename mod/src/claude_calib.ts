@@ -54,7 +54,7 @@ import { pyFloat, pyJsonDumps, pyJsonLoads } from "./sources.ts";
 import { stateName } from "./state.ts";
 import { _price, pyStr, tsEpoch, turnTimes } from "./claude_records.ts";
 import type { Transcript, Turn } from "./claude_records.ts";
-import { limitsEqual, NO_LIMITS } from "./claude_sources.ts";
+import { noPlan } from "./claude_sources.ts";
 import type { Limits } from "./claude_sources.ts";
 
 export const CALIB_TTL = 300;  // the scan walks transcripts; five minutes is
@@ -270,7 +270,7 @@ export function _pctNum(v: unknown): number | null {
  * non-secret identity that scopes the calibration cache. */
 export function seedLimitsSnapshot(lim: Limits,
   reading: unknown = null): Snapshot {
-  if (limitsEqual(lim, NO_LIMITS)) return {};
+  if (noPlan(lim)) return {};
   const part = (k: string) => isDict(reading) ? pyGet(reading, k) : "";
   // The account the reading is of, hashed, where the source names one:
   // calibration is the machine's cost over the plan's percentage, nothing

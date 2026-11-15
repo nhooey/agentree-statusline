@@ -31,7 +31,7 @@
 //             `hide`, as `spans` and as `line`
 //   account   one case a line: a status document's 💳 row drawn at `cols`
 //             under `hide`, `indent` blanks in, as `row` and as `line`;
-//             the last ones one document at widths that shed its pieces
+//             the last ones two documents at widths that shed their pieces
 //
 // Each document's clock is drawn in its own `clock.tz`.  A span is written
 // as the grid's cases write one.
@@ -65,9 +65,15 @@ const HIDES: readonly (readonly string[])[] = [
 const HIDE_COLS = 155;
 // The start line's: none, and 🔋 hidden on the tag lines alone.
 const START_HIDES: readonly string[][] = [[], ["tag.plan.five_hour"]];
-// A document with every piece of the 💳 row, 🔀 and 🎨 among them, drawn at
-// widths that shed them one by one.
-const SHED_DOC = "status/04-pr-and-style";
+// The Fable window's own: hidden, and the weekly window hidden, which
+// takes the shared 🔜 with it unless the Fable window draws its own.
+const FABLE_HIDES: readonly string[][] = [["account.plan.fable"],
+  ["account.plan.week"]];
+// A document with every piece of the 💳 row, 🔀 and 🎨 among them, and one
+// with the Fable window's 🦊 and its own 🔜, drawn at widths that shed
+// them one by one.
+const SHED_DOCS = ["status/04-pr-and-style",
+  "status/fable-own-reset"];
 // The 🛫 the mod would pass, at one width: the documents carry the counts
 // it works one out from, never the rate itself.
 const RATE = 220, RATE_COLS = 200;
@@ -254,20 +260,26 @@ function bandCases(doc: string): BandCase[] {
 }
 
 /** Every account case of one document: at each width and hiding the band
- * cases take, and once indented, as above the prompt. */
-function accountCases(doc: string): AccountCase[] {
+ * cases take, and once indented, as above the prompt; a document with the
+ * Fable window also with each weekly window hidden. */
+function accountCases(doc: string, fig: Dict): AccountCase[] {
+  const fable = (fig.limits as Dict).fable_pct !== null;
   return [...COLS.map((cols) => ({ doc, cols, hide: [], indent: 0 })),
     ...HIDES.map((hide) => ({ doc, cols: HIDE_COLS, hide: [...hide],
       indent: 0 })),
+    ...(fable ? FABLE_HIDES : []).map((hide) => ({ doc, cols: HIDE_COLS,
+      hide: [...hide], indent: 0 })),
     { doc, cols: HIDE_COLS, hide: [], indent: 2 }];
 }
 
-/** The account cases of SHED_DOC, from wide enough for every piece down
+/** The account cases of SHED_DOCS, from wide enough for every piece down
  * to too narrow for any but the cut 💳, a piece shed at each step. */
 function shedCases(): AccountCase[] {
   const out: AccountCase[] = [];
-  for (let cols = 200; cols >= 30; cols -= 10) {
-    out.push({ doc: SHED_DOC, cols, hide: [], indent: 0 });
+  for (const doc of SHED_DOCS) {
+    for (let cols = 200; cols >= 30; cols -= 10) {
+      out.push({ doc, cols, hide: [], indent: 0 });
+    }
   }
   return out;
 }
@@ -299,7 +311,7 @@ function cases(st: Settings): string {
       band.push(JSON.stringify({ ...c, rows: rowsJson(rows),
         lines: rows.map((r) => join(r)) }));
     }
-    for (const c of accountCases(id)) account.push(accountCase(c, fig));
+    for (const c of accountCases(id, fig)) account.push(accountCase(c, fig));
     for (const hide of START_HIDES) {
       const s = drawStart(st, fig, hide);
       start.push(JSON.stringify({ doc: id, hide, spans: s.map(spanJson),

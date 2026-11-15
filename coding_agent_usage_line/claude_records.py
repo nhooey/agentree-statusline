@@ -200,7 +200,7 @@ NO_GIT = Git(False, "", False, "", "", False)
 
 
 class Limits(NamedTuple):
-    """The two plan windows.  Percentages are strings because a missing figure
+    """The two plan windows, and the weekly Fable window beside them.  Percentages are strings because a missing figure
     is the empty string throughout, which is what makes a blank row blank.
 
     They carry whatever precision their source gave them — see _pct_str — and
@@ -218,9 +218,21 @@ class Limits(NamedTuple):
     # by orchestration: only _with_shares has a transcript to derive it from.
     session_turn: str = ""
     weekly_turn: str = ""
+    # The weekly Fable window, Claude Code's `seven_day_overage_included`,
+    # drawn as the source gave it: no shares, since the accounting divides
+    # by the two plan windows alone.  "" where the source has no such window.
+    fable_pct: str = ""
+    fable_reset: str = ""
 
 
 NO_LIMITS = Limits("", "", "", "", "", "")
+
+
+def no_plan(lim: Limits) -> bool:
+    """Whether `lim` holds neither plan window.  The Fable window alone is
+    not a plan reading: the accounting divides by the two plan windows, and
+    the status line's grid draws only them."""
+    return lim._replace(fable_pct="", fable_reset="") == NO_LIMITS
 
 
 class CacheShares(NamedTuple):

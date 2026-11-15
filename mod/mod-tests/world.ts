@@ -42,8 +42,10 @@ export type World = {
   // Each status document the mod filed in `$.state`, oldest first.
   docs: Dict[]
   // Whether `$.session.usage` is refused, and, while `hung` holds a list,
-  // each ask held unanswered until its function is called.
-  usage: { down: boolean; hung?: (() => void)[] }
+  // each ask held unanswered until its function is called; `rateLimits`
+  // is what it answers for them, none by default.
+  usage: { down: boolean; hung?: (() => void)[];
+    rateLimits?: { kind: string; percentUsed: number; resetsAt?: string }[] }
   // Each line the mod sent the debug log.
   debug: string[]
   // Each line the mod wrote into the transcript, `$.ui.log`'s default.
@@ -182,13 +184,13 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   })
   const usage: World['usage'] = { down: usageDown }
   const reading = () => ({ value: { startedAt: NOW * 1000,
-    context: { tokens: 1000, window: WINDOW }, rateLimits: [] } })
+    context: { tokens: 1000, window: WINDOW },
+    rateLimits: usage.rateLimits ?? [] } })
   on('session.usage', () => usage.hung
     ? new Promise((r) => usage.hung!.push(() => r(reading())))
     : usage.down
     ? { deny: 'usage unavailable' } as any
-    : { value: { startedAt: NOW * 1000,
-      context: { tokens: 1000, window: WINDOW }, rateLimits: [] } })
+    : reading())
   // The engine's own drawings, and the events beneath the mod.
   on('ui.render', () => h('Box', null) as RenderElement)
   on('session.start', ($, e) => ({ cwd: e.cwd }))

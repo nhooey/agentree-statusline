@@ -35,7 +35,8 @@ Read these three first:
 
 * **🎮 💰 35**: the session has cost $35 at API prices.
 * **💳 🔋 15٪ 🔜 6.7m**: the account has used 15٪ of its 5-hour window, which
-  resets in 6.7 minutes. 🪫 is the same for the weekly window.
+  resets in 6.7 minutes. 🪫 is the same for the weekly window, and 🦊,
+  where the account has one, for the weekly Fable window.
 * **🧵 🧠115k 11٪**: the main thread's context holds 115k tokens, 11٪ of the
   window.
 
@@ -45,7 +46,7 @@ Read these three first:
 | 🧵 | the mark, its state, 📨 with the messages waiting for its next turn, `main` and the first line of its latest text | the main thread alone | above the prompt, under 🎮 |
 | subagents | each one's head, name and the first line of its latest text | each subagent alone | above the prompt, under the thread that started it; between turns, those running or paused |
 | 🎤 | the mark, its state and the prompt typed last | the turn | above the prompt, under 🧵, first, while a turn runs |
-| 💳 | 📁 Directory · 🎨 Style · 💳 Account · 🔋 🪫 Windows · 🔜 Resets · 📅 Date · 🕐 Clock | the account and where the session works | under the footer line |
+| 💳 | 📁 Directory · 🎨 Style · 💳 Account · 🔋 🪫 🦊 Windows · 🔜 Resets · 📅 Date · 🕐 Clock | the account and where the session works | under the footer line |
 
 Each row's place is `rows` in the
 [configuration files](docs/options.md#configuration-files); see
@@ -216,6 +217,7 @@ different on one readout, the table says so.
 |---|---|---|:-:|:-:|:-:|
 | 🔋 | 5-hour | share of the 5-hour window | ✓ | ✓ | ✓ |
 | 🪫 | Weekly | share of the weekly window | ✓ | ✓ | ✓ |
+| 🦊 | Fable | share of the weekly Fable window, where the account has one, on the 💳 row | ✓ | | |
 | 🔜 | Reset | time until the window resets, on the 💳 row | ✓ | | |
 | 💯 | Full | a full 100٪ | ✓ | ✓ | ✓ |
 | `?` | Unknown | a share that cannot be derived yet | ✓ | ✓ | ✓ |

@@ -17,13 +17,15 @@
 import { STAMP_FMT } from "./spec.ts";
 import { isDict, pyGet, pyStrip, pyTruthy, utf8 } from "./py.ts";
 import {
-  collect, hashedAccountId, pyFloatText, pyJsonLoads, splitTimestamp,
+  collect, FABLE_WINDOW, hashedAccountId, pyFloatText, pyJsonLoads,
+  splitTimestamp,
 } from "./sources.ts";
 import type {
   AccountOf, Dict, Env, Fetch, Reading, Store,
 } from "./sources.ts";
 
-// The two plan windows, as claude_records.Limits holds them.  Percentages
+// The two plan windows and the weekly Fable window, as
+// claude_records.Limits holds them.  Percentages
 // are strings because a missing figure is the empty string throughout.
 // The fields keep Python's names, as the reading's do, so the shared cases
 // compare them as they are.  When claude_records.ts lands with its own
@@ -37,18 +39,30 @@ export type Limits = {
   readonly weekly_share: string;
   readonly session_turn: string;
   readonly weekly_turn: string;
+  // The weekly Fable window, Claude Code's `seven_day_overage_included`,
+  // as the source gave it: no shares, since the accounting divides by the
+  // two plan windows alone.  "" where the source has no such window.
+  readonly fable_pct: string;
+  readonly fable_reset: string;
 };
 
 export const NO_LIMITS: Limits = {
   session_pct: "", session_reset: "", session_share: "",
   weekly_pct: "", weekly_reset: "", weekly_share: "",
-  session_turn: "", weekly_turn: "",
+  session_turn: "", weekly_turn: "", fable_pct: "", fable_reset: "",
 };
 
 // NamedTuples compare by value; these are records, so by field.
 export function limitsEqual(a: Limits, b: Limits): boolean {
   return (Object.keys(NO_LIMITS) as (keyof Limits)[])
     .every((k) => a[k] === b[k]);
+}
+
+/** no_plan: whether `lim` holds neither plan window.  The Fable window
+ * alone is not a plan reading: the accounting divides by the two plan
+ * windows, and the status line's grid draws only them. */
+export function noPlan(lim: Limits): boolean {
+  return limitsEqual({ ...lim, fable_pct: "", fable_reset: "" }, NO_LIMITS);
 }
 
 export type PreparedClaudeReading = {
@@ -121,21 +135,27 @@ export function legacyLimits(reading: unknown): Limits {
     return NO_LIMITS;
   }
   let five: Dict | null = null, week: Dict | null = null;
+  let fable: Dict | null = null;
   const windows = pyGet(bucket, "windows", []);
   for (const window of Array.isArray(windows) ? windows : []) {
     if (!isDict(window) || pyGet(window, "used_percent") === null ||
         pyTruthy(pyGet(window, "expired"))) continue;
     const duration = pyGet(window, "duration_seconds");
-    if (duration === 18000 && five === null) five = window;
+    // The Fable window is a week long too, so it is told by its id.
+    if (pyGet(window, "id") === FABLE_WINDOW) {
+      if (fable === null) fable = window;
+    } else if (duration === 18000 && five === null) five = window;
     else if (duration === 604800 && week === null) week = window;
   }
-  if (five === null && week === null) return NO_LIMITS;
+  if (five === null && week === null && fable === null) return NO_LIMITS;
   return {
     ...NO_LIMITS,
     session_pct: five ? pct(pyGet(five, "used_percent")) : "",
     session_reset: five ? reset(pyGet(five, "resets_at")) : "",
     weekly_pct: week ? pct(pyGet(week, "used_percent")) : "",
     weekly_reset: week ? reset(pyGet(week, "resets_at")) : "",
+    fable_pct: fable ? pct(pyGet(fable, "used_percent")) : "",
+    fable_reset: fable ? reset(pyGet(fable, "resets_at")) : "",
   };
 }
 

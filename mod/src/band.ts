@@ -293,11 +293,15 @@ export function workspaceOf(fig: Dict, home: string): Workspace {
 // ════════════════════════════════════════════════════════════════════════════
 
 /** 💳: the plan's two windows, `limits.session_pct` and `weekly_pct` as the
- * source gave them, and on the label the time to each reset,
- * `limits.session_reset` and `weekly_reset`, then 📅 🕐 off `clock.now`.
- * A reading STALE_MARK_S or more old, by `usage.reading.as_of`, has each
- * figure marked with 🧊 and its age. */
-function accountRow(st: Settings, fig: Dict, now: number): Row {
+ * source gave them, then the weekly Fable window, `limits.fable_pct`,
+ * where the source has one, and on the label the time to each reset,
+ * `limits.session_reset`, `weekly_reset` and `fable_reset`, then 📅 🕐
+ * off `clock.now`.  The Fable window's 🔜 is left out where it is the
+ * weekly one's, already drawn after 🪫, unless `weekHidden`.  A reading
+ * STALE_MARK_S or more old, by `usage.reading.as_of`, has each figure
+ * marked with 🧊 and its age. */
+function accountRow(st: Settings, fig: Dict, now: number,
+  weekHidden = false): Row {
   const lim = decodeLimits(fig.limits);
   // The resets as the epochs the document carries, not the minute stamps
   // decodeLimits makes of them.
@@ -319,9 +323,18 @@ function accountRow(st: Settings, fig: Dict, now: number): Row {
   const credits = drawn.map((d) => ({ kind: String((d.credit as Dict).kind),
     spans: creditCell(st, d.credit as Dict,
       d.tint as "red" | "amber" | null, owed?.original === true, now) }));
+  const week = pct(lim.weekly_pct);
+  const fable = pct(lim.fable_pct);
+  // One 🔜 for the two weekly windows where they reset together: the
+  // weekly one's, while 🪫 is drawn.
+  const shared = !weekHidden && (week !== null || reset("weekly_reset")
+    !== null) && raw.fable_reset !== null &&
+    raw.fable_reset === raw.weekly_reset;
   return { scope: "account", label: accountLabel(st,
-    pct(lim.session_pct), pct(lim.weekly_pct), reset("session_reset"),
-    reset("weekly_reset"), ymd(now), hms(now), stale, credits), cells: {} };
+    pct(lim.session_pct), week, reset("session_reset"),
+    reset("weekly_reset"), ymd(now), hms(now), stale, credits,
+    fable, fable === null || shared ? null : reset("fable_reset")),
+    cells: {} };
 }
 
 /** 🎤: the turn opened last, `open_turn`, with `accounting.open_turn`
@@ -602,7 +615,8 @@ function accountPieces(st: Settings, fig: Dict, hide: readonly string[],
     !hidden(hide, "account." + p.path) &&
     !(rooted && ROOT_WORKSPACE.includes(p.path)));
   let dropped = false;
-  for (const p of accountRow(st, fig, now).label) {
+  for (const p of accountRow(st, fig, now,
+    hidden(hide, "account.plan.week")).label) {
     // A window's 🔜 goes with its window.
     const gone: boolean = hidden(hide, "account." + p.path) ||
       (dropped && p.path === "plan.reset");

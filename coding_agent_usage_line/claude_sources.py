@@ -54,19 +54,24 @@ def legacy_limits(reading):
         return NO_LIMITS
     if bucket.get("model") or bucket.get("feature") or bucket.get("label") not in (None, "", "default"):
         return NO_LIMITS
-    five = week = None
+    five = week = fable = None
     for window in bucket.get("windows", []):
         if not isinstance(window, dict) or window.get("used_percent") is None or window.get("expired"):
             continue
         duration = window.get("duration_seconds")
-        if duration == 18000 and five is None: five = window
+        # The Fable window is a week long too, so it is told by its id.
+        if window.get("id") == sources.FABLE_WINDOW:
+            if fable is None: fable = window
+        elif duration == 18000 and five is None: five = window
         elif duration == 604800 and week is None: week = window
-    if five is None and week is None:
+    if five is None and week is None and fable is None:
         return NO_LIMITS
     return Limits(_pct(five.get("used_percent")) if five else "",
                   _reset(five.get("resets_at")) if five else "", "",
                   _pct(week.get("used_percent")) if week else "",
-                  _reset(week.get("resets_at")) if week else "", "")
+                  _reset(week.get("resets_at")) if week else "", "",
+                  fable_pct=_pct(fable.get("used_percent")) if fable else "",
+                  fable_reset=_reset(fable.get("resets_at")) if fable else "")
 
 
 def prepare_claude_reading(spec, account, period, context, now=None):

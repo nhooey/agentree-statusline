@@ -179,7 +179,7 @@ compare, so the text is canonical:
   two ports' numbers agree. The other nulls, of the document's own shape,
   stay in the text.
 
-`schema` is 4 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
+`schema` is 5 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
 the figures the redesigned grid draws and today's rows do not: the status
 document's `turn` and `accounting`, the accounting's time and 💾 figures, the
 `Turn`'s lines and the `Transcript`'s main-thread figures. Schema 3, the same
@@ -189,7 +189,9 @@ need: the status document's `open_turn` and `accounting.open_turn`,
 `accounting.own`, the session's `start_s`, the `Transcript`'s `own_parts` and
 `own_est` with the compactions in its own cost, and the `Turn`'s `eta`. No row
 moved either time. Schema 4 added the `Transcript`'s `session_name` and
-`session_color`, which the band's 🎮 row draws. Both modes carry:
+`session_color`, which the band's 🎮 row draws, and schema 5 the `Limits`'
+weekly Fable window, `fable_pct` and `fable_reset`, which the 💳 row draws as
+🦊. Both modes carry:
 
 | Key | Holds |
 |---|---|
@@ -207,7 +209,7 @@ as `claude_records.py` defines them:
 | `payload` | `Payload`: the status-line JSON as read, its strings as given |
 | `transcript` | `Transcript`: tokens, cache rate, context, the last exchange, the ⌛ durations and their epochs, ETAs, queue and compactions; and the main thread's own, apart from its agents: `own_tok_up`, `own_tok_down` and `own_cache_pct` over its own requests; `own_parts`, an `[epoch, dollars]` pair for each of those requests and each compaction in the order written, a compaction's stamped where its turn is (at a `/compact` prompt with no calls, else at its boundary); `own_usd`, the parts totalled; `own_est`, true when a compaction is in them, whose summary's cost is an estimate; `lines_added` and `lines_removed` off its own tool results; the `prompt_id` and `turn_index` of the turn opened last; and `session_name` and `session_color`, the session's name and Claude Code's colour for it, off its latest `custom-title` (else `agent-name`) and `agent-color` records |
 | `git` | `Git`: branch, dirty, toplevel, worktree |
-| `limits` | `Limits`: the window percentages as the source gave them, this session's and this turn's share of each, the resets as epochs |
+| `limits` | `Limits`: the window percentages as the source gave them, this session's and this turn's share of each, the weekly Fable window's percentage (`fable_pct`, no shares), the resets as epochs |
 | `cache_shares` | `CacheShares`: 📖 and 📝 for the turn and the session |
 | `rate` | the session's token rate per second, or null |
 | `turn` | the `Turn` the 🎤 figures are about, the last one with main-thread calls that is not a compaction (`_with_shares`' pick), or null |
@@ -267,6 +269,7 @@ unknown (114 goldens), then:
 | `uncalibrated-02@196` | a reading too coarse to calibrate window shares from |
 | `subdec-*@*` | `--subscript-decimals` |
 | `model-fable@196`, `model-mythos@196` | model families other than Opus, Sonnet and Haiku in the 🤖 cell |
+| `fable-own-reset@196`, `fable-shared-reset@196` | a weekly Fable window beside the plan's two, resetting after the weekly one and with it; the status line draws neither, the 💳 row's cases do |
 
 The column rules are opt-in, and only 196 is wide enough for them (the cut-off
 is 170), so the two `rules-*@196` goldens are the only ruled ones.
