@@ -1,44 +1,41 @@
 #!/usr/bin/env python3
-"""Write the saved state of every fixture transcript's main fold, and of
-every fixture agent's fold.
+"""Write tests/fixtures/fold-saves.json: a digest of the saved state of
+every fixture transcript's main fold, of every fixture agent's fold, and
+of every fixture file's inbox entry, under each fold's format.
 
-    python3 tests/fixtures/gen/state.py
+    python3 tests/fixtures/gen/state.py              # write the file
+    python3 tests/fixtures/gen/state.py --show PATH  # print PATH's saves
 
-tests/fixtures/state/<path>.json, for each committed transcript that is a
-session's own (not an agent's), holds the texts a first save of its whole
-fold writes, as main_fold.fold_save writes them, with the format they were
-written under:
+    {"main-fold":  {"format": N, "saves": {TRANSCRIPT: SHA256, ...}},
+     "agent-fold": {"format": N, "saves": {AGENT FILE: SHA256, ...}},
+     "inbox-fold": {"format": N, "saves": {FILE: SHA256, ...}}}
 
-    {"format": N, "transcript": PATH, "parts": [TEXT, ...], "head": TEXT}
+Each path is from the repository root, and each digest is digest()'s of
+the texts that fold's save writes:
 
-tests/fold.py and mod/test/main_fold.test.ts save each fold again and fail
-where the text differs while spec/state.jsonc's "main-fold" format is still
-the fixture's: a change to either fold, or to what is saved of it, cannot
-land without a new format, and the two ports cannot drift apart.  Bump the
-format, then run this.
+  main-fold   each committed transcript that is a session's own (not an
+              agent's): a first save of its whole fold, to its last
+              newline, as main_fold.fold_save writes it, its parts and
+              then its head;
+  agent-fold  each committed agent transcript: the text agent_fold.
+              fold_text writes of its fold at each line end K, as a first
+              save writes it, as [K, TEXT];
+  inbox-fold  each committed transcript holding an inbox mark
+              (claude_records.SEND_QUEUED_MARK or INBOX_MARKS): the text
+              inbox_fold.entry_text writes of its entry at each line end
+              K, folded from the start with no mtime, as [K, TEXT]; a
+              session's own transcript folded as `main`, whose deliveries
+              are not folded.
 
-tests/fixtures/agent-state/<path>.json, for each committed agent
-transcript, holds the text agent_fold.fold_text writes of its fold at each
-line end K, as a first save writes it, under spec/state.jsonc's
-"agent-fold" format:
-
-    {"format": N, "agent": PATH, "texts": [[K, TEXT], ...]}
-
-tests/fold.py and mod/test/agent_fold.test.ts check both ports write each
-byte for byte, and read each back on to the last.
-
-tests/fixtures/inbox-state/<path>.json, for each committed transcript that
-holds an inbox mark (claude_records.SEND_QUEUED_MARK or INBOX_MARKS), holds
-the text inbox_fold.entry_text writes of its entry at each line end K,
-folded from the start with no mtime, under spec/state.jsonc's "inbox-fold"
-format; `main` for a session's own transcript, whose deliveries are not
-folded:
-
-    {"format": N, "file": PATH, "main": BOOL, "texts": [[K, TEXT], ...]}
-
-tests/fold.py and mod/test/inbox_fold.test.ts check both ports write each
-byte for byte, and read each back on to the last.
+tests/fold.py and mod/test/{main,agent,inbox}_fold.test.ts save each fold
+again, digest it, and fail where the digest differs or the format is not
+spec/state.jsonc's: a change to a fold, or to what is saved of it, cannot
+land without a new format, and the two ports, which must reach one digest,
+cannot drift apart.  Bump the format, then run this.  --show prints the
+texts a path's digests are of, to read what a change did by running it
+before and after.
 """
+import hashlib
 import json
 import os
 import subprocess
@@ -54,9 +51,18 @@ from coding_agent_usage_line import claude_records as cr  # noqa: E402
 from coding_agent_usage_line import inbox_fold as ib  # noqa: E402
 from coding_agent_usage_line import main_fold as mf  # noqa: E402
 
-OUT = os.path.join(FIXTURES, "state")
-AGENT_OUT = os.path.join(FIXTURES, "agent-state")
-INBOX_OUT = os.path.join(FIXTURES, "inbox-state")
+OUT = os.path.join(FIXTURES, "fold-saves.json")
+
+
+def digest(texts) -> str:
+    """The sha256 of a save's texts, in order: each a TEXT, or a [K, TEXT]
+    at line end K, written as `TEXT\\n` or `K\\tTEXT\\n` in UTF-8.
+    mod/test/fold_saves.ts is the TypeScript's."""
+    h = hashlib.sha256()
+    for t in texts:
+        line = t if isinstance(t, str) else "%d\t%s" % (t[0], t[1])
+        h.update((line + "\n").encode("utf-8"))
+    return h.hexdigest()
 
 
 def committed():
@@ -79,20 +85,6 @@ def agents():
                   if os.path.basename(f).startswith("agent-"))
 
 
-def agent_texts(path: str) -> dict:
-    """The text of `path`'s fold at each line end, as a first save writes
-    it."""
-    with open(os.path.join(ROOT, path), "rb") as fh:
-        data = fh.read()
-    f, at, texts = cr.AgentFold(), 0, []
-    for k in mf.line_ends(data):
-        cr.fold_agent_bytes(f, data[at:k])
-        at = k
-        texts.append([k, af.fold_text(f, 1, af.tail_digest(
-            data[max(0, k - af.FOLD_CHECK_BYTES):k]))])
-    return {"format": af.AGENT_FOLD_FORMAT, "agent": path, "texts": texts}
-
-
 def inbox_files():
     """Every committed fixture transcript holding an inbox mark, as a path
     from the repository root."""
@@ -106,7 +98,34 @@ def inbox_files():
     return out
 
 
-def inbox_texts(path: str) -> dict:
+def main_texts(path: str) -> list:
+    """A first save of `path`'s whole fold, to its last newline: its parts,
+    then its head."""
+    with open(os.path.join(ROOT, path), "rb") as fh:
+        data = fh.read()
+    end = data.rfind(b"\n") + 1
+    f = mf.MainFold()
+    for r in mf.records_of(data[:end]):
+        mf.fold_main(f, r)
+    parts, head, _slot, _mark = mf.fold_save(f, mf.fold_meta(data, end))
+    return [t for _, t in parts] + [head]
+
+
+def agent_texts(path: str) -> list:
+    """The text of `path`'s fold at each line end, as a first save writes
+    it."""
+    with open(os.path.join(ROOT, path), "rb") as fh:
+        data = fh.read()
+    f, at, texts = cr.AgentFold(), 0, []
+    for k in mf.line_ends(data):
+        cr.fold_agent_bytes(f, data[at:k])
+        at = k
+        texts.append([k, af.fold_text(f, 1, af.tail_digest(
+            data[max(0, k - af.FOLD_CHECK_BYTES):k]))])
+    return texts
+
+
+def inbox_texts(path: str) -> list:
     """The text of `path`'s inbox entry at each line end, folded from the
     start."""
     with open(os.path.join(ROOT, path), "rb") as fh:
@@ -118,59 +137,51 @@ def inbox_texts(path: str) -> dict:
         at = k
         e.tail = ib.tail_digest(data[max(0, k - ib.FOLD_CHECK_BYTES):k])
         texts.append([k, ib.entry_text(path, e)])
-    return {"format": ib.INBOX_FOLD_FORMAT, "file": path, "main": main,
-            "texts": texts}
+    return texts
 
 
-def fixture_name(path: str) -> str:
-    """tests/fixtures/a/b.jsonl's fixture: a--b.jsonl.json."""
-    return os.path.relpath(path, "tests/fixtures").replace("/", "--") \
-        + ".json"
+def folds():
+    """Each fold's name, format, the paths it saves and their texts."""
+    return (("main-fold", mf.MAIN_FOLD_FORMAT, transcripts(), main_texts),
+            ("agent-fold", af.AGENT_FOLD_FORMAT, agents(), agent_texts),
+            ("inbox-fold", ib.INBOX_FOLD_FORMAT, inbox_files(), inbox_texts))
 
 
-def saved(path: str) -> dict:
-    """A first save of `path`'s whole fold, to its last newline."""
-    with open(os.path.join(ROOT, path), "rb") as fh:
-        data = fh.read()
-    end = data.rfind(b"\n") + 1
-    f = mf.MainFold()
-    for r in mf.records_of(data[:end]):
-        mf.fold_main(f, r)
-    parts, head, _slot, _mark = mf.fold_save(f, mf.fold_meta(data, end))
-    return {"format": mf.MAIN_FOLD_FORMAT, "transcript": path,
-            "parts": [t for _, t in parts], "head": head}
+def load() -> dict:
+    with open(OUT, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def show(path: str) -> None:
+    """Each save of `path`, its fold's name and then its texts, one a
+    line."""
+    path = os.path.relpath(os.path.abspath(path), ROOT)
+    found = False
+    for name, _fmt, paths, texts in folds():
+        if path not in paths:
+            continue
+        found = True
+        print("=== %s" % name)
+        for t in texts(path):
+            print(t if isinstance(t, str) else "%d\t%s" % (t[0], t[1]))
+    if not found:
+        sys.exit("%s: no fold saves it" % path)
 
 
 def main():
-    os.makedirs(OUT, exist_ok=True)
-    for f in os.listdir(OUT):
-        os.remove(os.path.join(OUT, f))
-    for path in transcripts():
-        with open(os.path.join(OUT, fixture_name(path)), "w",
-                  encoding="utf-8") as fh:
-            fh.write(json.dumps(saved(path), ensure_ascii=False, indent=1)
-                     + "\n")
-    print("state/  %d saved folds" % len(transcripts()))
-    os.makedirs(AGENT_OUT, exist_ok=True)
-    for f in os.listdir(AGENT_OUT):
-        os.remove(os.path.join(AGENT_OUT, f))
-    for path in agents():
-        with open(os.path.join(AGENT_OUT, fixture_name(path)), "w",
-                  encoding="utf-8") as fh:
-            fh.write(json.dumps(agent_texts(path), ensure_ascii=False,
-                                indent=1) + "\n")
-    print("agent-state/  %d agents' folds" % len(agents()))
-    os.makedirs(INBOX_OUT, exist_ok=True)
-    for f in os.listdir(INBOX_OUT):
-        os.remove(os.path.join(INBOX_OUT, f))
-    files = inbox_files()
-    for path in files:
-        with open(os.path.join(INBOX_OUT, fixture_name(path)), "w",
-                  encoding="utf-8") as fh:
-            fh.write(json.dumps(inbox_texts(path), ensure_ascii=False,
-                                indent=1) + "\n")
-    print("inbox-state/  %d files' inbox folds" % len(files))
+    out = {name: {"format": fmt,
+                  "saves": {p: digest(texts(p)) for p in paths}}
+           for name, fmt, paths, texts in folds()}
+    with open(OUT, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(out, indent=1, sort_keys=True) + "\n")
+    print("fold-saves.json  %s" % ", ".join(
+        "%d %s" % (len(v["saves"]), k) for k, v in sorted(out.items())))
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:2] == ["--show"] and len(sys.argv) == 3:
+        show(sys.argv[2])
+    elif len(sys.argv) == 1:
+        main()
+    else:
+        sys.exit(__doc__)

@@ -1,7 +1,7 @@
 // agent_fold.ts against agent_fold.py: each fixture agent's fold, saved at
-// each line end, is the text tests/fixtures/agent-state/ holds, which the
-// Python writes (tests/fixtures/gen/state.py) and tests/fold.py holds the
-// Python to; and each text, read back, reads on to the last.
+// each line end, digests as tests/fixtures/fold-saves.json holds it, which
+// the Python writes (tests/fixtures/gen/state.py) and tests/fold.py holds
+// the Python to; and each text, read back, reads on to the last.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -14,46 +14,63 @@ import {
   AGENT_FOLD_FORMAT, agentFoldOf, agentFoldText, FOLD_CHECK_BYTES,
   foldCandidates, foldDir, slotNames, tailDigest,
 } from "../src/agent_fold.ts";
+import { digest, foldSaves, lineEnds } from "./fold_saves.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
 process.chdir(REPO);
 
-type Fixture = { format: number; agent: string; texts: [number, string][] };
+/** Every committed fixture agent transcript. */
+const AGENTS = execFileSync("git", ["ls-files", "tests/fixtures"]).toString()
+  .split("\n").filter((f) => f.endsWith(".jsonl") &&
+    path.basename(f).startsWith("agent-")).sort();
 
-function fixtures(): Fixture[] {
-  const dir = "tests/fixtures/agent-state";
-  return fs.readdirSync(dir).sort().map((f) =>
-    JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
-}
+type Fixture = { agent: string; texts: [number, string][] };
 
 function tailAt(data: Uint8Array, k: number): string {
   return tailDigest(data.subarray(Math.max(0, k - FOLD_CHECK_BYTES), k));
 }
 
-// The format honest, and the two ports' texts byte for byte the same.
-test("each fixture agent's fold saves as tests/fixtures/agent-state/ " +
-  "holds it", () => {
-  const all = fixtures();
-  assert.ok(all.length > 0);
-  for (const fx of all) {
-    assert.equal(fx.format, AGENT_FOLD_FORMAT,
-      `${fx.agent}: run tests/fixtures/gen/state.py`);
-    const data = fs.readFileSync(fx.agent);
+let folded: Fixture[] | null = null;
+
+/** Each fixture agent's fold, as a first save writes it at each line
+ * end. */
+function fixtures(): Fixture[] {
+  folded ??= AGENTS.map((agent) => {
+    const data = fs.readFileSync(agent);
     const f = cr.newAgentFold();
+    const texts: [number, string][] = [];
     let at = 0;
-    for (const [k, text] of fx.texts) {
+    for (const k of lineEnds(data)) {
       cr.foldAgentBytes(f, data.subarray(at, k));
       at = k;
-      assert.equal(agentFoldText(f, 1, tailAt(data, k)), text,
-        `${fx.agent} at ${k}: the fold changed; bump "agent-fold" in ` +
-        "spec/state.jsonc");
+      texts.push([k, agentFoldText(f, 1, tailAt(data, k))]);
     }
+    return { agent, texts };
+  });
+  return folded;
+}
+
+// The format honest, and the two ports' texts byte for byte the same: the
+// Python's digest is of the texts it wrote.
+test("each fixture agent's fold saves as tests/fixtures/fold-saves.json " +
+  "holds it", () => {
+  const want = foldSaves("agent-fold");
+  assert.ok(AGENTS.length > 0);
+  assert.equal(want.format, AGENT_FOLD_FORMAT,
+    "run tests/fixtures/gen/state.py");
+  assert.deepEqual(Object.keys(want.saves).sort(), AGENTS,
+    "run tests/fixtures/gen/state.py");
+  for (const fx of fixtures()) {
+    assert.equal(digest(fx.texts), want.saves[fx.agent],
+      `${fx.agent}: the fold changed; bump "agent-fold" in ` +
+      "spec/state.jsonc");
   }
 });
 
-// The Python's text at each line end, read here, reads on to its last.
-test("the Python's saved agent fold reads on here", () => {
+// The text at each line end, the Python's too, read here, reads on to the
+// last.
+test("the saved agent fold reads on here", () => {
   for (const fx of fixtures()) {
     if (!fx.texts.length) continue;
     const data = fs.readFileSync(fx.agent);

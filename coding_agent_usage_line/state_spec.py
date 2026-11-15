@@ -39,7 +39,7 @@ STATE_KINDS = {
     # names the byte offset folded to, and the sha256 of the transcript's
     # first check_bytes and of the check_bytes before that offset.  Bump
     # the format whenever either fold, or what is saved of it, changes:
-    # tests/fixtures/state/ fails until then.
+    # tests/fixtures/fold-saves.json fails until then.
     "main-fold": {
         "prefix": "claude-main-fold-",
         "key": ("transcript",),
@@ -59,7 +59,7 @@ STATE_KINDS = {
     # of the check_bytes before it.  A directory none of whose files was
     # written for eight days is swept with the calibrations.  Bump the
     # format whenever the fold, or what is saved of it, changes:
-    # tests/fixtures/agent-state/ fails until then.
+    # tests/fixtures/fold-saves.json fails until then.
     "agent-fold": {
         "prefix": "claude-agent-fold-",
         "key": ("transcript",),
@@ -80,7 +80,7 @@ STATE_KINDS = {
     # check_bytes before the offset, which must still match for the entry
     # to be read on from.  Swept with the other folds.  Bump the format
     # whenever the fold, or what is saved of it, changes:
-    # tests/fixtures/inbox-state/ fails until then.
+    # tests/fixtures/fold-saves.json fails until then.
     "inbox-fold": {
         "prefix": "claude-inbox-fold-",
         "key": ("transcript",),

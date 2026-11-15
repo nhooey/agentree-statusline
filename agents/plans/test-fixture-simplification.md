@@ -277,19 +277,21 @@ Each step is one pull request, with `bash tests/all.sh` green after it.
 
 ### Before `OP5`
 
-1. **`TF1` The saved folds as one file of digests.** Replace `state/`,
-   `agent-state/` and `inbox-state/` with `tests/fixtures/fold-saves.json`:
+1. **`TF1` The saved folds as one file of digests.** Done.
+   `tests/fixtures/fold-saves.json` holds what `state/`, `agent-state/`
+   and `inbox-state/` held:
 
    ```json
-   {"main-fold":  {"format": 6, "saves": {"<transcript>": "<sha256>"}},
-    "agent-fold": {"format": 3, "saves": {"<agent file>": "<sha256>"}},
+   {"main-fold":  {"format": 7, "saves": {"<transcript>": "<sha256>"}},
+    "agent-fold": {"format": 4, "saves": {"<agent file>": "<sha256>"}},
     "inbox-fold": {"format": 1, "saves": {"<file>": "<sha256>"}}}
    ```
 
-   A digest is over the texts the fixture holds today, in order (the
-   main fold's `parts` and `head`; each `[K, TEXT]` of the other two).
-   `tests/fold.py` and the three `mod/test/*_fold.test.ts` each save
-   every fold, digest it and compare, so:
+   A digest is over the texts those fixtures held, in order (the main
+   fold's `parts` and `head`; each `[K, TEXT]` of the other two), each
+   written as one line, `TEXT` or `K<tab>TEXT`. `tests/fold.py` and the
+   three `mod/test/*_fold.test.ts` each save every fold, digest it and
+   compare (`mod/test/fold_saves.ts` is the TypeScript's digest), so:
 
    - both ports still write each save byte for byte, since both must
      reach one digest;
@@ -299,8 +301,8 @@ Each step is one pull request, with `bash tests/all.sh` green after it.
      written, which the digest shows is the other port's text too.
 
    `gen/state.py --show PATH` prints one save's text, for reading a
-   change by running it before and after. A format change then touches
-   1 file, not 90.
+   change by running it before and after. A format change touches 1
+   fixture file, not 90.
 
 2. **`TF2` One figures document per distinct document, sparse.**
 

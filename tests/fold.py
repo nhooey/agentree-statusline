@@ -11,7 +11,6 @@ holds the TypeScript's side of the same cases.
 Run:  python3 tests/fold.py
 """
 
-import json
 import os
 import shutil
 import subprocess
@@ -30,9 +29,29 @@ from coding_agent_usage_line import claude_records as cr  # noqa: E402
 from coding_agent_usage_line import inbox_fold as ib  # noqa: E402
 from coding_agent_usage_line import main_fold as mf  # noqa: E402
 
-STATE = os.path.join(ROOT, "tests", "fixtures", "state")
-AGENT_STATE = os.path.join(ROOT, "tests", "fixtures", "agent-state")
-INBOX_STATE = os.path.join(ROOT, "tests", "fixtures", "inbox-state")
+sys.path.insert(0, os.path.join(ROOT, "tests", "fixtures", "gen"))
+import state as fold_saves  # noqa: E402
+
+# tests/fixtures/fold-saves.json: each fold's format and the digest of each
+# fixture's save, which gen/state.py writes and the TypeScript is held to.
+SAVES = fold_saves.load()
+
+
+def format_ok(fold, fmt):
+    """The file is at the spec's format: else every digest is stale, and
+    the one failure says so."""
+    got = SAVES[fold]["format"]
+    check("tests/fixtures/fold-saves.json's %s is at the spec's format; run "
+          "tests/fixtures/gen/state.py" % fold, got, fmt)
+    return got == fmt
+
+
+def saves_of(fold, paths):
+    """The fold's digests, checked to name exactly `paths`."""
+    saves = SAVES[fold]["saves"]
+    check("tests/fixtures/fold-saves.json's %s names each fixture; run "
+          "tests/fixtures/gen/state.py" % fold, sorted(saves), sorted(paths))
+    return saves
 
 
 def fixtures():
@@ -44,36 +63,28 @@ def fixtures():
             and not os.path.basename(f).startswith("agent-")]
 
 
-def check_agent_fold(path):
-    """An agent's fold: saved at each line end as tests/fixtures/
-    agent-state/ holds it, which mod/test/agent_fold.test.ts holds the
-    TypeScript to as well; each text read back and read on to the last;
-    and the panel's reading and agent_records' of what was read on, the
-    whole file's."""
+def check_agent_fold(path, want):
+    """An agent's fold: saved at each line end to the digest tests/
+    fixtures/fold-saves.json holds, `want`, which mod/test/agent_fold.
+    test.ts holds the TypeScript to as well; each text read back and read
+    on to the last; and the panel's reading and agent_records' of what was
+    read on, the whole file's."""
     name = os.path.relpath(path, ROOT)
-    fixture = os.path.join(AGENT_STATE, os.path.relpath(path, os.path.join(
-        ROOT, "tests", "fixtures")).replace("/", "--") + ".json")
-    with open(fixture, encoding="utf-8") as fh:
-        want = json.load(fh)
-    if want["format"] != af.AGENT_FOLD_FORMAT:
-        check("%s: tests/fixtures/agent-state/ is at the spec's format; run "
-              "tests/fixtures/gen/state.py" % name, want["format"],
-              af.AGENT_FOLD_FORMAT)
-        return
     with open(path, "rb") as fh:
         data = fh.read()
-    texts = want["texts"]
-    if not texts:
-        return
-    f, at, got = cr.AgentFold(), 0, []
-    for k, _ in texts:
+    f, at, texts = cr.AgentFold(), 0, []
+    for k in mf.line_ends(data):
         cr.fold_agent_bytes(f, data[at:k])
         at = k
-        got.append([k, af.fold_text(f, 1, af.tail_digest(
+        texts.append([k, af.fold_text(f, 1, af.tail_digest(
             data[max(0, k - af.FOLD_CHECK_BYTES):k]))])
-    check("%s: each line end's fold saved as tests/fixtures/agent-state/ "
-          "holds it; a change to the fold needs a new format in "
-          "spec/state.jsonc" % name, got, texts)
+    if want is not None:
+        check("%s: each line end's fold saved to tests/fixtures/"
+              "fold-saves.json's digest; a change to the fold needs a new "
+              "format in spec/state.jsonc" % name, fold_saves.digest(texts),
+              want)
+    if not texts:
+        return
     last = texts[-1][1]
     broke = []
     for k, text in texts:
@@ -94,31 +105,25 @@ def _tail_of(data, k):
     return af.tail_digest(data[max(0, k - af.FOLD_CHECK_BYTES):k])
 
 
-def check_inbox_entry(fixture):
-    """A file's inbox entry: folded at each line end as tests/fixtures/
-    inbox-state/ holds it, which mod/test/inbox_fold.test.ts holds the
-    TypeScript to as well; and each text, read back and read on, the
-    last."""
-    with open(fixture, encoding="utf-8") as fh:
-        want = json.load(fh)
-    name = want["file"]
-    if want["format"] != ib.INBOX_FOLD_FORMAT:
-        check("%s: tests/fixtures/inbox-state/ is at the spec's format; run "
-              "tests/fixtures/gen/state.py" % name, want["format"],
-              ib.INBOX_FOLD_FORMAT)
-        return
+def check_inbox_entry(name, want):
+    """A file's inbox entry: folded at each line end to the digest tests/
+    fixtures/fold-saves.json holds, `want`, which mod/test/inbox_fold.
+    test.ts holds the TypeScript to as well; and each text, read back and
+    read on, the last."""
     with open(os.path.join(ROOT, name), "rb") as fh:
         data = fh.read()
-    texts, main = want["texts"], want["main"]
-    e, at, got = ib.Entry(), 0, []
-    for k, _ in texts:
+    main = not os.path.basename(name).startswith("agent-")
+    e, at, texts = ib.Entry(), 0, []
+    for k in mf.line_ends(data):
         ib.fold_entry(e, data[at:k], main)
         at = k
         e.tail = ib.tail_digest(data[max(0, k - ib.FOLD_CHECK_BYTES):k])
-        got.append([k, ib.entry_text(name, e)])
-    check("%s: each line end's inbox entry as tests/fixtures/inbox-state/ "
-          "holds it; a change to the fold needs a new format in "
-          "spec/state.jsonc" % name, got, texts)
+        texts.append([k, ib.entry_text(name, e)])
+    if want is not None:
+        check("%s: each line end's inbox entry saved to tests/fixtures/"
+              "fold-saves.json's digest; a change to the fold needs a new "
+              "format in spec/state.jsonc" % name, fold_saves.digest(texts),
+              want)
     end, last = texts[-1]
     broke = []
     for k, text in texts:
@@ -282,10 +287,11 @@ def loaded(texts):
     return mf.load(files.get)
 
 
-def check_saves(path):
-    """The saved state of `path`'s fold: the fixture's text, read back at
-    every line end and read on to the same text, saved in many parts and
-    as it grows, and read past a torn head."""
+def check_saves(path, digest):
+    """The saved state of `path`'s fold: a first save of the whole, to the
+    digest tests/fixtures/fold-saves.json holds, read back at every line
+    end and read on to the same text, saved in many parts and as it grows,
+    and read past a torn head."""
     name = os.path.relpath(path, ROOT)
     with open(path, "rb") as fh:
         data = fh.read()
@@ -294,19 +300,12 @@ def check_saves(path):
     whole = mf.MainFold()
     for r in mf.records_of(data[:end]):
         mf.fold_main(whole, r)
-    fixture = os.path.join(STATE, os.path.relpath(path, os.path.join(
-        ROOT, "tests", "fixtures")).replace("/", "--") + ".json")
-    with open(fixture, encoding="utf-8") as fh:
-        want = json.load(fh)
-    if want["format"] != mf.MAIN_FOLD_FORMAT:
-        check("%s: tests/fixtures/state/ is at the spec's format; run "
-              "tests/fixtures/gen/state.py" % name, want["format"],
-              mf.MAIN_FOLD_FORMAT)
-        return
-    want = {"parts": want["parts"], "head": want["head"]}
-    check("%s: saved as tests/fixtures/state/ holds it; a change to the "
-          "fold needs a new format in spec/state.jsonc" % name,
-          saved(whole, data, end), want)
+    want = saved(whole, data, end)
+    if digest is not None:
+        check("%s: saved to tests/fixtures/fold-saves.json's digest; a "
+              "change to the fold needs a new format in spec/state.jsonc"
+              % name, fold_saves.digest(want["parts"] + [want["head"]]),
+              digest)
 
     broke = []
     f, done = mf.MainFold(), 0
@@ -384,6 +383,8 @@ def main():
           mf.fold_save(big, mf.fold_meta(b"", 0), None, 1000, 1000), None)
     files = fixtures()
     check("there are fixture transcripts to fold", len(files) > 10, True)
+    main_ok = format_ok("main-fold", mf.MAIN_FOLD_FORMAT)
+    saves = saves_of("main-fold", [os.path.relpath(p, ROOT) for p in files])
     for path in files:
         name = os.path.relpath(path, ROOT)
         records = dicts(cr._records(path))
@@ -422,17 +423,24 @@ def main():
             end = data.find(b"\n", end + 1)
         check("%s: a half-written last line reads now and once completed"
               % name, broken, [])
-        check_saves(path)
+        check_saves(path, saves.get(name) if main_ok else None)
 
     print("--- the agents' folds ---")
-    for path in agent_fixtures():
-        check_agent_fold(path)
+    agents = agent_fixtures()
+    agent_ok = format_ok("agent-fold", af.AGENT_FOLD_FORMAT)
+    saves = saves_of("agent-fold",
+                     [os.path.relpath(p, ROOT) for p in agents])
+    for path in agents:
+        check_agent_fold(path, saves.get(os.path.relpath(path, ROOT))
+                         if agent_ok else None)
 
     print("--- the inbox's fold ---")
-    inbox = sorted(os.listdir(INBOX_STATE))
+    inbox = fold_saves.inbox_files()
     check("there are fixture inbox entries", len(inbox) > 3, True)
+    inbox_ok = format_ok("inbox-fold", ib.INBOX_FOLD_FORMAT)
+    saves = saves_of("inbox-fold", inbox)
     for name in inbox:
-        check_inbox_entry(os.path.join(INBOX_STATE, name))
+        check_inbox_entry(name, saves.get(name) if inbox_ok else None)
     check_inbox_counts()
 
     print()

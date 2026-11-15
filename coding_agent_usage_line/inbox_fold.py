@@ -24,8 +24,9 @@ in file order (none for the session's own transcript: see fold_entry).  An
 entry at the file's size with the file's mtime is taken
 as it stands; any other is read on from only where its check digest still
 matches, and else folded afresh.  A last line with no newline yet is
-counted and not saved.  tests/fixtures/inbox-state/ holds each fixture
-file's entry at each line end, which both ports must write byte for byte.
+counted and not saved.  tests/fixtures/fold-saves.json holds a digest of
+each fixture file's entry at each line end, which both ports must write
+byte for byte.
 """
 import hashlib
 import json

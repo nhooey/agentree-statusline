@@ -418,10 +418,12 @@ These pin values rather than rows, so they assert instead of comparing files.
   finish: each fixture transcript folded to every record boundary, finished,
   and folded on to the end reads as its whole fold, and so does one with a
   half-written last line folded on a copy and then completed. Then the
-  folds saved as text by `main_fold.py`: each fixture's save is the one in
-  `tests/fixtures/state/` (`gen/state.py` writes them; a change to the fold
+  folds saved as text by `main_fold.py`: each fixture's save digests as
+  `tests/fixtures/fold-saves.json` holds it (`gen/state.py` writes it, and
+  `gen/state.py --show PATH` prints a save's text; a change to the fold
   needs a new format in `spec/state.jsonc`), read back at every line end
-  and read on, saved a part at a time, and read past a torn head.
+  and read on, saved a part at a time, and read past a torn head; the
+  agents' folds and the inbox's the same way.
   `mod/test/main_fold.test.ts` runs the same cases through the TypeScript,
   and hands state between the ports both ways.
 - **`subagent.py`** — the subagent rows, `prepare_subagent_tasks` and the
