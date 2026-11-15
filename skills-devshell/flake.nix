@@ -116,11 +116,5 @@
         { source = shell-skills; }
         { source = writing-skills; }
       ];
-      # The PR watcher's answers after a merge: clean up without asking.
-      preferences.github-workflow-pull-request-watcher = ''
-        - Delete local branch: yes
-        - Delete remote branch: yes
-        - Update default branch: yes
-      '';
     };
 }

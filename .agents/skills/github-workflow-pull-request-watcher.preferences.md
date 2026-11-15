@@ -1,0 +1,3 @@
+- Delete local branch: yes
+- Delete remote branch: yes
+- Update default branch: yes
