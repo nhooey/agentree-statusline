@@ -407,12 +407,19 @@ export function renderAgentSplit(elapsed: number | null,
 }
 
 /** Whether a task is only waiting: one `$.agent.list()` calls waiting, or
- * one Claude Code calls completed with an ETA still live, an agent under
- * it, or a background task it started. */
+ * one Claude Code calls completed with an ETA still live and time left on
+ * it, an agent under it, or a background task it started.  A report of 0s
+ * is the skill's sign-off: an agent that hands back after it, with no
+ * answer ending its turn, has finished. */
 export function parked(status: string, eta: unknown, waitingOn = false,
   background: unknown = []): boolean {
   return status === "waiting" || (status === "completed" &&
-    (pyTruthy(eta) || waitingOn || pyTruthy(background)));
+    (etaLeft(eta) || waitingOn || pyTruthy(background)));
+}
+
+/** Whether `eta`, a report as (epoch, seconds left), has time left. */
+function etaLeft(eta: unknown): boolean {
+  return Array.isArray(eta) && eta.length > 1 && Number(eta[1]) > 0;
 }
 
 /** The ids with an agent running or not yet started anywhere under them. */

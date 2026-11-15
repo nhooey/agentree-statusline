@@ -73,3 +73,10 @@ test("a waiting agent is paused, on its shell, its Monitor, its agents, " +
   assert.deepEqual(sr.agentState("waiting", bg([])), ["🟡", "📋"]);
   assert.ok(sr.parked("waiting", [], false, []));
 });
+
+test("a completed agent is parked on an ETA with time left, and finished " +
+  "on its 0s sign-off", () => {
+  assert.ok(sr.parked("completed", [1000, 60], false, []));
+  assert.ok(!sr.parked("completed", [1000, 0], false, []));
+  assert.ok(!sr.parked("completed", [], false, []));
+});

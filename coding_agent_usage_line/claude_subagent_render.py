@@ -274,10 +274,13 @@ def parked(status, eta, waiting_on=False, background=()):
     say, so this reads it back: an agent under it on the panel still
     running or not started, a background shell or Monitor it started and
     has not heard the end of (scan_background), or an ETA still live in its
-    last message (live_eta).
+    last message (live_eta) with time left on it: a report of 0s is the
+    skill's sign-off, and an agent that hands back after it, with no answer
+    ending its turn, has finished.
     """
     return status == "waiting" or (
-        status == "completed" and (bool(eta) or waiting_on or bool(background)))
+        status == "completed" and (bool(eta) and eta[1] > 0 or waiting_on
+                                   or bool(background)))
 def running_parents(prepared_tasks):
     """The ids with an agent running or not yet started anywhere under them on the panel."""
     parent = {str(t["id"]): str((m or {}).get("parentAgentId") or "")
