@@ -802,6 +802,10 @@ export function notificationText(r: Rec): string {
 
 const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
 
+/** What a Monitor's last notification says when it runs out its timeout,
+ * with no `<status>`: it has ended all the same. */
+export const MONITOR_EXPIRED = "[Monitor expired";
+
 /** What a thread knows of its background tasks beyond their kind, for the
  * band's tree, as [label, start]: by task id, of each task scanBackground's
  * `open` holds, its label and the epoch it opened, null where the record
@@ -875,7 +879,8 @@ export function copyBgInfo(info: BgInfo): BgInfo {
  * completed, and the payload carries neither.  A task opens on the tool
  * result that hands back its id — `backgroundTaskId` for a Bash run in the
  * background, `taskId` beside `timeoutMs` for a Monitor.  It closes on a
- * `<task-notification>` for that id that carries a `<status>`, or on the
+ * `<task-notification>` for that id that carries a `<status>`, or says
+ * a Monitor expired (MONITOR_EXPIRED), which carries none, or on the
  * thread ending it itself: TaskStop's result, or TaskOutput reading it
  * finished.  Its label is its call's (backgroundLabel), kept from the
  * Bash or Monitor call until the call's result, which opens the task or
@@ -929,7 +934,7 @@ export function scanBackground(r: Rec, open: Map<string, string>,
     for (const c of calls) if (call(c)) info.delete(c);
   }
   const text = notificationText(r);
-  if (text && text.includes("<status>")) {
+  if (text && (text.includes("<status>") || text.includes(MONITOR_EXPIRED))) {
     const m = TASK_ID.exec(text);
     if (m) closed(pyStrip(m[1]));
   }

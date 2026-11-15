@@ -720,7 +720,7 @@ The label, left to right:
 | 👶🏻 | how many rows hang directly under it, finished or not |
 | 🤏 | how often its window has been compacted |
 | 💻 | how many background shells it started and has not heard the end of, while it runs or is paused; not once it has failed or been killed. In the tree, only on a folded row: an opened one draws each shell as a row under it |
-| 📡 | the same for its Monitors |
+| 📡 | the same for its Monitors; one that ran out its timeout has ended, as its last notification says it expired |
 | 📨 | messages sent to it with SendMessage and not yet delivered: Claude Code's own "N queued". See [Inbox](#inbox) |
 | name | the task's name, or its description; then 🌿 and the branch of a worktree it works in apart from the session's, in full where the label has room; then what it is doing now. A label that only repeats the description is not drawn |
 

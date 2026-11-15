@@ -17706,6 +17706,26 @@
      true,
      false,
      "<task-notification><task-id>b7</task-id><status>completed</status></task-notification>"
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     "<task-notification><task-id>m5</task-id><summary>Monitor event: \"x\"</summary><event>[Monitor expired after 30m with 1 event delivered. Re-arm it if you still need the watch.]</event></task-notification>"
     ]
    ]
   },
@@ -18186,6 +18206,18 @@
      false,
      1787000047.0,
      null
+    ],
+    [
+     [],
+     false,
+     1787000048.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000049.0,
+     null
     ]
    ]
   },
@@ -18471,6 +18503,30 @@
     ],
     [
      [
+      1787000030.0,
+      1787000048.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000049.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
       null,
       null
      ],
@@ -18481,7 +18537,7 @@
       ],
       [
        1787000030.0,
-       1787000047.0
+       1787000049.0
       ]
      ]
     ]
@@ -18496,7 +18552,7 @@
      ],
      [
       1787000030.0,
-      1787000047.0
+      1787000049.0
      ]
     ],
     [
@@ -18530,7 +18586,7 @@
    "fn": "thread_clock",
    "kw": {},
    "out": [
-    37.0,
+    39.0,
     6.0,
     0.0
    ]
@@ -18544,7 +18600,7 @@
      ],
      [
       1787000030.0,
-      1787000047.0
+      1787000049.0
      ]
     ],
     [
