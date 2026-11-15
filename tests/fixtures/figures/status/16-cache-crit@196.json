@@ -135,7 +135,7 @@
     "transcript": "${FIXTURES}/transcripts/status/cache-crit.jsonl"
   },
   "rate": null,
-  "schema": 3,
+  "schema": 4,
   "transcript": {
     "agent_etas": [],
     "asst_text": "Done.",
@@ -169,6 +169,8 @@
     "own_usd": 0.9690000000000001,
     "prompt_id": null,
     "queued": 0,
+    "session_color": null,
+    "session_name": null,
     "shells": 0,
     "start_s": 1786843400,
     "tok_down": 1800,

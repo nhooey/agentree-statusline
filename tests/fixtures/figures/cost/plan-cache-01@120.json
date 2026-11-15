@@ -62,7 +62,7 @@
   },
   "context_window": 200000,
   "mode": "cost",
-  "schema": 3,
+  "schema": 4,
   "turns": [
     {
       "agent": false,

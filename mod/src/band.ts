@@ -486,7 +486,7 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
  * the tree draws no `✅ N done`, so only the running and paused agents
  * stay: the turn that ended has its receipt.  🎮's 📦 🌿 🔀 link under
  * the document's `github`, the repository's address on GitHub, where it
- * has one. */
+ * has one; its 📛 is the transcript's session name, in its colour. */
 export function treeOf(st: Settings, fig: Dict, rows: BandRows,
   opts: BandOpts, hide: readonly string[]): Row[] {
   const tr = decodeTranscript(fig.transcript);
@@ -518,6 +518,8 @@ export function treeOf(st: Settings, fig: Dict, rows: BandRows,
     cap: opts.cap ?? SUBAGENT_ROWS,
     folds: opts.folds,
     repo: typeof fig.github === "string" ? fig.github : null,
+    sessionName: tr.session_name,
+    sessionColour: tr.session_color,
   }, hide);
 }
 

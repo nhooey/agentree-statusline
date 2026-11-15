@@ -192,7 +192,8 @@ function headText(f: MainFold, meta: FoldMeta, counts: readonly number[],
       idle_at: tr.idleAt, last_seen: tr.lastSeen,
       opened: [tr.opened.pid, tr.opened.tidx], added: tr.added,
       removed: tr.removed,
-      gate: [tr.gate[0], tr.gate[1], tr.gate[2], tr.gate[3]] },
+      gate: [tr.gate[0], tr.gate[1], tr.gate[2], tr.gate[3]],
+      title: tr.title, agent_name: tr.agentName, color: tr.color },
     tu: { settled: tu.settled, last_stop: tu.lastStop,
       gate: [tu.gate[0], tu.gate[1], tu.gate[2], tu.gate[3]],
       pending: pendingJson(tu.pending),
@@ -368,6 +369,9 @@ export function foldOfSaved(
     tr.added = h.added;
     tr.removed = h.removed;
     tr.gate = [h.gate[0], h.gate[1], h.gate[2], h.gate[3]];
+    tr.title = h.title;
+    tr.agentName = h.agent_name;
+    tr.color = h.color;
     tu.settled = u.settled;
     tu.gate = [u.gate[0], u.gate[1], u.gate[2], u.gate[3]];
     tu.lastStop = u.last_stop;

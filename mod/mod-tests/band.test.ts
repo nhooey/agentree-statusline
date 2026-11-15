@@ -775,6 +775,49 @@ test('a prompt from the composer gets its turn tag under it, at no indent',
     expect(await drawnRows(other)).toEqual([])
   })
 
+/** Appends `records` to the transcript at `path`, a line each. */
+function append(w: World, path: string, records: readonly Dict[]) {
+  const more = encoder.encode(records.map((r) => JSON.stringify(r) + '\n')
+    .join(''))
+  const before = w.files.get(path)!
+  const grown = new Uint8Array(before.length + more.length)
+  grown.set(before)
+  grown.set(more, before.length)
+  w.files.set(path, grown)
+}
+
+test('🎮 draws the session\'s name off its transcript in its colour, the ' +
+  'name /rename wrote last winning', async ($, on) => {
+  const w = world(on)
+  const path = await start($, w, 'terminal', STATUS)
+  const tree = () => bandLines(BAND_ST, lastDoc(w), COLS, HIDE,
+    { rate: null, phase: 'running', live: LIVE, places: PLACES, ...AGENTS,
+      place: 'above', indent: INSET })
+  // No name written yet: no 📛.
+  expect(text(tree()[0])).not.toContain(spec.E_NAME)
+  append(w, path, [
+    { type: 'agent-name', agentName: 'Worker', sessionId: SESSION },
+    { type: 'custom-title', customTitle: 'Statusline', sessionId: SESSION },
+    { type: 'agent-color', agentColor: 'purple', sessionId: SESSION }])
+  await $.turn.start({ text: 'Go on.', turnId: 't3' })
+  await settle()
+  expect(lastDoc(w).transcript).toMatchObject({ session_name: 'Statusline',
+    session_color: 'purple' })
+  const root = tree()[0]
+  expect(text(root)).toMatch(/^ *⊟ 🎮 📛Statusline 📦/u)
+  expect(root.find((s) => s.text.includes('Statusline'))!.colour)
+    .toBe('F_PUR')
+  append(w, path, [
+    { type: 'custom-title', customTitle: 'Renamed', sessionId: SESSION }])
+  await w.clock.advance(CONFIG.tickMs)
+  await settle()
+  expect(text(tree()[0])).toMatch(/^ *⊟ 🎮 📛Renamed 📦/u)
+  expect(text(bandLines(BAND_ST, lastDoc(w), COLS,
+    [...HIDE, 'session.workspace.name'], { rate: null, phase: 'running',
+      live: LIVE, places: PLACES, ...AGENTS, place: 'above',
+      indent: INSET })[0])).not.toContain(spec.E_NAME)
+})
+
 test('a turn started with no plan reading has no 💳 on its tag',
   async ($, on) => {
     const w = world(on)

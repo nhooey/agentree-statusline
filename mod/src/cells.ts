@@ -18,8 +18,8 @@
 // `clock.tz`, as claude_cost.ts's do.
 import {
   E_ACCT, E_COST, E_DATE, E_DIR, E_DIRTY, E_GIT_BAD,
-  E_GIT_OK, E_IDLE, E_PCT, E_PR, E_PROJ, E_RESET, E_SESS, E_SESSION, E_STALE,
-  E_STY, E_THREAD,
+  E_GIT_OK, E_IDLE, E_NAME, E_PCT, E_PR, E_PROJ, E_RESET, E_SESS, E_SESSION,
+  E_STALE, E_STY, E_THREAD,
   E_TIME, E_TURN, E_TURN_ID, E_WEEK, K, MAG_COST, MAG_DUR_S, TAG_SCOPE,
   TURN_ID_HEX,
 } from "./spec.ts";
@@ -319,6 +319,27 @@ export type Workspace = {
  * (workspacePieces). */
 export function sessionLabel(): Piece[] {
   return [piece("name.label", E_SESSION)];
+}
+
+/** The palette's colour for each of Claude Code's session colours (its
+ * /color names), the nearest token in spec/layout.jsonc's palette. */
+export const SESSION_COLOURS: { readonly [name: string]: string } = {
+  red: "F_RED", blue: "F_BLU", green: "F_GRN", yellow: "F_YEL",
+  purple: "F_PUR", orange: "F_AMB", pink: "F_PNK", cyan: "F_CYN",
+};
+
+/** The colour a session's name is drawn in where it has no colour, or one
+ * SESSION_COLOURS does not name. */
+export const SESSION_COLOUR_NONE = "F_CRM";
+
+/** 📛 and the session's name, under the path `workspace.name`, in its
+ * colour (SESSION_COLOURS); none for no name.  It leaves 🎮's label after
+ * 🔀 and before 📦, which never leaves whole. */
+export function sessionNamePieces(name: string, colour: string): Piece[] {
+  if (!name) return [];
+  return [piece("workspace.name", E_NAME + name + " ",
+    Object.hasOwn(SESSION_COLOURS, colour) ? SESSION_COLOURS[colour]
+      : SESSION_COLOUR_NONE, 4)];
 }
 
 /** Where the session works, under the path `workspace`: 📦 the project,

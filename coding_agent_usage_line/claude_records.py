@@ -180,6 +180,8 @@ class Transcript(NamedTuple):
     turn_index: Optional[int] = None    # last, whether or not it has made
                             # a call yet: what the start line tags it with.
                             # See _stamp_turn_id.
+    session_name: str = ""  # the session's name (/rename's) and colour
+    session_color: str = ""  # (/color's), "" for none; _fold_session_name
 
 
 EMPTY_TRANSCRIPT = Transcript(None, 0, -1, 0, "", "", "", "", 0.0, 0.0)
@@ -1745,7 +1747,8 @@ class TranscriptFold:
                  "spans", "tools", "blocked", "pending", "first", "open_at",
                  "prev", "eta_state", "queued", "compactions", "background",
                  "bg_info", "idle_at", "last_seen", "opened", "wrote",
-                 "added", "removed", "ends", "gate")
+                 "added", "removed", "ends", "gate", "title", "agent_name",
+                 "color")
 
     def __init__(self):
         self.reqs = OSet()          # request ids _dedupe_usage has kept
@@ -1773,6 +1776,9 @@ class TranscriptFold:
         self.added = self.removed = 0
         self.ends = {}              # scan_agent_end's, for the agents' ETAs
         self.gate = new_turn_gate()  # turn_opens', for every walk below
+        # The latest custom-title, agent-name and agent-color records';
+        # see _fold_session_name.
+        self.title = self.agent_name = self.color = ""
 
 
 def fold_transcript_all(records, f: Optional[TranscriptFold] = None
@@ -1809,7 +1815,29 @@ def fold_transcript(f: TranscriptFold, r: dict) -> None:
     _fold_own_parts(f, r, kept, text)
     _fold_context(f, r, kept)
     _fold_last_texts(f, r)
+    _fold_session_name(f, r)
     _fold_clock(f, r, text is not None)
+
+
+def _fold_session_name(f: TranscriptFold, r: dict) -> None:
+    """The session's name and colour, as Claude Code writes them each time
+    it names or colours the session (/rename, /color) and again on every
+    resume: the latest `custom-title`, the latest `agent-name`, and the
+    latest `agent-color`, "default" being none.  The name is the title,
+    else the agent name (transcript_finish)."""
+    t = r.get("type")
+    if t == "custom-title":
+        v = r.get("customTitle")
+        if isinstance(v, str):
+            f.title = v
+    elif t == "agent-name":
+        v = r.get("agentName")
+        if isinstance(v, str):
+            f.agent_name = v
+    elif t == "agent-color":
+        v = r.get("agentColor")
+        if isinstance(v, str):
+            f.color = "" if v == "default" else v
 
 
 def _fold_own_parts(f: TranscriptFold, r: dict, kept: bool,
@@ -2054,6 +2082,9 @@ def transcript_finish(f: TranscriptFold, agents: Sequence[AgentRec],
         lines_removed=removed,
         prompt_id=opened["pid"],
         turn_index=opened["tidx"],
+        session_name=squash(f.title if f.title.strip()
+                            else f.agent_name).strip(),
+        session_color=f.color,
     )
 
 

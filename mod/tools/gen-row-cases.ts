@@ -115,7 +115,8 @@ export function inZone<T>(fig: Dict, f: () => T): T {
 
 export type BandCase = { doc: string; cols: number; hide: string[];
   phase: Phase; rate: number | null; place?: Place; places?: RowsPlace;
-  agents?: string; progress?: string; cap?: number; background?: boolean };
+  agents?: string; progress?: string; cap?: number; background?: boolean;
+  session?: { name: string; color: string } };
 
 /** The panel's corpus, tests/fixtures/panel/corpus.json: its cases' tasks
  * are the band's tree's subagents (corpusAgents). */
@@ -168,15 +169,19 @@ export function withBackground(doc: Dict, now: number): Dict {
 
 /** The band case's rows: with `agents` or `progress`, the document's
  * `agents` from the corpus (corpusAgents), drawn in the tree under `cap`,
- * with open background tasks under `background` (withBackground). */
+ * with open background tasks under `background` (withBackground); with
+ * `session`, the transcript's session name and colour. */
 export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
+  const fig1 = c.session === undefined ? fig0 : { ...fig0,
+    transcript: { ...fig0.transcript as Dict, session_name: c.session.name,
+      session_color: c.session.color } };
   const agents = (): Dict => {
     const doc = corpusAgents(c.agents ?? "", c.progress ?? "");
     return c.background
       ? withBackground(doc, (fig0.clock as Dict).now as number) : doc;
   };
   const fig = c.agents !== undefined || c.progress !== undefined
-    ? { ...fig0, agents: agents() } : fig0;
+    ? { ...fig1, agents: agents() } : fig1;
   return inZone(fig, () => bandLines(st, fig, c.cols, c.hide,
     { rate: c.rate, phase: c.phase, place: c.place, places: c.places,
       cap: c.cap }));
@@ -185,8 +190,10 @@ export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
 /** The band's tree with subagents, on TREE_DOC: each case of the corpus
  * that has some, at each width, with the main thread's progress update;
  * one under a cap that folds siblings into `… N more`; one that hides the
- * progress updates; once between turns; and with open background shells
- * and Monitors under the main thread and the agents that started them. */
+ * progress updates; once between turns; with open background shells
+ * and Monitors under the main thread and the agents that started them;
+ * and with the session named, at each width, in a colour and in none, and
+ * with its name hidden. */
 function treeCases(): BandCase[] {
   const base = { doc: TREE_DOC, hide: [] as string[], phase: "running" as
     Phase, rate: RATE, place: "above" as Place, places: PLACES,
@@ -204,6 +211,14 @@ function treeCases(): BandCase[] {
     out.push({ ...base, cols, agents: TREE_AGENTS[2], cap: 10,
       background: true });
   }
+  const session = { name: "Statusline", color: "purple" };
+  for (const cols of [...COLS, 60]) {
+    out.push({ ...base, cols, agents: TREE_AGENTS[1], session });
+  }
+  out.push({ ...base, cols: 200, agents: TREE_AGENTS[1],
+    session: { name: "Statusline", color: "" } });
+  out.push({ ...base, cols: 200, agents: TREE_AGENTS[1], session,
+    hide: ["session.workspace.name"] });
   return out;
 }
 
