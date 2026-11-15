@@ -847,6 +847,8 @@ export function trackerV1(raw: Dict): Reading {
      pyGet(raw, "weekly_resets_at"), 604800],
     ["seven_day_opus", pyGet(raw, "weekly_opus_pct"),
      pyGet(raw, "weekly_resets_at"), 604800],
+    ["seven_day_overage_included", pyGet(raw, "weekly_fable_pct"),
+     pyGet(raw, "weekly_resets_at"), 604800],
   ] as const) {
     if (pct !== null) {
       windows.push({ id: ident, duration_seconds: duration,

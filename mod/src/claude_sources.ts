@@ -284,6 +284,7 @@ export function trackerReading(store: unknown): Dict {
     session_resets_at: unix(pyGet(u, "sessionResetTime")),
     weekly_pct: pyGet(u, "weeklyPercentage"),
     weekly_opus_pct: pyGet(u, "opusWeeklyPercentage"),
+    weekly_fable_pct: pyGet(u, "fableWeeklyPercentage"),
     weekly_resets_at: unix(pyGet(u, "weeklyResetTime")),
     as_of: unix(pyGet(u, "lastUpdated")),
   };

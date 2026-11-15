@@ -176,7 +176,9 @@ test("tracker: plist store to reading", async () => {
       }
       // A store expat refuses, or one that is not a dict, is no reading in
       // both languages: neither readout falls over on it.
-      same(await claudeUsageTracker(env), c.expected, c.name);
+      const reading = await claudeUsageTracker(env);
+      same(reading, c.expected, c.name);
+      same(legacyLimits(reading), c.limits, c.name);
       count("tracker");
     }
   } finally {

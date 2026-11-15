@@ -473,6 +473,8 @@ def tracker_reading(store: dict) -> dict:
         weeklyPercentage        7-day window
         weeklyResetTime         Apple epoch
         opusWeeklyPercentage    the Opus sub-limit
+        fableWeeklyPercentage   the weekly Fable window, which resets
+                                with the 7-day window (no reset of its own)
         lastUpdated             when the app took this reading
 
     `activeProfileId` at the top level of the store names the record to read;
@@ -482,7 +484,7 @@ def tracker_reading(store: dict) -> dict:
 
     NOTHING ELSE IS TOUCHED, and the reason is two keys along from the one
     that is: the same profile record holds `oauthAccountJSON` and an API
-    session key.  This function names the six fields it wants, and the
+    session key.  This function names the seven fields it wants, and the
     record's `id` only as a hash (`account_id`, which keys the calibration
     cache to the account).  The shared collector whitelists the returned v1 fields before private,
     scoped caching; a credential therefore cannot enter application state.
@@ -533,6 +535,7 @@ def tracker_reading(store: dict) -> dict:
         "session_resets_at": unix(u.get("sessionResetTime")),
         "weekly_pct": u.get("weeklyPercentage"),
         "weekly_opus_pct": u.get("opusWeeklyPercentage"),
+        "weekly_fable_pct": u.get("fableWeeklyPercentage"),
         "weekly_resets_at": unix(u.get("weeklyResetTime")),
         "as_of": unix(u.get("lastUpdated")),
     }
