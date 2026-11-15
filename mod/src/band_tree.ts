@@ -24,10 +24,16 @@
 // main's and 🎤 turn's to the main conversation, and on 🎮's label 📦 🌿 🔀 link to the
 // repository on GitHub, where its address is known.
 //
+// Stamped (TreeInput's `stamped`), the same tree is the turn's receipt
+// (receipt.ts): every agent the turn ran, each under the agent that
+// started it, ended or not, with no cap, no grouped rows, no folds and no
+// presses, and 🏁 on the turn and on each agent that had ended.
+//
 // Pure: the rows' figures come in built (band.ts), and the agents as the
 // document's prepared tasks (subagent_tasks.ts).
 import {
-  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MORE, E_SESS,
+  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MORE, E_PHASE_DONE,
+  E_PHASE_END, E_SESS,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
   E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_EFF_HIGH, E_IDLE, MAG_DUR_S,
 } from "./spec.ts";
@@ -71,7 +77,10 @@ export type TreeAgents = {
  * `mainProgress` the first line of the last text it wrote, and
  * `turnPrompt` the prompt typed last, drawn after 🎤's name.  `cap` is the most subagent rows drawn, and `folds` the folds
  * kept, by key.  `repo` is the repository's address on GitHub, which 📦 🌿
- * 🔀 link to; null or absent, they link nowhere. */
+ * 🔀 link to; null or absent, they link nowhere.  `stamped` draws the
+ * tree as the turn's receipt stamps it: the agents as stampedNodes picks
+ * them, every row opened, no fold marks, `cap`, `folds` and `repo` not
+ * read, and nothing pressing. */
 export type TreeInput = {
   readonly session: Row | null;
   readonly main: Row | null;
@@ -86,6 +95,7 @@ export type TreeInput = {
   readonly cap: number;
   readonly folds?: Folds;
   readonly repo?: string | null;
+  readonly stamped?: boolean;
 };
 
 /** The folds the person left, by key: true folded, false opened.  A key
@@ -146,7 +156,7 @@ type Node = {
 };
 
 /** `pieces` with every span pressing `press`. */
-function pressing(pieces: readonly Piece[], press: Press): Piece[] {
+function pressingAll(pieces: readonly Piece[], press: Press): Piece[] {
   return pieces.map((p) => ({ ...p,
     spans: p.spans.map((s) => pressed(s, press)) }));
 }
@@ -187,33 +197,40 @@ function treeLine(lasts: readonly boolean[], kids: boolean,
 }
 
 /** The rows of `nodes`, top to bottom, each with its tree line as the
- * first piece of its label, under the path `tree`, dim. */
+ * first piece of its label, under the path `tree`, dim; `marks` false
+ * draws no fold mark. */
 function walk(nodes: readonly Node[], lasts: readonly boolean[],
-  out: Row[]): void {
+  out: Row[], marks: boolean): void {
   nodes.forEach((n, i) => drawNode(n, [...lasts, i === nodes.length - 1],
-    out));
+    out, marks));
 }
 
 /** `n`'s row with its tree line, `lasts` as treeLine reads it, then its
- * children's where they are not folded under it. */
-function drawNode(n: Node, lasts: readonly boolean[], out: Row[]): void {
-  const line = treeLine(lasts, n.kids.length > 0 || n.folded, n.folded,
-    n.fold);
+ * children's where they are not folded under it.  `marks` false draws no
+ * fold mark: a row with children is drawn as one without. */
+function drawNode(n: Node, lasts: readonly boolean[], out: Row[],
+  marks = true): void {
+  const line = treeLine(lasts, marks && (n.kids.length > 0 || n.folded),
+    n.folded, n.fold);
   out.push({ ...n.row, left: true, label: [
     ...(line.length ? [{ path: "tree", spans: line, drop: 0 }] : []),
     ...n.row.label] });
-  if (!n.folded) walk(n.kids, lasts, out);
+  if (!n.folded) walk(n.kids, lasts, out, marks);
 }
 
 /** The tree's rows, top to bottom, under `hide`: 🎮, then 🧵 and under
  * it 🎤, its subagents, `… N more` and `✅ N done`.  Without 🎮 its
  * children stand at the top; without 🧵, 🎤 and the subagents hang from
- * the root. */
+ * the root.  Stamped, as TreeInput's `stamped` says. */
 export function treeRows(st: Settings, inp: TreeInput,
   hide: readonly string[]): Row[] {
-  const folds = inp.folds ?? {};
-  const agents = inp.agents !== null && !hidden(hide, "agent")
-    ? agentNodes(st, inp.agents, inp.cap, folds) : [];
+  const stamped = inp.stamped ?? false;
+  const folds = stamped ? {} : inp.folds ?? {};
+  const pressing = (pieces: readonly Piece[], press: Press): Piece[] =>
+    stamped ? [...pieces] : pressingAll(pieces, press);
+  const agents = inp.agents === null || hidden(hide, "agent") ? []
+    : stamped ? stampedNodes(st, inp.agents)
+    : agentNodes(st, inp.agents, inp.cap, folds);
   const turn: Node[] = inp.turn ? [{ folded: false, kids: [],
     row: { ...inp.turn, label: pressing([
       headPiece(st, E_TURN, inp.turnPhase),
@@ -246,9 +263,10 @@ export function treeRows(st: Settings, inp: TreeInput,
     drawNode({ folded, kids: folded ? [] : top, fold,
       row: { ...inp.session, label: [
         { path: "name.label", spans: [span(E_SESSION + " ")], drop: 0 },
-        ...linked(ws, inp.repo ?? null, inp.workspace)] } }, [], out);
+        ...linked(ws, stamped ? null : inp.repo ?? null,
+          inp.workspace)] } }, [], out, !stamped);
   } else {
-    for (const n of top) drawNode(n, [], out);
+    for (const n of top) drawNode(n, [], out, !stamped);
   }
   return out;
 }
@@ -339,8 +357,8 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     const eta: Eta | false = etas.has(id) ? etas.get(id)! : false;
     // 👶🏻 on a folded row: every agent hidden under it.
     return { scope: "agent",
-      label: pressing([...agentLabel(st, t.task, t.usage, t.meta, waitingOn,
-        shut(id) ? under(id).length : 0, 0, null, true),
+      label: pressingAll([...agentLabel(st, t.task, t.usage, t.meta,
+        waitingOn, shut(id) ? under(id).length : 0, 0, null, true),
       ...progressPiece(t.progress)],
       { kind: "view", agent: id }),
       cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
@@ -393,6 +411,72 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     }
   }
   return nodes;
+}
+
+/** The subagents as the stamped tree's nodes under 🧵 main: every agent
+ * the turn ran, one that started since `a.turnStart` or whose last record
+ * is since then, or one with no record yet (every agent, with no
+ * turnStart), each under the nearest
+ * agent above it that the turn ran too, else under 🧵, in the order they
+ * started.  Every row opened, none pressing, no cap and no grouped rows;
+ * an agent that had ended draws 🏁 in place of its ⚫. */
+function stampedNodes(st: Settings, a: TreeAgents): Node[] {
+  const prepared = preparedOf(a.tasks);
+  const busy = runningParents(prepared);
+  const etas = inheritedEtas(prepared);
+  const ran = (t: TreeTask): boolean => {
+    const end = t.usage.last_seen ?? t.usage.last_epoch;
+    const begun = typeof t.task.startTime === "number";
+    if (a.turnStart === null || (!begun && typeof end !== "number")) {
+      return true;
+    }
+    return (begun && (t.task.startTime as number) / 1000 >= a.turnStart) ||
+      (typeof end === "number" && end >= a.turnStart);
+  };
+  const all = new Map(a.tasks.map((t) => [String(t.task.id), t]));
+  const byId = new Map(a.tasks.filter(ran).map((t) =>
+    [String(t.task.id), t]));
+  // The nearest agent above `id` that the turn ran, through the ones it
+  // did not; "" for 🧵.
+  const parentOf = (id: string): string => {
+    const seen = new Set([id]);
+    let p = String(all.get(id)!.meta.parentAgentId ?? "");
+    while (p && !byId.has(p) && all.has(p) && !seen.has(p)) {
+      seen.add(p);
+      p = String(all.get(p)!.meta.parentAgentId ?? "");
+    }
+    return byId.has(p) && !seen.has(p) ? p : "";
+  };
+  const kidsOf = new Map<string, string[]>();
+  for (const id of byId.keys()) {
+    const p = parentOf(id);
+    if (!kidsOf.has(p)) kidsOf.set(p, []);
+    kidsOf.get(p)!.push(id);
+  }
+  const start = (id: string): number =>
+    Number(byId.get(id)!.task.startTime ?? Infinity);
+  for (const ids of kidsOf.values()) {
+    ids.sort((x, y) => start(x) - start(y) || (x < y ? -1 : x > y ? 1 : 0));
+  }
+  const row = (id: string): Row => {
+    const t = byId.get(id)!;
+    const waitingOn = busy.has(id);
+    const eta: Eta | false = etas.has(id) ? etas.get(id)! : false;
+    const done = ended(t.task, t.usage, busy);
+    const label = agentLabel(st, t.task, t.usage, t.meta, waitingOn, 0, 0,
+      null, true).map((p) => done && p.path === "name.kind"
+      ? { ...p, spans: p.spans.map((s) => ({ ...s,
+        text: s.text.replace(E_PHASE_END, E_PHASE_DONE) })) } : p);
+    return { scope: "agent",
+      label: [...label, ...progressPiece(t.progress)], cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
+        a.now, eta, waitingOn) };
+  };
+  // Agents whose parents run in a cycle are left out, as no thread
+  // started them.
+  return (kidsOf.get("") ?? []).map(function node(id: string): Node {
+    return { row: row(id), folded: false,
+      kids: (kidsOf.get(id) ?? []).map(node) };
+  });
 }
 
 /** A grouped row that sums `tasks`, kept under `fold`, folded or opened

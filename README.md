@@ -58,7 +58,10 @@ Every row's figures, left to right: 🤖 Model · 🛫 Rate or Doing · 💰 Cos
 Stamped by the mod as each turn ends, in place of Claude Code's `✻ Worked for
 …` line, and kept in the transcript: the 🎤 row as it stood when the turn
 ended, dim, then the turn's tag. 🧵 and 🎮 stay live on screen, and
-`rows` can stamp them too.
+`rows` can stamp them too. A turn that ran subagents stamps the band's
+tree instead: 🧵, under it 🎤 and then every agent the turn ran, each
+under the agent that started it, 🏁 on each that had finished
+([Layout](docs/layout.md#the-receipt)).
 
 ```
                          🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
@@ -129,7 +132,7 @@ different on one readout, the table says so.
 |---|---|---|:-:|:-:|:-:|
 | 💳 | Account | the plan's own figures for the whole account, on every device, and where the session works; under the footer line | ✓ | | |
 | 🎤 | Turn | the turn; above the prompt while it runs | ✓ | | ✓ |
-| 🧵 | Main thread | the main thread alone; in the band's tree under 🎮; on the receipt when `rows` stamps it | ✓ | | ✓ |
+| 🧵 | Main thread | the main thread alone; in the band's tree under 🎮; on the receipt when `rows` stamps it, or over the subagents the turn ran | ✓ | | ✓ |
 | 🎮 | Session | the main thread and every agent; the root of the band's tree above the prompt; on the receipt when `rows` stamps it | ✓ | | ✓ |
 | ⊟ ⊞ | Fold | in the band's tree, a row with children, opened or folded; `✅ N done` and `… N more` are folded | ✓ | | |
 
@@ -256,6 +259,7 @@ the 🛫 column, with how long it has been doing it.
 | 🟢 | Running | the agent is working |
 | 🟡 | Paused | it ended its turn, but work it started is still going |
 | ⚫ | Ended | it has finished, for good |
+| 🏁 | Finished | on the receipt, a thread that had ended when the turn's end stamped it |
 
 | Phase | Glyph | Name | Meaning |
 |---|---|---|---|

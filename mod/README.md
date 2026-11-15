@@ -157,7 +157,11 @@ is drawn (`place`), whether it is drawn while a turn runs, always or
 never (`live`), and whether the receipt stamps it (`transcript`), apart;
 `--rows` to `tools/draw-figures.ts` takes the same table.
 `"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}`
-stamps 🧵 and 🎮 under 🎤. The receipt is Text in the transcript rather
+stamps 🧵 and 🎮 under 🎤. A turn that ran subagents stamps the band's
+tree, drawn whole and pressing nothing: 🧵 the parent, under it 🎤 and
+then every agent the turn ran, 🏁 on each that had finished, from the
+band's last status document (`--agents` with `--status` draws it;
+[docs/layout.md](../docs/layout.md#the-receipt)). The receipt is Text in the transcript rather
 than a `$.ui.log` line, which Claude Code draws as its own notice,
 `⏺ usage-band:` before it and a blank row after, in plain dim text.
 

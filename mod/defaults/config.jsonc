@@ -81,9 +81,10 @@
     // The 💳 account; its transcript is always false.
     "account": {"place": "footer", "live": "always",  "transcript": false},
     // The subagents, in the band's tree under the thread that started
-    // each, kept while they run; their place is always "above" and their
-    // transcript false.
-    "subagents": {"place": "above", "live": "always", "transcript": false}
+    // each, kept while they run; their place is always "above", and their
+    // transcript always true: the receipt of a turn that ran any stamps
+    // them all under 🧵.
+    "subagents": {"place": "above", "live": "always", "transcript": true}
   },
   // How many subagent rows the band's tree draws at most; the later
   // siblings past it are summed on their parent's "… N more" row.

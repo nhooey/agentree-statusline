@@ -559,3 +559,57 @@ test("the repository's address on GitHub is read off its remote, in each " +
   assert.equal(githubRepo("/srv/git/r.git"), null);
   assert.equal(githubRepo(""), null);
 });
+
+/** The stamped tree of a corpus case, as the receipt draws it: 🧵 the
+ * parent, 🎤 🏁 under it, the agents the turn opened at `turnStart` ran. */
+function stamped(id: string, turnStart: number | null = null,
+  over: Partial<TreeInput> = {}): string[] {
+  return tree(id, { session: null, mainPhase: "⚫", turnPhase: "🏁",
+    stamped: true, cap: 2, ...over }, [], turnStart);
+}
+
+/** Each line's tree line: what stands before its first glyph. */
+function lines(drawn: readonly string[]): string[] {
+  return drawn.map((l) => /^[ │├╰─⊟⊞]*/u.exec(l)![0]);
+}
+
+test("stamped, the tree lists every agent opened, each under the agent " +
+  "that started it, with no cap, no grouped rows and no fold marks", () => {
+  const drawn = stamped("03-tree@220");
+  assert.deepEqual(lines(drawn), ["", "├─ ", "├─ ", "│  ╰─ ", "├─ ",
+    "│  ├─ ", "│  ╰─ ", "│     ╰─ ", "│        ╰─ ", "╰─ "]);
+  assert.match(drawn[0], /^🧵⚫ main  Checking the binary/u);
+  assert.match(drawn[1], /^├─ 🎤🏁 turn$/u);
+  // An ended agent keeps the agents it started, and draws 🏁.
+  assert.match(drawn[2], /🏁 Gourd/u);
+  assert.match(drawn[3], /🏁 Garlic/u);
+  assert.match(drawn[4], /🟢 🤏2 Trunk/u);
+  assert.match(drawn[9], /🟢 Moss/u);
+  assert.ok(!drawn.some((l) => /more|done|👶🏻/u.test(l)));
+  // Folds kept for the band change nothing stamped.
+  assert.deepEqual(stamped("03-tree@220", null,
+    { folds: { t1: true, main: true } }), drawn);
+});
+
+test("stamped, the tree holds only the agents the turn ran, and 🏁 on " +
+  "each that ended, failed or was killed", () => {
+  const all = stamped("01-mixed@220");
+  for (const name of ["Daisy", "Fern", "Kale", "Elm"]) {
+    assert.match(all.find((l) => l.includes(name))!, /🏁 /u, name);
+  }
+  assert.ok(!all.some((l) => l.includes("⚫") && !l.includes("main")));
+  // Started, or last seen, since the turn opened.
+  const turn = stamped("01-mixed@220", 1786845500);
+  assert.ok(!turn.some((l) => l.includes("Daisy") || l.includes("Fern")));
+  for (const name of ["Kale", "Elm", "Clover", "Quince"]) {
+    assert.ok(turn.some((l) => l.includes(name)), name);
+  }
+});
+
+test("stamped, no row presses anything", () => {
+  const rows = treeOfCase("03-tree@220", { stamped: true,
+    repo: "https://github.com/o/r" });
+  assert.deepEqual(rows.flatMap(pressesOf), []);
+  assert.match(stripAnsi(join(rows[0].label.flatMap((p) => p.spans))),
+    /^🎮 📦repo/u);
+});

@@ -1009,6 +1009,9 @@ export const E_MORE = "…";             // …  the later siblings past the cap
 export const E_PHASE_RUN = "🟢";       // 🟢  running: it has the floor
 export const E_PHASE_PAUSE = "🟡";     // 🟡  paused: not started yet, or waiting to resume
 export const E_PHASE_END = "⚫";       // ⚫  ended, and waiting on nothing
+export const E_PHASE_DONE = "🏁";      // 🏁  finished, on the turn's receipt: a thread
+                                       //    that ended by the time the turn's end
+                                       //    stamped it
 // Running, the ⌛ split's own marks: E_WORK, E_TOOL, E_WAIT.
 export const E_MODE_AGENTS = "💤";     // 💤  paused on agents it started
 export const E_MODE_SHELL = "💻";      // 💻  paused on a background shell; not 🐚, which
