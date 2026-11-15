@@ -271,8 +271,7 @@ def _head_text(f: MainFold, meta: dict, counts, seq: int) -> str:
                "eta": [e[0], e[1], e[2], e[3]], "queued": tr.queued,
                "compactions": tr.compactions,
                "background": [[k, v] for k, v in tr.background.items()],
-               "bg_info": [[k, label, t]
-                           for k, (label, t) in tr.bg_info.items()],
+               "bg_info": [[k] + v for k, v in tr.bg_info.items()],
                "idle_at": tr.idle_at, "last_seen": tr.last_seen,
                "opened": [tr.opened["pid"], tr.opened["tidx"]],
                "added": tr.added, "removed": tr.removed,
@@ -416,7 +415,8 @@ def fold_of_saved(got, parts):
                         _fl(eta[2]), eta[3]]
         tr.queued, tr.compactions = h["queued"], h["compactions"]
         tr.background = {k: v for k, v in h["background"]}
-        tr.bg_info = {k: [label, _fl(t)] for k, label, t in h["bg_info"]}
+        tr.bg_info = {k: [label, _fl(t), cmd, out]
+                      for k, label, t, cmd, out in h["bg_info"]}
         tr.idle_at, tr.last_seen = float(h["idle_at"]), float(h["last_seen"])
         tr.opened = {"pid": h["opened"][0], "tidx": h["opened"][1]}
         tr.added, tr.removed = h["added"], h["removed"]

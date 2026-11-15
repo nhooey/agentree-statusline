@@ -88,6 +88,10 @@ export type TreeAgents = {
    * done`, and a shell or Monitor that closed, before it goes.  None where
    * absent or 0. */
   readonly linger?: number;
+  /** The home folder, the document's `agents.home`, which a background
+   * task's toast draws as `~` in its output file (bgPath); none where
+   * absent. */
+  readonly home?: string;
   /** The agents an earlier receipt left out while they were still at
    * work, by id: the stamped tree owes each its row once it has ended
    * (stampedSplit). */
@@ -223,18 +227,46 @@ function bgAge(b: BgTask, now: number): number | null {
     : Math.max(0, (b.end ?? now) - b.start);
 }
 
+/** The longest output path a task's toast draws whole; a longer one keeps
+ * its first two folders and its file name (bgPath). */
+export const BG_PATH_MAX = 80;
+
+/** What a task's toast puts before its output file: drawn only in the
+ * toast, never on a row, so it is no mark of the spec's. */
+const TOAST_OUTPUT = "⤷";
+
+/** Output file `path` as a task's toast draws it: `home`, where given and
+ * the path is under it, as `~`, and where still longer than BG_PATH_MAX,
+ * its first two folders, `…` and its file name. */
+export function bgPath(path: string, home = ""): string {
+  const p = home && (path === home || path.startsWith(home + "/"))
+    ? "~" + path.slice(home.length) : path;
+  if (Array.from(p).length <= BG_PATH_MAX) return p;
+  const segs = p.split("/");
+  const lead = p.startsWith("/") ? 3 : 2;
+  return segs.length > lead + 1
+    ? [...segs.slice(0, lead), "…", segs.at(-1)].join("/") : p;
+}
+
 /** What a press on a background task's row shows, one line: its glyph
  * and kind, 🟢 running or ⚫ ended, ⌛ how long it has run, or ran, where
- * its start is known, and `label`, its call's description, else its
- * command's first line (backgroundLabel). */
+ * its start is known; `label`, its call's description, else its
+ * command's first line (backgroundLabel), left out where the command
+ * starts with it; `$` and its command on one line (backgroundCommand),
+ * where known; and ⤷ the file its output is written to (bgPath), where
+ * known. */
 export function bgText(st: Settings, b: BgTask, label: string,
-  now: number): string {
+  now: number, home = ""): string {
   const shell = b.kind === "bash";
   const age = bgAge(b, now);
+  const cmd = b.command ?? "";
+  const out = b.output ?? "";
   return [shell ? E_MODE_SHELL + " shell" : E_MODE_MONITOR + " Monitor",
     b.end === undefined ? E_PHASE_RUN + " running" : E_PHASE_END + " ended",
     ...(age === null ? [] : [E_IDLE + " " + durFmt(st, age).trim()]),
-    label].join(" · ");
+    ...(cmd && b.label && cmd.startsWith(b.label) ? [] : [label]),
+    ...(cmd ? ["$ " + cmd] : []),
+    ...(out ? [TOAST_OUTPUT + " " + bgPath(out, home)] : [])].join(" · ");
 }
 
 /** The row of a background task: 💻 for a shell, 📡 for a Monitor, with
@@ -242,7 +274,8 @@ export function bgText(st: Settings, b: BgTask, label: string,
  * call's label, or else its kind; ⌛ how long it has run, or ran, where
  * its start is known.  A leaf whose label shows bgText as a toast: it has
  * no transcript to switch to, and no call opens one task's own view. */
-function bgNode(st: Settings, b: BgTask, now: number): Node {
+function bgNode(st: Settings, b: BgTask, now: number, home: string):
+  Node {
   const shell = b.kind === "bash";
   const label = squash(b.label).trim() || (shell ? "shell" : "monitor");
   const age = bgAge(b, now);
@@ -250,7 +283,7 @@ function bgNode(st: Settings, b: BgTask, now: number): Node {
     label: pressingAll([headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
       b.end === undefined ? E_PHASE_RUN : E_PHASE_END),
     { path: "name.label", spans: [span(label)], drop: 0 }],
-    { kind: "task", row: b.id, text: bgText(st, b, label, now) }),
+    { kind: "task", row: b.id, text: bgText(st, b, label, now, home) }),
     cells: age === null ? {} : { clock: ageCell(st, age) } } };
 }
 
@@ -480,7 +513,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     id === "" ? a.mainEnded ?? [] : byId.get(id)!.bgEnded ?? [], a.now,
     linger);
   const bgNodes = (id: string): Node[] =>
-    bgDrawn(id).map((b) => bgNode(st, b, a.now));
+    bgDrawn(id).map((b) => bgNode(st, b, a.now, a.home ?? ""));
   const shut = (id: string): boolean =>
     (shownKids(id).length > 0 || bgDrawn(id).length > 0) &&
     foldShut(folds, id, false);

@@ -165,9 +165,12 @@ export function withBackground(doc: Dict, now: number): Dict {
     kind === "bash" ? "Build the docs site" : "Watch the CI checks";
   return { ...doc, main_background: [
     { id: "msh", kind: "bash", label: "Run the plugin tests",
-      start: now - 372 },
+      start: now - 372, command: "npm test -- --watch",
+      output: "/private/tmp/claude-501/-Users-u-git-p/0f3c9a7e-5b1d-4e2a" +
+        "-9c8b-1a2b3c4d5e6f/tasks/b3qupkikw.output" },
     { id: "mmon", kind: "monitor", label: "Watch PR #38 for comments",
-      start: now - 1500 }],
+      start: now - 1500, command: "gh pr view 38 --comments ⏎ sleep 30",
+      output: "/Users/u/.cache/tasks/mmon.output" }],
   tasks: (doc.tasks as Dict[]).map((t) => ({ ...t,
     bgTasks: ((t.usage as Dict).background as [string, string][] ?? [])
       .map(([id, kind]) => ({ id, kind, label: label(kind),

@@ -479,13 +479,15 @@ def handmade():
         result(31, "x", toolUseResult={"task": {"task_id": "m3",
                                                 "status": "running"}}),
         result(32, "x", toolUseResult={"backgroundTaskId": ""}),
-        # The calls whose labels the band's tree draws: a description, a
-        # command's first line with text, a long one cut, an input that is
-        # no dict, a foreground call let go, and a call still waiting.
+        # The calls whose labels and commands the band's tree draws: a
+        # description beside a command of two lines, a command's first
+        # line with text, a long one cut, an input that is no dict, a
+        # foreground call let go, and a call still waiting.
         {"type": "assistant", "timestamp": stamp(40), "message": {
             "content": [
                 {"type": "tool_use", "id": "c1", "name": "Bash", "input": {
-                    "command": "npm test", "description": "Run the tests\nx",
+                    "command": "npm test -- --watch\n\n  && echo done ",
+                    "description": "Run the tests\nx",
                     "run_in_background": True}},
                 {"type": "tool_use", "id": "c2", "name": "Monitor",
                  "input": {"command": "  \n  tail -f log  \nmore",
@@ -495,7 +497,7 @@ def handmade():
                 {"type": "tool_use", "id": "c4", "name": "Read",
                  "input": {"description": "not a background tool"}},
                 {"type": "tool_use", "id": "c5", "name": "Bash",
-                 "input": {"command": "é" * 130}},
+                 "input": {"command": "é" * 310}},
                 {"type": "tool_use", "id": "c6", "name": "Monitor",
                  "input": {"command": "still waiting"}},
                 {"type": "tool_use", "id": "c7", "name": "Bash",
@@ -503,13 +505,31 @@ def handmade():
                 {"type": "tool_use", "name": "Bash", "input": {}},
                 {"type": "tool_use", "id": "c8", "name": ["Bash"]},
                 "no block"]}},
-        result(41, "c1", toolUseResult={"backgroundTaskId": "b4"}),
+        # A background Bash call's result names its output file, in a
+        # string or in text blocks; a Monitor's names none, and its
+        # events' notifications do, the first one kept.
+        {"type": "user", "timestamp": stamp(41), "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "c1", "content":
+             "Command running in background with ID: b4. Output is being "
+             "written to: /private/tmp/claude-501/p/tasks/b4.output. You "
+             "will be notified when it completes."}]},
+         "toolUseResult": {"backgroundTaskId": "b4"}},
         result(42, "c2", toolUseResult={"taskId": "m4", "timeoutMs": 5}),
+        note(42, "<task-notification><task-id>m4</task-id><output-file>"
+                 " /private/tmp/claude-501/p/tasks/m4.output </output-file>"
+                 "<event>x</event></task-notification>"),
+        note(42, "<task-notification><task-id>m4</task-id><output-file>"
+                 "/elsewhere.output</output-file><event>y</event>"
+                 "</task-notification>"),
         result(43, "c3", "c4", toolUseResult={"stdout": "x"}),
         {"type": "user", "message": {"content": [
             {"type": "tool_result", "tool_use_id": "zz"}]},
          "toolUseResult": {"backgroundTaskId": "b5"}},
-        result(45, "c5", toolUseResult={"backgroundTaskId": "b6"}),
+        {"type": "user", "timestamp": stamp(45), "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "c5", "content": [
+                {"type": "text", "text": "Output is being written to: "},
+                {"type": "text", "text": "/Users/u/tasks/b6.output"}]}]},
+         "toolUseResult": {"backgroundTaskId": "b6"}},
         result(46, "c7", toolUseResult={"backgroundTaskId": "b7"}),
         note(47, "<task-notification><task-id>b7</task-id>"
                  "<status>completed</status></task-notification>"),

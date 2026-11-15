@@ -213,9 +213,22 @@ binary, then the changelog" --cols 200`):
   list does, and one on 🧵 main's or 🎤 turn's goes back to the main
   conversation, since the turn is the main thread's. A click on a
   shell's or a Monitor's row shows what the band knows of it as a toast
-  for 8 seconds, one line: its glyph and kind, 🟢 running, ⌛ how long
-  it has run where its start is known, and its label, as in
-  `💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests`. Claude Code
+  for 8 seconds, one line, its parts parted by ` · `:
+  - its glyph and kind;
+  - 🟢 running, or ⚫ ended for one that lingers;
+  - ⌛ how long it has run, or ran, where its start is known;
+  - its call's `description`, left out where it has none and its label
+    is its command's own first line;
+  - `$` and its whole `command`, on one line, each line break drawn as
+    `⏎`, cut at 300 characters with `…`;
+  - ⤷ the file its output is written to, where a record has named one:
+    a shell's call's result names it, and a Monitor's notifications do,
+    from its first event on. Under the home folder it starts with `~`,
+    and one longer than 80 characters keeps its first two folders, `…`
+    and its file name.
+
+  As in `💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · $ npm
+  test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output`. Claude Code
   offers mods no way to open one task's own view. 🎮 and the grouped
   rows have no label click, and 📛 the session's name takes none. On
   🎮's label 📦 the
@@ -250,7 +263,8 @@ binary, then the changelog" --cols 200`):
   🟢, then the call's `description`, else the first line of its
   `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
   has run. It counts against no cap and does not fold; a click on it
-  shows it as a toast (see the clicks above). Once the thread hears its
+  shows it as a toast, with its whole command and its output file (see
+  the clicks above), which both ports' folds keep with its label. Once the thread hears its
   end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at
   how long it ran, for `finished-linger` seconds after the record that
   closed it (5 as the mod ships), and then leaves. An opened thread leaves its 💻
