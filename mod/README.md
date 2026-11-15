@@ -92,7 +92,10 @@ and `subscript-decimals`, the `rows` table (for each of 🎤, 🧵, 🎮, the su
 🔖 tag lines and 💳, where it is drawn, above the prompt or under the
 footer line, when, and whether a turn's end stamps it into the
 transcript), `subagent-rows`, `account-place`, `weekly-windows` (the 💳 row's other weekly windows, all off by default), `right-edge` (following the rows' places),
-and the footer's layout (`hint-inset`, `hint-tuck`, `footer-ruler`). `hooks/configuration.ts` reads the
+the footer's layout (`hint-inset`, `hint-tuck`, `footer-ruler`),
+`agent-message-row`, `slow-toast` (a slow read shown as a toast as well as
+in the log) and `starts-kept` (how many start lines and receipts the
+mod's store keeps). `hooks/configuration.ts` reads the
 files at each load, on `session.start`, and every 30 seconds on the tick,
 a stat of each file, reading again only one that has changed, or the
 files of a new root after a `/cd`; a change draws everything again, with
@@ -194,7 +197,8 @@ For every session, installed from this repository's marketplace
 
 or from GitHub, in a session:
 
-    /plugin install usage-band --marketplace nhooey/claude-code-usage-statusline
+    /plugin marketplace add nhooey/claude-code-usage-statusline
+    /plugin install usage-band@claude-code-usage-statusline
 
 Installed from a local marketplace, the mod is read from `mod/` itself: a
 change here takes effect at the next session start or `/reload-plugins`,
