@@ -234,10 +234,15 @@ The store is read with `defaults export` rather than by opening the `.plist`
 file, because a running app's latest preferences may not have reached the file
 yet. The account named by `activeProfileId` is read, falling back to the one
 marked `isSelectedForDisplay`, then to the first. Only the usage figures are
-taken: the five-hour, weekly and Opus-weekly percentages, their reset times,
-and when the app last updated them, with the record's `id` hashed (see
+taken: the five-hour, weekly, Opus-weekly and Fable-weekly percentages, their
+reset times, and when the app last updated them, with the record's `id` hashed (see
 [Calibration cache](#calibration-cache)). The same record holds an OAuth
 account and a session key, and neither is read.
+
+The Fable-weekly percentage becomes the weekly Fable window
+(`seven_day_overage_included`, 🦊 on the 💳 row). The app keeps no reset time
+of its own for it, so it takes the weekly window's; a store without the
+figure gives no Fable window.
 
 Set `CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST` to read an exported store
 from a file instead, for example one copied from another machine.

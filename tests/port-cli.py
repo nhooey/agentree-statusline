@@ -406,7 +406,7 @@ class PublicPortTests(unittest.TestCase):
         tracker = self.home / "tracker.plist"
         profile = {"id": "fixture", "oauthAccountJSON": canary, "claudeUsage": {
             "sessionPercentage": 98, "sessionResetTime": now + 18000 - 978307200,
-            "weeklyPercentage": 10, "opusWeeklyPercentage": 4,
+            "weeklyPercentage": 10, "opusWeeklyPercentage": 4, "fableWeeklyPercentage": 6,
             "weeklyResetTime": now + 604800 - 978307200, "lastUpdated": now - 978307200}}
         with tracker.open("wb") as stream:
             plistlib.dump({"activeProfileId": "fixture",
@@ -415,7 +415,11 @@ class PublicPortTests(unittest.TestCase):
         status, out = self.usage_mode("--agent", "claude", session="tracker-review")
         self.assertEqual((status, out["source"]), (0, "claude-usage-tracker"))
         self.assertEqual([(w["id"], w["used_percent"]) for w in out["windows"]],
-                         [("five_hour", 98.0), ("seven_day", 10.0), ("seven_day_opus", 4.0)])
+                         [("five_hour", 98.0), ("seven_day", 10.0), ("seven_day_opus", 4.0),
+                          ("seven_day_overage_included", 6.0)])
+        fable = [w for w in out["windows"] if w["id"] == "seven_day_overage_included"][0]
+        week = [w for w in out["windows"] if w["id"] == "seven_day"][0]
+        self.assertEqual(fable["resets_at"], week["resets_at"])
         text = json.dumps(out)
         self.assertNotIn(canary, text)
         self.assertNotIn("account", text)

@@ -680,7 +680,8 @@ def claude_usage_tracker():
         windows = []
         for ident, pct, reset, duration in (("five_hour", raw.get("session_pct"), raw.get("session_resets_at"), 18000),
                                             ("seven_day", raw.get("weekly_pct"), raw.get("weekly_resets_at"), 604800),
-                                            ("seven_day_opus", raw.get("weekly_opus_pct"), raw.get("weekly_resets_at"), 604800)):
+                                            ("seven_day_opus", raw.get("weekly_opus_pct"), raw.get("weekly_resets_at"), 604800),
+                                            ("seven_day_overage_included", raw.get("weekly_fable_pct"), raw.get("weekly_resets_at"), 604800)):
             if pct is not None: windows.append({"id": ident, "duration_seconds": duration, "used_percent": pct, "resets_at": reset})
         reading = normalise({"schema_version":1, "as_of":raw.get("as_of"), "windows":windows}, "claude-usage-tracker")
         account = _account_id(raw)

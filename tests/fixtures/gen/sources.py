@@ -467,6 +467,8 @@ def tracker_inputs():
     golden = golden_store(TRACKER_USAGE)
     yield "golden store", golden, "UTC"
     yield "app store", plist_store(APP_USAGE), "UTC"
+    yield "app store with fable", plist_store(
+        dict(APP_USAGE, fableWeeklyPercentage=7)), "UTC"
     yield "active P0", plist_store(APP_USAGE, active="P0"), "UTC"
     yield "selected fallback", plist_store(APP_USAGE, active="gone",
                                            selected=True), "UTC"
@@ -556,6 +558,9 @@ def tracker_cases(scratch):
             case["expected"] = sources.claude_usage_tracker()
         except Exception as exc:  # noqa: BLE001
             case["expected"] = {"raises": type(exc).__name__}
+        # The 💳 row's figures, so the Fable window is seen to reach them.
+        case["limits"] = claude_sources.legacy_limits(
+            case["expected"])._asdict()
         out.append(case)
     set_tz("UTC")
     return out

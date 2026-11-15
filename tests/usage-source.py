@@ -3,7 +3,7 @@
 import hashlib, json, os, plistlib, sys, tempfile, time
 
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__))); sys.path.insert(0, ROOT)
-from coding_agent_usage_line import claude, sources, state
+from coding_agent_usage_line import claude, claude_sources, sources, state
 
 NOW=1788860278.0; APPLE=978307200.0; CANARY="oauth-canary-must-never-be-copied"
 passed=0
@@ -14,8 +14,8 @@ def check(name, got, want):
 
 def store(path, usage=None, active="P1", selected=False, extra=None):
     usage=usage or {"sessionPercentage":98,"sessionResetTime":1788864600.363-APPLE,
-        "weeklyPercentage":10,"opusWeeklyPercentage":3,"weeklyResetTime":1789434000.363-APPLE,
-        "lastUpdated":NOW-60-APPLE}
+        "weeklyPercentage":10,"opusWeeklyPercentage":3,"fableWeeklyPercentage":7,
+        "weeklyResetTime":1789434000.363-APPLE,"lastUpdated":NOW-60-APPLE}
     profiles=[{"id":"P0","claudeUsage":{"sessionPercentage":1,"weeklyPercentage":1},"isSelectedForDisplay":selected},
               {"id":"P1","claudeUsage":usage,"oauthAccountJSON":CANARY}]
     value={"activeProfileId":active,"profiles_v3":json.dumps(profiles).encode()}; value.update(extra or {})
@@ -25,7 +25,8 @@ with tempfile.TemporaryDirectory(prefix="usage-source.") as tmp:
     primary=os.path.join(tmp,"primary.plist"); store(primary)
     with open(primary,"rb") as fh: raw=claude.tracker_reading(plistlib.load(fh))
     check("tracker session",raw.get("session_pct"),98); check("tracker weekly",raw.get("weekly_pct"),10)
-    check("tracker opus",raw.get("weekly_opus_pct"),3); check("CFDate reset",raw.get("session_resets_at"),1788864600.363)
+    check("tracker opus",raw.get("weekly_opus_pct"),3); check("tracker fable",raw.get("weekly_fable_pct"),7)
+    check("CFDate reset",raw.get("session_resets_at"),1788864600.363)
     check("weekly CFDate reset",raw.get("weekly_resets_at"),1789434000.363)
     check("CFDate as_of",raw.get("as_of"),NOW-60)
     # Tracker adapter normalizes to grouped v1 and persists only safe fields.
@@ -40,6 +41,19 @@ with tempfile.TemporaryDirectory(prefix="usage-source.") as tmp:
     check("v1 strict envelope keys",sorted(reading),["account","account_id","as_of","buckets","schema_version","source"])
     check("v1 tracker account id hashed",reading["account_id"],"profile:"+hashlib.sha256(b"P1").hexdigest()[:24])
     assert CANARY not in repr(reading); passed+=1; print("  ok    tracker canary whitelist")
+    # The Fable figure reaches the 💳 row's Limits, on the weekly reset.
+    lim=claude_sources.legacy_limits(reading)
+    check("tracker fable limits",lim.fable_pct,"7"); check("tracker fable reset",lim.fable_reset,lim.weekly_reset)
+    nofable=os.path.join(tmp,"nofable.plist")
+    store(nofable,usage={"sessionPercentage":98,"sessionResetTime":1788864600.363-APPLE,
+        "weeklyPercentage":10,"weeklyResetTime":1789434000.363-APPLE,"lastUpdated":NOW-60-APPLE})
+    os.environ["CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST"]=nofable
+    try: bare=sources.claude_usage_tracker()
+    finally:
+        if old is None: os.environ.pop("CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST",None)
+        else: os.environ["CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST"]=old
+    check("tracker without fable has no fable window",[w["id"] for w in bare["buckets"][0]["windows"]],["five_hour","seven_day"])
+    check("tracker without fable limits",(claude_sources.legacy_limits(bare).fable_pct,claude_sources.legacy_limits(bare).fable_reset),("",""))
     # Active, selected-display, first-profile fallback and bad old schemas.
     other=os.path.join(tmp,"other.plist"); store(other,active="P0")
     with open(other,"rb") as fh: check("active profile",claude.tracker_reading(plistlib.load(fh))["session_pct"],1)
