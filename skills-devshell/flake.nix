@@ -15,18 +15,28 @@
 
     # Every input below this divider is a skill source.
 
-    # Markdown hygiene, for the README, docs/ and the skills this repo ships.
-    document-skills = {
-      url = "github:nhooey/document-skills";
+    # Base skills every agent run here needs: headless runs in checkouts,
+    # tidy scratchpads and the cross-repository plan's graph.
+    coding-agent-skills = {
+      url = "github:nhooey/coding-agent-skills/overnight-skills";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         agent-skill-flake.follows = "agent-skill-flake";
       };
     };
 
-    # Git and GitHub hygiene, policy and workflow; picked below.
+    # Markdown hygiene, for the README, docs/ and the skills this repo ships.
+    document-skills = {
+      url = "github:nhooey/document-skills/overnight-skills";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        agent-skill-flake.follows = "agent-skill-flake";
+      };
+    };
+
+    # Git and GitHub hygiene, policy and workflow, all of them.
     git-skills = {
-      url = "github:nhooey/git-skills";
+      url = "github:nhooey/git-skills/overnight-skills";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         agent-skill-flake.follows = "agent-skill-flake";
@@ -35,7 +45,25 @@
 
     # Only nix-flakes, which this repo's flake.nix follows.
     nix-skills = {
-      url = "github:nhooey/nix-skills";
+      url = "github:nhooey/nix-skills/overnight-skills";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        agent-skill-flake.follows = "agent-skill-flake";
+      };
+    };
+
+    # Python style, for coding-agent-usage-line.py and its package.
+    python-skills = {
+      url = "github:nhooey/python-skills/overnight-skills";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        agent-skill-flake.follows = "agent-skill-flake";
+      };
+    };
+
+    # Safe shell commands: named deletes, PIDs, no machine-wide changes.
+    shell-skills = {
+      url = "github:nhooey/shell-skills/overnight-skills";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         agent-skill-flake.follows = "agent-skill-flake";
@@ -44,7 +72,7 @@
 
     # Prose hygiene, for the README, docs/ and commit messages.
     writing-skills = {
-      url = "github:nhooey/writing-skills";
+      url = "github:nhooey/writing-skills/overnight-skills";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         agent-skill-flake.follows = "agent-skill-flake";
@@ -56,9 +84,12 @@
     {
       nixpkgs,
       agent-skill-flake,
+      coding-agent-skills,
       document-skills,
       git-skills,
       nix-skills,
+      python-skills,
+      shell-skills,
       writing-skills,
       ...
     }@inputs:
@@ -67,42 +98,22 @@
       systems = import inputs.systems;
       name = "coding-agent-usage-line-skills";
       sources = [
-        { source = document-skills; }
         {
-          source = git-skills;
-          # All but git-hygiene-conventional-commits: this repo's subjects
-          # are plain sentences, not `type(scope):` prefixes.
+          source = coding-agent-skills;
           skills = [
-            "git-hygiene-avoid-sweeping-operations"
-            "git-hygiene-branch-naming"
-            "git-hygiene-commit-message-format"
-            "git-hygiene-gitignore"
-            "git-hygiene-no-history-in-tracked-files"
-            "git-hygiene-push-force-safely"
-            "git-hygiene-ssh-remotes"
-            "git-workflow-curate-unpushed"
-            "git-workflow-inspect-before-commit"
-            "git-workflow-push-mode"
-            "git-workflow-tidy-branches"
-            "github-hygiene-gh-cli-gotchas"
-            "github-hygiene-pull-request-mirrors-commit"
-            "github-hygiene-refer-to-issues-and-pull-requests"
-            "github-policy-auto-delete-merged-branches"
-            "github-policy-codeowners"
-            "github-policy-merge-commits-only"
-            "github-policy-protect-default-branch"
-            "github-workflow-browser-draft-preview"
-            "github-workflow-pull-request-changeset-prompt"
-            "github-workflow-pull-request-stacked"
-            "github-workflow-pull-request-status-line"
-            "github-workflow-pull-request-watcher"
-            "github-workflow-repo-activity"
+            "coding-agent-headless-in-checkout"
+            "coding-agent-plans-as-graph"
+            "coding-agent-scratchpad-scripts"
           ];
         }
+        { source = document-skills; }
+        { source = git-skills; }
         {
           source = nix-skills;
           skills = [ "nix-flakes" ];
         }
+        { source = python-skills; }
+        { source = shell-skills; }
         { source = writing-skills; }
       ];
       # The PR watcher's answers after a merge: clean up without asking.
