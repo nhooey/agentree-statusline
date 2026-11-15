@@ -1123,6 +1123,58 @@
   },
   {
    "args": [
+    "{\n  \"context_window\": {\n    \"context_window_size\": 1000000\n  },\n  \"cost\": {\n    \"total_api_duration_ms\": 10592313,\n    \"total_cost_usd\": 114.63436755000001,\n    \"total_duration_ms\": 20696166,\n    \"total_lines_added\": 3443,\n    \"total_lines_removed\": 214\n  },\n  \"cwd\": \"${HOME}/src/statusline-fixture/deep/tree\",\n  \"effort\": {\n    \"level\": \"high\"\n  },\n  \"exceeds_200k_tokens\": true,\n  \"model\": {\n    \"display_name\": \"Opus 5 (1M context)\",\n    \"id\": \"claude-opus-5[1m]\"\n  },\n  \"output_style\": {\n    \"name\": \"default\"\n  },\n  \"rate_limits\": {\n    \"five_hour\": {\n      \"resets_at\": 1786847400,\n      \"used_percentage\": 15\n    },\n    \"seven_day\": {\n      \"resets_at\": 1787014800,\n      \"used_percentage\": 87\n    },\n    \"seven_day_overage_included\": {\n      \"resets_at\": 1787101200,\n      \"used_percentage\": 12.5\n    }\n  },\n  \"session_id\": \"f1xture0-0000-4000-8000-00000000c0de\",\n  \"thinking\": {\n    \"enabled\": true\n  },\n  \"transcript_path\": \"${FIXTURES}/transcripts/status/main.jsonl\",\n  \"version\": \"2.1.233\",\n  \"workspace\": {\n    \"added_dirs\": [],\n    \"current_dir\": \"${HOME}/src/statusline-fixture/deep/tree\",\n    \"project_dir\": \"${HOME}/src/statusline-fixture/deep/tree\"\n  }\n}\n"
+   ],
+   "fn": "read_payload",
+   "kw": {},
+   "out": {
+    "cost_usd": "114.63436755000001",
+    "ctx_window": "1000000",
+    "current_dir": "${HOME}/src/statusline-fixture/deep/tree",
+    "effort": "high",
+    "lines_added": "3443",
+    "lines_removed": "214",
+    "model": "Opus 5 (1M context)",
+    "model_id": "claude-opus-5[1m]",
+    "output_style": "default",
+    "pr_number": "",
+    "project_dir": "${HOME}/src/statusline-fixture/deep/tree",
+    "rl_session_pct": "15",
+    "rl_session_reset": "1786847400",
+    "rl_weekly_pct": "87",
+    "rl_weekly_reset": "1787014800",
+    "session_id": "f1xture0-0000-4000-8000-00000000c0de",
+    "transcript": "${FIXTURES}/transcripts/status/main.jsonl"
+   }
+  },
+  {
+   "args": [
+    "{\n  \"context_window\": {\n    \"context_window_size\": 1000000\n  },\n  \"cost\": {\n    \"total_api_duration_ms\": 10592313,\n    \"total_cost_usd\": 114.63436755000001,\n    \"total_duration_ms\": 20696166,\n    \"total_lines_added\": 3443,\n    \"total_lines_removed\": 214\n  },\n  \"cwd\": \"${HOME}/src/statusline-fixture/deep/tree\",\n  \"effort\": {\n    \"level\": \"high\"\n  },\n  \"exceeds_200k_tokens\": true,\n  \"model\": {\n    \"display_name\": \"Opus 5 (1M context)\",\n    \"id\": \"claude-opus-5[1m]\"\n  },\n  \"output_style\": {\n    \"name\": \"default\"\n  },\n  \"rate_limits\": {\n    \"five_hour\": {\n      \"resets_at\": 1786847400,\n      \"used_percentage\": 15\n    },\n    \"seven_day\": {\n      \"resets_at\": 1787014800,\n      \"used_percentage\": 87\n    },\n    \"seven_day_overage_included\": {\n      \"resets_at\": 1787014800,\n      \"used_percentage\": 4\n    }\n  },\n  \"session_id\": \"f1xture0-0000-4000-8000-00000000c0de\",\n  \"thinking\": {\n    \"enabled\": true\n  },\n  \"transcript_path\": \"${FIXTURES}/transcripts/status/main.jsonl\",\n  \"version\": \"2.1.233\",\n  \"workspace\": {\n    \"added_dirs\": [],\n    \"current_dir\": \"${HOME}/src/statusline-fixture/deep/tree\",\n    \"project_dir\": \"${HOME}/src/statusline-fixture/deep/tree\"\n  }\n}\n"
+   ],
+   "fn": "read_payload",
+   "kw": {},
+   "out": {
+    "cost_usd": "114.63436755000001",
+    "ctx_window": "1000000",
+    "current_dir": "${HOME}/src/statusline-fixture/deep/tree",
+    "effort": "high",
+    "lines_added": "3443",
+    "lines_removed": "214",
+    "model": "Opus 5 (1M context)",
+    "model_id": "claude-opus-5[1m]",
+    "output_style": "default",
+    "pr_number": "",
+    "project_dir": "${HOME}/src/statusline-fixture/deep/tree",
+    "rl_session_pct": "15",
+    "rl_session_reset": "1786847400",
+    "rl_weekly_pct": "87",
+    "rl_weekly_reset": "1787014800",
+    "session_id": "f1xture0-0000-4000-8000-00000000c0de",
+    "transcript": "${FIXTURES}/transcripts/status/main.jsonl"
+   }
+  },
+  {
+   "args": [
     "{\n  \"context_window\": {\n    \"context_window_size\": 1000000\n  },\n  \"cost\": {\n    \"total_api_duration_ms\": 10592313,\n    \"total_cost_usd\": 114.63436755000001,\n    \"total_duration_ms\": 20696166,\n    \"total_lines_added\": 3443,\n    \"total_lines_removed\": 214\n  },\n  \"cwd\": \"${HOME}/src/statusline-fixture/deep/tree\",\n  \"effort\": {\n    \"level\": \"high\"\n  },\n  \"exceeds_200k_tokens\": true,\n  \"model\": {\n    \"display_name\": \"Fable 5\",\n    \"id\": \"claude-fable-5\"\n  },\n  \"output_style\": {\n    \"name\": \"default\"\n  },\n  \"rate_limits\": {\n    \"five_hour\": {\n      \"resets_at\": 1786847400,\n      \"used_percentage\": 15\n    },\n    \"seven_day\": {\n      \"resets_at\": 1787014800,\n      \"used_percentage\": 87\n    }\n  },\n  \"session_id\": \"f1xture0-0000-4000-8000-00000000c0de\",\n  \"thinking\": {\n    \"enabled\": true\n  },\n  \"transcript_path\": \"${FIXTURES}/transcripts/status/main.jsonl\",\n  \"version\": \"2.1.233\",\n  \"workspace\": {\n    \"added_dirs\": [],\n    \"current_dir\": \"${HOME}/src/statusline-fixture/deep/tree\",\n    \"project_dir\": \"${HOME}/src/statusline-fixture/deep/tree\"\n  }\n}\n"
    ],
    "fn": "read_payload",

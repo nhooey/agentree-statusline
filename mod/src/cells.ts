@@ -17,7 +17,7 @@
 // `now` in the process's TZ, which the edge sets from the document's
 // `clock.tz`, as claude_cost.ts's do.
 import {
-  E_ACCT, E_COST, E_DATE, E_DIR, E_DIRTY, E_GIT_BAD,
+  E_ACCT, E_COST, E_DATE, E_DIR, E_DIRTY, E_FABLE, E_GIT_BAD,
   E_GIT_OK, E_IDLE, E_NAME, E_PCT, E_PR, E_PROJ, E_RESET, E_SESS, E_SESSION,
   E_STALE, E_STY, E_THREAD,
   E_TIME, E_TURN, E_TURN_ID, E_WEEK, K, MAG_COST, MAG_DUR_S, TAG_SCOPE,
@@ -215,14 +215,16 @@ export function untilReset(st: Settings, epoch: number | null,
 }
 
 /** The plan's two windows as the 💳 row draws them: 🔋 `sess` and 🪫
- * `week`, each followed by its 🔜 reset where it has one, under the paths
- * `plan.five_hour`, `plan.week` and `plan.reset`; a window with neither a
+ * `week`, then 🦊 `fable`, the weekly Fable window, each followed by its
+ * 🔜 reset where it has one, under the paths `plan.five_hour`,
+ * `plan.week`, `plan.fable` and `plan.reset`; a window with neither a
  * share nor a reset is left out.  With `stale`, how long ago the reading
  * was taken, each share is followed by 🧊 and that.  Each window ends in
  * blanks, which trimLast takes off the last. */
 export function planPieces(st: Settings, sess: number | null,
   week: number | null, sessReset: string | null, weekReset: string | null,
-  stale: string | null = null): Piece[] {
+  stale: string | null = null, fable: number | null = null,
+  fableReset: string | null = null): Piece[] {
   // Each window whole, its share then its reset, since the row has no
   // figure in the plan columns to sit under: 🔋 15٪ 🔜 6.7m.  Three digits
   // for both, so 🪫 reads 87٪ as 🔋 does, not the 87.0٪ the wider 🪫
@@ -246,7 +248,8 @@ export function planPieces(st: Settings, sess: number | null,
   };
   return [
     ...plan("plan.five_hour", E_SESS, "F_LIM_SESS", sess, sessReset),
-    ...plan("plan.week", E_WEEK, "F_LIM_WEEK", week, weekReset)];
+    ...plan("plan.week", E_WEEK, "F_LIM_WEEK", week, weekReset),
+    ...plan("plan.fable", E_FABLE, "F_LIM_FABLE", fable, fableReset)];
 }
 
 /** `pieces` with the blanks after the last one taken off: they would only
@@ -266,14 +269,16 @@ export function trimLast(pieces: readonly Piece[]): Piece[] {
  * then 📅 and 🕐 at the end, which leave first on a narrow terminal.  With
  * `stale`, how long ago the reading was taken, each figure is followed by
  * 🧊 and that: the footer's tail draws in one style, so the mark is in the
- * text. */
+ * text.  `fable` and `fableReset` are the weekly Fable window's, drawn
+ * after 🪫 where the source has one. */
 export function accountLabel(st: Settings, sess: number | null,
   week: number | null, sessReset: string | null, weekReset: string | null,
   date: string, time: string, stale: string | null = null,
-  credits: readonly { kind: string; spans: readonly Span[] }[] = []):
+  credits: readonly { kind: string; spans: readonly Span[] }[] = [],
+  fable: number | null = null, fableReset: string | null = null):
     Piece[] {
   const windows = trimLast(planPieces(st, sess, week, sessReset, weekReset,
-    stale));
+    stale, fable, fableReset));
   // The credits after the windows, each leaving before 📅 and 🕐 on a
   // narrow terminal.
   const owed: Piece[] = credits.map((c) => ({ path: "credits." + c.kind,

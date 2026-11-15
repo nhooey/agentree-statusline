@@ -1310,6 +1310,24 @@
     },
     {
       "cols": 196,
+      "env": "default",
+      "figures": "fable-own-reset",
+      "flags": [],
+      "id": "fable-own-reset@196",
+      "input": "payloads/status/fable-own-reset.json",
+      "suite": "status"
+    },
+    {
+      "cols": 196,
+      "env": "default",
+      "figures": "fable-shared-reset",
+      "flags": [],
+      "id": "fable-shared-reset@196",
+      "input": "payloads/status/fable-shared-reset.json",
+      "suite": "status"
+    },
+    {
+      "cols": 196,
       "env": "app-41-63",
       "figures": "01-plain",
       "flags": [],

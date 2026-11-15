@@ -510,6 +510,11 @@ def openai_admin(start, end, opener=None, failure=None):
     if cached is not None: account["cached_input_tokens"]=cached
     return normalise({"schema_version":1, "as_of":time.time(), "windows":[], "account":account}, "openai-admin")
 
+# Claude Code's name for the weekly Fable window, beside `seven_day`: a
+# window a week long that the 💳 row draws apart from the plan's own.
+FABLE_WINDOW = "seven_day_overage_included"
+
+
 def experimental_claude_oauth(opener=None, failure=None):
     token=os.environ.get("CLAUDE_OAUTH_ACCESS_TOKEN")
     if not token: return {}
@@ -517,7 +522,7 @@ def experimental_claude_oauth(opener=None, failure=None):
                      {"Authorization":"Bearer " + token, "anthropic-beta":"oauth-2025-04-20"}, opener=opener, failure=failure)
     if not raw: return {}
     windows=[]
-    for name in ("five_hour", "seven_day", "seven_day_opus", "seven_day_sonnet"):
+    for name in ("five_hour", "seven_day", FABLE_WINDOW, "seven_day_opus", "seven_day_sonnet"):
         item=raw.get(name, {}) if isinstance(raw, dict) else {}
         if isinstance(item, dict) and item.get("utilization") is not None:
             duration=18000 if name == "five_hour" else 604800
@@ -597,6 +602,7 @@ def _native_windows(value):
     if not isinstance(raw, dict): return windows
     source_bucket = str(raw.get("limit_id") or raw.get("limitId") or "default")
     aliases = (("five_hour", "five_hour"), ("seven_day", "seven_day"),
+               (FABLE_WINDOW, FABLE_WINDOW),
                ("primary", "primary"), ("secondary", "secondary"))
     for key, ident in aliases:
         item = raw.get(key)
@@ -607,7 +613,7 @@ def _native_windows(value):
         if item.get("window_minutes") is not None and item.get("duration_seconds") is None and item.get("limit_window_seconds") is None:
             number = _number(duration); duration = number * 60 if number is not None else None
         if duration is None and key == "five_hour": duration = 5 * 3600
-        if duration is None and key == "seven_day": duration = 7 * 86400
+        if duration is None and key in ("seven_day", FABLE_WINDOW): duration = 7 * 86400
         windows.append({"id": ident,
                         "duration_seconds": duration, "used_percent": usage,
                         "resets_at": item.get("resets_at", item.get("reset_at")),

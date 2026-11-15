@@ -96,7 +96,7 @@ as the mod ships:
 
 | Row | Scope | Place | Drawn |
 |---|---|---|---|
-| 💳 | the account: the plan's two windows, and where the session works but for what 🎮's label has, all on the label | under the footer line | always |
+| 💳 | the account: the plan's two windows and the Fable window, and where the session works but for what 🎮's label has, all on the label | under the footer line | always |
 | 🎮 `session` | the session: the main thread and every agent, summed; on its label, its name and where it works | above the prompt, the tree's root | always |
 | 🧵 `agent` | the main thread alone, before any agent's figures are added | above the prompt, under 🎮 | always |
 | `subagents` | each subagent alone | above the prompt, under the thread that started it | always; between turns, those running or paused |
@@ -132,16 +132,21 @@ left, what is the project's: 📦 project, 🌿 branch, 📁 directory, 🔀 PR 
 🎨 output style, less 📦 🌿 🔀 while the tree's root draws them on its
 label. Then, flush right where the other rows end, what is
 global: 💳 and each window's share, 🔋 the 5-hour and 🪫 the weekly, each
-with 🔜 and the time until it resets, then four blank columns and 📅 and 🕐,
-the date and time now. A reading 10 minutes old or more has each share
+with 🔜 and the time until it resets, then 🦊 the weekly Fable window
+(Claude Code's `seven_day_overage_included`) where the usage source has
+one, then four blank columns and 📅 and 🕐, the date and time now. 🦊 has
+a 🔜 of its own only where it resets at another time than 🪫; where they
+reset together, 🪫's 🔜 stands for both, `🪫 87٪ 🔜 1.9d  🦊 4٪`, unless 🪫
+is hidden. With no Fable window, nothing is drawn for it. A reading 10 minutes old or more has each share
 followed by 🧊 and its age, `🪫 87٪ 🧊3h 🔜 1.9d`, in the text rather than
 a colour, since [the footer's tail](#the-footers-tail) draws in Claude
 Code's one style. It draws nothing in the columns: its figures are the
 plan's own, read from the configured [usage source](usage-sources.md), and
 can include use from other machines, the web and the phone. Both shares
-take three digits, so 🪫 reads `87٪` as 🔋 does. Too wide for its row, it
-sheds 🎨, then 🔀, then 📁, then 📅, then 🕐, then the windows' 🔜, and only
-then is cut with `…`.
+take three digits, so 🪫 reads `87٪` as 🔋 does, and so does 🦊. Too wide
+for its row, it sheds 🎨, then 🔀, then 📁, then 📅, then 🕐, then the
+windows' 🔜, 🦊's with them, and only then is cut with `…`; the windows
+themselves are never shed.
 
 No row takes a press: each is plain text, above the prompt, under the
 footer line and in the receipt.
@@ -535,13 +540,14 @@ which take the paths in the option `hide`, from the
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main` (the 🧵 row), `session`, `agent`, and `tag` for the turn tag lines' 🔋 and 🪫 (`tag.plan.five_hour`, `tag.plan.week`; [The turn tags](#the-turn-tags)) |
-| group | `plan` (🔋 🪫 🔜), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨, and `name`, 🎮's 📛), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
+| group | `plan` (🔋 🪫 🔜, and 🦊 `fable` on the 💳 row), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
 
 ```
 --hide account                  the 💳 row
 --hide '*.work'                 💾 on every row
 --hide turn.time.eta            ⛳ on the 🎤 row only
 --hide account.workspace        📦 🌿 📁 🔀 🎨 on the 💳 row
+--hide account.plan.fable       🦊 and its 🔜 on the 💳 row
 --hide session.workspace.name   📛 and the session's name on 🎮
 --hide '*.state.rate'           🛫 everywhere
 --hide '*.chat.progress'        every thread's latest text in the tree
@@ -1000,8 +1006,8 @@ Hue says *what* a figure is; brightness says *whether it is worth looking
 at*.
 
 **Hue is identity and never changes with the value.** Each quantity keeps
-its colour on every row: 🔋 is always green and 🪫 always red, whatever
-their figures say. The one exception is 🎯 (below).
+its colour on every row: 🔋 is always green, 🪫 always red and 🦊 always
+the model's purple, whatever their figures say. The one exception is 🎯 (below).
 
 **Brightness is magnitude.** A figure with no natural ceiling is dim under a
 fixed cut and full strength at or over it:

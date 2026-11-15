@@ -45,7 +45,7 @@ the terminal where the cursor ended up. See
 
 For an agent or a skill that needs the account's plan windows (the
 five-hour, the weekly, and any other the source gives, such as
-`seven_day_opus`), this is the command to run. It reads no stdin.
+`seven_day_opus` or the Fable window, `seven_day_overage_included`), this is the command to run. It reads no stdin.
 
 ```sh
 $ coding-agent-usage-line.py --agent claude --mode usage
@@ -78,7 +78,8 @@ without it, `auto` asks the Codex app-server.
 | `windows` | one object per plan window, below |
 | `reason` | only without a reading: `no-reading` |
 
-Each window has `id` (`five_hour`, `seven_day`, `seven_day_opus`, or a
+Each window has `id` (`five_hour`, `seven_day`,
+`seven_day_overage_included`, `seven_day_opus`, or a
 Codex window's `primary` or `secondary`), `bucket` and `label` (the quota
 it belongs to; `default` for Claude's), `used_percent`, `left_percent`,
 `resets_at` (epoch seconds), `duration_seconds` and `expired` (its reset
@@ -221,7 +222,7 @@ removes it.
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main`, `session`, `agent`, and `tag` for the turn tag lines, 🔻🔖 and 🔺🔖 |
-| group | `plan` (🔋 🪫), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫, and on agent rows the 👶🏻 🤏 💻 📡 📨 counts), `chat` (the activity, and the progress update in the band's tree), `workspace` (🌿), `name` (the name and the kind) |
+| group | `plan` (🔋 🪫, and 🦊 `fable` on the 💳 row), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫, and on agent rows the 👶🏻 🤏 💻 📡 📨 counts), `chat` (the activity, and the progress update in the band's tree), `workspace` (🌿), `name` (the name and the kind) |
 
 On an agent row:
 

@@ -434,6 +434,17 @@ def payloads(corpus):
                                      "display_name": "Fable 5"})
     out["model-mythos"] = case(model={"id": "claude-mythos-5",
                                       "display_name": "Mythos 5"})
+    # The weekly Fable window beside the plan's two, which the 💳 row draws
+    # after 🪫: resetting a day after the weekly window, so with a 🔜 of its
+    # own, and with the weekly window, so under 🪫's.
+    limits = base["rate_limits"]
+    out["fable-own-reset"] = case(rate_limits=dict(
+        limits, seven_day_overage_included={"used_percentage": 12.5,
+                                            "resets_at": PIN_NOW + 254200}))
+    out["fable-shared-reset"] = case(rate_limits=dict(
+        limits, seven_day_overage_included={
+            "used_percentage": 4,
+            "resets_at": limits["seven_day"]["resets_at"]}))
     # The cost fields of 06 are dropped, not set to None; case() cannot spell
     # that inside a nested dict, so it is done here.
     for k in ("total_duration_ms", "total_api_duration_ms"):

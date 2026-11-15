@@ -347,6 +347,8 @@ NATIVE = [
         "rateLimits": {"limitId": "codex", "primary": {
             "usedPercent": 1, "windowDurationMins": 300}}}),
     ("rate_limits key nested", {"rate_limits": CLAUDE_LIMITS}),
+    ("claude fable window", dict(CLAUDE_LIMITS, seven_day_overage_included={
+        "used_percentage": 12.5, "resets_at": PIN_NOW + 90000})),
     ("rate_limits null", {"rate_limits": None}),
     ("not a dict", [1]),
     ("empty", {}),
@@ -682,6 +684,18 @@ LIMITS = [
         window("a", 18000, None, 5), window("b", 18000, 7, 5, expired=True),
         window("c", 18000, 8, 6), window("d", 604800, 9, None))),
     ("weekly only", default_bucket(window("w", 604800, 63, PIN_NOW))),
+    # The Fable window is a week long too, and told apart by its id, ahead
+    # of the plan's own weekly window or after it.
+    ("fable", default_bucket(
+        window("seven_day_overage_included", 604800, 12.5, PIN_NOW + 90000),
+        window("five_hour", 18000, 41, PIN_NOW + 400),
+        window("seven_day", 604800, 63, PIN_NOW + 160000))),
+    ("fable only", default_bucket(
+        window("seven_day_overage_included", 604800, 5, None))),
+    ("fable missing and expired skipped", default_bucket(
+        window("seven_day_overage_included", 604800, None, 5),
+        window("seven_day_overage_included", 604800, 7, 5, expired=True),
+        window("seven_day", 604800, 9, None))),
     ("other durations", default_bucket(window("a", 3600, 1, None))),
     ("labelled bucket", default_bucket(window("a", 18000, 1, None),
                                        label="General")),

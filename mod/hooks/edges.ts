@@ -26,6 +26,7 @@ import type {
   AgentEta, AgentRec, Git, Payload, Transcript, Turn,
 } from '../src/claude_records.ts'
 import { githubRepo } from '../src/github.ts'
+import { FABLE_WINDOW } from '../src/sources.ts'
 import { drawnCredits } from '../src/credits.ts'
 import { seedLimitsSnapshot } from '../src/claude_calib.ts'
 import {
@@ -53,6 +54,9 @@ export type Seen = { effort: string }
 
 export const seen: Seen = { effort: '' }
 let samples: RateSample[] = []
+/** The rate-limit kinds `$.session.usage()` named last, as logged; null
+ * until the first, so a load logs them once. */
+let seenKinds: string | null = null
 
 // ════════════════════════════════════════════════════════════════════════════
 // The documents.
@@ -67,6 +71,14 @@ export async function payloadOf($: $, transcript: string): Promise<{
   const model = await $.session.model()
   const id = await $.session.id()
   const usage = await $.session.usage()
+  // The kinds of rate limit the session names, logged as the set changes,
+  // so the log says which windows reach the mod: `rate limits: five_hour
+  // seven_day seven_day_overage_included` where the Fable window does.
+  const kinds = usage.rateLimits.map((r) => r.kind).join(' ')
+  if (kinds !== seenKinds) {
+    seenKinds = kinds
+    await log($, 'rate limits: ' + (kinds || 'none'))
+  }
   const limit = (kind: string) => {
     const l = usage.rateLimits.find((r) => r.kind === kind)
     if (!l) return undefined
@@ -83,7 +95,8 @@ export async function payloadOf($: $, transcript: string): Promise<{
     ...(usage.cost ? { cost: { total_cost_usd: usage.cost.usd } } : {}),
     ...(seen.effort ? { effort: { level: seen.effort } } : {}),
     rate_limits: { five_hour: limit('five_hour'),
-      seven_day: limit('seven_day') },
+      seven_day: limit('seven_day'),
+      [FABLE_WINDOW]: limit(FABLE_WINDOW) },
   }
   return { raw, payload: readPayload(JSON.stringify(raw)) }
 }

@@ -730,6 +730,10 @@ export function cacheNamespace(spec: string, account: string, context: unknown,
   return "default";
 }
 
+// Claude Code's name for the weekly Fable window, beside `seven_day`: a
+// window a week long that the 💳 row draws apart from the plan's own.
+export const FABLE_WINDOW = "seven_day_overage_included";
+
 // Translate a transcript/native quota snapshot without inventing fields.
 export function nativeWindows(value: unknown): Dict[] {
   const raw = isDict(value) ? pyGet(value, "rate_limits", value) : {};
@@ -737,7 +741,8 @@ export function nativeWindows(value: unknown): Dict[] {
   if (!isDict(raw)) return windows;
   const sourceBucket = pyStr(pyTruthy(raw.limit_id) ? raw.limit_id
     : pyTruthy(raw.limitId) ? raw.limitId : "default");
-  for (const key of ["five_hour", "seven_day", "primary", "secondary"]) {
+  for (const key of ["five_hour", "seven_day", FABLE_WINDOW, "primary",
+                     "secondary"]) {
     const item = pyGet(raw, key);
     if (!isDict(item)) continue;
     const usage = pyGet(item, "used_percentage", pyGet(item, "used_percent"));
@@ -751,7 +756,9 @@ export function nativeWindows(value: unknown): Dict[] {
       duration = n !== null ? n * 60 : null;
     }
     if (duration === null && key === "five_hour") duration = 5 * 3600;
-    if (duration === null && key === "seven_day") duration = 7 * 86400;
+    if (duration === null && (key === "seven_day" || key === FABLE_WINDOW)) {
+      duration = 7 * 86400;
+    }
     windows.push({
       id: key, duration_seconds: duration, used_percent: usage,
       resets_at: pyGet(item, "resets_at", pyGet(item, "reset_at")),
@@ -913,12 +920,12 @@ export interface Store {
 // sources do; none of the ported ones sets it.
 /** experimental_claude_oauth's reading of /api/oauth/usage's answer `raw`,
  * taken at `now`: each window with a utilization, the 5-hour one and the
- * three 7-day ones. */
+ * four 7-day ones. */
 export function claudeOauthReading(raw: unknown, now: number): Reading {
   if (!isDict(raw)) return {};
   const windows: Dict[] = [];
-  for (const name of ["five_hour", "seven_day", "seven_day_opus",
-                      "seven_day_sonnet"]) {
+  for (const name of ["five_hour", "seven_day", FABLE_WINDOW,
+                      "seven_day_opus", "seven_day_sonnet"]) {
     const item = pyGet(raw, name, {});
     if (isDict(item) && pyGet(item, "utilization") !== null) {
       windows.push({ id: name,

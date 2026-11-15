@@ -192,6 +192,14 @@ E_WEEK = "🪫"         # weekly window consumed — a drained battery under
                       # width-table entry on any profile, no compensating
                       # pad.  That property is the reason it was chosen;
                       # a replacement for this slot needs it too.
+E_FABLE = "🦊"        # the weekly Fable window consumed, Claude Code's
+                      # `seven_day_overage_included`, on the 💳 row after
+                      # 🪫: the fox of the fables, a creature where 🔋 and
+                      # 🪫 are containers, since this window is not one of
+                      # the plan's pair.  Not 📖, which is the cache's
+                      # read share, nor 📜, which reads as a log.
+                      # U+1F98A, Emoji_Presentation=Yes, inside EAW_WIDE,
+                      # above the U+1F90C split: two columns everywhere.
 # The three scopes column 4 reports, widening left to right: what the turn
 # just answered consumed, what this session has consumed, what the account
 # has.  Each MARKS a figure rather than naming a metric, so each is emitted
@@ -511,6 +519,7 @@ F_MSG = "\033[38;2;255;255;255m"           # white, that row's text on
 # own, and the colour would have to be decoded before it could be read.
 F_LIM_SESS = F_GRN                         # the 🔋 5-hour row
 F_LIM_WEEK = F_RED                         # the 🪫 weekly row
+F_LIM_FABLE = F_PUR                        # the 🦊 Fable window, on 💳
 # Column 3's 📖 and 📝 rows, ONE colour for the pair: the cost line's
 # share_half paints these same two figures amber and a quantity keeps its
 # ink across the readouts as it keeps its glyph.  Not one hue per row as the
@@ -1324,8 +1333,9 @@ TAG_SCOPE = "tag"
 # of the label it is.  One renderer draws all three readouts, so one path
 # means the same everywhere.
 HIDE_GROUPS = {
-    "plan": ("five_hour", "week", "reset"),               # 🔋 🪫, and their 🔜
-                                                          #  on the 💳 label
+    "plan": ("five_hour", "week", "fable", "reset"),      # 🔋 🪫, 🦊 on the
+                                                          #  💳 label, and
+                                                          #  their 🔜 there
     "cost": ("cost",),                                    # 💰
     "tokens": ("io", "cache"),                            # 🧩 ▴ ▾, 🎯
     "context": ("size", "share"),                         # 🧠, and its ٪
@@ -1427,6 +1437,7 @@ TRUE_COLOURS = {
     "F_MSG": "\033[38;2;255;255;255m",
     "F_LIM_SESS": "\033[38;2;120;200;80m",
     "F_LIM_WEEK": "\033[38;2;255;90;90m",
+    "F_LIM_FABLE": "\033[38;2;200;130;255m",
     "F_SHARE": "\033[38;2;255;200;0m",
     "F_SUM": "\033[38;2;76;76;76m",
     "F_RULE": "\033[38;2;76;76;76m",

@@ -23,6 +23,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -127,6 +129,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -219,6 +223,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -311,6 +317,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -456,6 +464,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -601,6 +611,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -747,6 +759,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -894,6 +908,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -1041,6 +1057,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -1191,6 +1209,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -1307,6 +1327,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -1421,6 +1443,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -1550,6 +1574,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -1654,6 +1680,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -1780,6 +1808,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -1918,6 +1948,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -2064,6 +2096,8 @@
      "session": "s1"
     },
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -2154,6 +2188,8 @@
      "session": "s1"
     },
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -2200,6 +2236,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -2326,6 +2364,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -2453,6 +2493,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -2579,6 +2621,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -2739,6 +2783,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -2853,6 +2899,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -2967,6 +3015,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3086,6 +3136,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3200,6 +3252,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3348,6 +3402,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3501,6 +3557,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3615,6 +3673,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3750,6 +3810,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3846,6 +3908,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",
@@ -3980,6 +4044,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -4099,6 +4165,8 @@
     },
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -4197,6 +4265,8 @@
     },
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -4294,6 +4364,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -4394,6 +4466,8 @@
     },
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -4490,6 +4564,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -4586,6 +4662,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -4657,6 +4735,8 @@
     },
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -4753,6 +4833,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -4882,6 +4964,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -5004,6 +5088,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5126,6 +5212,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5246,6 +5334,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5415,6 +5505,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5547,6 +5639,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5682,6 +5776,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5786,6 +5882,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "15",
      "session_reset": "2026-08-16 02:30",
      "session_share": "",
@@ -5878,6 +5976,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "",
      "session_reset": "",
      "session_share": "",
@@ -5971,6 +6071,8 @@
     "commands": {},
     "context": null,
     "limits": {
+     "fable_pct": "",
+     "fable_reset": "",
      "session_pct": "41",
      "session_reset": "2026-08-16 04:00",
      "session_share": "",

@@ -233,7 +233,12 @@ def values():
             cr.NO_LIMITS._replace(session_pct="0.38", weekly_pct=""),
             cr.NO_LIMITS._replace(weekly_pct="abc",
                                   weekly_reset="2026-08-18 01:00"),
-            cr.NO_LIMITS._replace(session_share="5")]
+            cr.NO_LIMITS._replace(session_share="5"),
+            # The Fable window alone is no plan reading, and beside one
+            # changes nothing.
+            cr.NO_LIMITS._replace(fable_pct="5",
+                                  fable_reset="2026-08-18 01:00"),
+            cr.NO_LIMITS._replace(weekly_pct="63", fable_pct="5")]
     readings = [None, "text", {},
                 {"source": "cmd", "account_name": "me",
                  "period_start": 1786800000},

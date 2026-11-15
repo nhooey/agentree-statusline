@@ -68,6 +68,6 @@ op["/v1/organization/usage/completions?"]={"data":[{"results":[None]}],"has_more
 assert sources.openai_admin(0, 1, opener_for(op)) == {}
 # Private Claude's stable windows retain their known durations.
 os.environ["CLAUDE_OAUTH_ACCESS_TOKEN"]="x"
-c=sources.experimental_claude_oauth(opener_for({"/api/oauth/usage?":{"five_hour":{"utilization":1},"seven_day":{"utilization":2}}}))
-assert [x["duration_seconds"] for b in c["buckets"] for x in b["windows"]] == [18000.0, 604800.0]
+c=sources.experimental_claude_oauth(opener_for({"/api/oauth/usage?":{"five_hour":{"utilization":1},"seven_day":{"utilization":2},"seven_day_overage_included":{"utilization":3}}}))
+assert [(x["id"], x["duration_seconds"]) for b in c["buckets"] for x in b["windows"]] == [("five_hour", 18000.0), ("seven_day", 604800.0), ("seven_day_overage_included", 604800.0)]
 print("ok HTTP sources")
