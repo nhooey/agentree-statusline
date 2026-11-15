@@ -432,18 +432,20 @@ test("a waiting agent's progress update stays drawn", () => {
 /** The tree under 🧵 main over corpus case `id`'s agents with open
  * background tasks (withBackground: a shell and a Monitor of the main
  * thread's, and each agent's usage's), `edit` changing the document
- * first, as plain lines at 200 columns. */
+ * first, as plain lines at 200 columns, a finished row kept `linger`
+ * seconds. */
 function bgTree(id: string, over: Partial<TreeInput> = {},
   hide: string[] = [], turnStart: number | null = null,
-  edit: (doc: Dict) => Dict = (d) => d): string[] {
+  edit: (doc: Dict) => Dict = (d) => d, linger = 0): string[] {
   const doc = edit(withBackground(corpusAgents(id, ""), NOW));
   const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
   const rows = treeRows(ST, { session: null, main: blank("main"),
     turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
     mainProgress: "", turnPhase: "🟢", agents: {
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart,
-      mainBackground: doc.main_background as BgTask[] }, cap: 10, ...over },
-  hide);
+      mainBackground: doc.main_background as BgTask[],
+      mainEnded: (doc.main_background_ended ?? []) as BgTask[], linger },
+    cap: 10, ...over }, hide);
   const keys = fixedKeys(ST, 200, hide);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, hide)))
     .trimEnd());
@@ -467,6 +469,70 @@ test("each open shell and Monitor is a leaf under the thread that " +
   const done = bgTree("01-mixed@220", {}, [], NOW - 3600);
   assert.match(done.at(-2)!, /📡🟢 Watch PR #38/u);
   assert.match(done.at(-1)!, /✅ 4 done/u);
+});
+
+/** The tree over 01-mixed's agents, Elm's last record `ago` seconds
+ * before NOW, a finished row kept `linger` seconds, at most `cap` agent
+ * rows, the turn opened an hour before NOW. */
+function lingerTree(ago: number, linger: number, cap = 10): string[] {
+  const doc = corpusAgents("01-mixed@220", "");
+  const tasks = (doc.tasks as TreeTask[]).map((t) => t.task.id === "e1"
+    ? { ...t, usage: { ...t.usage, last_seen: NOW - ago,
+      last_epoch: NOW - ago } } : t);
+  const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
+  const rows = treeRows(ST, { session: null, main: blank("main"),
+    turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
+    mainProgress: "", turnPhase: "🟢", agents: { tasks, limits: LIMITS,
+      now: NOW, turnStart: NOW - 3600, linger }, cap }, []);
+  const keys = fixedKeys(ST, 200, []);
+  return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, [])))
+    .trimEnd());
+}
+
+test("an agent that ended under finished-linger ago keeps its own row, " +
+  "ended, and goes into ✅ N done once it has lingered", () => {
+  const kept = lingerTree(2, 5);
+  assert.ok(kept.some((l) => /^├─ \S+⚫ Elm/u.test(l)), kept.join("\n"));
+  assert.match(kept.at(-1)!, /✅ 3 done/u);
+  // Past it, Elm is in ✅ N done, as with no linger at all.
+  for (const lines of [lingerTree(6, 5), lingerTree(2, 0)]) {
+    assert.ok(!lines.some((l) => l.includes("Elm")), lines.join("\n"));
+    assert.match(lines.at(-1)!, /✅ 4 done/u);
+  }
+});
+
+test("a lingering agent row counts toward subagent-rows as a live one " +
+  "does", () => {
+  const more = (lines: string[]): number => Number(lines.find((l) =>
+    l.includes("more"))?.match(/… (\d+) more/u)?.[1] ?? 0);
+  assert.equal(more(lingerTree(2, 5, 4)), more(lingerTree(2, 0, 4)) + 1);
+});
+
+test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
+  "stopped, for finished-linger, and then goes", () => {
+  const gone = (ago: number) => (d: Dict): Dict => ({ ...d,
+    main_background: [(d.main_background as BgTask[])[1]],
+    main_background_ended: [{ ...(d.main_background as BgTask[])[0],
+      end: NOW - ago }] });
+  const kept = bgTree("02-parked@220", {}, [], null, gone(2), 5);
+  // In the order they opened: the Monitor 25m ago, the shell 6.2m ago.
+  assert.match(kept.at(-2)!, /^├─ 📡🟢 Watch PR #38 for comments/u);
+  assert.match(kept.at(-1)!, /^╰─ 💻⚫ Run the plugin tests +⌛6\.2m$/u);
+  for (const lines of [bgTree("02-parked@220", {}, [], null, gone(6), 5),
+    bgTree("02-parked@220", {}, [], null, gone(2), 0)]) {
+    assert.ok(!lines.some((l) => l.includes("Run the plugin tests")));
+    assert.match(lines.at(-1)!, /^╰─ 📡🟢 Watch PR #38/u);
+  }
+  // An agent's own closed shell lingers under it the same way.
+  const poppy = bgTree("02-parked@220", {}, [], null, (d) => ({ ...d,
+    tasks: (d.tasks as TreeTask[]).map((t) => t.bgTasks?.length === 2
+      ? { ...t, bgTasks: [t.bgTasks[0]],
+        bgEnded: [{ ...t.bgTasks[1], end: NOW - 1 }] } : t) }), 5);
+  const at = poppy.findIndex((l) => l.includes("Poppy"));
+  assert.match(poppy[at + 2], /^│  ╰─ 💻⚫ Build the docs site/u);
+  const shown = bgText(ST, { id: "x", kind: "bash", label: "x",
+    start: NOW - 60, end: NOW - 1 }, "Build", NOW);
+  assert.equal(shown, "💻 shell · ⚫ ended · ⌛ 59s · Build");
 });
 
 test("a shell with no label draws its kind, and one with no start no ⌛",

@@ -250,8 +250,10 @@ binary, then the changelog" --cols 200`):
   🟢, then the call's `description`, else the first line of its
   `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
   has run. It counts against no cap and does not fold; a click on it
-  shows it as a toast (see the clicks above), and it leaves once the
-  thread hears its end ([State](#state)). An opened thread leaves its 💻
+  shows it as a toast (see the clicks above). Once the thread hears its
+  end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at
+  how long it ran, for `finished-linger` seconds after the record that
+  closed it (5 as the mod ships), and then leaves. An opened thread leaves its 💻
   📡 counts to these rows; a folded one hides them and counts them. With
   the panel corpus's `02-parked@220`,
   whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
@@ -276,8 +278,11 @@ binary, then the changelog" --cols 200`):
   ```
 - **The grouped rows.** `✅ N done`, last under 🧵 while a turn runs,
   sums the subagents that ended since the turn opened; its 🛫 column is ✅ and how long ago
-  the last one ended. Past `subagent-rows` live subagent rows, running or
-  paused (6 as the mod ships), the later siblings fold into their parent's `… N more`,
+  the last one ended. A subagent that ends keeps its own row where it
+  stood, ⚫ and its figures as they ended, for `finished-linger` seconds
+  after its last record (5 as the mod ships), and only then goes into
+  `✅ N done`. Past `subagent-rows` live subagent rows, running, paused or
+  lingering (6 as the mod ships), the later siblings fold into their parent's `… N more`,
   which sums them and their subagents, 🏃 and how many of them run in its
   🛫 column; every row drawn keeps its parents. A grouped row's 🎯 is
   weighted by each agent's ▴, its ⌛ is the agents' ⌛ summed.

@@ -83,6 +83,9 @@ export type BandOpts = {
   /** The most subagent rows the tree draws, `subagent-rows`;
    * SUBAGENT_ROWS where absent. */
   readonly cap?: number;
+  /** How many seconds the tree keeps a row that finished drawn,
+   * `finished-linger`; none where absent. */
+  readonly linger?: number;
   /** The band's tree's folds, by key (band_tree.ts); each row's default
    * where absent. */
   readonly folds?: Folds;
@@ -527,7 +530,9 @@ export function treeOf(st: Settings, fig: Dict, rows: BandRows,
     agents: shown ? { tasks: (doc.tasks ?? []) as TreeTask[],
       limits: decodeLimits(fig.limits), now,
       turnStart: running ? tr.turn_s || null : null,
-      mainBackground: (doc.main_background ?? []) as BgTask[] } : null,
+      mainBackground: (doc.main_background ?? []) as BgTask[],
+      mainEnded: (doc.main_background_ended ?? []) as BgTask[],
+      linger: opts.linger ?? 0 } : null,
     cap: opts.cap ?? SUBAGENT_ROWS,
     folds: opts.folds,
     repo: typeof fig.github === "string" ? fig.github : null,

@@ -817,15 +817,27 @@ export const MONITOR_EXPIRED = "[Monitor expired";
  * `open` does not hold is a call's. */
 export type BgInfo = Map<string, [string, number | null]>;
 
-/** An open background task as the band's tree draws it: its task id, its
+/** A background task as the band's tree draws it: its task id, its
  * kind, "bash" or "monitor", its label and the epoch it opened, null
- * where that is not known. */
+ * where that is not known; and for one that has closed, the epoch of the
+ * record that closed it. */
 export type BgTask = {
   readonly id: string;
   readonly kind: string;
   readonly label: string;
   readonly start: number | null;
+  readonly end?: number;
 };
+
+/** The background tasks a thread has heard the end of, by task id, each
+ * with its `end`, the latest BG_ENDED_KEEP of them, for the band's tree
+ * to keep a closed task's row drawn a while (`finished-linger`).  The
+ * mod's alone: the Python keeps none, and no save writes them, so a fold
+ * read back has none. */
+export type BgEnded = Map<string, BgTask>;
+
+/** How many closed background tasks a thread's BgEnded keeps. */
+export const BG_ENDED_KEEP = 8;
 
 /** The most characters of a call's text a background task keeps as its
  * label. */
@@ -855,6 +867,11 @@ export function backgroundTasks(open: ReadonlyMap<string, string>,
     const got = info.get(id);
     return { id, kind, label: got?.[0] ?? "", start: got?.[1] ?? null };
   });
+}
+
+/** The closed tasks of `ended`, in the order they closed. */
+export function endedTasks(ended: BgEnded | undefined): BgTask[] {
+  return [...(ended ?? new Map<string, BgTask>()).values()];
 }
 
 /** `info` as a save writes it: [key, label, start] for each entry. */
@@ -887,9 +904,10 @@ export function copyBgInfo(info: BgInfo): BgInfo {
  * thread ending it itself: TaskStop's result, or TaskOutput reading it
  * finished.  Its label is its call's (backgroundLabel), kept from the
  * Bash or Monitor call until the call's result, which opens the task or
- * lets the call go. */
+ * lets the call go.  Where `ended` is given, an open task that closes on
+ * a stamped record goes into it with that stamp as its end (BgEnded). */
 export function scanBackground(r: Rec, open: Map<string, string>,
-  info: BgInfo | null = null): void {
+  info: BgInfo | null = null, ended: BgEnded | null = null): void {
   const content = pyDig(r, "message", "content");
   const calls: string[] = [];
   if (info && Array.isArray(content)) {
@@ -916,6 +934,16 @@ export function scanBackground(r: Rec, open: Map<string, string>,
     open.set(id, kind);
   };
   const closed = (id: string): void => {
+    const end = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
+    if (ended && open.has(id) && end !== null) {
+      const got = info?.get(id);
+      ended.delete(id);
+      ended.set(id, { id, kind: open.get(id)!, label: got?.[0] ?? "",
+        start: got?.[1] ?? null, end });
+      for (const k of [...ended.keys()].slice(0, -BG_ENDED_KEEP)) {
+        ended.delete(k);
+      }
+    }
     open.delete(id);
     info?.delete(id);
   };
@@ -1708,6 +1736,8 @@ export interface AgentFold {
   blocks: number;
   readonly background: Map<string, string>;
   readonly bgInfo: BgInfo;
+  /** scanBackground's closed tasks; never saved. */
+  readonly bgEnded?: BgEnded;
   effort: unknown;
   readonly keys: Set<unknown>;
 }
@@ -1717,7 +1747,8 @@ export function newAgentFold(): AgentFold {
     work: [], pending: new Map(), tools: [], waiting: [], recs: [],
     wrote: new Set(), added: 0, removed: 0, pos: 0, compactions: 0,
     lastSeen: null, apiError: false, cwd: "", blocks: 0,
-    background: new Map(), bgInfo: new Map(), effort: "", keys: new Set() };
+    background: new Map(), bgInfo: new Map(), bgEnded: new Map(),
+    effort: "", keys: new Set() };
 }
 
 /** A copy of `fold` that folds on apart from it. */
@@ -1729,7 +1760,7 @@ export function copyAgentFold(fold: AgentFold): AgentFold {
   tools: fold.tools.slice(), waiting: fold.waiting.slice(),
   recs: fold.recs.slice(), wrote: new Set(fold.wrote),
   background: new Map(fold.background), bgInfo: copyBgInfo(fold.bgInfo),
-  keys: new Set(fold.keys) };
+  bgEnded: new Map(fold.bgEnded ?? []), keys: new Set(fold.keys) };
 }
 
 /** Fold `data`, the file's bytes from `fold.pos` on, into `fold`.  Short
@@ -1772,7 +1803,7 @@ export function foldAgentRecord(fold: AgentFold, length: number,
   liveEta(r, fold.etaState);
   agentSpan(r, fold.spanState, fold.work);
   scanToolSpans(r, fold.pending, fold.tools, fold.waiting);
-  scanBackground(r, fold.background, fold.bgInfo);
+  scanBackground(r, fold.background, fold.bgInfo, fold.bgEnded ?? null);
   const [a, d] = diffLines(r, fold.wrote);
   fold.added += a;
   fold.removed += d;
@@ -2185,6 +2216,8 @@ export interface TranscriptFold {
   background: Map<string, string>;
   /** scanBackground's labels and starts, for the band's tree. */
   bgInfo: BgInfo;
+  /** scanBackground's closed tasks; never saved. */
+  bgEnded?: BgEnded;
   idleAt: number;
   lastSeen: number;
   /** The turn opened last, for its promptId alone. */
@@ -2211,7 +2244,7 @@ export function newTranscriptFold(): TranscriptFold {
     asstText: "", spans: [], tools: [], blocked: [], pending: new Map(),
     first: null, openAt: null, prev: null, etaState: newEtaState(),
     queued: 0, compactions: 0, background: new Map(), bgInfo: new Map(),
-    idleAt: 0.0,
+    bgEnded: new Map(), idleAt: 0.0,
     lastSeen: 0.0, opened: { pid: "", tidx: null }, wrote: new Set(),
     added: 0, removed: 0, ends: new Map(), gate: newTurnGate(), title: "",
     agentName: "", color: "" };
@@ -2235,7 +2268,7 @@ export function copyTranscriptFold(f: TranscriptFold): TranscriptFold {
     etaState: [f.etaState[0].slice(), f.etaState[1], f.etaState[2],
       f.etaState[3]],
     background: new Map(f.background), bgInfo: copyBgInfo(f.bgInfo),
-    opened: { ...f.opened },
+    bgEnded: new Map(f.bgEnded ?? []), opened: { ...f.opened },
     wrote: new Set(f.wrote), ends: new Map(f.ends),
     gate: [f.gate[0], f.gate[1], f.gate[2], f.gate[3]] };
 }
@@ -2414,7 +2447,7 @@ function foldClock(f: TranscriptFold, r: Rec, opens: boolean): void {
   _stampTurnId(f.opened, r);
   if (pyGet(r, "isSidechain") !== true) {
     liveEta(r, f.etaState, opens);
-    scanBackground(r, f.background, f.bgInfo);
+    scanBackground(r, f.background, f.bgInfo, f.bgEnded ?? null);
   }
   const t = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
   if (t === null) return;

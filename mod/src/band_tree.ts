@@ -14,7 +14,9 @@
 // Monitors (📡), each a leaf row with its call's label and how long it has
 // run, in the order they opened; they count against no cap.  Under 🧵
 // main, after those, `✅ N done` sums the subagents that finished in the
-// turn.  Past the cap, the later siblings under one parent are summed on
+// turn.  A row that finishes, an agent that ends or a shell or Monitor
+// that closes, stays where it stood, ⚫, for `finished-linger` seconds
+// after it finished, and only then goes into `✅ N done` or goes.  Past the cap, the later siblings under one parent are summed on
 // that parent's `… N more`, and every shown row's parents stay.  A row
 // with children draws ⊟ in its tree line, or ⊞ where it is folded; a
 // folded thread counts every agent hidden under it with 👶🏻 and its own
@@ -78,6 +80,14 @@ export type TreeAgents = {
   readonly now: number;
   readonly turnStart: number | null;
   readonly mainBackground?: readonly BgTask[];
+  /** The main thread's background tasks that closed, each with its end;
+   * each agent's are its task's `bgEnded`. */
+  readonly mainEnded?: readonly BgTask[];
+  /** How many seconds after it finished a row stays drawn as it was
+   * (`finished-linger`): an agent that ended, before it goes into `✅ N
+   * done`, and a shell or Monitor that closed, before it goes.  None where
+   * absent or 0. */
+  readonly linger?: number;
   /** The agents an earlier receipt left out while they were still at
    * work, by id: the stamped tree owes each its row once it has ended
    * (stampedSplit). */
@@ -206,35 +216,63 @@ function ageCell(st: Settings, age: number): Span[] {
     magDim(age, MAG_DUR_S))];
 }
 
-/** What a press on an open background task's row shows, one line: its
- * glyph and kind, 🟢 running, ⌛ how long it has run where its start is
- * known, and `label`, its call's description, else its command's first
- * line (backgroundLabel). */
+/** How long background task `b` has run at `now`: to its end, for one
+ * that has closed; null where its start is not known. */
+function bgAge(b: BgTask, now: number): number | null {
+  return b.start === null ? null
+    : Math.max(0, (b.end ?? now) - b.start);
+}
+
+/** What a press on a background task's row shows, one line: its glyph
+ * and kind, 🟢 running or ⚫ ended, ⌛ how long it has run, or ran, where
+ * its start is known, and `label`, its call's description, else its
+ * command's first line (backgroundLabel). */
 export function bgText(st: Settings, b: BgTask, label: string,
   now: number): string {
   const shell = b.kind === "bash";
+  const age = bgAge(b, now);
   return [shell ? E_MODE_SHELL + " shell" : E_MODE_MONITOR + " Monitor",
-    E_PHASE_RUN + " running",
-    ...(b.start === null ? []
-      : [E_IDLE + " " + durFmt(st, Math.max(0, now - b.start)).trim()]),
+    b.end === undefined ? E_PHASE_RUN + " running" : E_PHASE_END + " ended",
+    ...(age === null ? [] : [E_IDLE + " " + durFmt(st, age).trim()]),
     label].join(" · ");
 }
 
-/** The row of an open background task: 💻 for a shell, 📡 for a Monitor,
- * with 🟢 as every running thread has, then its call's label, or else
- * its kind; ⌛ how long it has run, where its start is known.  A leaf
- * whose label shows bgText as a toast: it has no transcript to switch to,
- * and no call opens one task's own view. */
+/** The row of a background task: 💻 for a shell, 📡 for a Monitor, with
+ * 🟢 as every running thread has, or ⚫ once it has closed, then its
+ * call's label, or else its kind; ⌛ how long it has run, or ran, where
+ * its start is known.  A leaf whose label shows bgText as a toast: it has
+ * no transcript to switch to, and no call opens one task's own view. */
 function bgNode(st: Settings, b: BgTask, now: number): Node {
   const shell = b.kind === "bash";
   const label = squash(b.label).trim() || (shell ? "shell" : "monitor");
+  const age = bgAge(b, now);
   return { folded: false, kids: [], row: { scope: "agent",
     label: pressingAll([headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
-      E_PHASE_RUN),
+      b.end === undefined ? E_PHASE_RUN : E_PHASE_END),
     { path: "name.label", spans: [span(label)], drop: 0 }],
     { kind: "task", row: b.id, text: bgText(st, b, label, now) }),
-    cells: b.start === null ? {}
-      : { clock: ageCell(st, Math.max(0, now - b.start)) } } };
+    cells: age === null ? {} : { clock: ageCell(st, age) } } };
+}
+
+/** Whether a row that finished at `end` is still drawn at `now`, `linger`
+ * seconds after it finished: never where `end` is not known. */
+export function lingers(end: number | null | undefined, now: number,
+  linger: number): boolean {
+  return linger > 0 && typeof end === "number" && now - end < linger;
+}
+
+/** The background rows a thread draws at `now`: its open tasks `open`,
+ * and those of its closed tasks `gone` that still linger (lingers), each
+ * where it stood, in the order they opened. */
+export function bgRows(open: readonly BgTask[], gone: readonly BgTask[],
+  now: number, linger: number): readonly BgTask[] {
+  const ids = new Set(open.map((b) => b.id));
+  const still = gone.filter((b) => !ids.has(b.id) &&
+    lingers(b.end, now, linger));
+  if (!still.length) return open;
+  const at = (b: BgTask): number => b.start ?? Infinity;
+  return [...open, ...still].sort((x, y) =>
+    at(x) === at(y) ? 0 : at(x) < at(y) ? -1 : 1);
 }
 
 /** A thread's head, its kind glyph and its state circle in two columns,
@@ -385,10 +423,13 @@ function ended(t: Dict, u: Dict, busy: ReadonlySet<string>): boolean {
 /** The subagents as the tree's nodes under 🧵 main: each live agent under
  * the agent that started it (treeShape, which steps over a finished
  * ancestor), in the order they started; an ended agent only where a live
- * one hangs under it.  At most `cap` agent rows, in the tree's order: the
- * siblings past it are summed on their parent's `… N more`.  After each
- * thread's agents, its open shells and Monitors (bgNode), past no cap.
- * Then `✅ N done`, the agents that ended since the turn opened. */
+ * one hangs under it, or for `a.linger` seconds after it ended, as it
+ * stood.  At most `cap` agent rows, in the tree's order, a lingering one
+ * counted as a live one is: the siblings past it are summed on their
+ * parent's `… N more`.  After each thread's agents, its open shells and
+ * Monitors (bgNode), and the closed ones that linger, past no cap.  Then
+ * `✅ N done`, the agents that ended since the turn opened and linger no
+ * more. */
 function agentNodes(st: Settings, a: TreeAgents, cap: number,
   folds: Folds): Node[] {
   const prepared = preparedOf(a.tasks);
@@ -410,11 +451,19 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     const t = byId.get(id)!;
     return ended(t.task, t.usage, busy);
   };
+  const linger = a.linger ?? 0;
+  // When an agent ended: its last record.
+  const endOf = (id: string): number | null => {
+    const u = byId.get(id)!.usage;
+    return (u.last_seen ?? u.last_epoch) as number | null;
+  };
+  // Drawn as a live one is: at work, ended under `linger` seconds ago, or
+  // over a live agent.
   const liveMemo = new Map<string, boolean>();
   const live = (id: string): boolean => {
     if (!liveMemo.has(id)) {
       liveMemo.set(id, false);
-      liveMemo.set(id, !isEnded(id) ||
+      liveMemo.set(id, !isEnded(id) || lingers(endOf(id), a.now, linger) ||
         (kidsOf.get(id) ?? []).some((k) => live(k)));
     }
     return liveMemo.get(id)!;
@@ -426,10 +475,14 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
   // A thread's open shells and Monitors, the main thread's under "".
   const bgOf = (id: string): readonly BgTask[] => id === ""
     ? a.mainBackground ?? [] : byId.get(id)!.bgTasks ?? [];
+  // Its rows: the open ones and the closed ones that linger.
+  const bgDrawn = (id: string): readonly BgTask[] => bgRows(bgOf(id),
+    id === "" ? a.mainEnded ?? [] : byId.get(id)!.bgEnded ?? [], a.now,
+    linger);
   const bgNodes = (id: string): Node[] =>
-    bgOf(id).map((b) => bgNode(st, b, a.now));
+    bgDrawn(id).map((b) => bgNode(st, b, a.now));
   const shut = (id: string): boolean =>
-    (shownKids(id).length > 0 || bgOf(id).length > 0) &&
+    (shownKids(id).length > 0 || bgDrawn(id).length > 0) &&
     foldShut(folds, id, false);
   const agentRow = (id: string): Row => {
     const t = byId.get(id)!;
@@ -478,8 +531,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
   const nodes = [...place(""), ...bgNodes("")];
   if (a.turnStart !== null) {
     const done = [...byId.keys()].filter((id) => !live(id) && (() => {
-      const u = byId.get(id)!.usage;
-      const end = (u.last_seen ?? u.last_epoch) as number | null;
+      const end = endOf(id);
       return end !== null && end >= a.turnStart!;
     })());
     if (done.length) {

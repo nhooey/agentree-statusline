@@ -382,6 +382,15 @@ paused ones under 🧵 then, and leaves the ones that ended to the turn's
 receipt ([Between turns](layout.md#between-turns)). `"running"` draws
 them only while a turn runs.
 
+`finished-linger` is how many seconds a row of the band's tree that
+finished stays drawn where it stood, ⚫ and its figures as they ended: a
+subagent that ended, before it goes into `✅ N done`, and a background
+shell or Monitor that closed, before it goes. It counts from when the row
+finished, the agent's last record or the record that closed the task, so
+a reload does not start it again. The defaults say 5; 0 moves a row at
+once. A lingering subagent counts toward `subagent-rows` as a live one
+does ([The subagent rows](layout.md#the-subagent-rows)).
+
 `--show-config` prints the merged options, each with the layer it came from
 and the layers' files, and the warnings, and exits. It reads no stdin, so
 its walk starts in the directory it runs in:

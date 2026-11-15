@@ -10,7 +10,7 @@
 // Pure: the reads are the hooks' (hooks/subagents.ts), and `now` comes in.
 import {
   W_CACHE_READ, W_CACHE_WRITE, _usd, closeAgentSpan, ETA_LINE,
-  backgroundTasks, openToolSpans, threadClock,
+  backgroundTasks, endedTasks, openToolSpans, threadClock,
 } from "./claude_records.ts";
 import type { AgentFold, BgTask, Span } from "./claude_records.ts";
 import { _naiveTimestamp, _windowStarts } from "./claude_calib.ts";
@@ -188,7 +188,9 @@ export function inboxTargets(
 
 /** One prepared task, its latest progress update and the background
  * shells and Monitors it has open, in the order they opened (none where
- * absent), as the band's document carries them (`agents.tasks`). */
+ * absent), and the ones it last closed, each with its end, in the order
+ * they closed (none where absent), as the band's document carries them
+ * (`agents.tasks`). */
 export type TreeTask = {
   readonly task: Dict;
   readonly usage: Dict;
@@ -196,6 +198,7 @@ export type TreeTask = {
   readonly shares: { sess: number | null; week: number | null };
   readonly progress: string;
   readonly bgTasks?: readonly BgTask[];
+  readonly bgEnded?: readonly BgTask[];
 };
 
 /** The task the renderer reads, from the agent list and the fold: its id,
@@ -255,10 +258,11 @@ export function treeTasks(agents: readonly AgentInput[], now: number,
     if (!meta.parentAgentId && a.listed?.parentId) {
       meta.parentAgentId = a.listed.parentId;
     }
+    const gone = endedTasks(a.fold?.bgEnded);
     return { task, usage: filled, meta,
       shares: agentShares(filled, calib, snap), progress: a.progress,
       bgTasks: a.fold ? backgroundTasks(a.fold.background, a.fold.bgInfo)
-        : [] };
+        : [], ...gone.length ? { bgEnded: gone } : {} };
   });
 }
 
