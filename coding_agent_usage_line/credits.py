@@ -1,7 +1,7 @@
 """The account's credits against the `credits` option's conditions.
 
 A condition is one map of `field`, `op`, `value` and `unit`
-(agents/plans/credit-balances.md, "The configuration"):
+(agents/plans/open/credit-balances.md, "The configuration"):
 
     {"field": "balance", "op": "<=", "value": 20, "unit": "usd"}
 

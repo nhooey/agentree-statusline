@@ -1,3 +1,9 @@
+---
+title: Clickable rows: from a figure to its place in the transcript
+state: implemented
+kind: end-state
+---
+
 # Clickable rows: from a figure to its place in the transcript
 
 Built, every step, 2026-10-21; step 1 tried live in part, the agent
@@ -140,4 +146,4 @@ Step 1 decides whether steps 2 and 3 go ahead as written.
 `mod/hooks/register.tsx` (the row drawing, `line()`, the `UserMessage`
 hooks, the receipt stamp), `mod/src/agent_message.ts`, `mod/mod-tests/`,
 `docs/layout.md`. `register.tsx` is rewritten by the configuration plan's
-step 6 (every `CONFIG.x`); see [the schedule](../_schedule.md).
+step 6 (every `CONFIG.x`); see [the schedule](../open/build-schedule.md).

@@ -1,3 +1,9 @@
+---
+title: Colours: every default on the 256-colour palette
+state: implemented
+kind: end-state
+---
+
 # Colours: every default on the 256-colour palette
 
 Asked 2026-10-20: "ensure that the default colours snap to the 256-colour
@@ -74,4 +80,4 @@ set looks the same in both.
 `spec/layout.jsonc`, `tools/gen-spec.py`, the generated `spec.py` and
 `spec.ts`, every fixture and golden carrying colour escapes, `docs/`.
 Step 1 regenerates fixtures broadly, so it runs when no other node is
-regenerating them; see [the schedule](../_schedule.md).
+regenerating them; see [the schedule](../open/build-schedule.md).

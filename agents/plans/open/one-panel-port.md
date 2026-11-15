@@ -1,6 +1,12 @@
+---
+title: One port: Claude's figures drawn by the mod alone
+state: approved
+kind: end-state
+---
+
 # One port: Claude's figures drawn by the mod alone
 
-Approved to build. Its steps are `OP1` … `OP8` in [the schedule](_schedule.md).
+Approved to build. Its steps are `OP1` … `OP8` in [the schedule](build-schedule.md).
 Its decisions are taken (see [Decided](#decided)).
 
 ## Why

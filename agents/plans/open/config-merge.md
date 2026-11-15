@@ -1,8 +1,14 @@
+---
+title: Configuration: one set of options, merged from files and flags
+state: approved
+kind: end-state
+---
+
 # Configuration: one set of options, merged from files and flags
 
 Being built: steps 1 to 6 are done (each has its Status), so both ports
 read the files and draw from them; steps 7 and 8 are the user's, by hand.
-[Options](../../docs/options.md) is the reference for the flags and the
+[Options](../../../docs/options.md) is the reference for the flags and the
 files. This document collects the design as it is decided.
 
 ## Why

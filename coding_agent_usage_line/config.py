@@ -1,5 +1,5 @@
 """The configuration files: where they are, what they say, and what is
-wrong with them (agents/plans/config-merge.md, "Files").
+wrong with them (agents/plans/open/config-merge.md, "Files").
 
 Three files, highest first:
 

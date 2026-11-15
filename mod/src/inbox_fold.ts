@@ -1,7 +1,7 @@
 // The agent panel's inbox counts, read on from a saved fold: inbox_fold.py's
 // port, written byte for byte as it writes them.  spec/state.jsonc's
 // "inbox-fold" row names the directory and the format;
-// agents/plans/_implemented/saved-running-totals.md has the design, and
+// agents/plans/closed/saved-running-totals.md has the design, and
 // inbox_fold.py's docstring the text:
 //
 //   {"format":N,"seq":S,"files":[[PATH,POS,MTIME,TAIL,SENDS,GOT],...]}

@@ -1,6 +1,12 @@
+---
+title: Receipts for a subagent's run and a typed /compact
+state: approved
+kind: end-state
+---
+
 # Receipts for a subagent's run and a typed /compact
 
-Approved to build. Its steps are `AR1` … `AR5` in [the schedule](_schedule.md).
+Approved to build. Its steps are `AR1` … `AR5` in [the schedule](build-schedule.md).
 
 ## Why
 

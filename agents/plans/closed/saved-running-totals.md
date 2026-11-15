@@ -1,3 +1,9 @@
+---
+title: Saved running totals: fold the transcript once
+state: implemented
+kind: end-state
+---
+
 # Saved running totals: fold the transcript once
 
 Built: every step, and the inbox (Decided 5), landed by 2026-10-21. Each
