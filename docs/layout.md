@@ -211,11 +211,12 @@ binary, then the changelog" --cols 200`):
   waiting, ⚫ between turns) and their name, and an agent its
   [subagent row's](#the-subagent-rows) head and name, with only its own
   counts before the name and no blank slots, since depth already moves
-  each name. A working or waiting
-  thread's latest progress update follows its name, dim, cut with `…`
-  where the label ends: the first line of the last text the thread wrote
-  between its tool calls, an ETA report left out. The hide path
-  `chat.progress` hides it.
+  each name. A thread's latest text follows its name, dim, cut with `…`
+  where the label ends: the first line of the last text the thread wrote,
+  an ETA report left out, so a progress update while it works and its
+  final answer once it has ended. The hide path `chat.progress` hides it.
+  🎤's name is followed the same way by the prompt typed last, hidden by
+  `chat.prompt`.
 - **Waiting agents.** An agent that has ended its turn to wait on its own
   shell or Monitor, or that Claude Code otherwise holds, is `waiting` in
   `$.agent.list()` and ◯ waiting in Claude Code's panel. Its row is 🟡
@@ -335,11 +336,11 @@ starts, so each mark sits beside the model it names, at one column on
 every row, and 🧵's 📨 stands to its left. An agent row's label is drawn
 flush left.
 
-- **🎤**, the turn, its mark alone, and in the tree its circle and
-  `turn`. The turn tags tie it to the prompt (🔻🔖) and the receipt
+- **🎤**, the turn, its mark alone, and in the tree its circle, `turn`
+  and the prompt typed last. The turn tags tie it to the prompt (🔻🔖) and the receipt
   (🔺🔖).
-- **🧵**, the main thread, and in the tree its circle, `main` and its
-  progress update. While messages wait for its next turn (typed
+- **🧵**, the main thread, and in the tree its circle, `main` and the
+  first line of the last text it wrote. While messages wait for its next turn (typed
   while it works, an agent's SendMessage, a task notification), 📨 and
   how many before the mark, `📨3 🧵`, and in the tree after its circle,
   as an agent row's [📨](#inbox) counts its own. The receipt's 🧵 row
@@ -473,7 +474,7 @@ which take the paths in the option `hide`, from the
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main` (the 🧵 row), `session`, `agent`, and `tag` for the turn tag lines' 🔋 and 🪫 (`tag.plan.five_hour`, `tag.plan.week`; [The turn tags](#the-turn-tags)) |
-| group | `plan` (🔋 🪫 🔜), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest progress update in the tree, on 🧵 and agent rows), `workspace` (📦 🌿 📁 🔀 🎨), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
+| group | `plan` (🔋 🪫 🔜), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
 
 ```
 --hide account              the 💳 row
@@ -481,7 +482,7 @@ which take the paths in the option `hide`, from the
 --hide turn.time.eta        ⛳ on the 🎤 row only
 --hide account.workspace    📦 🌿 📁 🔀 🎨 on the 💳 row
 --hide '*.state.rate'       🛫 everywhere
---hide '*.chat.progress'    every thread's progress update in the tree
+--hide '*.chat.progress'    every thread's latest text in the tree
 --hide tag.plan            🔋 🪫 and 💳 on the turn tag lines
 ```
 

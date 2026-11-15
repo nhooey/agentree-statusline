@@ -257,14 +257,23 @@ test("✅ N done sums the agents that ended since the turn opened, under " +
   assert.ok(!tree("01-mixed@220").some((l) => l.includes("done")));
 });
 
-test("the progress update is drawn for a working or waiting thread " +
-  "alone, and chat.progress hides it", () => {
+test("each thread's latest text follows its name, working or ended, and " +
+  "chat.progress hides it", () => {
   assert.ok(tree("01-mixed@220").some((l) =>
     /Marigold  Running the suite/u.test(l)));
   assert.ok(!tree("01-mixed@220", {}, ["*.chat.progress"]).some((l) =>
     l.includes("Running the suite") || l.includes("Checking the binary")));
-  assert.ok(!tree("01-mixed@220", { mainPhase: "⚫" }).some((l) =>
-    l.includes("Checking the binary")));
+  assert.ok(tree("01-mixed@220", { mainPhase: "⚫" }).some((l) =>
+    /🧵⚫ main  Checking the binary/u.test(l)));
+});
+
+test("🎤 draws the prompt typed last after its name, and chat.prompt " +
+  "hides it", () => {
+  const over = { agents: null, turnPrompt: "Draw the\n  prompt" };
+  assert.match(tree("03-tree@220", over)[2],
+    /^   ╰─ 🎤🟢 turn  Draw the¶ prompt$/u);
+  assert.match(tree("03-tree@220", over, ["*.chat.prompt"])[2],
+    /^   ╰─ 🎤🟢 turn$/u);
 });
 
 test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +

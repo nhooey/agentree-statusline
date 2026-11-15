@@ -50,22 +50,19 @@ export async function agentsDoc($: $, transcript: string, tr: Transcript,
     const path = pathOf.get(id) ?? ''
     const fold = path ? folds.get(path) ?? null : null
     const listedAgent = byId.get(id) ?? null
-    const live = listedAgent !== null &&
-      !['failed', 'killed'].includes(listedAgent.status ?? '')
     inputs.push({
       id, listed: listedAgent, fold,
       meta: path ? await sidecarOf($, path) : null,
       inbox: 0,
       branch: fold?.cwd ? await branchApart($, fold.cwd, sessionRoot) : '',
-      // Drawn only for a thread that works or waits, which the tree
-      // tells from its state; an agent the list has let go has ended.
-      progress: path && live ? await progressAt($, path) : '',
+      // Its last text: what it is saying while it works, its final
+      // answer once it has ended.
+      progress: path ? await progressAt($, path) : '',
     })
   }
   return {
     tasks: treeTasks(inputs, now, (m) => ctxWindowFor('', m), calib, snap),
-    main_progress: tr.turn_s && !tr.idle_at
-      ? await progressAt($, transcript) : '',
+    main_progress: await progressAt($, transcript),
   }
 }
 
