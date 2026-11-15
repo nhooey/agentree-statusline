@@ -14,6 +14,7 @@ import { RIGHT_EDGE, STALE_MARK_S } from "../src/spec.ts";
 import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";
 import { draw } from "../src/grid.ts";
+import type { TreeTask } from "../src/subagent_tasks.ts";
 import { panelLayout } from "../src/claude_subagent_render.ts";
 import {
   FOOTER_GAP, FOOTER_JOIN, MODE_PILLS, TAIL_CUT, accountLine, accountText, footerParts, modeOfHint, bandLines, bandRows, fixedKeys, footerTail,
@@ -214,21 +215,26 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
   assert.deepEqual(flat.map((l) => l.scope), ["turn", "blank", "tag"]);
   // No agents in the document, or none the turn ran: as before.
   assert.deepEqual(receipt(status), flat);
-  const ran = { ...status,
-    agents: corpusAgents("01-mixed@220", "All four suites pass") };
+  // Bluebell and Thistle ended in the turn; the rest it ran still run.
+  const doc = corpusAgents("01-mixed@220", "All four suites pass");
+  const ran = { ...status, agents: { ...doc,
+    tasks: (doc.tasks as TreeTask[]).map((t) =>
+      ["r2", "r3"].includes(String(t.task.id))
+        ? { ...t, task: { ...t.task, status: "completed" } } : t) } };
   assert.deepEqual(receipt({ ...ran, transcript: { ...(status.transcript as
     Dict), turn_s: 1786847000 } }), flat);
   const tree = receipt(ran);
   const lines = plain(tree);
   assert.deepEqual(tree.map((l) => l.scope), ["main", "turn", "agent",
-    "agent", "agent", "agent", "blank", "tag"]);
+    "agent", "blank", "tag"]);
   assert.match(lines[0], /^🧵⚫ main  All four suites pass/u);
   assert.match(lines[1], /^├─ 🎤🏁 turn  /u);
-  // The agents the turn opened at 1786846520 ran, in the order they
-  // started, none pressing.
-  for (const [i, name] of [[2, "Bluebell"], [3, "Thistle"], [5, "Quince"]] as
-    const) assert.match(lines[i], new RegExp("^[├╰]─ .*" + name, "u"));
-  assert.ok(lines[5].startsWith("╰─ "));
+  // The agents the turn opened at 1786846520 ran and that ended, in the
+  // order they started, none pressing; Quince, still waiting, is not.
+  for (const [i, name] of [[2, "Bluebell"], [3, "Thistle"]] as
+    const) assert.match(lines[i], new RegExp("^[├╰]─ .*🏁 " + name, "u"));
+  assert.ok(lines[3].startsWith("╰─ "));
+  assert.ok(!lines.some((l) => l.includes("Quince")));
   assert.ok(!tree.some((l) => l.spans.some((s) => s.press)));
   // The rows keep the receipt's columns: 💰 where the flat 🎤 has it.
   const col = (l: string) => visWidth(l.slice(0, l.indexOf("💰")), st.widths);

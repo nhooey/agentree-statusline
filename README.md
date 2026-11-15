@@ -61,8 +61,9 @@ Stamped by the mod as each turn ends, in place of Claude Code's `✻ Worked for
 …` line, and kept in the transcript: the 🎤 row as it stood when the turn
 ended, dim, then the turn's tag. 🧵 and 🎮 stay live on screen, and
 `rows` can stamp them too. A turn that ran subagents stamps the band's
-tree instead: 🧵, under it 🎤 and then every agent the turn ran, each
-under the agent that started it, 🏁 on each that had finished
+tree instead: 🧵, under it 🎤 and then every agent the turn ran that
+had finished, 🏁, each under the agent that started it; one still at
+work is stamped on the first receipt after it ends
 ([Layout](docs/layout.md#the-receipt)).
 
 ```
