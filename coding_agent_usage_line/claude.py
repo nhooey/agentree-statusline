@@ -489,18 +489,11 @@ def tracker_reading(store: dict) -> dict:
     cache to the account).  The shared collector whitelists the returned v1 fields before private,
     scoped caching; a credential therefore cannot enter application state.
 
-    THE OLD SHAPE IS GONE.  Until 2026-09 the store held `usageHistory_<uuid>`
-    — a rolling array of {sessionReset, weeklyReset} snapshots — and the 5-hour
-    reset was NOT in it: on a sessionReset snapshot `triggeringResetTime` was
-    a copy of the snapshot's own timestamp, so the wrapper script derived the
-    window instead, from the most recent 0٪ → non-zero transition in the
-    history.  That history now lives in a file
-    (~/Library/Application Support/Claude Usage/history/) and the reset is
-    published directly and correctly, so the derivation is not ported.  It is
-    written down here rather than carried as code because carrying it means
-    parsing nine megabytes of JSON on the off-chance, and because the thing it
-    worked around is fixed: reviving it is a matter of reading that file, not
-    of remembering what it did.
+    THE 5-HOUR RESET IS READ, NOT DERIVED: `sessionResetTime` above is the
+    window's end as the app publishes it.  The app keeps its usage history
+    in a file (~/Library/Application Support/Claude Usage/history/), which
+    this function does not read; a store without `profiles_v3` gives no
+    reading.
     """
     profs = store.get("profiles_v3")
     if isinstance(profs, (bytes, bytearray)):
