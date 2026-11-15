@@ -934,8 +934,12 @@ answer that ended its turn after its last report. The exception is a
 report in the message that ends the turn, which stays live, unless it is
 the `0s` sign-off, which finishes the answer. That is an agent parking on
 background work, and Claude Code marks it completed while it waits; the row
-shows it 🟡 paused. A killed or failed agent is read at its last record and
-stops there.
+shows it 🟡 paused. An agent that has ended (completed with nothing left to
+wait on, killed or failed) is read at its last record and stops there, as
+its ⌛ does: an overrun it never signed off stays frozen, in amber, at what
+it was when the agent ended. One that ended on its own `0s` sign-off, with
+no child pushing past it, draws no ⛳ at all, as the main thread's sign-off
+isn't drawn once the thread is idle.
 
 **Inherited up the tree.** A parent isn't done until the children it is
 waiting on are, so a row counts to the latest finish among its own estimate

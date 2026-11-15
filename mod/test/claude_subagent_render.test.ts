@@ -13,6 +13,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as fm from "../src/formatting.ts";
 import * as sr from "../src/claude_subagent_render.ts";
+import { NO_LIMITS } from "../src/claude_records.ts";
 import type { Span } from "../src/spans.ts";
 import { revive } from "./formatting_codec.ts";
 
@@ -79,4 +80,21 @@ test("a completed agent is parked on an ETA with time left, and finished " +
   assert.ok(sr.parked("completed", [1000, 60], false, []));
   assert.ok(!sr.parked("completed", [1000, 0], false, []));
   assert.ok(!sr.parked("completed", [], false, []));
+});
+
+test("an ended agent reads its ⛳ at its end: none for a sign-off at zero, " +
+  "and an overrun frozen there, not growing, for one that did not", () => {
+  const st = fm.settings({}, true, false, 5);
+  const NOW = 1786847000;
+  const fin = (own: number[], shown: number[] | false, at: number,
+    status = "completed"): string => (sr.agentCells(st,
+    { id: "f", status, startTime: (NOW - 600) * 1000 },
+    { eta: own, last_epoch: NOW - 200 }, {}, {}, NO_LIMITS, at,
+    shown as never).eta ?? []).map((s) => s.text).join("");
+  assert.equal(fin([NOW - 300, 0], false, NOW), "");
+  const late = fin([NOW - 400, 0], [NOW - 600, 280], NOW);
+  assert.match(late, /^⛳ +\+2m$/u);
+  assert.equal(fin([NOW - 400, 0], [NOW - 600, 280], NOW + 600), late);
+  assert.match(fin([NOW - 500, 120], false, NOW + 600, "killed"),
+    /^⛳ +\+3m$/u);
 });

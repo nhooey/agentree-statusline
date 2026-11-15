@@ -579,6 +579,18 @@ def run(tmp):
           (over((NOW - 60, 0.0)), over((NOW - 300, 60.0)),
            over((NOW - 120, 0.0), (NOW - 600, 500.0))),
           ([True, False], [False, True], [False, True]))
+    fin = lambda own, shown, at, status="completed": unpainted(
+        sr.agent_cells(task("f", status=status, startTime=start),
+                       NS(eta=own, last_epoch=NOW - 200), {}, {},
+                       sl.NO_LIMITS, now=at, eta=shown).get("eta", []))
+    check("an agent that has ended reads its ⛳ at its end: one that signed "
+          "off at zero draws none, as the main thread's does once idle, and "
+          "one that did not keeps its overrun frozen there, not growing",
+          (fin((NOW - 300, 0.0), False, NOW),
+           fin((NOW - 400, 0.0), (NOW - 600, 280.0), NOW),
+           fin((NOW - 400, 0.0), (NOW - 600, 280.0), NOW + 600),
+           fin((NOW - 500, 120.0), False, NOW + 600, "killed")),
+          ("", "\u26F3  +2m", "\u26F3  +2m", "\u26F3  +3m"))
     check("a run whose sign-off lands the moment it starts is all done, not "
           "a division by zero",
           sr.eta_reading((NOW, 0.0), int(NOW * 1000), NOW), (1.0, 0.0))
