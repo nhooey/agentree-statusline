@@ -35,20 +35,35 @@ export const PLAN_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 export const PLAN_USAGE_HEADERS = { 'anthropic-beta': 'oauth-2025-04-20' }
 /** Seconds between asks. */
 export const PLAN_USAGE_EVERY = 60
-/** Seconds a failed ask waits before the next, where the answer gives no
- * `Retry-After`. */
-export const PLAN_USAGE_BACKOFF = 300
-/** The longest `Retry-After` taken, in seconds. */
-export const PLAN_USAGE_RETRY_MAX = 3600
+/** Seconds the first failed ask in a row waits before the next; each
+ * failure after it doubles the wait, up to PLAN_USAGE_BACKOFF_MAX. */
+export const PLAN_USAGE_BACKOFF = 120
+/** The longest wait after a failure, and the longest `Retry-After` taken,
+ * in seconds. */
+export const PLAN_USAGE_BACKOFF_MAX = 3600
+export const PLAN_USAGE_RETRY_MAX = PLAN_USAGE_BACKOFF_MAX
+/** Seconds an ask is waited for before it counts as failed: under
+ * PLAN_USAGE_LOCK_STALE, so the failure's wait is in the store before
+ * another session can take the lock over. */
+export const PLAN_USAGE_TIMEOUT = 20
 /** Seconds after which a lock directory is taken as abandoned. */
 export const PLAN_USAGE_LOCK_STALE = 30
-/** Seconds a reading stands in for Claude Code's own: past one backoff and
- * the ask after it, the native reading is the fresher. */
-export const PLAN_USAGE_FRESH = PLAN_USAGE_BACKOFF + 2 * PLAN_USAGE_EVERY
+/** Seconds a reading stands in for Claude Code's own: past two failures'
+ * waits and the ask after them, the native reading is the fresher. */
+export const PLAN_USAGE_FRESH = 7 * 60
 
 /** What `$.store` keeps per account: the reading, when it was asked for,
- * and, after a failure, when the next ask may be. */
-type Kept = { reading?: Reading; fetched_at?: number; retry_at?: number }
+ * and, after a failure, how many failed in a row and when the next ask may
+ * be. */
+type Kept = { reading?: Reading; fetched_at?: number; retry_at?: number;
+  failures?: number }
+
+/** The seconds to wait after the `failures`th failed ask in a row: the
+ * first wait doubled for each failure before it, held to the most. */
+export function backoffAfter(failures: number): number {
+  return Math.min(PLAN_USAGE_BACKOFF_MAX,
+    PLAN_USAGE_BACKOFF * 2 ** Math.max(0, failures - 1))
+}
 
 /** The opaque credential handle `$.session.authorize()` answers. */
 type Handle = NonNullable<Awaited<ReturnType<$['session']['authorize']>>>[
@@ -170,8 +185,9 @@ async function takeLock($: $, dir: string, now: number): Promise<boolean> {
 
 /** planUsageVia's ask: the store's reading where another session asked
  * within the minute or a failure's wait is not over, else, under the lock,
- * the endpoint's answer, kept; a failure logged once and waited out for
- * its `Retry-After`, or PLAN_USAGE_BACKOFF, by every session. */
+ * the endpoint's answer, kept; a failure logged once and waited out by
+ * every session, for a wait that doubles with each failure in a row, or
+ * for the answer's `Retry-After` where that is longer. */
 async function ask($: $, key: string, now: number): Promise<void> {
   const first = await keptIfFresh($, key, now)
   plan.kept = first.kept
@@ -196,12 +212,18 @@ async function ask($: $, key: string, now: number): Promise<void> {
 /** The ask itself, made while holding the lock. */
 async function askHeld($: $, key: string, now: number, handle: Handle,
   kept: Kept): Promise<void> {
-  let wait = PLAN_USAGE_BACKOFF
+  const failures = (typeof kept.failures === 'number' ? kept.failures : 0) + 1
+  let wait = backoffAfter(failures)
   try {
-    const r = await $.http.fetch(PLAN_USAGE_URL, { auth: handle,
-      headers: { ...PLAN_USAGE_HEADERS } })
+    const r = await Promise.race([
+      $.http.fetch(PLAN_USAGE_URL, { auth: handle,
+        headers: { ...PLAN_USAGE_HEADERS } }),
+      $.clock.sleep(PLAN_USAGE_TIMEOUT * 1000).then(() => null)])
+    if (r === null) {
+      throw new Error('no answer in ' + PLAN_USAGE_TIMEOUT + ' s')
+    }
     if (!r.ok) {
-      wait = retryAfter(r.headers?.['retry-after'], now) ?? wait
+      wait = Math.max(wait, retryAfter(r.headers?.['retry-after'], now) ?? 0)
       throw new Error('HTTP ' + r.status)
     }
     let raw: unknown
@@ -225,7 +247,7 @@ async function askHeld($: $, key: string, now: number, handle: Handle,
       plan.errors.add(what)
       await log($, 'plan usage failed: ' + what)
     }
-    plan.kept = { ...kept, retry_at: now + wait }
+    plan.kept = { ...kept, retry_at: now + wait, failures }
     await $.store.set(key, plan.kept).catch(() => {})
   }
 }

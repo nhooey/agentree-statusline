@@ -70,7 +70,7 @@ import {
 import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
 import type { Dict } from '../src/py.ts'
-import { retryAfter } from '../hooks/plan_usage.ts'
+import { backoffAfter, retryAfter } from '../hooks/plan_usage.ts'
 
 const COLS = 150
 // The options the mod draws with here: the user file over the defaults.
@@ -522,8 +522,9 @@ test('plan-usage off asks nothing, and draws Claude Code\'s own',
     expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^87/)
   })
 
-test('a failed plan-usage ask is logged once and waited out for 5 ' +
-  'minutes, the last reading kept meanwhile', async ($, on) => {
+test('a failed plan-usage ask is logged once and waited out, the wait ' +
+  'doubling with each failure in a row up to an hour, the last reading ' +
+  'kept meanwhile', async ($, on) => {
     const w = planWorld(on, PLAN_ANSWER)
     await start($, w, 'terminal', STATUS)
     expect(w.oauth.asked.length).toBe(1)
@@ -535,17 +536,64 @@ test('a failed plan-usage ask is logged once and waited out for 5 ' +
     expect(logOf(w).split(line).length - 1).toBe(1)
     // The last reading, still fresh, is still drawn.
     expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^6/)
-    // Nothing asked for the 5 minutes after the failure.
-    for (let i = 0; i < 4; i++) {
-      await w.clock.advance(61_000)
+    // Each failure in a row counted in the store, its wait not asked in.
+    const runs: number[] = []
+    for (let i = 0; i < 7; i++) {
+      const kept = w.store.get('plan-usage:default') as Dict
+      const asked = w.oauth.asked.length
+      runs.push(Number(kept.failures))
+      await w.clock.advance(Number(kept.retry_at) * 1000 - w.clock.now() -
+        1_000)
       await settle()
+      expect(w.oauth.asked.length).toBe(asked)
+      await w.clock.advance(62_000)
+      await settle()
+      expect(w.oauth.asked.length).toBe(asked + 1)
     }
+    expect(runs).toEqual([1, 2, 3, 4, 5, 6, 7])
+    // 2, 4, 8, ... minutes, held to an hour.
+    expect([1, 2, 3, 4, 5, 6, 7].map(backoffAfter))
+      .toEqual([120, 240, 480, 960, 1920, 3600, 3600])
+    // The same failure is not logged again.
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // An answer ends the run: the next failure waits 2 minutes again.
+    w.oauth.status = 200
+    const kept = w.store.get('plan-usage:default') as Dict
+    await w.clock.advance(Number(kept.retry_at) * 1000 - w.clock.now() +
+      1_000)
+    await settle()
+    expect((w.store.get('plan-usage:default') as Dict).failures)
+      .toBeUndefined()
+    w.oauth.status = 503
+    await w.clock.advance(61_000)
+    await settle()
+    const after = w.store.get('plan-usage:default') as Dict
+    expect(after.failures).toBe(1)
+    expect(Math.round((Number(after.retry_at) - w.clock.now() / 1000) / 60))
+      .toBe(2)
+  })
+
+test('a plan-usage ask that never answers counts as failed after 20 ' +
+  'seconds, so the next waits out the failure\'s wait', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    w.oauth.hang = true
+    await w.clock.advance(61_000)
+    await settle()
     expect(w.oauth.asked.length).toBe(2)
-    // After them, asked again; the same failure is not logged again.
+    await w.clock.advance(21_000)
+    await settle()
+    expect(logOf(w)).toContain('plan usage failed: no answer in 20 s\n')
+    const kept = w.store.get('plan-usage:default') as Dict
+    expect(kept.failures).toBe(1)
+    // The lock is let go, and the next ask waits the 2 minutes out.
+    expect(w.made.size).toBe(0)
+    await w.clock.advance(90_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
     await w.clock.advance(61_000)
     await settle()
     expect(w.oauth.asked.length).toBe(3)
-    expect(logOf(w).split(line).length - 1).toBe(1)
   })
 
 test('a 429 is waited out for its Retry-After, kept in the store for ' +
