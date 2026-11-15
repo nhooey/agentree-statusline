@@ -322,24 +322,6 @@ def fold_save(f: MainFold, meta: dict, mark: Optional[SaveMark] = None,
     return list(parts.items()), head, HEAD_SLOTS[seq % 2], new
 
 
-def fold_writes(f: MainFold, meta: dict, mark: Optional[SaveMark] = None,
-                part_bytes: int = FOLD_PART_BYTES):
-    """The files a save of `f` writes, in order, as (name, text), and the
-    mark it brings `mark` to; None where the head is over its cap.  With no
-    mark, a fold started over, both heads are emptied first, so neither
-    reads a part it was not written beside; then the parts; then the head.
-    The mod's saveMainFold (hooks/transcripts.ts) writes foldWrites' list, the
-    same one."""
-    got = fold_save(f, meta, mark, part_bytes)
-    if got is None:
-        return None
-    parts, head, slot, new = got
-    writes = [] if mark is not None else [(s, "") for s in HEAD_SLOTS]
-    writes += [(part_name(i), t) for i, t in parts]
-    writes.append((slot, head))
-    return writes, new
-
-
 def fold_head_of(text: Optional[str]):
     """A head's text read back, as (seq, meta, counts, head), or None for
     one that will not parse, is of another format, or is not a head."""
@@ -527,78 +509,6 @@ def line_ends(data: bytes) -> List[int]:
         out.append(at + 1)
         at = data.find(b"\n", at + 1)
     return out
-
-
-_NEWLINES = re.compile(r"\r\n|\r|\n")
-
-
-def line_records(raw: bytes):
-    """records_of's reading of one whole line, `raw`: errors replaced,
-    split on \\r\\n, \\r and \\n, an object's each.  No sequence a decoder
-    replaces holds a newline byte, so line by line reads as all at once."""
-    text = raw.decode("utf-8", "replace")
-    # Nearly every line ends in its one newline and holds no other.
-    texts = (_NEWLINES.split(text) if b"\r" in raw
-             else (text[:-1] if text.endswith("\n") else text,))
-    for text in texts:
-        if not text:
-            continue
-        try:
-            r = json.loads(text)
-        except ValueError:
-            continue
-        if isinstance(r, dict):
-            yield r
-
-
-def _meta_at(fh, offset: int) -> dict:
-    """fold_meta of the open transcript `fh`, read only where it looks."""
-    fh.seek(0)
-    first = fh.read(min(FOLD_CHECK_BYTES, offset))
-    lo = max(0, offset - FOLD_CHECK_BYTES)
-    fh.seek(lo)
-    tail = fh.read(offset - lo)
-    return {"offset": offset, "first": hashlib.sha256(first).hexdigest(),
-            "tail": hashlib.sha256(tail).hexdigest()}
-
-
-def fold_on(transcript: str, d: str, end: Optional[int] = None) -> int:
-    """The mod's cold read, run as a process (mod/scripts/agent_lines.py's
-    fold mode): the fold saved in directory `d` for `transcript`, read on
-    over its whole lines up to `end` (its end where None), and saved back
-    into `d` as the mod saves it, in fold_writes' order, each file through
-    os.replace.  A saved head is read only where the transcript still holds
-    the bytes it was folded from, as the mod checks it; with none, the fold
-    starts over from the transcript's start.  The offset saved to, which
-    the mod reads the head and parts at; where nothing new was folded, or
-    the head is over its cap, nothing is written and the offset is the one
-    saved before (0 for none).  The transcript is read a line at a time,
-    so only the fold is held."""
-    with open(transcript, "rb") as fh:
-        size = os.fstat(fh.fileno()).st_size
-        end = size if end is None else min(end, size)
-        got = load(lambda name: _read(os.path.join(d, name)),
-                   lambda meta: meta["offset"] <= size
-                   and _meta_at(fh, meta["offset"]) == meta)
-        f, mark = (got[0], got[2]) if got else (MainFold(), None)
-        start = at = got[1]["offset"] if got else 0
-        fh.seek(at)
-        while at < end:
-            raw = fh.readline(end - at)
-            if not raw.endswith(b"\n"):
-                break
-            for r in line_records(raw):
-                fold_main(f, r)
-            at += len(raw)
-        if at == start:
-            return start
-        save = fold_writes(f, _meta_at(fh, at), mark)
-    if save is None:
-        return start
-    os.makedirs(d, exist_ok=True)
-    for name, text in save[0]:
-        _write(os.path.join(d, name), text)
-    return at
 
 
 def main(argv: List[str]) -> int:

@@ -43,7 +43,7 @@ import {
 } from '../src/agent_fold.ts'
 import type { AgentEta, AgentReading } from '../src/claude_records.ts'
 import {
-  foldLoad, foldMain, foldMeta, foldSave, foldWrites, newMainFold, partName,
+  foldLoad, foldMain, foldMeta, foldSave, newMainFold, partName,
 } from '../src/main_fold.ts'
 import type { FoldMeta, MainFold } from '../src/main_fold.ts'
 import { INBOX_SLOTS, inboxFoldDir, inboxFoldLoad } from '../src/inbox_fold.ts'
@@ -1053,93 +1053,62 @@ test('a saved fold of other bytes is not read, and is saved over',
       .toBe(JSON.stringify(foldSave(whole, back!.meta)))
   })
 
-// The worker, scripts/agent_lines.py's fold mode, runs where the saved fold
-// is a megabyte or more behind.  Here it saves the fold of the whole
-// transcript, though half was planted, so the document says whose fold the
-// mod read on from: the worker's, read back through `$.fs`, with no records
-// passed.  test/main_fold.test.ts checks that the worker writes what the
-// mod writes.
-test('a reload reads on from the state the worker saved', async ($, on) => {
-  const path = sessionFile('-worker-fold')
-  const ran: string[] = []
+/** A world whose shell reads (`tail -c +N | head -c L | base64`) are
+ * recorded: the widest asked for, and where each read over the check
+ * digests' 4 KiB starts.  Read whole, every one of those is a multiple of
+ * its 2 MiB; read in pieces, each piece after the first starts at a line's
+ * end, off that grid. */
+function shellWorld(on: On) {
+  const seen = { widest: 0, froms: [] as number[] }
   const w: World = world(on, (e) => {
-    const [, , script, mode, file, end, dir] = e.argv
-    if (!script?.endsWith('/scripts/agent_lines.py')) return NO_GIT_HERE
-    ran.push(mode)
-    if (mode !== 'fold') return { ...NO_GIT_HERE, exitCode: 1 }
-    const bytes = w.files.get(file)!.subarray(0, Number(end))
-    const to = bytes.lastIndexOf(10) + 1
-    const f = newMainFold()
-    for (const r of _recordsOf(bytes.subarray(0, to))) foldMain(f, r)
-    for (const [n, t] of foldWrites(f, foldMeta(bytes, to), null)!.writes) {
-      w.files.set(dir + '/' + n, encoder.encode(t))
+    const [cmd, , script, , from, file, want] = e.argv
+    if (cmd !== '/bin/sh' || !script.includes('base64')) return NO_GIT_HERE
+    seen.widest = Math.max(seen.widest, Number(want))
+    if (Number(want) > 4096) seen.froms.push(Number(from) - 1)
+    const f = w.files.get(file)!
+    const piece = f.subarray(Number(from) - 1,
+      Number(from) - 1 + Number(want))
+    const s: string[] = []
+    for (let i = 0; i < piece.length; i += 8192) {
+      s.push(String.fromCharCode(...piece.subarray(i, i + 8192)))
     }
-    return { ...NO_GIT_HERE, exitCode: 0, stdout: to + '\n', stderr: '' }
+    return { ...NO_GIT_HERE, exitCode: 0, stdout: btoa(s.join('')) + '\n',
+      stderr: '' }
   })
-  const one = w.files.get(MAIN)!
-  // Blank lines past the records, which no fold reads, to pass the megabyte.
-  const bytes = new Uint8Array(one.length + 1.2 * 1024 * 1024).fill(10)
-  bytes.set(one)
-  w.files.set(path, bytes)
-  const half = one.indexOf(10, one.length >> 1) + 1
-  const dir = statePath(STATE, 'main-fold', path)
-  plant(w, dir, newMainFold(), foldMeta(bytes, half))
-  await start($, w, 'terminal', path)
-  expect(ran).toEqual(['fold'])
-  const doc = figuresOf(lastDoc(w))
-  const rate = doc.rate as number | null
-  expect(doc).toEqual(await statusOver(w, path, bytes, rate))
-  expect(doc).not.toEqual(await statusOver(w, path, bytes.subarray(half),
-    rate))
-})
+  return { w, seen }
+}
 
-// A copy of mod/ on its own (a GitHub install, a dev mod) has no package
-// beside the worker, which exits 1: the mod then folds the transcript
-// itself, a piece at a time, so no more than a piece of it is held at
-// once, and saves the fold, as the worker would have.  The copies of
-// main.jsonl's records past two pieces' length put piece ends mid-record.
-// It folds 17 MiB twice, some 11 s on an idle machine: three budgets.
-test('with no package for the worker, the mod folds the bytes in pieces',
+/** `one` repeated past `mib` MiB. */
+function repeated(one: Uint8Array, mib: number): Uint8Array {
+  const copies = Math.ceil((mib * 1024 * 1024) / one.length)
+  const bytes = new Uint8Array(one.length * copies)
+  for (let i = 0; i < copies; i++) bytes.set(one, i * one.length)
+  return bytes
+}
+
+/** The shell reads `seen` recorded within 2 MiB each, and at least two of
+ * them starting at a line's end of `bytes` off the 2 MiB grid. */
+function readInPieces(seen: { widest: number; froms: number[] },
+  bytes: Uint8Array) {
+  expect(seen.widest).toBeLessThanOrEqual(2 * 1024 * 1024)
+  const starts = seen.froms.filter((at) => at % (2 * 1024 * 1024) !== 0 &&
+    bytes[at - 1] === 10)
+  expect(starts.length).toBeGreaterThanOrEqual(2)
+}
+
+// A long stretch past the fold, as on the first read of a long session,
+// is folded a piece at a time, so no more than a piece of it is held at
+// once, and the fold saved.  The copies of main.jsonl's records past two
+// pieces' length put piece ends mid-record.  It folds 17 MiB twice, some
+// 11 s on an idle machine: three budgets.
+test('a long transcript is folded in pieces, and saved',
   { timeoutMs: 3 * BUDGET_MS }, async ($, on) => {
-    const path = sessionFile('-no-worker')
-    const ran: string[] = []
-    let widest = 0
-    // Where each shell read starts: read whole, every one is a multiple of
-    // its 2 MiB; read in pieces, each piece after the first starts at a
-    // line's end, off that grid.
-    const froms: number[] = []
-    const w: World = world(on, (e) => {
-      const [cmd, , script, mode, from, file, want] = e.argv
-      if (script?.endsWith('/scripts/agent_lines.py')) {
-        ran.push(mode)
-        return { ...NO_GIT_HERE, exitCode: 1, stderr:
-          'no coding_agent_usage_line package beside mod/' }
-      }
-      if (cmd !== '/bin/sh' || !script.includes('base64')) return NO_GIT_HERE
-      widest = Math.max(widest, Number(want))
-      // Not the check digests' reads, of 4 KiB.
-      if (Number(want) > 4096) froms.push(Number(from) - 1)
-      const f = w.files.get(file)!
-      const piece = f.subarray(Number(from) - 1,
-        Number(from) - 1 + Number(want))
-      const s: string[] = []
-      for (let i = 0; i < piece.length; i += 8192) {
-        s.push(String.fromCharCode(...piece.subarray(i, i + 8192)))
-      }
-      return { ...NO_GIT_HERE, exitCode: 0, stdout: btoa(s.join('')) + '\n',
-        stderr: '' }
-    })
-    const one = w.files.get(MAIN)!
-    const copies = Math.ceil((17 * 1024 * 1024) / one.length)
-    const bytes = new Uint8Array(one.length * copies)
-    for (let i = 0; i < copies; i++) bytes.set(one, i * one.length)
+    const path = sessionFile('-pieces')
+    const { w, seen } = shellWorld(on)
+    const bytes = repeated(w.files.get(MAIN)!, 17)
     w.files.set(path, bytes)
     await start($, w, 'terminal', path)
-    expect(ran).toEqual(['fold'])
-    expect(widest).toBeLessThanOrEqual(2 * 1024 * 1024)
-    const starts = froms.filter((at) => at % (2 * 1024 * 1024) !== 0 &&
-      bytes[at - 1] === 10)
-    expect(starts.length).toBeGreaterThanOrEqual(2)
+    readInPieces(seen, bytes)
     const doc = figuresOf(lastDoc(w))
     expect(doc).toEqual(await statusOver(w, path, bytes,
       doc.rate as number | null))
@@ -1153,6 +1122,27 @@ test('with no package for the worker, the mod folds the bytes in pieces',
     expect(back?.meta).toEqual(foldMeta(bytes, bytes.length))
     expect(JSON.stringify(foldSave(back!.fold, back!.meta)))
       .toBe(JSON.stringify(foldSave(whole, back!.meta)))
+  })
+
+// A long agent file is folded a piece at a time too, and the fold it saves
+// is the whole file's.  Its records repeated past three pieces' length put
+// piece ends mid-record.
+test('a long agent file is folded in pieces, and saved',
+  { timeoutMs: 3 * BUDGET_MS }, async ($, on) => {
+    const { w, seen } = shellWorld(on)
+    const path = sessionFile('-agent-pieces')
+    const agent = path.slice(0, -'.jsonl'.length) +
+      '/subagents/agent-fork1.jsonl'
+    w.files.set(path, w.files.get(STATUS)!)
+    const bytes = repeated(w.files.get(
+      '/fixtures/transcripts/status/agents/subagents/agent-fork1.jsonl')!, 25)
+    w.files.set(agent, bytes)
+    await start($, w, 'terminal', path)
+    readInPieces(seen, bytes)
+    const slot = foldDir(STATE, path) + '/' + slotNames(agent)[1]
+    const end = bytes.lastIndexOf(10) + 1
+    expect(new TextDecoder().decode(w.files.get(slot)!)).toBe(
+      agentFoldText(readOn(bytes, 0), 1, tailAt(bytes, end)))
   })
 
 // The saved cuts the mod once kept are removed on its first read: `rm`

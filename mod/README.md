@@ -125,12 +125,10 @@ Each agent's file is kept as its fold the same way, in
 `claude-agent-fold-<digest>/`, the `agent-fold` row's directory, one file
 per agent written to two slots in turn.
 
-A megabyte or more to fold, as on the first read of a long session, is
-folded by `scripts/agent_lines.py` in Python, with the repository's
-package beside `mod/`. A copy of `mod/` on its own, installed from GitHub
-or as a dev mod, has no package beside it, and the mod folds the
-transcript itself, 8 MiB at a time: slower, but only until the fold is
-saved.
+A long stretch to fold, as on the first read of a long session, the mod
+folds 8 MiB at a time, the transcript's and each agent's file alike, so
+no more than a piece is held at once and the hooks worker is free between
+pieces. Once the fold is saved, a reload reads on from it.
 
 ### The receipt
 
@@ -244,10 +242,9 @@ says why (`refresh: no status document: …`), as does a turn that got no
 receipt (`no receipt: …`). The mod times each read, step by step, and a
 read over two seconds is logged and shown as a toast, at most one a
 minute, with each step's length in ms: `slow read: <ms> (records,
-worker, load, fold, shell, pieces, decode, parse, agents, sum, turns,
-usage, calib, git)`, each followed by its figure; `pieces` counts the
-shell reads, and `foldPieces` the pieces the mod folded itself where the
-worker could not run.
+load, fold, shell, pieces, decode, parse, agents, sum, turns, usage,
+calib, git)`, each followed by its figure; `pieces` counts the shell
+reads, and `foldPieces` the 8 MiB pieces folded.
 
 ### Its tests
 

@@ -16,17 +16,15 @@ glyph from the agent panel's rows touched 81 files.
 The band, the footer rows and the receipt are already the mod's alone.
 Claude Code 2.1.323 removed `subagentStatusLine`: the agent panel always
 draws its own rows, runs no command, and no `ui.render` component draws
-it. So the Python's Claude modes serve nothing in Claude Code but the mod's
-fold worker, and each subagent's figures need a new place: the band above
-the prompt, one row per running subagent, drawn by the mod with the
-renderer it already has (`claude_subagent_render.ts`, `cells.ts`,
-`grid.ts`).
+it. So the Python's Claude modes serve nothing in Claude Code, and each
+subagent's figures need a new place: the band above the prompt, one row
+per running subagent, drawn by the mod with the renderer it already has
+(`claude_subagent_render.ts`, `cells.ts`, `grid.ts`).
 
 ## What the Python serves today
 
 | Use                                   | Entry                                                     | Has a TypeScript twin                                 |
 | ------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------- |
-| The mod's large transcript folds      | `mod/scripts/agent_lines.py`, spawned by `transcripts.ts`       | yes: the mod folds 8 MiB at a time without it, slower |
 | The status line and the cost receipt  | `--mode status`, `--mode cost`                            | yes: the band and the mod's receipt replace both      |
 | Codex receipts and its status         | `--agent codex`, from a Codex `Stop` hook                 | no                                                    |
 | The reference the ports are tested on | the fixture generators and goldens under `tests/`         | the TypeScript is what is tested against it           |
@@ -36,56 +34,56 @@ renderer it already has (`claude_subagent_render.ts`, `cells.ts`,
 `OP1`'s measure, by `tools/python-module-reach.py`, which follows each
 module's imports from each entry without running anything. Codex is the
 launcher with `--agent codex`; Claude is the same launcher with
-`--agent claude`, the agent panel among its modes; the fold worker is
-`mod/scripts/agent_lines.py`. The last column counts the Python files
-under `tests/` and `tools/` that load the module.
+`--agent claude`. The last column counts the Python files under `tests/`
+and `tools/` that load the module.
 
-| Module | Lines | Codex | Claude | Fold worker | Test files |
-| --- | ---: | :---: | :---: | :---: | ---: |
-| `claude.py` | 3649 | — | ✅ | — | 20 |
-| `claude_render.py` | 1192 | — | ✅ | — | 23 |
-| `claude_subagent_render.py` | 720 | — | ✅ | — | 22 |
-| `claude_cost_render.py` | 267 | — | ✅ | — | 20 |
-| `grid.py` | 260 | — | ✅ | — | 22 |
-| `inbox_fold.py` | 245 | — | ✅ | — | 21 |
-| `claude_sources.py` | 77 | — | ✅ | — | 20 |
-| `credits.py` | 69 | — | — | — | 1 |
-| `claude_records.py` | 3204 | — | ✅ | ✅ | 26 |
-| `main_fold.py` | 662 | — | ✅ | ✅ | 26 |
-| `agent_fold.py` | 193 | — | ✅ | ✅ | 26 |
-| `sources.py` | 1006 | ✅ | ✅ | — | 20 |
-| `config.py` | 637 | ✅ | ✅ | — | 21 |
-| `codex.py` | 540 | ✅ | ✅ | — | 20 |
-| `options_spec.py` | 463 | ✅ | ✅ | — | 21 |
-| `cli.py` | 454 | ✅ | ✅ | — | 3 |
-| `options.py` | 255 | ✅ | ✅ | — | 21 |
-| `render.py` | 200 | ✅ | ✅ | — | 20 |
-| `usage_report.py` | 113 | ✅ | ✅ | — | 3 |
-| `models.py` | 40 | ✅ | ✅ | — | 20 |
-| `formatting.py` | 1539 | ✅ | ✅ | ✅ | 32 |
-| `spec.py` | 1402 | ✅ | ✅ | ✅ | 32 |
-| `spans.py` | 280 | ✅ | ✅ | ✅ | 32 |
-| `state.py` | 268 | ✅ | ✅ | ✅ | 26 |
-| `state_spec.py` | 91 | ✅ | ✅ | ✅ | 26 |
+| Module | Lines | Codex | Claude | Test files |
+| --- | ---: | :---: | :---: | ---: |
+| `claude.py` | 3566 | — | ✅ | 19 |
+| `claude_records.py` | 3264 | — | ✅ | 25 |
+| `claude_render.py` | 1192 | — | ✅ | 22 |
+| `claude_subagent_render.py` | 727 | — | — | 5 |
+| `main_fold.py` | 572 | — | ✅ | 25 |
+| `claude_cost_render.py` | 267 | — | ✅ | 19 |
+| `grid.py` | 260 | — | — | 5 |
+| `inbox_fold.py` | 245 | — | ✅ | 20 |
+| `agent_fold.py` | 193 | — | ✅ | 25 |
+| `claude_sources.py` | 77 | — | ✅ | 19 |
+| `credits.py` | 69 | — | — | 1 |
+| `formatting.py` | 1539 | ✅ | ✅ | 31 |
+| `spec.py` | 1424 | ✅ | ✅ | 31 |
+| `sources.py` | 1006 | ✅ | ✅ | 19 |
+| `config.py` | 637 | ✅ | ✅ | 20 |
+| `codex.py` | 540 | ✅ | ✅ | 19 |
+| `options_spec.py` | 474 | ✅ | ✅ | 20 |
+| `cli.py` | 432 | ✅ | ✅ | 2 |
+| `spans.py` | 280 | ✅ | ✅ | 31 |
+| `state.py` | 268 | ✅ | ✅ | 25 |
+| `options.py` | 255 | ✅ | ✅ | 20 |
+| `render.py` | 200 | ✅ | ✅ | 19 |
+| `usage_report.py` | 113 | ✅ | ✅ | 2 |
+| `state_spec.py` | 91 | ✅ | ✅ | 25 |
+| `models.py` | 40 | ✅ | ✅ | 19 |
 
-What it decides for `OP4` and `OP5`:
+What it decides for `OP5`:
 
-- **Codex keeps 14 modules, 7,288 lines:** `cli.py`, `codex.py`,
+- **Codex keeps 14 modules, 7,299 lines:** `cli.py`, `codex.py`,
   `render.py`, `sources.py`, `config.py`, `options.py`, `options_spec.py`,
   `usage_report.py`, `models.py`, `state.py`, `state_spec.py`,
   `formatting.py`, `spec.py` and `spans.py`. `formatting.py` and `spec.py`
   are kept whole here but hold the Claude rows' glyphs and cells too, and
   `sources.py` holds the Claude Usage Tracker's adapter; each can shed its
   Claude parts at `OP5`.
-- **Claude alone uses 7 modules, 6,410 lines:** `claude.py`,
-  `claude_render.py`, `claude_subagent_render.py`, `claude_cost_render.py`,
-  `grid.py`, `inbox_fold.py` and `claude_sources.py`. They go at `OP5`.
-- **The fold worker also uses 3, 4,059 lines:** `claude_records.py`,
-  `main_fold.py` and `agent_fold.py`. They go at `OP5` once `OP4` has
-  moved the worker to Node.
-- **No entry loads `credits.py`,** 69 lines: the 💳 row is the mod's, and
-  only `tests/source-cache.py` imports it. It can go with its test now.
-- **The tests:** 32 files load `formatting.py`, so the generators and
+- **Claude alone uses 8 modules, 9,376 lines:** `claude.py`,
+  `claude_records.py`, `claude_render.py`, `main_fold.py`,
+  `claude_cost_render.py`, `inbox_fold.py`, `agent_fold.py` and
+  `claude_sources.py`. They go at `OP5`.
+- **No entry loads 3 modules, 1,056 lines:** `claude_subagent_render.py`
+  and `grid.py`, which only the renderer's tests and its case generator
+  (`tests/fixtures/gen/panel.py`) load, and `credits.py`, which only
+  `tests/fixtures/gen/sources.py` loads (the 💳 row is the mod's). They
+  go with their tests.
+- **The tests:** 31 files load `formatting.py`, so the generators and
   checks that only test the Claude modules go with them at `OP5`, and the
   rest stay as Codex's.
 
@@ -208,10 +206,24 @@ Marigold folded
    read on through `$` (`mod/hooks/inbox.ts`) and saved under its
    `inbox-fold` row. Tests in `mod/test/band_tree.test.ts`, the rows'
    cases and `docs/layout.md`.
-4. **`OP4` The mod's fold worker in TypeScript.** `transcripts.ts` folds
-   large transcripts in Node in place of `python3 .../agent_lines.py`.
+4. **`OP4` The mod's fold worker in TypeScript.** Done: the mod spawns
+   no Python. `foldOf` folds whatever is past the saved fold of the
+   session's transcript, and `agentReadings` whatever is past each agent
+   file's (`foldAgentPieces`), 8 MiB (`FOLD_PIECE`) at a time in the
+   hooks worker, each piece read through the shell before it is folded,
+   so a piece's fold is the longest the worker is held and no more than
+   a piece is held in memory. The choice is the mod's existing piecewise
+   fold rather than a fold run in another process: its folds are the
+   ones the fixtures and goldens already check, so nothing about the
+   results moves, and its reads are already not awaited by any hook.
+   `mod/scripts/agent_lines.py` and its worker test are gone, and with
+   them `main_fold.py`'s `fold_on`, `fold_writes` and `line_records`,
+   which only the worker ran. Tests in `mod/mod-tests/band.test.ts` (a
+   long transcript and a long agent file, each folded in pieces and
+   saved) and `mod/test/claude_records.test.ts` (an agent file in
+   pieces reads as it does whole).
 5. **`OP5` Remove the Python's Claude twins.** Delete the modules `OP1`
-   found only Claude and the fold worker use, `--mode status` and
+   found only Claude uses, and those no entry loads, `--mode status` and
    `--mode cost` for Claude, their tests and their fixture generators,
    and move what the TypeScript's tests still need to Node or keep it as
    committed data.

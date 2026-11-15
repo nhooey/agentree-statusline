@@ -8,7 +8,7 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import * as cr from "../src/claude_records_node.ts";
 import * as mf from "../src/main_fold.ts";
@@ -274,102 +274,6 @@ test("a fold saved as it grows reads back, and past a torn head", () => {
       { parts: want.parts, head: want.head }, `${p} past a torn head`);
   }
 });
-
-// ════════════════════════════════════════════════════════════════════════════
-// The worker: scripts/agent_lines.py's fold mode, the mod's cold read.
-// ════════════════════════════════════════════════════════════════════════════
-
-const WORKER = path.join(REPO, "mod/scripts/agent_lines.py");
-
-/** Every file in `dir`, by name, as its text. */
-function filesIn(dir: string): Map<string, string> {
-  return new Map(fs.readdirSync(dir).sort().map((n) =>
-    [n, fs.readFileSync(path.join(dir, n), "utf-8")]));
-}
-
-/** `writes` written over `files`, as the mod writes them through $.fs. */
-function writeOver(files: Map<string, string>,
-  writes: readonly [string, string][]): Map<string, string> {
-  for (const [n, t] of writes) files.set(n, t);
-  return new Map([...files].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));
-}
-
-/** What foldOf does where the worker cannot: the fold saved in `files`,
- * where it was folded from `data`'s bytes, read on to `end` and saved back
- * in foldWrites' order; or, with none, folded from the start.  And the
- * offset then saved to. */
-function modSave(files: Map<string, string>, data: Uint8Array, end: number):
-  number {
-  const back = mf.foldLoad((n) => files.get(n) ?? null);
-  const fits = back !== null && back.meta.offset <= data.length &&
-    JSON.stringify(mf.foldMeta(data, back.meta.offset)) ===
-      JSON.stringify(back.meta);
-  const f = fits ? back.fold : mf.newMainFold();
-  const from = fits ? back.meta.offset : 0;
-  if (end <= from) return from;
-  foldMain(f, cr._recordsOf(data.subarray(from, end)));
-  writeOver(files, mf.foldWrites(f, mf.foldMeta(data, end),
-    fits ? back.mark : null)!.writes);
-  return end;
-}
-
-// The state the worker saves is the one the mod saves for the same
-// transcript and offset, file for file and byte for byte: from nothing,
-// read on from a state the mod saved at a line end, from one already at
-// the end, and from one of other bytes, which both start over from.
-test("the worker saves the fold as the mod saves it", () => {
-  for (const p of FILES) {
-    const data = fs.readFileSync(p);
-    const ends = lineEnds(data);
-    const end = ends.at(-1) ?? 0;
-    const other = Buffer.from(data);
-    if (other.length) other[0] ^= 1;
-    const plants: [string, Uint8Array, number | null][] = [
-      ["nothing", data, null],
-      ["the first line", data, ends[0] ?? null],
-      ["halfway", data, ends[ends.length >> 1] ?? null],
-      ["the end", data, end],
-      ["other bytes", other, ends[ends.length >> 1] ?? null]];
-    for (const [what, bytes, k] of plants) {
-      const dir = tmp();
-      const files = new Map<string, string>();
-      if (k !== null) {
-        const f = foldMain(mf.newMainFold(),
-          cr._recordsOf(bytes.subarray(0, k)));
-        const w = mf.foldWrites(f, mf.foldMeta(bytes, k), null)!;
-        for (const [n, t] of w.writes) fs.writeFileSync(path.join(dir, n), t);
-        writeOver(files, w.writes);
-      }
-      const out = execFileSync("python3", [WORKER, "fold", p,
-        String(data.length), dir]).toString();
-      const to = modSave(files, data, end);
-      assert.equal(out, `${to}\n`, `${p} from ${what}`);
-      assert.deepEqual(filesIn(dir), files, `${p} from ${what}`);
-      fs.rmSync(dir, { recursive: true });
-    }
-  }
-});
-
-// A copy of mod/ on its own, as a GitHub install or a dev mod has it, has
-// no package beside the worker: it exits 1, says so, and writes nothing,
-// so foldOf folds the bytes itself (mod-tests/band.test.ts).
-test("the worker with no package beside it exits 1 and writes nothing",
-  () => {
-    const root = tmp();
-    const scripts = path.join(root, "mod", "scripts");
-    fs.mkdirSync(scripts, { recursive: true });
-    fs.copyFileSync(WORKER, path.join(scripts, "agent_lines.py"));
-    const dir = tmp();
-    const p = FILES[0];
-    const r = spawnSync("python3", [path.join(scripts, "agent_lines.py"),
-      "fold", p, String(fs.statSync(p).size), dir], { encoding: "utf-8" });
-    assert.equal(r.status, 1, r.stderr);
-    assert.equal(r.stdout, "");
-    assert.match(r.stderr, /no coding_agent_usage_line package beside mod/);
-    assert.deepEqual(fs.readdirSync(dir), []);
-    fs.rmSync(root, { recursive: true });
-    fs.rmSync(dir, { recursive: true });
-  });
 
 test("a head over its cap is not saved", () => {
   const f = mf.newMainFold();

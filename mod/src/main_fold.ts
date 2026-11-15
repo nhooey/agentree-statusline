@@ -237,8 +237,7 @@ export function foldSave(f: MainFold, meta: FoldMeta,
  * it brings `mark` to; null where the head is over its cap.  With no mark,
  * a fold started over, both heads are emptied first: $.fs.write truncates
  * and then writes, so neither could then read a part it was not written
- * beside.  Then the parts, then the head.  main_fold.py's fold_writes, the
- * worker's (scripts/agent_lines.py's fold mode), is the same list. */
+ * beside.  Then the parts, then the head. */
 export function foldWrites(f: MainFold, meta: FoldMeta,
   mark: SaveMark | null, partBytes: number = FOLD_PART_BYTES):
   { writes: [string, string][]; mark: SaveMark } | null {

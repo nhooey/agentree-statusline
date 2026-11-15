@@ -11,9 +11,8 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as cr from "../src/claude_records_node.ts";
-import { execFileSync } from "node:child_process";
 import {
-  agentReadingOf, foldAgentBytes, foldAgentRecord, newAgentFold,
+  agentReadingOf, foldAgentBytes, newAgentFold,
 } from "../src/claude_records.ts";
 import { agentFoldOf, agentFoldText } from "../src/agent_fold.ts";
 
@@ -329,29 +328,21 @@ function agentCases(): Case[] {
       c.fn === "_read_agent_file" && c.out !== null));
 }
 
-// What mod/scripts/agent_lines.py cuts a file down to folds as the file
-// does whole, a piece at a time, as the mod reads a large stretch.
-test("an agent file's lines cut down by agent_lines.py read as it does whole",
-  () => {
-    const script = path.join(REPO, "mod/scripts/agent_lines.py");
-    for (const c of agentCases()) {
-      const data = fs.readFileSync(c.args[0]);
-      const whole = data.lastIndexOf(10) + 1;
+// A file folded a piece at a time, as the mod folds a large stretch
+// (hooks/transcripts.ts, foldAgentPieces), reads as it does whole: each
+// piece's last line, cut short, is left for the next, and a piece holding
+// no whole line grows until it does.  The pieces here are small, so most
+// lines fall across them.
+test("an agent file folded in pieces reads as it does whole", () => {
+  for (const c of agentCases()) {
+    const data = fs.readFileSync(c.args[0]);
+    for (const piece of [1, 97, 4096]) {
       const fold = newAgentFold();
-      while (fold.pos < whole) {
-        const out = execFileSync("python3", [script, c.args[0],
-          String(fold.pos), String(data.length)]).toString().split("\n");
-        for (const l of out.slice(1).filter(Boolean)) {
-          const tab = l.indexOf("\t");
-          let r: unknown = null;
-          try {
-            r = JSON.parse(l.slice(tab + 1));
-          } catch {
-            // Skipped, as the line itself is.
-          }
-          foldAgentRecord(fold, Number(l.slice(0, tab)), r);
-        }
-        assert.equal(fold.pos, Number(out[0]), c.args[0]);
+      let want = piece;
+      while (data.length - fold.pos > want) {
+        const was = fold.pos;
+        foldAgentBytes(fold, data.subarray(fold.pos, fold.pos + want));
+        want = fold.pos === was ? want * 2 : piece;
       }
       foldAgentBytes(fold, data.subarray(fold.pos), true);
       assert.deepEqual(agentReadingOf(fold), c.out, c.args[0]);
@@ -359,9 +350,10 @@ test("an agent file's lines cut down by agent_lines.py read as it does whole",
       const all = newAgentFold();
       foldAgentBytes(all, data, true);
       assert.equal(agentFoldText(fold, 1, ""), agentFoldText(all, 1, ""),
-        c.args[0]);
+        `${c.args[0]} in pieces of ${piece}`);
     }
-  });
+  }
+});
 
 // A fold saved halfway and read back goes on to the same reading, and one
 // saved under another format is not read back.

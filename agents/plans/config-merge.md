@@ -298,7 +298,6 @@ one.
 | `markSpacing` | `mark-spacing` | both | `--mark-spacing`, `--no-mark-spacing` | |
 | `subscriptDecimals` | `subscript-decimals` | both | `--subscript-decimals` | gains `--no-subscript-decimals` |
 | `version` | none | | | stays a constant in `config.ts`: it keys the caches, and a file must not change it |
-| `agentLinesTimeoutMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `foldSaveMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `tickMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `tickRunningMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
