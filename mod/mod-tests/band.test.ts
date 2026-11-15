@@ -70,6 +70,7 @@ import {
 import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
 import type { Dict } from '../src/py.ts'
+import { retryAfter } from '../hooks/plan_usage.ts'
 
 const COLS = 150
 // The options the mod draws with here: the user file over the defaults.
@@ -545,6 +546,69 @@ test('a failed plan-usage ask is logged once and waited out for 5 ' +
     await settle()
     expect(w.oauth.asked.length).toBe(3)
     expect(logOf(w).split(line).length - 1).toBe(1)
+  })
+
+test('a 429 is waited out for its Retry-After, kept in the store for ' +
+  'every session on the account', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    w.oauth.status = 429
+    w.oauth.headers = { 'retry-after': '900' }
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    const kept = w.store.get('plan-usage:default') as Dict
+    // Waited from the failed ask, a minute after the reading kept.
+    const waited = Number(kept.retry_at) - Number(kept.fetched_at) - 900
+    expect(waited >= 60 && waited <= 61).toBe(true)
+    // Nothing asked for the 15 minutes the answer named.
+    for (let i = 0; i < 14; i++) {
+      await w.clock.advance(61_000)
+      await settle()
+    }
+    expect(w.oauth.asked.length).toBe(2)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(3)
+  })
+
+test('a Retry-After is read as seconds or an HTTP date, held to between ' +
+  'a minute and an hour', async () => {
+    expect(retryAfter('120', 0)).toBe(120)
+    expect(retryAfter('5', 0)).toBe(60)
+    expect(retryAfter('99999', 0)).toBe(3600)
+    const now = 1_800_000_000
+    expect(retryAfter(new Date((now + 600) * 1000).toUTCString(), now))
+      .toBe(600)
+    expect(retryAfter('soon', 0)).toBe(null)
+    expect(retryAfter(undefined, 0)).toBe(null)
+  })
+
+test('the plan-usage ask is taken under a lock directory, left alone ' +
+  'while another session holds it and taken over once abandoned',
+  async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    const mk = w.runs.find((a) => a[0] === '/bin/mkdir')!
+    const dir = mk[mk.length - 1]
+    expect(dir).toMatch(/\/plan-usage-[0-9a-f]{16}\.lock$/)
+    // Removed once the ask is answered.
+    expect(w.made.has(dir)).toBe(false)
+    // Another session takes it just before this one's minute is up.
+    await w.clock.advance(59_000)
+    await settle()
+    w.made.set(dir, w.clock.now())
+    await w.clock.advance(2_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(1)
+    expect(w.made.has(dir)).toBe(true)
+    // Held past 30 seconds, it is taken as abandoned and the ask made.
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    expect(w.made.has(dir)).toBe(false)
   })
 
 test('the credits are asked of the usage endpoint once per 5 minutes, ' +

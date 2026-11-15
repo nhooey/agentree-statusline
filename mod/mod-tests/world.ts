@@ -60,6 +60,7 @@ export type World = {
   // the requests made of it; with no answer there is no credential, and
   // nothing is asked.
   oauth: { body: string | null; status?: number;
+    headers?: Record<string, string>;
     kind?: 'bearer' | 'api-key';
     asked: { url: string; auth?: string;
       headers?: Record<string, string> }[];
@@ -69,6 +70,9 @@ export type World = {
   reads: string[]
   lists: string[]
   runs: (readonly string[])[]
+  // Each directory `mkdir` made, by path, with when, in ms; `rmdir`
+  // removes it.  A test may seed one, as another session's lock.
+  made: Map<string, number>
   // Each file's mtime in ms where a test set one; NOW otherwise.
   mtimes: Map<string, number>
 }
@@ -130,6 +134,11 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const isDir = (p: string) => [...files.keys()].some((f) =>
     f.startsWith(p.endsWith('/') ? p : p + '/'))
   on('fs.stat', ($, e) => {
+    const lock = made.get(e.path)
+    if (lock !== undefined) {
+      return { value: { kind: 'dir' as const, size: 0, mtimeMs: lock,
+        isLink: false } }
+    }
     const f = fileAt(e.path)
     if (f) {
       return { value: { kind: 'file' as const, size: f.length,
@@ -173,8 +182,28 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
       mtimeMs: mtimes.get(dir + name) ?? NOW * 1000, isLink: false })) }
   })
   const runs: (readonly string[])[] = []
+  const made = new Map<string, number>()
   on('process.run', ($, e) => {
     runs.push(e.argv)
+    const prog = e.argv[0]
+    const path = e.argv[e.argv.length - 1]
+    if (prog === '/bin/mkdir' && path.endsWith('.lock')) {
+      if (made.has(path)) {
+        const busy: Ran = { exitCode: 1, stdout: '', stderr: 'File exists',
+          isStdoutTruncated: false, isStderrTruncated: false }
+        return { value: busy }
+      }
+      made.set(path, clock.now())
+      const ok: Ran = { exitCode: 0, stdout: '', stderr: '',
+        isStdoutTruncated: false, isStderrTruncated: false }
+      return { value: ok }
+    }
+    if (prog === '/bin/rmdir' && path.endsWith('.lock')) {
+      made.delete(path)
+      const ok: Ran = { exitCode: 0, stdout: '', stderr: '',
+        isStdoutTruncated: false, isStderrTruncated: false }
+      return { value: ok }
+    }
     return { value: run(e) }
   })
   on('session.cwd', () => ({ value: CWD }))
@@ -191,7 +220,8 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     if (oauth.hang) return new Promise(() => {})
     const status = oauth.status ?? 200
     return oauth.body === null ? { deny: 'no network in tests' } as any
-      : { value: { status, ok: status >= 200 && status < 300, headers: {},
+      : { value: { status, ok: status >= 200 && status < 300,
+        headers: oauth.headers ?? {},
         text: oauth.body } }
   })
   const usage: World['usage'] = { down: usageDown }
@@ -217,5 +247,5 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     return { value: undefined }
   })
   return { files, store, stored, docs, usage, debug, logged, clock, session,
-    oauth, reads, lists, runs, mtimes }
+    oauth, reads, lists, runs, made, mtimes }
 }
