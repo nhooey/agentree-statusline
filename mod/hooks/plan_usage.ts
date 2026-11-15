@@ -52,13 +52,24 @@ const plan = {
 }
 
 /** The keys of the answer `raw` that hold a window's utilization, by
- * name: which of them carries Fable is the log's to show. */
-export function windowKeys(raw: unknown): string[] {
-  if (!isDict(raw)) return []
-  return Object.keys(raw).filter((k) => {
+ * name, then those that are null or an object with none: which of them
+ * carries Fable is the log's to show, read or not. */
+export function windowKeys(raw: unknown): { read: string[]; empty: string[] } {
+  if (!isDict(raw)) return { read: [], empty: [] }
+  const keys = Object.keys(raw).sort()
+  const read = keys.filter((k) => {
     const item = raw[k]
     return isDict(item) && pyGet(item, 'utilization') !== null
-  }).sort()
+  })
+  const empty = keys.filter((k) => !read.includes(k) &&
+    (raw[k] === null || isDict(raw[k])))
+  return { read, empty }
+}
+
+/** The log line for windowKeys' answer `w`. */
+export function windowLine(w: { read: string[]; empty: string[] }): string {
+  return 'plan usage: ' + (w.read.join(' ') || 'none') +
+    (w.empty.length ? ' · no reading: ' + w.empty.join(' ') : '')
 }
 
 /** The account's plan windows as last asked for, while fresh, else null;
@@ -119,10 +130,10 @@ async function ask($: $, key: string, now: number): Promise<void> {
     }
     if (!isDict(raw)) throw new Error('an answer that is not an object')
     plan.answer = { raw, at: now }
-    const keys = windowKeys(raw).join(' ')
+    const keys = windowLine(windowKeys(raw))
     if (keys !== plan.keys) {
       plan.keys = keys
-      await log($, 'plan usage: ' + (keys || 'none'))
+      await log($, keys)
     }
     plan.kept = { reading: claudeOauthReading(raw, now), fetched_at: now }
     await $.store.set(key, plan.kept)

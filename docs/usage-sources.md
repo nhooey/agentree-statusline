@@ -259,9 +259,10 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   once per distinct failure (`plan usage failed: HTTP 503`), and the next ask
   waits five minutes.
 - **The window keys are logged** once per load, and again when they change:
-  `plan usage: five_hour seven_day seven_day_overage_included`. Key names
-  only, never a figure or a header. The line says which key carries a window
-  when one is in doubt.
+  `plan usage: five_hour seven_day · no reading: seven_day_opus`. The keys
+  with a utilization come first, then those that are null or hold none. Key
+  names only, never a figure or a header. The line says which key carries a
+  window when one is in doubt, read or not.
 
 Turn it off with `"plan-usage": false` in a configuration file. The
 [credits](#the-accounts-credits) are read from a session's answer of the

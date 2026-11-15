@@ -482,7 +482,8 @@ test('under plan-usage, the plan\'s windows are asked of the usage ' +
     await settle()
     expect(w.oauth.asked.length).toBe(2)
     const line = 'plan usage: five_hour seven_day seven_day_omelette ' +
-      'seven_day_overage_included\n'
+      'seven_day_overage_included · no reading: seven_day_opus ' +
+      'seven_day_sonnet\n'
     expect(logOf(w).split(line).length - 1).toBe(1)
     // The keys alone, never a figure.
     expect(logOf(w)).not.toContain('utilization')
@@ -492,7 +493,8 @@ test('under plan-usage, the plan\'s windows are asked of the usage ' +
     await w.clock.advance(61_000)
     await settle()
     expect(logOf(w)).toContain(
-      'plan usage: five_hour seven_day seven_day_omelette\n')
+      'plan usage: five_hour seven_day seven_day_omelette · no reading: ' +
+      'seven_day_opus seven_day_sonnet\n')
   })
 
 for (const kind of ['none', 'api-key'] as const) {
