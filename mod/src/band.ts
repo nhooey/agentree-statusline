@@ -15,7 +15,7 @@
 // in the process's TZ, which the edge sets from `clock.tz` before drawing,
 // as for claude_cost.ts.
 import {
-  CHROME_DEPTH, E_ACCT, E_DATE, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN, E_PROJ,
+  CHROME_DEPTH, E_ACCT, E_DATE, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN,
   E_TOOL, E_WORK, GRID_CELLS, MAG_DUR_S, QUIET_WARN_S, STALE_MARK_S,
 } from "./spec.ts";
 import { durFmt, magDim, padVal, visWidth } from "./formatting.ts";
@@ -254,15 +254,17 @@ function homeDir(dir: string, home: string): string {
   return dir;
 }
 
-/** `dir`, as homeDir draws it, with the project's root, `root`, drawn as
- * 📦, the project's own mark, under its parent:
- * "~/git/📦/mod" for its mod/ folder. */
-function projectDir(dir: string, root: string, home: string): string {
+/** `dir`, as homeDir draws it, and where in it the project's root,
+ * `root`, has its own folder's name, which 📁 draws in 📦's colour:
+ * "~/git/repo/mod" and the span of "repo" for its mod/ folder.  The span
+ * is null outside the project. */
+function projectDir(dir: string, root: string, home: string):
+  [string, readonly [number, number] | null] {
   const r = pyRstrip(root, "/");
-  if (!r || (dir !== r && !dir.startsWith(r + "/"))) return homeDir(dir, home);
-  const parent = r.slice(0, r.lastIndexOf("/"));
-  return (parent ? homeDir(parent, home) : "") + "/" + E_PROJ +
-    pySlice(dir, pyLen(r));
+  const shown = homeDir(dir, home);
+  if (!r || (dir !== r && !dir.startsWith(r + "/"))) return [shown, null];
+  const end = homeDir(r, home).length;
+  return [shown, [end - (r.length - r.lastIndexOf("/") - 1), end]];
 }
 
 /** Where the session works, off the document's `git` and `payload`.  The
@@ -272,13 +274,15 @@ export function workspaceOf(fig: Dict, home: string): Workspace {
   const git: Git = decodeGit(fig.git);
   const style = pay.output_style;
   const pr = pay.pr_number;
+  const [dir, dirProject] = git.in_git
+    ? projectDir(pay.current_dir, git.main_root || git.toplevel, home)
+    : [homeDir(pay.current_dir, home), null];
   return {
     project: projectName(git, pay.project_dir),
     branch: git.branch,
     dirty: Boolean(git.dirty),
-    dir: git.in_git
-      ? projectDir(pay.current_dir, git.main_root || git.toplevel, home)
-      : homeDir(pay.current_dir, home),
+    dir,
+    ...(dirProject ? { dirProject } : {}),
     pr: pr && pr !== "null" ? pr : "",
     style: style && style !== "default" && style !== "null" ? style : "",
   };

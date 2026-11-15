@@ -308,6 +308,9 @@ export type Workspace = {
   readonly branch: string;
   readonly dirty: boolean;
   readonly dir: string;
+  /** Where in `dir` the project's own folder's name stands, drawn in 📦's
+   * colour; absent outside the project. */
+  readonly dirProject?: readonly [number, number];
   readonly pr: string;
   readonly style: string;
 };
@@ -334,7 +337,15 @@ export function workspacePieces(ws: Workspace | null): Piece[] {
         "  ", "F_AMB")
       : piece("workspace.branch", E_GIT_OK + ws.branch + "  ", "F_GRN"));
   }
-  if (ws.dir) out.push(piece("workspace.dir", E_DIR + ws.dir + "  ", "F_BLU", 3));
+  if (ws.dir && ws.dirProject) {
+    const [a, b] = ws.dirProject;
+    out.push({ path: "workspace.dir", drop: 3, spans: [
+      span(E_DIR + ws.dir.slice(0, a), "F_BLU"),
+      span(ws.dir.slice(a, b), "F_PROJ"),
+      span(ws.dir.slice(b) + "  ", "F_BLU")] });
+  } else if (ws.dir) {
+    out.push(piece("workspace.dir", E_DIR + ws.dir + "  ", "F_BLU", 3));
+  }
   if (ws.pr) out.push(piece("workspace.pr", E_PR + "#" + ws.pr + "  ", "F_CYN", 2));
   if (ws.style) out.push(piece("workspace.style", E_STY + ws.style, "F_CYN", 1));
   return out;

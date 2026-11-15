@@ -387,8 +387,9 @@ flush left.
   worktree, the main repository, since 🌿 already names the worktree's
   branch), 🌿 the branch, 📁 the current directory, 🔀 the branch's pull
   request and 🎨 the output style, when not the default. A dirty working
-  tree turns 🌿 into 🍂 and adds `✱`. 📁 draws the project's root as 📦
-  under its parent, so `📁~/git/📦/mod` is the project's `mod/` folder.
+  tree turns 🌿 into 🍂 and adds `✱`. 📁 draws the whole path, the
+  project's own folder in 📦's colour, so in `📁~/git/repo/mod` the
+  `repo` stands out as the project.
   Its windows and clock are in [The rows](#the-rows).
 
 A label keeps at least 12 columns before columns drop: an agent row's head
