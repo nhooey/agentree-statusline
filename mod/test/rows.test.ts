@@ -27,7 +27,7 @@ import {
 } from "../src/receipt.ts";
 import type { RowName } from "../src/band.ts";
 import { decodeTurn } from "../src/claude_cost.ts";
-import { spanFrom, spanJson } from "../tools/gen-grid-cases.ts";
+import { PROFILES, spanFrom, spanJson } from "../tools/gen-grid-cases.ts";
 import {
   OUT, corpusAgents, document, drawAccount, drawBand, drawReceipt,
   drawStart, generate, inZone,
@@ -36,11 +36,11 @@ import type { AccountCase, BandCase, ReceiptCase }
   from "../tools/gen-row-cases.ts";
 
 type File = { settings: { profiles: { [name: string]: Env } };
-  band: (BandCase & { rows: unknown[][][]; lines: string[] })[];
-  receipt: (ReceiptCase & { rows: unknown[][][]; lines: string[] })[];
+  band: (BandCase & { rows: unknown[][][]; lines?: string[] })[];
+  receipt: (ReceiptCase & { rows: unknown[][][]; lines?: string[] })[];
   start: { doc: string; hide: string[]; spans: unknown[][];
-    line: string }[];
-  account: (AccountCase & { row: unknown[][]; line: string })[] };
+    line?: string }[];
+  account: (AccountCase & { row: unknown[][]; line?: string })[] };
 
 const files = readdirSync(OUT).filter((f) => f.endsWith(".json")).sort();
 
@@ -53,10 +53,12 @@ test("the committed cases are the generator's", () => {
   }
 });
 
-/** Spans as the cases write them, and their joined line. */
+/** Spans as the cases write them, and their joined line where the case
+ * has it. */
 function same(got: readonly Span[], want: readonly unknown[][],
-  line: string, where: string): void {
+  line: string | undefined, where: string): void {
   assert.deepEqual(got.map(spanJson), want, where);
+  if (line === undefined) return;
   assert.equal(join(got), line, where);
   assert.equal(join(want.map(spanFrom)), line, where);
 }
@@ -71,7 +73,7 @@ for (const f of files) {
           c.place ?? null]);
         const rows = drawBand(st, document(c.doc), c);
         assert.equal(rows.length, c.rows.length, where);
-        rows.forEach((r, i) => same(r, c.rows[i], c.lines[i], where));
+        rows.forEach((r, i) => same(r, c.rows[i], c.lines?.[i], where));
       }
     });
     test(`${f} under ${profile}: receipt`, () => {
@@ -79,16 +81,21 @@ for (const f of files) {
         const where = JSON.stringify([c.doc, c.cols, c.hide]);
         const got = drawReceipt(st, document(c.doc), c);
         assert.equal(got.length, c.rows.length, where);
-        got.forEach((r, i) => same(r, c.rows[i], c.lines[i], where));
+        got.forEach((r, i) => same(r, c.rows[i], c.lines?.[i], where));
       }
     });
-    test(`${f} under ${profile}: start`, () => {
+  }
+  // Written once, in the first profile's file, since no profile changes
+  // them: replayed under every profile.
+  for (const [profile, env] of Object.entries(PROFILES)) {
+    const st = settings(env);
+    test(`${f}'s start cases under ${profile}`, () => {
       for (const c of data.start) {
         same(drawStart(st, document(c.doc), c.hide), c.spans, c.line,
           JSON.stringify([c.doc, c.hide]));
       }
     });
-    test(`${f} under ${profile}: account`, () => {
+    test(`${f}'s account cases under ${profile}`, () => {
       for (const c of data.account) {
         const where = JSON.stringify([c.doc, c.cols, c.hide, c.indent]);
         same(drawAccount(st, document(c.doc), c), c.row, c.line, where);
@@ -96,6 +103,18 @@ for (const f of files) {
     });
   }
 }
+
+test("each kind of case has one joined line in each file", () => {
+  for (const f of files) {
+    const data = JSON.parse(readFileSync(pathJoin(OUT, f), "utf8")) as File;
+    for (const [kind, list] of Object.entries({ band: data.band,
+      receipt: data.receipt, start: data.start, account: data.account })) {
+      const joined = (list as Dict[]).filter((c) =>
+        c.lines !== undefined || c.line !== undefined);
+      assert.equal(joined.length, list.length ? 1 : 0, `${f} ${kind}`);
+    }
+  }
+});
 
 test("the band's columns do not move with the phase or the figures", () => {
   const st = settings({});

@@ -338,18 +338,19 @@ Each step is one pull request, with `bash tests/all.sh` green after it.
    A schema number touches no fixture; a new field touches only the
    documents of sessions that have a value for it.
 
-3. **`TF3` `rows/` in one form, the second profile a sample.**
+3. **`TF3` `rows/` in one form, the second profile a sample.** Done.
 
    - Each case keeps its spans and drops the joined `lines`:
      `spans.join` is pinned by `formatting/spans.json`, and one case
-     per kind keeps its joined line.
+     per kind in each file keeps its joined line.
    - `iterm-tmux.json` keeps the cases a profile can change: each
      document once at 155 columns in each phase, and the receipts.
      `start` and `account`, identical under every profile, are written
-     once.
+     once, in `unknown.json`, and `rows.test.ts` replays them under
+     every profile.
 
-   About 3,000 KB to 950 KB, and a band change's diff is one line per
-   case, not two.
+   2,826 KB to 899 KB, and a band change's diff is one line per case,
+   not two.
 
 ### After `OP5`
 
