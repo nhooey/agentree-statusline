@@ -515,6 +515,17 @@ def openai_admin(start, end, opener=None, failure=None):
 FABLE_WINDOW = "seven_day_overage_included"
 
 
+def oauth_window_names(raw):
+    """The plan windows of /api/oauth/usage's answer `raw` to read, in
+    order: the 5-hour one, the plan's week and the Fable week, then every
+    other seven_day_* key, by name, since the answer adds per-model weeks
+    under names of its own (seven_day_opus, seven_day_sonnet,
+    seven_day_omelette, ...). The plan's week comes before the others,
+    which are as long."""
+    first=["five_hour", "seven_day", FABLE_WINDOW]
+    if not isinstance(raw, dict): return []
+    return first + sorted(k for k in raw if isinstance(k, str) and k.startswith("seven_day_") and k not in first)
+
 def experimental_claude_oauth(opener=None, failure=None):
     token=os.environ.get("CLAUDE_OAUTH_ACCESS_TOKEN")
     if not token: return {}
@@ -522,8 +533,8 @@ def experimental_claude_oauth(opener=None, failure=None):
                      {"Authorization":"Bearer " + token, "anthropic-beta":"oauth-2025-04-20"}, opener=opener, failure=failure)
     if not raw: return {}
     windows=[]
-    for name in ("five_hour", "seven_day", FABLE_WINDOW, "seven_day_opus", "seven_day_sonnet"):
-        item=raw.get(name, {}) if isinstance(raw, dict) else {}
+    for name in oauth_window_names(raw):
+        item=raw.get(name, {})
         if isinstance(item, dict) and item.get("utilization") is not None:
             duration=18000 if name == "five_hour" else 604800
             windows.append({"id":name, "duration_seconds":duration, "used_percent":item.get("utilization"), "resets_at":item.get("resets_at")})

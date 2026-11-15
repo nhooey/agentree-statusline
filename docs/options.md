@@ -367,6 +367,15 @@ names it.
 follows `usage-text`: 5 when any row whose `live` is not `"never"` has
 `place` `"above"`, as under the defaults, else 2.
 
+`plan-usage` is on in the defaults: the mod asks
+`https://api.anthropic.com/api/oauth/usage` for the plan's windows once a
+minute, one request with the session's own credential, which Claude Code
+sets on the request and the mod never sees, and only for a signed-in
+subscription. Under `usage-source` `auto` it draws them over Claude Code's
+own reading, which names only the plan's week, so the weekly Fable window
+(🦊 on 💳) shows without the Claude Usage Tracker. `false` turns it off; see
+[The plan's windows under the mod](usage-sources.md#the-plans-windows-under-the-mod).
+
 `rows.subagents.live` is `"always"` in the defaults: background subagents
 keep running between turns, so the band's tree keeps the running and
 paused ones under 🧵 then, and leaves the ones that ended to the turn's

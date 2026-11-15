@@ -53,9 +53,14 @@ export type World = {
   clock: MockClock
   // The session `$.session.id` answers, which a /resume switches.
   session: { id: string }
-  // The usage endpoint's answer, and the requests made of it; with no
-  // answer there is no credential, and nothing is asked.
-  oauth: { body: string | null; asked: { url: string; auth?: string }[];
+  // The usage endpoint's answer, its status (200 by default), the kind of
+  // credential `$.session.authorize` answers (a bearer one by default), and
+  // the requests made of it; with no answer there is no credential, and
+  // nothing is asked.
+  oauth: { body: string | null; status?: number;
+    kind?: 'bearer' | 'api-key';
+    asked: { url: string; auth?: string;
+      headers?: Record<string, string> }[];
     hang?: boolean }
   // The path of each `$.fs.read` and each `$.fs.list`, and the argv of
   // each `$.process.run`, in order.
@@ -175,12 +180,15 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   on('session.id', () => ({ value: session.id }))
   const oauth: World['oauth'] = { body: null, asked: [] }
   on('session.authorize', () => ({ value: oauth.body === null ? null
-    : { handle: 'test-handle', kind: 'bearer' as const } }))
+    : { handle: 'test-handle', kind: oauth.kind ?? 'bearer' } }))
   on('http.fetch', ($, e: any) => {
-    oauth.asked.push({ url: e.url, auth: e.init?.auth })
+    oauth.asked.push({ url: e.url, auth: e.init?.auth,
+      headers: e.init?.headers })
     if (oauth.hang) return new Promise(() => {})
+    const status = oauth.status ?? 200
     return oauth.body === null ? { deny: 'no network in tests' } as any
-      : { value: { status: 200, ok: true, headers: {}, text: oauth.body } }
+      : { value: { status, ok: status >= 200 && status < 300, headers: {},
+        text: oauth.body } }
   })
   const usage: World['usage'] = { down: usageDown }
   const reading = () => ({ value: { startedAt: NOW * 1000,
