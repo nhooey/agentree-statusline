@@ -49,10 +49,10 @@ LEVELS = [("true colour", {"TERM": "xterm-256color", "COLORTERM": "truecolor"}),
 DRAWINGS = [
     ("the band, 01-baseline at 196",
      ["node", "mod/tools/draw-figures.ts",
-      "tests/fixtures/figures/status/01-baseline@196.json", "--cols", "196"]),
+      "tests/fixtures/figures/status/01-baseline.json", "--cols", "196"]),
     ("the receipt, 01-plain at 150",
      ["node", "mod/tools/draw-figures.ts",
-      "tests/fixtures/figures/cost/01-plain@150.json", "--cols", "150"]),
+      "tests/fixtures/figures/cost/01-plain.json", "--cols", "150"]),
 ]
 GOLDENS = [("true colour", "status/true-colour-01@196.txt"),
            ("256 colours", "status/01-baseline@196.txt")]

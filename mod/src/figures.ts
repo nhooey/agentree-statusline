@@ -84,6 +84,15 @@ const CACHE_SHARES: Fields = {
   sess_write: "value",
 };
 
+/** Each record's fields, as a document writes them: what the tests fill a
+ * committed document's records back out from, the null fields left out.
+ * The Turn's are claude_cost.ts's TURN_FIELDS. */
+export const RECORD_FIELDS: { readonly [record: string]: readonly string[] } =
+  Object.fromEntries(Object.entries({
+    Payload: PAYLOAD, Transcript: TRANSCRIPT, Git: GIT, Limits: LIMITS,
+    CacheShares: CACHE_SHARES,
+  }).map(([name, fields]) => [name, Object.keys(fields)]));
+
 // _FIG_MISSING: the record's value for "missing", which the document
 // writes null.
 const TRANSCRIPT_MISSING: Dict = {

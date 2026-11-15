@@ -304,17 +304,22 @@ Each step is one pull request, with `bash tests/all.sh` green after it.
    change by running it before and after. A format change touches 1
    fixture file, not 90.
 
-2. **`TF2` One figures document per distinct document, sparse.**
+2. **`TF2` One figures document per distinct document, sparse.** Done.
 
    - `cases.json` gives each case a `figures` name; cases whose
      documents are the same name the same one (`01-baseline`, not
      `01-baseline@196` … `@none`). 230 files become 43.
-   - The committed text leaves out `schema` and every key whose value
-     is `null`. One loader per port (`tests/_figures.py`, a module
-     beside `mod/test/`) puts back the port's own schema number and a
-     `null` for each key of the record tables the text lacks, so the
-     decoders, which refuse a document with a key missing, are
-     unchanged.
+   - The committed text leaves out `schema` and every record field
+     (of a `Payload`, `Transcript`, `Git`, `Limits`, `CacheShares` or
+     `Turn`) whose value is `null`. One loader per port
+     (`tests/_figures.py`, `mod/test/figures_doc.ts`) puts back the
+     port's own schema number and a `null` for each record field the
+     text lacks, so the decoders, which refuse a document with a key
+     missing, are unchanged. The document's other `null`s (106 lines
+     across the 43: an accounting's `sess_share`, `usage.account_text`,
+     a status document's `rate`, `turn` and `open_turn`) stay in the
+     text, since a loader knows only the record tables and a new record
+     field never adds one; the 43 come to 438 KB.
    - `run-cases.py` compares what each of the 230 runs wrote, made
      sparse the same way, with its named document; `claude.test.ts`
      does the same for the TypeScript. A case whose document differs

@@ -9,6 +9,11 @@ command, a calibration cache rewritten in place).  A second implementation
 cannot run that, so it is spelt out here instead and tests/run-cases.py
 replays it.  What each case and environment is FOR is in tests/README.md.
 
+Each case names its figures document, `figures`, tests/fixtures/figures/
+<suite>/<figures>.json: a document has no width and no flags, so the cases
+that come to the same document name the same one, by default the case's
+own name.  run-cases.py fails a case whose run writes another.
+
 ORDER MATTERS.  The cases of one suite share one state directory, in the
 order listed, as they did under the shell suites: a payload with rate_limits
 writes the plan cache that a later payload without them reads.  The runner
@@ -121,10 +126,11 @@ def width(c):
 def status_cases():
     out = []
 
-    def case(name, payload, c, env="default", flags=()):
+    def case(name, payload, c, env="default", flags=(), figures=None):
         out.append({"id": "%s@%s" % (name, width(c)), "suite": "status",
                     "input": "payloads/status/%s.json" % payload,
-                    "cols": c or 0, "env": env, "flags": list(flags)})
+                    "cols": c or 0, "env": env, "flags": list(flags),
+                    "figures": figures or name})
 
     for p in STATUS_PAYLOADS:
         for c in STATUS_WIDTHS:
@@ -142,13 +148,17 @@ def status_cases():
     # failures are at the ends: 196 whole, 92 crowded, unknown the budget.
     # 08 for account figures wide enough to touch their marks.
     for c in (196, 92, None):
-        case("tight-01", "01-baseline", c, flags=["--no-mark-spacing"])
-        case("tight-08", "08-limits-critical", c, flags=["--no-mark-spacing"])
+        case("tight-01", "01-baseline", c, flags=["--no-mark-spacing"],
+             figures="01-baseline")
+        case("tight-08", "08-limits-critical", c, flags=["--no-mark-spacing"],
+             figures="08-limits-critical")
     # The rules are painted into the gap and take no column, so these must
     # match the unruled goldens once the `|` are spaces.  196 is the one width
     # that carries them; 01 leaves column 1 empty and 04 fills it.
-    case("rules-01", "01-baseline", 196, flags=["--column-rules"])
-    case("rules-04", "04-pr-and-style", 196, flags=["--column-rules"])
+    case("rules-01", "01-baseline", 196, flags=["--column-rules"],
+         figures="01-baseline")
+    case("rules-04", "04-pr-and-style", 196, flags=["--column-rules"],
+         figures="04-pr-and-style")
     # A 5-hour boundary at 02:18, between the last turn's prompt and its
     # calls: 🎤 <= 🎮 <= 💳 must hold for the turn that straddles it.  02
     # because a payload with its own rate_limits would overwrite the plant.
@@ -159,18 +169,20 @@ def status_cases():
     case("uncalibrated-02", "02-no-limits", 196, env="coarse")
     # The switch reaches five formatters and must change no row's width.
     for c in (196, 92, None):
-        case("subdec-01", "01-baseline", c, flags=["--subscript-decimals"])
+        case("subdec-01", "01-baseline", c, flags=["--subscript-decimals"],
+             figures="01-baseline")
         case("subdec-08", "08-limits-critical", c,
-             flags=["--subscript-decimals"])
+             flags=["--subscript-decimals"], figures="08-limits-critical")
     # Under 1٪, where the point form writes ".38" and this one "0₃₈": the
     # straddle plant leaves this session 0.63٪, the corpus's only such share.
     case("subdec-sub1-02", "02-no-limits", 196, env="straddle",
-         flags=["--subscript-decimals"])
+         flags=["--subscript-decimals"], figures="straddle-02")
     # short_model's branches no corpus payload reaches; see gen/status.py.
     case("model-fable", "model-fable", 196)
     case("model-mythos", "model-mythos", 196)
     # The true-colour set, where every case above draws the 256 one.
-    case("true-colour-01", "01-baseline", 196, env="true-colour")
+    case("true-colour-01", "01-baseline", 196, env="true-colour",
+         figures="01-baseline")
     return out
 
 
@@ -179,10 +191,11 @@ def cost_cases():
 
     # A Stop payload carries no quota envelope, so every cost case reads a
     # planted source: app-41-63 unless it says otherwise.
-    def case(name, transcript, c, env="app-41-63", flags=()):
+    def case(name, transcript, c, env="app-41-63", flags=(), figures=None):
         out.append({"id": "%s@%s" % (name, width(c)), "suite": "cost",
                     "input": "transcripts/cost/%s.jsonl" % transcript,
-                    "cols": c or 0, "env": env, "flags": list(flags)})
+                    "cols": c or 0, "env": env, "flags": list(flags),
+                    "figures": figures or name})
 
     for t in COST_TRANSCRIPTS:
         for c in COST_WIDTHS:
@@ -191,8 +204,9 @@ def cost_cases():
     # the pair's diff is the flag.  02 for the compaction row's own label.
     tight = ["--no-mark-spacing"]
     for c in (196, 120, None):
-        case("tight-01", "01-plain", c, flags=tight)
-    case("tight-02", "02-compaction", 150, flags=tight)
+        case("tight-01", "01-plain", c, flags=tight, figures="01-plain")
+    case("tight-02", "02-compaction", 150, flags=tight,
+         figures="02-compaction")
     # A second reading, so the 🔋 and 🪫 cells are not only ever 41٪ / 63٪.
     for c in COST_WIDTHS:
         case("plan-cache-01", "01-plain", c, env="plan-cache")
@@ -200,27 +214,30 @@ def cost_cases():
     # not clamp to 99٪.
     for c in (196, 120):
         case("plan-full-01", "01-plain", c, env="plan-full")
-    case("plan-full-tight-01", "01-plain", 196, env="plan-full", flags=tight)
+    case("plan-full-tight-01", "01-plain", 196, env="plan-full", flags=tight,
+         figures="plan-full-01")
     # Each switch removes something, so each is checked where it was visible.
     # --force-newline at 196 because the auto rule never fires there.  They
     # ran after plan-full was planted in the shell suite, so they read it.
     for c in (196, 150, 120, 92):
         case("no-acct-01", "01-plain", c, env="plan-full",
-             flags=["--no-account-totals"])
+             flags=["--no-account-totals"], figures="plan-full-01")
     for c in (196, 120):
         case("no-datetime-01", "01-plain", c, env="plan-full",
-             flags=["--no-datetime"])
+             flags=["--no-datetime"], figures="plan-full-01")
         case("no-usage-01", "01-plain", c, env="plan-full",
-             flags=["--no-usage-text"])
+             flags=["--no-usage-text"], figures="plan-full-01")
         case("force-nl-01", "01-plain", c, env="plan-full",
-             flags=["--force-newline"])
+             flags=["--force-newline"], figures="plan-full-01")
     case("no-usage-02", "02-compaction", 150, env="plan-full",
-         flags=["--no-usage-text"])
+         flags=["--no-usage-text"], figures="plan-full-02")
     # All four at once, at the tightest width.
     all_off = ["--no-account-totals", "--no-datetime", "--no-usage-text",
                "--force-newline"]
-    case("all-off-01", "01-plain", 92, env="plan-full", flags=all_off)
-    case("all-off-02", "02-compaction", 92, env="plan-full", flags=all_off)
+    case("all-off-01", "01-plain", 92, env="plan-full", flags=all_off,
+         figures="plan-full-01")
+    case("all-off-02", "02-compaction", 92, env="plan-full", flags=all_off,
+         figures="plan-full-02")
     # A boundary at 01:31, between 01-plain's last prompt and its one call:
     # the prompt's share must be part of the session's, not larger.
     for c in (196, 120):
@@ -233,9 +250,10 @@ def cost_cases():
     # point out of; both must move identically.  plan-cache so 🔋 🪫 draw.
     sub = ["--subscript-decimals"]
     for c in (196, 120):
-        case("subdec-01", "01-plain", c, env="plan-cache", flags=sub)
+        case("subdec-01", "01-plain", c, env="plan-cache", flags=sub,
+             figures="plan-cache-01")
     case("subdec-tight-01", "01-plain", 196, env="plan-cache",
-         flags=sub + tight)
+         flags=sub + tight, figures="plan-cache-01")
     # In colour, as the cost line draws only when asked.
     case("true-colour-01", "01-plain", 196, env="true-colour-panel",
          flags=["--color"])

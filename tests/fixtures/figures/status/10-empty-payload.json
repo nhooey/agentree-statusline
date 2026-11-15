@@ -1,0 +1,96 @@
+{
+  "accounting": {
+    "open_turn": null,
+    "own": null,
+    "session": null,
+    "turn": null
+  },
+  "cache_shares": {},
+  "clock": {
+    "now": 1786847000,
+    "tz": "UTC"
+  },
+  "context_window": 200000,
+  "git": {
+    "branch": "golden-clean",
+    "dirty": false,
+    "in_git": true,
+    "is_worktree": false,
+    "main_root": "${SCRATCH}/repo",
+    "toplevel": "${SCRATCH}/repo"
+  },
+  "limits": {
+    "session_pct": "15",
+    "session_reset": 1786847400,
+    "weekly_pct": "87",
+    "weekly_reset": 1787014800
+  },
+  "mode": "status",
+  "open_turn": null,
+  "payload": {
+    "lines_added": "0",
+    "lines_removed": "0"
+  },
+  "rate": null,
+  "transcript": {
+    "agent_etas": [],
+    "blocked_s": 0,
+    "busy_s": 0,
+    "compactions": 0,
+    "ctx_est": false,
+    "ctx_tokens": 0,
+    "eta": [],
+    "lines_added": 0,
+    "lines_removed": 0,
+    "monitors": 0,
+    "own_est": false,
+    "own_parts": [],
+    "own_tok_down": 0,
+    "own_usd": 0,
+    "queued": 0,
+    "shells": 0,
+    "tok_down": 0,
+    "tool_s": 0
+  },
+  "turn": null,
+  "usage": {
+    "account_text": null,
+    "plan": {
+      "session_pct": 15,
+      "session_resets_at": 1786847400,
+      "weekly_pct": 87,
+      "weekly_resets_at": 1787014800
+    },
+    "reading": {
+      "account": {},
+      "account_name": "default",
+      "agent": "claude",
+      "as_of": 1786847000,
+      "buckets": [
+        {
+          "id": "default",
+          "label": "default",
+          "windows": [
+            {
+              "duration_seconds": 18000,
+              "id": "five_hour",
+              "resets_at": 1786847400,
+              "used_percent": 15
+            },
+            {
+              "duration_seconds": 604800,
+              "id": "seven_day",
+              "resets_at": 1787014800,
+              "used_percent": 87
+            }
+          ]
+        }
+      ],
+      "fetched_at": 1786847000,
+      "period_start": "1786838400",
+      "schema_version": 1,
+      "source": "native",
+      "stale": false
+    }
+  }
+}

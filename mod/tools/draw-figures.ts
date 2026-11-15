@@ -8,7 +8,8 @@
 //        [--rows JSON] [--right-edge N] [--inset N]
 //        [--hint TEXT] [--plain]
 //
-// FILE is a figures document, such as one of tests/fixtures/figures/.
+// FILE is a figures document, such as one of tests/fixtures/figures/,
+// whose records' null fields may be left out, as those leave them.
 // A status document draws the band's 🎤 🤖 🎮 rows wherever they are
 // placed (--part band, the default), the 💳 account row (--part
 // account), the start line (--part start), what the mod draws above the
@@ -68,6 +69,7 @@ import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
 import type { Rows } from "../src/config.ts";
 import { OPTIONS } from "../src/options_spec.ts";
 import { corpusAgents } from "./gen-row-cases.ts";
+import { full } from "../test/figures_doc.ts";
 
 const USAGE = "usage: draw-figures.ts FILE [--cols N] " +
   "[--part {band,account,above,footer,tail,receipt,start}] " +
@@ -81,8 +83,10 @@ function fail(msg: string): never {
   process.exit(2);
 }
 
+/** A figures document, filled out as the tests fill a committed one
+ * (mod/test/figures_doc.ts), so a sparse one draws as a written one. */
 function read(path: string): Dict {
-  return JSON.parse(readFileSync(path, "utf8")) as Dict;
+  return full(JSON.parse(readFileSync(path, "utf8")) as Dict);
 }
 
 const argv = process.argv.slice(2);

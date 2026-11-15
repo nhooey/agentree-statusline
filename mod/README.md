@@ -137,7 +137,7 @@ place of Claude Code's `✻ <word> for <duration>`: the rows whose
 `transcript` is set in `rows`, frozen and dim, in their colours. As the
 mod ships that is 🎤 alone, since 🧵 and 🎮 stay live on screen
 (`node tools/draw-figures.ts
-../tests/fixtures/figures/cost/10-turn-id@196.json --cols 160 --part
+../tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part
 receipt --inset 2 --right-edge 5 --plain`, run from `mod/`):
 
 ```

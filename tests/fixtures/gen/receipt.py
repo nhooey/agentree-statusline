@@ -13,14 +13,14 @@ VARIANTS, by running the program's render stage (--from-figures) as
 run-cases.py does, and writes what it printed to
 tests/fixtures/receipt/cases.json, one case to a line:
 
-    {"figures": "<id>.json" under figures/cost/, "cols", "flags",
+    {"figures": the document's name under figures/cost/, "cols", "flags",
      "terminal": the profile variables, "tz": the zone the document's clock
      is drawn in, "out": the systemMessage, "" for none}
 
-A document's placeholders are filled as run-cases.py fills them; none of
-them is drawn.
+A document is filled out as run-cases.py fills it (tests/_figures.py),
+and its placeholders filled as run-cases.py fills them; none of them is
+drawn.
 """
-import hashlib
 import json
 import os
 import subprocess
@@ -33,6 +33,9 @@ REPO = os.path.dirname(os.path.dirname(FIXTURES))
 PROGRAM = os.path.join(REPO, "coding-agent-usage-line.py")
 FIGURES = os.path.join(FIXTURES, "figures", "cost")
 OUT = os.path.join(FIXTURES, "receipt")
+sys.path.insert(0, os.path.join(REPO, "tests"))
+
+import _figures  # noqa: E402
 
 # (cols, flags, terminal, tz): widths that cut the labels and put the turn
 # tag on a line of its own, each layout switch, and zones either side of
@@ -62,17 +65,9 @@ def fill(text):
 
 
 def documents():
-    """Each distinct cost figures document once, under its first name:
-    the flag cases' documents repeat the plain ones'."""
-    seen, out = set(), []
-    for name in sorted(os.listdir(FIGURES)):
-        with open(os.path.join(FIGURES, name), encoding="utf-8") as fh:
-            text = fh.read()
-        digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
-        if digest not in seen:
-            seen.add(digest)
-            out.append((name, text))
-    return out
+    """Each cost figures document, by name, as full canonical text."""
+    return [(f[:-5], _figures.read_full("cost", f[:-5]))
+            for f in sorted(os.listdir(FIGURES)) if f.endswith(".json")]
 
 
 def environ(terminal):

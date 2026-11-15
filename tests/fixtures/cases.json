@@ -3,6 +3,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [],
       "id": "01-baseline@196",
       "input": "payloads/status/01-baseline.json",
@@ -11,6 +12,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [],
       "id": "01-baseline@150",
       "input": "payloads/status/01-baseline.json",
@@ -19,6 +21,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [],
       "id": "01-baseline@120",
       "input": "payloads/status/01-baseline.json",
@@ -27,6 +30,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [],
       "id": "01-baseline@92",
       "input": "payloads/status/01-baseline.json",
@@ -35,6 +39,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [],
       "id": "01-baseline@60",
       "input": "payloads/status/01-baseline.json",
@@ -43,6 +48,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [],
       "id": "01-baseline@none",
       "input": "payloads/status/01-baseline.json",
@@ -51,6 +57,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "02-no-limits",
       "flags": [],
       "id": "02-no-limits@196",
       "input": "payloads/status/02-no-limits.json",
@@ -59,6 +66,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "02-no-limits",
       "flags": [],
       "id": "02-no-limits@150",
       "input": "payloads/status/02-no-limits.json",
@@ -67,6 +75,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "02-no-limits",
       "flags": [],
       "id": "02-no-limits@120",
       "input": "payloads/status/02-no-limits.json",
@@ -75,6 +84,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "02-no-limits",
       "flags": [],
       "id": "02-no-limits@92",
       "input": "payloads/status/02-no-limits.json",
@@ -83,6 +93,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "02-no-limits",
       "flags": [],
       "id": "02-no-limits@60",
       "input": "payloads/status/02-no-limits.json",
@@ -91,6 +102,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "02-no-limits",
       "flags": [],
       "id": "02-no-limits@none",
       "input": "payloads/status/02-no-limits.json",
@@ -99,6 +111,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "03-no-transcript",
       "flags": [],
       "id": "03-no-transcript@196",
       "input": "payloads/status/03-no-transcript.json",
@@ -107,6 +120,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "03-no-transcript",
       "flags": [],
       "id": "03-no-transcript@150",
       "input": "payloads/status/03-no-transcript.json",
@@ -115,6 +129,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "03-no-transcript",
       "flags": [],
       "id": "03-no-transcript@120",
       "input": "payloads/status/03-no-transcript.json",
@@ -123,6 +138,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "03-no-transcript",
       "flags": [],
       "id": "03-no-transcript@92",
       "input": "payloads/status/03-no-transcript.json",
@@ -131,6 +147,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "03-no-transcript",
       "flags": [],
       "id": "03-no-transcript@60",
       "input": "payloads/status/03-no-transcript.json",
@@ -139,6 +156,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "03-no-transcript",
       "flags": [],
       "id": "03-no-transcript@none",
       "input": "payloads/status/03-no-transcript.json",
@@ -147,6 +165,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [],
       "id": "04-pr-and-style@196",
       "input": "payloads/status/04-pr-and-style.json",
@@ -155,6 +174,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [],
       "id": "04-pr-and-style@150",
       "input": "payloads/status/04-pr-and-style.json",
@@ -163,6 +183,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [],
       "id": "04-pr-and-style@120",
       "input": "payloads/status/04-pr-and-style.json",
@@ -171,6 +192,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [],
       "id": "04-pr-and-style@92",
       "input": "payloads/status/04-pr-and-style.json",
@@ -179,6 +201,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [],
       "id": "04-pr-and-style@60",
       "input": "payloads/status/04-pr-and-style.json",
@@ -187,6 +210,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [],
       "id": "04-pr-and-style@none",
       "input": "payloads/status/04-pr-and-style.json",
@@ -195,6 +219,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "05-haiku-max",
       "flags": [],
       "id": "05-haiku-max@196",
       "input": "payloads/status/05-haiku-max.json",
@@ -203,6 +228,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "05-haiku-max",
       "flags": [],
       "id": "05-haiku-max@150",
       "input": "payloads/status/05-haiku-max.json",
@@ -211,6 +237,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "05-haiku-max",
       "flags": [],
       "id": "05-haiku-max@120",
       "input": "payloads/status/05-haiku-max.json",
@@ -219,6 +246,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "05-haiku-max",
       "flags": [],
       "id": "05-haiku-max@92",
       "input": "payloads/status/05-haiku-max.json",
@@ -227,6 +255,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "05-haiku-max",
       "flags": [],
       "id": "05-haiku-max@60",
       "input": "payloads/status/05-haiku-max.json",
@@ -235,6 +264,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "05-haiku-max",
       "flags": [],
       "id": "05-haiku-max@none",
       "input": "payloads/status/05-haiku-max.json",
@@ -243,6 +273,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "06-zero-cost",
       "flags": [],
       "id": "06-zero-cost@196",
       "input": "payloads/status/06-zero-cost.json",
@@ -251,6 +282,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "06-zero-cost",
       "flags": [],
       "id": "06-zero-cost@150",
       "input": "payloads/status/06-zero-cost.json",
@@ -259,6 +291,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "06-zero-cost",
       "flags": [],
       "id": "06-zero-cost@120",
       "input": "payloads/status/06-zero-cost.json",
@@ -267,6 +300,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "06-zero-cost",
       "flags": [],
       "id": "06-zero-cost@92",
       "input": "payloads/status/06-zero-cost.json",
@@ -275,6 +309,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "06-zero-cost",
       "flags": [],
       "id": "06-zero-cost@60",
       "input": "payloads/status/06-zero-cost.json",
@@ -283,6 +318,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "06-zero-cost",
       "flags": [],
       "id": "06-zero-cost@none",
       "input": "payloads/status/06-zero-cost.json",
@@ -291,6 +327,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "07-big-numbers",
       "flags": [],
       "id": "07-big-numbers@196",
       "input": "payloads/status/07-big-numbers.json",
@@ -299,6 +336,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "07-big-numbers",
       "flags": [],
       "id": "07-big-numbers@150",
       "input": "payloads/status/07-big-numbers.json",
@@ -307,6 +345,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "07-big-numbers",
       "flags": [],
       "id": "07-big-numbers@120",
       "input": "payloads/status/07-big-numbers.json",
@@ -315,6 +354,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "07-big-numbers",
       "flags": [],
       "id": "07-big-numbers@92",
       "input": "payloads/status/07-big-numbers.json",
@@ -323,6 +363,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "07-big-numbers",
       "flags": [],
       "id": "07-big-numbers@60",
       "input": "payloads/status/07-big-numbers.json",
@@ -331,6 +372,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "07-big-numbers",
       "flags": [],
       "id": "07-big-numbers@none",
       "input": "payloads/status/07-big-numbers.json",
@@ -339,6 +381,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [],
       "id": "08-limits-critical@196",
       "input": "payloads/status/08-limits-critical.json",
@@ -347,6 +390,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [],
       "id": "08-limits-critical@150",
       "input": "payloads/status/08-limits-critical.json",
@@ -355,6 +399,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [],
       "id": "08-limits-critical@120",
       "input": "payloads/status/08-limits-critical.json",
@@ -363,6 +408,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [],
       "id": "08-limits-critical@92",
       "input": "payloads/status/08-limits-critical.json",
@@ -371,6 +417,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [],
       "id": "08-limits-critical@60",
       "input": "payloads/status/08-limits-critical.json",
@@ -379,6 +426,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [],
       "id": "08-limits-critical@none",
       "input": "payloads/status/08-limits-critical.json",
@@ -387,6 +435,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "09-no-session-id",
       "flags": [],
       "id": "09-no-session-id@196",
       "input": "payloads/status/09-no-session-id.json",
@@ -395,6 +444,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "09-no-session-id",
       "flags": [],
       "id": "09-no-session-id@150",
       "input": "payloads/status/09-no-session-id.json",
@@ -403,6 +453,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "09-no-session-id",
       "flags": [],
       "id": "09-no-session-id@120",
       "input": "payloads/status/09-no-session-id.json",
@@ -411,6 +462,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "09-no-session-id",
       "flags": [],
       "id": "09-no-session-id@92",
       "input": "payloads/status/09-no-session-id.json",
@@ -419,6 +471,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "09-no-session-id",
       "flags": [],
       "id": "09-no-session-id@60",
       "input": "payloads/status/09-no-session-id.json",
@@ -427,6 +480,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "09-no-session-id",
       "flags": [],
       "id": "09-no-session-id@none",
       "input": "payloads/status/09-no-session-id.json",
@@ -435,6 +489,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "10-empty-payload",
       "flags": [],
       "id": "10-empty-payload@196",
       "input": "payloads/status/10-empty-payload.json",
@@ -443,6 +498,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "10-empty-payload",
       "flags": [],
       "id": "10-empty-payload@150",
       "input": "payloads/status/10-empty-payload.json",
@@ -451,6 +507,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "10-empty-payload",
       "flags": [],
       "id": "10-empty-payload@120",
       "input": "payloads/status/10-empty-payload.json",
@@ -459,6 +516,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "10-empty-payload",
       "flags": [],
       "id": "10-empty-payload@92",
       "input": "payloads/status/10-empty-payload.json",
@@ -467,6 +525,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "10-empty-payload",
       "flags": [],
       "id": "10-empty-payload@60",
       "input": "payloads/status/10-empty-payload.json",
@@ -475,6 +534,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "10-empty-payload",
       "flags": [],
       "id": "10-empty-payload@none",
       "input": "payloads/status/10-empty-payload.json",
@@ -483,6 +543,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "11-sonnet-200k",
       "flags": [],
       "id": "11-sonnet-200k@196",
       "input": "payloads/status/11-sonnet-200k.json",
@@ -491,6 +552,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "11-sonnet-200k",
       "flags": [],
       "id": "11-sonnet-200k@150",
       "input": "payloads/status/11-sonnet-200k.json",
@@ -499,6 +561,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "11-sonnet-200k",
       "flags": [],
       "id": "11-sonnet-200k@120",
       "input": "payloads/status/11-sonnet-200k.json",
@@ -507,6 +570,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "11-sonnet-200k",
       "flags": [],
       "id": "11-sonnet-200k@92",
       "input": "payloads/status/11-sonnet-200k.json",
@@ -515,6 +579,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "11-sonnet-200k",
       "flags": [],
       "id": "11-sonnet-200k@60",
       "input": "payloads/status/11-sonnet-200k.json",
@@ -523,6 +588,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "11-sonnet-200k",
       "flags": [],
       "id": "11-sonnet-200k@none",
       "input": "payloads/status/11-sonnet-200k.json",
@@ -531,6 +597,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "12-root-cwd",
       "flags": [],
       "id": "12-root-cwd@196",
       "input": "payloads/status/12-root-cwd.json",
@@ -539,6 +606,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "12-root-cwd",
       "flags": [],
       "id": "12-root-cwd@150",
       "input": "payloads/status/12-root-cwd.json",
@@ -547,6 +615,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "12-root-cwd",
       "flags": [],
       "id": "12-root-cwd@120",
       "input": "payloads/status/12-root-cwd.json",
@@ -555,6 +624,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "12-root-cwd",
       "flags": [],
       "id": "12-root-cwd@92",
       "input": "payloads/status/12-root-cwd.json",
@@ -563,6 +633,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "12-root-cwd",
       "flags": [],
       "id": "12-root-cwd@60",
       "input": "payloads/status/12-root-cwd.json",
@@ -571,6 +642,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "12-root-cwd",
       "flags": [],
       "id": "12-root-cwd@none",
       "input": "payloads/status/12-root-cwd.json",
@@ -579,6 +651,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "13-empty-transcript",
       "flags": [],
       "id": "13-empty-transcript@196",
       "input": "payloads/status/13-empty-transcript.json",
@@ -587,6 +660,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "13-empty-transcript",
       "flags": [],
       "id": "13-empty-transcript@150",
       "input": "payloads/status/13-empty-transcript.json",
@@ -595,6 +669,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "13-empty-transcript",
       "flags": [],
       "id": "13-empty-transcript@120",
       "input": "payloads/status/13-empty-transcript.json",
@@ -603,6 +678,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "13-empty-transcript",
       "flags": [],
       "id": "13-empty-transcript@92",
       "input": "payloads/status/13-empty-transcript.json",
@@ -611,6 +687,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "13-empty-transcript",
       "flags": [],
       "id": "13-empty-transcript@60",
       "input": "payloads/status/13-empty-transcript.json",
@@ -619,6 +696,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "13-empty-transcript",
       "flags": [],
       "id": "13-empty-transcript@none",
       "input": "payloads/status/13-empty-transcript.json",
@@ -627,6 +705,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "14-limits-full",
       "flags": [],
       "id": "14-limits-full@196",
       "input": "payloads/status/14-limits-full.json",
@@ -635,6 +714,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "14-limits-full",
       "flags": [],
       "id": "14-limits-full@150",
       "input": "payloads/status/14-limits-full.json",
@@ -643,6 +723,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "14-limits-full",
       "flags": [],
       "id": "14-limits-full@120",
       "input": "payloads/status/14-limits-full.json",
@@ -651,6 +732,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "14-limits-full",
       "flags": [],
       "id": "14-limits-full@92",
       "input": "payloads/status/14-limits-full.json",
@@ -659,6 +741,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "14-limits-full",
       "flags": [],
       "id": "14-limits-full@60",
       "input": "payloads/status/14-limits-full.json",
@@ -667,6 +750,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "14-limits-full",
       "flags": [],
       "id": "14-limits-full@none",
       "input": "payloads/status/14-limits-full.json",
@@ -675,6 +759,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "15-cache-warn",
       "flags": [],
       "id": "15-cache-warn@196",
       "input": "payloads/status/15-cache-warn.json",
@@ -683,6 +768,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "15-cache-warn",
       "flags": [],
       "id": "15-cache-warn@150",
       "input": "payloads/status/15-cache-warn.json",
@@ -691,6 +777,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "15-cache-warn",
       "flags": [],
       "id": "15-cache-warn@120",
       "input": "payloads/status/15-cache-warn.json",
@@ -699,6 +786,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "15-cache-warn",
       "flags": [],
       "id": "15-cache-warn@92",
       "input": "payloads/status/15-cache-warn.json",
@@ -707,6 +795,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "15-cache-warn",
       "flags": [],
       "id": "15-cache-warn@60",
       "input": "payloads/status/15-cache-warn.json",
@@ -715,6 +804,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "15-cache-warn",
       "flags": [],
       "id": "15-cache-warn@none",
       "input": "payloads/status/15-cache-warn.json",
@@ -723,6 +813,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "16-cache-crit",
       "flags": [],
       "id": "16-cache-crit@196",
       "input": "payloads/status/16-cache-crit.json",
@@ -731,6 +822,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "16-cache-crit",
       "flags": [],
       "id": "16-cache-crit@150",
       "input": "payloads/status/16-cache-crit.json",
@@ -739,6 +831,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "16-cache-crit",
       "flags": [],
       "id": "16-cache-crit@120",
       "input": "payloads/status/16-cache-crit.json",
@@ -747,6 +840,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "16-cache-crit",
       "flags": [],
       "id": "16-cache-crit@92",
       "input": "payloads/status/16-cache-crit.json",
@@ -755,6 +849,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "16-cache-crit",
       "flags": [],
       "id": "16-cache-crit@60",
       "input": "payloads/status/16-cache-crit.json",
@@ -763,6 +858,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "16-cache-crit",
       "flags": [],
       "id": "16-cache-crit@none",
       "input": "payloads/status/16-cache-crit.json",
@@ -771,6 +867,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "17-rounding-boundary",
       "flags": [],
       "id": "17-rounding-boundary@196",
       "input": "payloads/status/17-rounding-boundary.json",
@@ -779,6 +876,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "17-rounding-boundary",
       "flags": [],
       "id": "17-rounding-boundary@150",
       "input": "payloads/status/17-rounding-boundary.json",
@@ -787,6 +885,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "17-rounding-boundary",
       "flags": [],
       "id": "17-rounding-boundary@120",
       "input": "payloads/status/17-rounding-boundary.json",
@@ -795,6 +894,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "17-rounding-boundary",
       "flags": [],
       "id": "17-rounding-boundary@92",
       "input": "payloads/status/17-rounding-boundary.json",
@@ -803,6 +903,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "17-rounding-boundary",
       "flags": [],
       "id": "17-rounding-boundary@60",
       "input": "payloads/status/17-rounding-boundary.json",
@@ -811,6 +912,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "17-rounding-boundary",
       "flags": [],
       "id": "17-rounding-boundary@none",
       "input": "payloads/status/17-rounding-boundary.json",
@@ -819,6 +921,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "18-agents",
       "flags": [],
       "id": "18-agents@196",
       "input": "payloads/status/18-agents.json",
@@ -827,6 +930,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "18-agents",
       "flags": [],
       "id": "18-agents@150",
       "input": "payloads/status/18-agents.json",
@@ -835,6 +939,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "18-agents",
       "flags": [],
       "id": "18-agents@120",
       "input": "payloads/status/18-agents.json",
@@ -843,6 +948,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "18-agents",
       "flags": [],
       "id": "18-agents@92",
       "input": "payloads/status/18-agents.json",
@@ -851,6 +957,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "18-agents",
       "flags": [],
       "id": "18-agents@60",
       "input": "payloads/status/18-agents.json",
@@ -859,6 +966,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "18-agents",
       "flags": [],
       "id": "18-agents@none",
       "input": "payloads/status/18-agents.json",
@@ -867,6 +975,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "19-queue-and-compact",
       "flags": [],
       "id": "19-queue-and-compact@196",
       "input": "payloads/status/19-queue-and-compact.json",
@@ -875,6 +984,7 @@
     {
       "cols": 150,
       "env": "default",
+      "figures": "19-queue-and-compact",
       "flags": [],
       "id": "19-queue-and-compact@150",
       "input": "payloads/status/19-queue-and-compact.json",
@@ -883,6 +993,7 @@
     {
       "cols": 120,
       "env": "default",
+      "figures": "19-queue-and-compact",
       "flags": [],
       "id": "19-queue-and-compact@120",
       "input": "payloads/status/19-queue-and-compact.json",
@@ -891,6 +1002,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "19-queue-and-compact",
       "flags": [],
       "id": "19-queue-and-compact@92",
       "input": "payloads/status/19-queue-and-compact.json",
@@ -899,6 +1011,7 @@
     {
       "cols": 60,
       "env": "default",
+      "figures": "19-queue-and-compact",
       "flags": [],
       "id": "19-queue-and-compact@60",
       "input": "payloads/status/19-queue-and-compact.json",
@@ -907,6 +1020,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "19-queue-and-compact",
       "flags": [],
       "id": "19-queue-and-compact@none",
       "input": "payloads/status/19-queue-and-compact.json",
@@ -915,6 +1029,7 @@
     {
       "cols": 196,
       "env": "dirty",
+      "figures": "dirty-01",
       "flags": [],
       "id": "dirty-01@196",
       "input": "payloads/status/01-baseline.json",
@@ -923,6 +1038,7 @@
     {
       "cols": 150,
       "env": "dirty",
+      "figures": "dirty-01",
       "flags": [],
       "id": "dirty-01@150",
       "input": "payloads/status/01-baseline.json",
@@ -931,6 +1047,7 @@
     {
       "cols": 120,
       "env": "dirty",
+      "figures": "dirty-01",
       "flags": [],
       "id": "dirty-01@120",
       "input": "payloads/status/01-baseline.json",
@@ -939,6 +1056,7 @@
     {
       "cols": 92,
       "env": "dirty",
+      "figures": "dirty-01",
       "flags": [],
       "id": "dirty-01@92",
       "input": "payloads/status/01-baseline.json",
@@ -947,6 +1065,7 @@
     {
       "cols": 60,
       "env": "dirty",
+      "figures": "dirty-01",
       "flags": [],
       "id": "dirty-01@60",
       "input": "payloads/status/01-baseline.json",
@@ -955,6 +1074,7 @@
     {
       "cols": 0,
       "env": "dirty",
+      "figures": "dirty-01",
       "flags": [],
       "id": "dirty-01@none",
       "input": "payloads/status/01-baseline.json",
@@ -963,6 +1083,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "stale-plan-02-no-limits",
       "flags": [],
       "id": "stale-plan-02-no-limits@196",
       "input": "payloads/status/02-no-limits.json",
@@ -971,6 +1092,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "stale-plan-10-empty-payload",
       "flags": [],
       "id": "stale-plan-10-empty-payload@196",
       "input": "payloads/status/10-empty-payload.json",
@@ -979,6 +1101,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -989,6 +1112,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -999,6 +1123,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1009,6 +1134,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1019,6 +1145,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1029,6 +1156,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1039,6 +1167,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--column-rules"
       ],
@@ -1049,6 +1178,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "04-pr-and-style",
       "flags": [
         "--column-rules"
       ],
@@ -1059,6 +1189,7 @@
     {
       "cols": 196,
       "env": "straddle",
+      "figures": "straddle-02",
       "flags": [],
       "id": "straddle-02@196",
       "input": "payloads/status/02-no-limits.json",
@@ -1067,6 +1198,7 @@
     {
       "cols": 196,
       "env": "coarse",
+      "figures": "uncalibrated-02",
       "flags": [],
       "id": "uncalibrated-02@196",
       "input": "payloads/status/02-no-limits.json",
@@ -1075,6 +1207,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1085,6 +1218,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1095,6 +1229,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1105,6 +1240,7 @@
     {
       "cols": 92,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1115,6 +1251,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "01-baseline",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1125,6 +1262,7 @@
     {
       "cols": 0,
       "env": "default",
+      "figures": "08-limits-critical",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1135,6 +1273,7 @@
     {
       "cols": 196,
       "env": "straddle",
+      "figures": "straddle-02",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1145,6 +1284,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "model-fable",
       "flags": [],
       "id": "model-fable@196",
       "input": "payloads/status/model-fable.json",
@@ -1153,6 +1293,7 @@
     {
       "cols": 196,
       "env": "default",
+      "figures": "model-mythos",
       "flags": [],
       "id": "model-mythos@196",
       "input": "payloads/status/model-mythos.json",
@@ -1161,6 +1302,7 @@
     {
       "cols": 196,
       "env": "true-colour",
+      "figures": "01-baseline",
       "flags": [],
       "id": "true-colour-01@196",
       "input": "payloads/status/01-baseline.json",
@@ -1169,6 +1311,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [],
       "id": "01-plain@196",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1177,6 +1320,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [],
       "id": "01-plain@150",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1185,6 +1329,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [],
       "id": "01-plain@120",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1193,6 +1338,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [],
       "id": "01-plain@92",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1201,6 +1347,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [],
       "id": "01-plain@none",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1209,6 +1356,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "02-compaction",
       "flags": [],
       "id": "02-compaction@196",
       "input": "transcripts/cost/02-compaction.jsonl",
@@ -1217,6 +1365,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "02-compaction",
       "flags": [],
       "id": "02-compaction@150",
       "input": "transcripts/cost/02-compaction.jsonl",
@@ -1225,6 +1374,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "02-compaction",
       "flags": [],
       "id": "02-compaction@120",
       "input": "transcripts/cost/02-compaction.jsonl",
@@ -1233,6 +1383,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "02-compaction",
       "flags": [],
       "id": "02-compaction@92",
       "input": "transcripts/cost/02-compaction.jsonl",
@@ -1241,6 +1392,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "02-compaction",
       "flags": [],
       "id": "02-compaction@none",
       "input": "transcripts/cost/02-compaction.jsonl",
@@ -1249,6 +1401,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "03-single-turn",
       "flags": [],
       "id": "03-single-turn@196",
       "input": "transcripts/cost/03-single-turn.jsonl",
@@ -1257,6 +1410,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "03-single-turn",
       "flags": [],
       "id": "03-single-turn@150",
       "input": "transcripts/cost/03-single-turn.jsonl",
@@ -1265,6 +1419,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "03-single-turn",
       "flags": [],
       "id": "03-single-turn@120",
       "input": "transcripts/cost/03-single-turn.jsonl",
@@ -1273,6 +1428,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "03-single-turn",
       "flags": [],
       "id": "03-single-turn@92",
       "input": "transcripts/cost/03-single-turn.jsonl",
@@ -1281,6 +1437,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "03-single-turn",
       "flags": [],
       "id": "03-single-turn@none",
       "input": "transcripts/cost/03-single-turn.jsonl",
@@ -1289,6 +1446,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "04-tool-result",
       "flags": [],
       "id": "04-tool-result@196",
       "input": "transcripts/cost/04-tool-result.jsonl",
@@ -1297,6 +1455,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "04-tool-result",
       "flags": [],
       "id": "04-tool-result@150",
       "input": "transcripts/cost/04-tool-result.jsonl",
@@ -1305,6 +1464,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "04-tool-result",
       "flags": [],
       "id": "04-tool-result@120",
       "input": "transcripts/cost/04-tool-result.jsonl",
@@ -1313,6 +1473,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "04-tool-result",
       "flags": [],
       "id": "04-tool-result@92",
       "input": "transcripts/cost/04-tool-result.jsonl",
@@ -1321,6 +1482,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "04-tool-result",
       "flags": [],
       "id": "04-tool-result@none",
       "input": "transcripts/cost/04-tool-result.jsonl",
@@ -1329,6 +1491,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "05-sidechain",
       "flags": [],
       "id": "05-sidechain@196",
       "input": "transcripts/cost/05-sidechain.jsonl",
@@ -1337,6 +1500,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "05-sidechain",
       "flags": [],
       "id": "05-sidechain@150",
       "input": "transcripts/cost/05-sidechain.jsonl",
@@ -1345,6 +1509,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "05-sidechain",
       "flags": [],
       "id": "05-sidechain@120",
       "input": "transcripts/cost/05-sidechain.jsonl",
@@ -1353,6 +1518,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "05-sidechain",
       "flags": [],
       "id": "05-sidechain@92",
       "input": "transcripts/cost/05-sidechain.jsonl",
@@ -1361,6 +1527,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "05-sidechain",
       "flags": [],
       "id": "05-sidechain@none",
       "input": "transcripts/cost/05-sidechain.jsonl",
@@ -1369,6 +1536,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "06-interrupted",
       "flags": [],
       "id": "06-interrupted@196",
       "input": "transcripts/cost/06-interrupted.jsonl",
@@ -1377,6 +1545,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "06-interrupted",
       "flags": [],
       "id": "06-interrupted@150",
       "input": "transcripts/cost/06-interrupted.jsonl",
@@ -1385,6 +1554,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "06-interrupted",
       "flags": [],
       "id": "06-interrupted@120",
       "input": "transcripts/cost/06-interrupted.jsonl",
@@ -1393,6 +1563,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "06-interrupted",
       "flags": [],
       "id": "06-interrupted@92",
       "input": "transcripts/cost/06-interrupted.jsonl",
@@ -1401,6 +1572,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "06-interrupted",
       "flags": [],
       "id": "06-interrupted@none",
       "input": "transcripts/cost/06-interrupted.jsonl",
@@ -1409,6 +1581,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "07-empty",
       "flags": [],
       "id": "07-empty@196",
       "input": "transcripts/cost/07-empty.jsonl",
@@ -1417,6 +1590,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "07-empty",
       "flags": [],
       "id": "07-empty@150",
       "input": "transcripts/cost/07-empty.jsonl",
@@ -1425,6 +1599,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "07-empty",
       "flags": [],
       "id": "07-empty@120",
       "input": "transcripts/cost/07-empty.jsonl",
@@ -1433,6 +1608,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "07-empty",
       "flags": [],
       "id": "07-empty@92",
       "input": "transcripts/cost/07-empty.jsonl",
@@ -1441,6 +1617,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "07-empty",
       "flags": [],
       "id": "07-empty@none",
       "input": "transcripts/cost/07-empty.jsonl",
@@ -1449,6 +1626,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "08-woken",
       "flags": [],
       "id": "08-woken@196",
       "input": "transcripts/cost/08-woken.jsonl",
@@ -1457,6 +1635,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "08-woken",
       "flags": [],
       "id": "08-woken@150",
       "input": "transcripts/cost/08-woken.jsonl",
@@ -1465,6 +1644,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "08-woken",
       "flags": [],
       "id": "08-woken@120",
       "input": "transcripts/cost/08-woken.jsonl",
@@ -1473,6 +1653,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "08-woken",
       "flags": [],
       "id": "08-woken@92",
       "input": "transcripts/cost/08-woken.jsonl",
@@ -1481,6 +1662,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "08-woken",
       "flags": [],
       "id": "08-woken@none",
       "input": "transcripts/cost/08-woken.jsonl",
@@ -1489,6 +1671,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "09-agents",
       "flags": [],
       "id": "09-agents@196",
       "input": "transcripts/cost/09-agents.jsonl",
@@ -1497,6 +1680,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "09-agents",
       "flags": [],
       "id": "09-agents@150",
       "input": "transcripts/cost/09-agents.jsonl",
@@ -1505,6 +1689,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "09-agents",
       "flags": [],
       "id": "09-agents@120",
       "input": "transcripts/cost/09-agents.jsonl",
@@ -1513,6 +1698,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "09-agents",
       "flags": [],
       "id": "09-agents@92",
       "input": "transcripts/cost/09-agents.jsonl",
@@ -1521,6 +1707,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "09-agents",
       "flags": [],
       "id": "09-agents@none",
       "input": "transcripts/cost/09-agents.jsonl",
@@ -1529,6 +1716,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "10-turn-id",
       "flags": [],
       "id": "10-turn-id@196",
       "input": "transcripts/cost/10-turn-id.jsonl",
@@ -1537,6 +1725,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "10-turn-id",
       "flags": [],
       "id": "10-turn-id@150",
       "input": "transcripts/cost/10-turn-id.jsonl",
@@ -1545,6 +1734,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "10-turn-id",
       "flags": [],
       "id": "10-turn-id@120",
       "input": "transcripts/cost/10-turn-id.jsonl",
@@ -1553,6 +1743,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "10-turn-id",
       "flags": [],
       "id": "10-turn-id@92",
       "input": "transcripts/cost/10-turn-id.jsonl",
@@ -1561,6 +1752,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "10-turn-id",
       "flags": [],
       "id": "10-turn-id@none",
       "input": "transcripts/cost/10-turn-id.jsonl",
@@ -1569,6 +1761,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "11-turn-id-late",
       "flags": [],
       "id": "11-turn-id-late@196",
       "input": "transcripts/cost/11-turn-id-late.jsonl",
@@ -1577,6 +1770,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "11-turn-id-late",
       "flags": [],
       "id": "11-turn-id-late@150",
       "input": "transcripts/cost/11-turn-id-late.jsonl",
@@ -1585,6 +1779,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "11-turn-id-late",
       "flags": [],
       "id": "11-turn-id-late@120",
       "input": "transcripts/cost/11-turn-id-late.jsonl",
@@ -1593,6 +1788,7 @@
     {
       "cols": 92,
       "env": "app-41-63",
+      "figures": "11-turn-id-late",
       "flags": [],
       "id": "11-turn-id-late@92",
       "input": "transcripts/cost/11-turn-id-late.jsonl",
@@ -1601,6 +1797,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "11-turn-id-late",
       "flags": [],
       "id": "11-turn-id-late@none",
       "input": "transcripts/cost/11-turn-id-late.jsonl",
@@ -1609,6 +1806,7 @@
     {
       "cols": 196,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1619,6 +1817,7 @@
     {
       "cols": 120,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1629,6 +1828,7 @@
     {
       "cols": 0,
       "env": "app-41-63",
+      "figures": "01-plain",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1639,6 +1839,7 @@
     {
       "cols": 150,
       "env": "app-41-63",
+      "figures": "02-compaction",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1649,6 +1850,7 @@
     {
       "cols": 196,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [],
       "id": "plan-cache-01@196",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1657,6 +1859,7 @@
     {
       "cols": 150,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [],
       "id": "plan-cache-01@150",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1665,6 +1868,7 @@
     {
       "cols": 120,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [],
       "id": "plan-cache-01@120",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1673,6 +1877,7 @@
     {
       "cols": 92,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [],
       "id": "plan-cache-01@92",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1681,6 +1886,7 @@
     {
       "cols": 0,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [],
       "id": "plan-cache-01@none",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1689,6 +1895,7 @@
     {
       "cols": 196,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [],
       "id": "plan-full-01@196",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1697,6 +1904,7 @@
     {
       "cols": 120,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [],
       "id": "plan-full-01@120",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1705,6 +1913,7 @@
     {
       "cols": 196,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-mark-spacing"
       ],
@@ -1715,6 +1924,7 @@
     {
       "cols": 196,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-account-totals"
       ],
@@ -1725,6 +1935,7 @@
     {
       "cols": 150,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-account-totals"
       ],
@@ -1735,6 +1946,7 @@
     {
       "cols": 120,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-account-totals"
       ],
@@ -1745,6 +1957,7 @@
     {
       "cols": 92,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-account-totals"
       ],
@@ -1755,6 +1968,7 @@
     {
       "cols": 196,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-datetime"
       ],
@@ -1765,6 +1979,7 @@
     {
       "cols": 196,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-usage-text"
       ],
@@ -1775,6 +1990,7 @@
     {
       "cols": 196,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--force-newline"
       ],
@@ -1785,6 +2001,7 @@
     {
       "cols": 120,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-datetime"
       ],
@@ -1795,6 +2012,7 @@
     {
       "cols": 120,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-usage-text"
       ],
@@ -1805,6 +2023,7 @@
     {
       "cols": 120,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--force-newline"
       ],
@@ -1815,6 +2034,7 @@
     {
       "cols": 150,
       "env": "plan-full",
+      "figures": "plan-full-02",
       "flags": [
         "--no-usage-text"
       ],
@@ -1825,6 +2045,7 @@
     {
       "cols": 92,
       "env": "plan-full",
+      "figures": "plan-full-01",
       "flags": [
         "--no-account-totals",
         "--no-datetime",
@@ -1838,6 +2059,7 @@
     {
       "cols": 92,
       "env": "plan-full",
+      "figures": "plan-full-02",
       "flags": [
         "--no-account-totals",
         "--no-datetime",
@@ -1851,6 +2073,7 @@
     {
       "cols": 196,
       "env": "straddle-cost",
+      "figures": "straddle-01",
       "flags": [],
       "id": "straddle-01@196",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1859,6 +2082,7 @@
     {
       "cols": 120,
       "env": "straddle-cost",
+      "figures": "straddle-01",
       "flags": [],
       "id": "straddle-01@120",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1867,6 +2091,7 @@
     {
       "cols": 196,
       "env": "coarse-cost",
+      "figures": "uncalibrated-01",
       "flags": [],
       "id": "uncalibrated-01@196",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1875,6 +2100,7 @@
     {
       "cols": 120,
       "env": "coarse-cost",
+      "figures": "uncalibrated-01",
       "flags": [],
       "id": "uncalibrated-01@120",
       "input": "transcripts/cost/01-plain.jsonl",
@@ -1883,6 +2109,7 @@
     {
       "cols": 196,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1893,6 +2120,7 @@
     {
       "cols": 120,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [
         "--subscript-decimals"
       ],
@@ -1903,6 +2131,7 @@
     {
       "cols": 196,
       "env": "plan-cache",
+      "figures": "plan-cache-01",
       "flags": [
         "--subscript-decimals",
         "--no-mark-spacing"
@@ -1914,6 +2143,7 @@
     {
       "cols": 196,
       "env": "true-colour-panel",
+      "figures": "true-colour-01",
       "flags": [
         "--color"
       ],

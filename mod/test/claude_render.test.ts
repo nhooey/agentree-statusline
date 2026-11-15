@@ -1,7 +1,7 @@
 // claude_render.ts and figures.ts against the status goldens.
 //
-// Each status case in tests/fixtures/cases.json has a committed figures
-// document and a golden, and tests/run-cases.py's render stage draws the
+// Each status case in tests/fixtures/cases.json names a committed figures
+// document and has a golden, and tests/run-cases.py's render stage draws the
 // one and compares it with the other.  This does the same through the
 // TypeScript: the document's placeholders filled as run-cases.py fills
 // them, the settings from the case's environment and flags, and the drawn
@@ -14,6 +14,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderStatusFigures, statusSettings } from "../src/figures.ts";
+import { readFigures } from "./figures_doc.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -27,6 +28,7 @@ const SCRATCH = "/tmp/claude-golden-status.scratch";
 
 type Case = {
   id: string; suite: string; env: string; flags: string[]; cols: number;
+  figures: string;
 };
 
 function fill(text: string): string {
@@ -50,8 +52,7 @@ test("status goldens, drawn from their figures", () => {
   const fails: string[] = [];
   try {
     for (const c of cases) {
-      const fig = JSON.parse(fill(fs.readFileSync(
-        path.join(FIXTURES, "figures/status", c.id + ".json"), "utf-8")));
+      const fig = readFigures<any>("status", c.figures, fill);
       const env = JSON.parse(fs.readFileSync(
         path.join(FIXTURES, "env", c.env + ".json"), "utf-8"));
       // _fig_zone: the clock cells are drawn in the document's zone.
