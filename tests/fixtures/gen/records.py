@@ -721,6 +721,26 @@ def handmade():
         asst(42, "m6", "Started over.", usage=(1, 100, 1500, 60),
              stop="end_turn"),
     ])
+    # The session's name and colour, as Claude Code writes them on a
+    # resume and on /rename and /color: the agent name and a colour, then
+    # a title, which wins over the agent name; a title of blanks, which
+    # leaves the name to the agent name, and "default", no colour; then a
+    # later title and colour, which win.
+    def named(kind, field, value):
+        return {"type": kind, field: value, "sessionId": "S1"}
+    put("names.jsonl", [
+        named("agent-name", "agentName", "Worker"),
+        named("agent-color", "agentColor", "purple"),
+        prompt(0, "go", promptId="N1"),
+        asst(2, "n1", "went", usage=(1, 10, 100, 5), stop="end_turn"),
+        named("custom-title", "customTitle", "Statusline"),
+        named("custom-title", "customTitle", "   "),
+        named("agent-color", "agentColor", "default"),
+        prompt(10, "again", promptId="N2"),
+        asst(12, "n2", "again", usage=(1, 10, 110, 5), stop="end_turn"),
+        named("custom-title", "customTitle", "Status\nline  two"),
+        named("agent-color", "agentColor", "cyan"),
+    ])
     files.update(session())
     files.update(inbox_now())
     return files

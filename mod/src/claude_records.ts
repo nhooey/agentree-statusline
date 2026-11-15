@@ -294,6 +294,8 @@ export interface Transcript {
   readonly lines_removed: number;
   readonly prompt_id: string;       // the turn opened last: its promptId
   readonly turn_index: number | null;   // and turnIndex; _stampTurnId
+  readonly session_name: string;    // the session's name, /rename's, and
+  readonly session_color: string;   // its colour; foldSessionName
 }
 
 type TranscriptFirst = "tok_up" | "tok_down" | "cache_pct" | "ctx_tokens" |
@@ -307,7 +309,8 @@ export function transcript(
     tool_at: 0.0, wait_at: 0.0, idle_at: 0.0, last_seen: 0.0,
     own_tok_up: null, own_tok_down: 0, own_cache_pct: -1, own_usd: 0.0,
     own_parts: [], own_est: false,
-    lines_added: 0, lines_removed: 0, prompt_id: "", turn_index: null, ...t,
+    lines_added: 0, lines_removed: 0, prompt_id: "", turn_index: null,
+    session_name: "", session_color: "", ...t,
   };
 }
 
@@ -2194,6 +2197,11 @@ export interface TranscriptFold {
   ends: Map<string, number>;
   /** turnOpens's, for every walk foldTranscript makes. */
   gate: TurnGate;
+  /** The session's latest `custom-title`, `agent-name` and `agent-color`,
+   * foldSessionName's. */
+  title: string;
+  agentName: string;
+  color: string;
 }
 
 export function newTranscriptFold(): TranscriptFold {
@@ -2205,7 +2213,8 @@ export function newTranscriptFold(): TranscriptFold {
     queued: 0, compactions: 0, background: new Map(), bgInfo: new Map(),
     idleAt: 0.0,
     lastSeen: 0.0, opened: { pid: "", tidx: null }, wrote: new Set(),
-    added: 0, removed: 0, ends: new Map(), gate: newTurnGate() };
+    added: 0, removed: 0, ends: new Map(), gate: newTurnGate(), title: "",
+    agentName: "", color: "" };
 }
 
 /** `records` folded into `f`, a fresh fold by default. */
@@ -2259,7 +2268,27 @@ export function foldTranscript(f: TranscriptFold, r: Rec): void {
   foldOwnParts(f, r, kept, text);
   foldContext(f, r, kept);
   foldLastTexts(f, r);
+  foldSessionName(f, r);
   foldClock(f, r, text !== null);
+}
+
+/** The session's name and colour, as Claude Code writes them each time
+ * it names or colours the session (/rename, /color) and again on every
+ * resume: the latest `custom-title`, the latest `agent-name`, and the
+ * latest `agent-color`, "default" being none.  The name is the title,
+ * else the agent name (transcriptFinish). */
+function foldSessionName(f: TranscriptFold, r: Rec): void {
+  const t = pyGet(r, "type");
+  if (t === "custom-title") {
+    const v = pyGet(r, "customTitle");
+    if (typeof v === "string") f.title = v;
+  } else if (t === "agent-name") {
+    const v = pyGet(r, "agentName");
+    if (typeof v === "string") f.agentName = v;
+  } else if (t === "agent-color") {
+    const v = pyGet(r, "agentColor");
+    if (typeof v === "string") f.color = v === "default" ? "" : v;
+  }
 }
 
 /** The main thread's own parts, its requests and its compactions, in one
@@ -2500,6 +2529,8 @@ export function transcriptFinish(f: TranscriptFold,
     lines_removed: f.removed,
     prompt_id: f.opened.pid,
     turn_index: f.opened.tidx,
+    session_name: pyStrip(squash(pyStrip(f.title) ? f.title : f.agentName)),
+    session_color: f.color,
   });
 }
 

@@ -2814,8 +2814,9 @@ def _cost_check(pay: Payload, session: Optional[dict]) -> str:
 # 💾 figures; the Turn's lines and last reported `eta`; and the
 # Transcript's main-thread figures, `own_parts` and `own_est` with
 # compactions in its own cost.  The grid's rows draw them, as the plan's
-# "Where each row's figures come from" lays out.
-FIGURES_SCHEMA = 3
+# "Where each row's figures come from" lays out.  4: the Transcript's
+# `session_name` and `session_color`, which the band's 🎮 row draws.
+FIGURES_SCHEMA = 4
 
 # Where a run writes its figures as well as drawing them.  For the shared
 # cases only, like the calibration override above: tests/run-cases.py sets

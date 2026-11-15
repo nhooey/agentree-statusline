@@ -1,0 +1,11 @@
+{"type": "agent-name", "agentName": "Worker", "sessionId": "S1"}
+{"type": "agent-color", "agentColor": "purple", "sessionId": "S1"}
+{"type": "user", "userType": "external", "promptSource": "typed", "timestamp": "2026-08-17T20:53:20.000Z", "message": {"content": "go"}, "promptId": "N1"}
+{"type": "assistant", "timestamp": "2026-08-17T20:53:22.000Z", "message": {"id": "n1", "model": "claude-opus-5", "content": [{"type": "text", "text": "went"}], "usage": {"input_tokens": 1, "cache_creation_input_tokens": 10, "cache_read_input_tokens": 100, "output_tokens": 5}, "stop_reason": "end_turn"}, "requestId": "req-n1"}
+{"type": "custom-title", "customTitle": "Statusline", "sessionId": "S1"}
+{"type": "custom-title", "customTitle": "   ", "sessionId": "S1"}
+{"type": "agent-color", "agentColor": "default", "sessionId": "S1"}
+{"type": "user", "userType": "external", "promptSource": "typed", "timestamp": "2026-08-17T20:53:30.000Z", "message": {"content": "again"}, "promptId": "N2"}
+{"type": "assistant", "timestamp": "2026-08-17T20:53:32.000Z", "message": {"id": "n2", "model": "claude-opus-5", "content": [{"type": "text", "text": "again"}], "usage": {"input_tokens": 1, "cache_creation_input_tokens": 10, "cache_read_input_tokens": 110, "output_tokens": 5}, "stop_reason": "end_turn"}, "requestId": "req-n2"}
+{"type": "custom-title", "customTitle": "Status\nline  two", "sessionId": "S1"}
+{"type": "agent-color", "agentColor": "cyan", "sessionId": "S1"}

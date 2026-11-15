@@ -97,7 +97,7 @@ as the mod ships:
 | Row | Scope | Place | Drawn |
 |---|---|---|---|
 | 💳 | the account: the plan's two windows, and where the session works but for what 🎮's label has, all on the label | under the footer line | always |
-| 🎮 `session` | the session: the main thread and every agent, summed; on its label, where the session works | above the prompt, the tree's root | always |
+| 🎮 `session` | the session: the main thread and every agent, summed; on its label, its name and where it works | above the prompt, the tree's root | always |
 | 🧵 `agent` | the main thread alone, before any agent's figures are added | above the prompt, under 🎮 | always |
 | `subagents` | each subagent alone | above the prompt, under the thread that started it | always; between turns, those running or paused |
 | 🎤 `turn` | the turn: what it has cost so far | above the prompt, under 🧵, first | while a turn runs |
@@ -159,7 +159,8 @@ whether a survey held the band when it was drawn.
 ### The tree
 
 Above the prompt the rows are a tree of the session's threads: 🎮 the
-root, with where the session works (📦 🌿 🔀) on its label; under it 🧵
+root, with the session's name (📛) and where it works (📦 🌿 🔀) on its
+label; under it 🧵
 main, the main thread; under 🧵 first 🎤, the turn the main thread is
 working, then the subagents it started, each under the thread that
 started it, in the order they started, and after a thread's agents its
@@ -206,7 +207,8 @@ binary, then the changelog" --cols 200`):
   update) switches the transcript to that agent, as Claude Code's tasks
   list does, and one on 🧵 main's or 🎤 turn's goes back to the main
   conversation, since the turn is the main thread's. 🎮 and the grouped
-  rows have no label click. On 🎮's label 📦 the
+  rows have no label click, and 📛 the session's name takes none. On
+  🎮's label 📦 the
   project, 🌿 the branch and 🔀 the pull request link to them on GitHub,
   when the `origin` remote is on GitHub; otherwise they are plain text.
   The clickable parts are drawn as before, with no hotkeys and no
@@ -381,8 +383,27 @@ flush left.
   how many before the mark, `📨3 🧵`, and in the tree after its circle,
   as an agent row's [📨](#inbox) counts its own. The receipt's 🧵 row
   leaves the 📨 out.
-- **🎮**, the session, its mark alone, and in the tree 📦 🌿 🔀 after
-  it.
+- **🎮**, the session, its mark alone, and in the tree 📛 and the
+  session's name, then 📦 🌿 🔀. The name is the one /rename gives the
+  session, read off the main transcript: its latest `custom-title`
+  record, else its latest `agent-name`. It is drawn in the session's
+  colour, its latest `agent-color` (/color), as the palette's nearest
+  colour, and cream (`F_CRM`) with none (or `default`); with no name
+  there is no 📛. A later record wins, so a /rename shows on the next
+  read.
+
+  | Claude Code's colour | Drawn in |
+  |---|---|
+  | `red` | `F_RED` |
+  | `blue` | `F_BLU` |
+  | `green` | `F_GRN` |
+  | `yellow` | `F_YEL` |
+  | `purple` | `F_PUR` |
+  | `orange` | `F_AMB` |
+  | `pink` | `F_PNK` |
+  | `cyan` | `F_CYN` |
+  | none, `default` or another | `F_CRM` |
+
 - **💳** carries where the session works: 📦 the project (in a linked git
   worktree, the main repository, since 🌿 already names the worktree's
   branch), 🌿 the branch, 📁 the current directory, 🔀 the branch's pull
@@ -395,7 +416,8 @@ flush left.
 A label keeps at least 12 columns before columns drop: an agent row's head
 on the [subagent rows](#the-subagent-rows) and the first letters of its name. It
 sheds its ranked parts whole before anything is cut, least important
-first: 🎨, then 🔀, then 📁 on a label that has them. A part leaves whole
+first: 🎨, then 🔀, then 📁 on a label that has them, then 📛 and the
+session's name on 🎮's; 📦 and 🌿 are only ever cut. A part leaves whole
 rather than showing as `📁~/sr…`. What is left is cut with `…`. Which
 columns drop on a narrow terminal is worked out without a label's spill,
 so a long agent name never changes the grid.
@@ -513,16 +535,17 @@ which take the paths in the option `hide`, from the
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main` (the 🧵 row), `session`, `agent`, and `tag` for the turn tag lines' 🔋 and 🪫 (`tag.plan.five_hour`, `tag.plan.week`; [The turn tags](#the-turn-tags)) |
-| group | `plan` (🔋 🪫 🔜), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
+| group | `plan` (🔋 🪫 🔜), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫; on agent rows also `kids`, `compact`, `shells`, `monitors`, `inbox`: 👶🏻 🤏 💻 📡 📨; on the 🧵 row `inbox`), `chat` (`doing`, on agent rows; `progress`, the latest text in the tree, on 🧵 and agent rows; `prompt`, the prompt typed last, on the tree's 🎤 row), `workspace` (📦 🌿 📁 🔀 🎨, and `name`, 🎮's 📛), `clock` (📅 🕐), `name` (`label`, `kind`, `tag`: the row's name, an agent's kind, the turn's tag lines) |
 
 ```
---hide account              the 💳 row
---hide '*.work'             💾 on every row
---hide turn.time.eta        ⛳ on the 🎤 row only
---hide account.workspace    📦 🌿 📁 🔀 🎨 on the 💳 row
---hide '*.state.rate'       🛫 everywhere
---hide '*.chat.progress'    every thread's latest text in the tree
---hide tag.plan            🔋 🪫 and 💳 on the turn tag lines
+--hide account                  the 💳 row
+--hide '*.work'                 💾 on every row
+--hide turn.time.eta            ⛳ on the 🎤 row only
+--hide account.workspace        📦 🌿 📁 🔀 🎨 on the 💳 row
+--hide session.workspace.name   📛 and the session's name on 🎮
+--hide '*.state.rate'           🛫 everywhere
+--hide '*.chat.progress'        every thread's latest text in the tree
+--hide tag.plan                 🔋 🪫 and 💳 on the turn tag lines
 ```
 
 A column hidden on every row it could show on is removed, and the others

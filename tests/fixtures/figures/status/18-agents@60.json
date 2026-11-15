@@ -142,7 +142,7 @@
     "transcript": "${FIXTURES}/transcripts/status/agents.jsonl"
   },
   "rate": null,
-  "schema": 3,
+  "schema": 4,
   "transcript": {
     "agent_etas": [],
     "asst_text": "Done.",
@@ -172,6 +172,8 @@
     "own_usd": 0.047560000000000005,
     "prompt_id": "p-fork",
     "queued": 0,
+    "session_color": null,
+    "session_name": null,
     "shells": 0,
     "start_s": 1786843400,
     "tok_down": 4200,

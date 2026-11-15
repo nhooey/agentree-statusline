@@ -23,6 +23,11 @@ export const E_GIT_OK = "🌿";        // branch, clean tree
 export const E_GIT_BAD = "🍂";       // branch, dirty tree
 export const E_DIRTY = "✱";          // dirty marker, after a dirty branch name
 export const E_PR = "🔀";            // PR number
+export const E_NAME = "📛";          // the session's name (/rename), on 🎮's label.  A
+                                     // name badge: what the session is called, not
+                                     // where it works.  U+1F4DB, Unicode 6.0, single
+                                     // codepoint, Emoji_Presentation=Yes, inside
+                                     // EAW_WIDE.
 export const E_MOD = "🤖";           // model
 export const E_TOK = "🧩";           // ▴/▾ tokens
 export const E_UP = "▴";             // input tokens, inside the 🧩 segment.  U+25B4 BLACK
@@ -1334,7 +1339,8 @@ export const HIDE_GROUPS = {
                                                         //  and a thread's
                                                         //  latest progress
                                                         //  update
-  "workspace": ["project", "branch", "dir", "pr", "style"],  // 📦 🌿 📁 🔀 🎨
+  "workspace": ["project", "branch", "dir", "pr", "style", "name"],  // 📦 🌿 📁 🔀 🎨, and
+                                                                     //  🎮's 📛
   "clock": ["date", "time"],                            // 📅 🕐
   "name": ["label", "kind", "receipt", "tag"],          // the row's name, an
                                                         //  agent's kind, the

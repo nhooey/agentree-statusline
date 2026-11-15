@@ -235,7 +235,7 @@
     "transcript": "${FIXTURES}/transcripts/status/main.jsonl"
   },
   "rate": null,
-  "schema": 3,
+  "schema": 4,
   "transcript": {
     "agent_etas": [],
     "asst_text": "Two figures, because one of them is not a duration you spent.¶ ¶ The session age is wall clock 🧩 and the other is 時間 answered.",
@@ -829,6 +829,8 @@
     "own_usd": 34.64311500000003,
     "prompt_id": null,
     "queued": 0,
+    "session_color": null,
+    "session_name": null,
     "shells": 0,
     "start_s": 1786813520,
     "tok_down": 841300,

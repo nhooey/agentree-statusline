@@ -165,7 +165,7 @@ compare, so the text is canonical:
   first cost case to run a `cmd:` source records what the command printed,
   and the later ones read it back from the source cache, which keeps less.
 
-`schema` is 3 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
+`schema` is 4 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
 the figures the redesigned grid draws and today's rows do not: the status
 document's `turn` and `accounting`, the accounting's time and 💾 figures, the
 `Turn`'s lines and the `Transcript`'s main-thread figures. Schema 3, the same
@@ -174,7 +174,8 @@ day, added what the decisions in the plan's
 need: the status document's `open_turn` and `accounting.open_turn`,
 `accounting.own`, the session's `start_s`, the `Transcript`'s `own_parts` and
 `own_est` with the compactions in its own cost, and the `Turn`'s `eta`. No row
-moved either time. Both modes carry:
+moved either time. Schema 4 added the `Transcript`'s `session_name` and
+`session_color`, which the band's 🎮 row draws. Both modes carry:
 
 | Key | Holds |
 |---|---|
@@ -190,7 +191,7 @@ as `claude_records.py` defines them:
 | Key | Record |
 |---|---|
 | `payload` | `Payload`: the status-line JSON as read, its strings as given |
-| `transcript` | `Transcript`: tokens, cache rate, context, the last exchange, the ⌛ durations and their epochs, ETAs, queue and compactions; and the main thread's own, apart from its agents: `own_tok_up`, `own_tok_down` and `own_cache_pct` over its own requests; `own_parts`, an `[epoch, dollars]` pair for each of those requests and each compaction in the order written, a compaction's stamped where its turn is (at a `/compact` prompt with no calls, else at its boundary); `own_usd`, the parts totalled; `own_est`, true when a compaction is in them, whose summary's cost is an estimate; `lines_added` and `lines_removed` off its own tool results; and the `prompt_id` and `turn_index` of the turn opened last |
+| `transcript` | `Transcript`: tokens, cache rate, context, the last exchange, the ⌛ durations and their epochs, ETAs, queue and compactions; and the main thread's own, apart from its agents: `own_tok_up`, `own_tok_down` and `own_cache_pct` over its own requests; `own_parts`, an `[epoch, dollars]` pair for each of those requests and each compaction in the order written, a compaction's stamped where its turn is (at a `/compact` prompt with no calls, else at its boundary); `own_usd`, the parts totalled; `own_est`, true when a compaction is in them, whose summary's cost is an estimate; `lines_added` and `lines_removed` off its own tool results; the `prompt_id` and `turn_index` of the turn opened last; and `session_name` and `session_color`, the session's name and Claude Code's colour for it, off its latest `custom-title` (else `agent-name`) and `agent-color` records |
 | `git` | `Git`: branch, dirty, toplevel, worktree |
 | `limits` | `Limits`: the window percentages as the source gave them, this session's and this turn's share of each, the resets as epochs |
 | `cache_shares` | `CacheShares`: 📖 and 📝 for the turn and the session |

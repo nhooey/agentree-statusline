@@ -28,9 +28,9 @@ import type { Dict } from "./py.ts";
 
 // The status document's `turn`, `accounting` and `open_turn`,
 // `accounting.own`, the session's `start_s`, the main thread's own figures
-// on its transcript (`own_parts` and `own_est`), and the Turn's `eta`.
-// claude.py says which.
-export const FIGURES_SCHEMA = 3;
+// on its transcript (`own_parts` and `own_est`), the Turn's `eta`, and the
+// session's name and colour on its transcript.  claude.py says which.
+export const FIGURES_SCHEMA = 4;
 
 // ════════════════════════════════════════════════════════════════════════════
 // Records.
@@ -64,6 +64,7 @@ const TRANSCRIPT: Fields = {
   own_cache_pct: "value", own_usd: "value", own_parts: "value",
   own_est: "value", lines_added: "value",
   lines_removed: "value", prompt_id: "str", turn_index: "value",
+  session_name: "str", session_color: "str",
 };
 
 const GIT: Fields = {

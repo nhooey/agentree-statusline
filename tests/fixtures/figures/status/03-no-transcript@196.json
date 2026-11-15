@@ -56,7 +56,7 @@
     "transcript": "/nonexistent/x.jsonl"
   },
   "rate": null,
-  "schema": 3,
+  "schema": 4,
   "transcript": {
     "agent_etas": [],
     "asst_text": null,
@@ -81,6 +81,8 @@
     "own_usd": 0,
     "prompt_id": null,
     "queued": 0,
+    "session_color": null,
+    "session_name": null,
     "shells": 0,
     "start_s": null,
     "tok_down": 0,

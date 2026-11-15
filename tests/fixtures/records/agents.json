@@ -9101,6 +9101,326 @@
   },
   {
    "args": [
+    "tests/fixtures/records/inputs/names.jsonl"
+   ],
+   "fn": "inbox_classify",
+   "kw": {},
+   "out": [
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ]
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl"
+   ],
+   "fn": "inbox_sends",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl"
+   ],
+   "fn": "inbox_deliveries",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl",
+    [
+     "queued for delivery to"
+    ]
+   ],
+   "fn": "marked_records",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl",
+    [
+     "\"coordinator\"",
+     "\"peer\""
+    ]
+   ],
+   "fn": "marked_records",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl",
+    [
+     "{"
+    ]
+   ],
+   "fn": "marked_records",
+   "kw": {},
+   "out": [
+    {
+     "agentName": "Worker",
+     "sessionId": "S1",
+     "type": "agent-name"
+    },
+    {
+     "agentColor": "purple",
+     "sessionId": "S1",
+     "type": "agent-color"
+    },
+    {
+     "message": {
+      "content": "go"
+     },
+     "promptId": "N1",
+     "promptSource": "typed",
+     "timestamp": "2026-08-17T20:53:20.000Z",
+     "type": "user",
+     "userType": "external"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "text": "went",
+        "type": "text"
+       }
+      ],
+      "id": "n1",
+      "model": "claude-opus-5",
+      "stop_reason": "end_turn",
+      "usage": {
+       "cache_creation_input_tokens": 10,
+       "cache_read_input_tokens": 100,
+       "input_tokens": 1,
+       "output_tokens": 5
+      }
+     },
+     "requestId": "req-n1",
+     "timestamp": "2026-08-17T20:53:22.000Z",
+     "type": "assistant"
+    },
+    {
+     "customTitle": "Statusline",
+     "sessionId": "S1",
+     "type": "custom-title"
+    },
+    {
+     "customTitle": "   ",
+     "sessionId": "S1",
+     "type": "custom-title"
+    },
+    {
+     "agentColor": "default",
+     "sessionId": "S1",
+     "type": "agent-color"
+    },
+    {
+     "message": {
+      "content": "again"
+     },
+     "promptId": "N2",
+     "promptSource": "typed",
+     "timestamp": "2026-08-17T20:53:30.000Z",
+     "type": "user",
+     "userType": "external"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "text": "again",
+        "type": "text"
+       }
+      ],
+      "id": "n2",
+      "model": "claude-opus-5",
+      "stop_reason": "end_turn",
+      "usage": {
+       "cache_creation_input_tokens": 10,
+       "cache_read_input_tokens": 110,
+       "input_tokens": 1,
+       "output_tokens": 5
+      }
+     },
+     "requestId": "req-n2",
+     "timestamp": "2026-08-17T20:53:32.000Z",
+     "type": "assistant"
+    },
+    {
+     "customTitle": "Status\nline  two",
+     "sessionId": "S1",
+     "type": "custom-title"
+    },
+    {
+     "agentColor": "cyan",
+     "sessionId": "S1",
+     "type": "agent-color"
+    }
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl",
+    [
+     "zzz"
+    ]
+   ],
+   "fn": "marked_records",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/names.jsonl",
+    [
+     "}\n{"
+    ]
+   ],
+   "fn": "marked_records",
+   "kw": {},
+   "out": [
+    {
+     "agentName": "Worker",
+     "sessionId": "S1",
+     "type": "agent-name"
+    },
+    {
+     "agentColor": "purple",
+     "sessionId": "S1",
+     "type": "agent-color"
+    },
+    {
+     "message": {
+      "content": "go"
+     },
+     "promptId": "N1",
+     "promptSource": "typed",
+     "timestamp": "2026-08-17T20:53:20.000Z",
+     "type": "user",
+     "userType": "external"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "text": "went",
+        "type": "text"
+       }
+      ],
+      "id": "n1",
+      "model": "claude-opus-5",
+      "stop_reason": "end_turn",
+      "usage": {
+       "cache_creation_input_tokens": 10,
+       "cache_read_input_tokens": 100,
+       "input_tokens": 1,
+       "output_tokens": 5
+      }
+     },
+     "requestId": "req-n1",
+     "timestamp": "2026-08-17T20:53:22.000Z",
+     "type": "assistant"
+    },
+    {
+     "customTitle": "Statusline",
+     "sessionId": "S1",
+     "type": "custom-title"
+    },
+    {
+     "customTitle": "   ",
+     "sessionId": "S1",
+     "type": "custom-title"
+    },
+    {
+     "agentColor": "default",
+     "sessionId": "S1",
+     "type": "agent-color"
+    },
+    {
+     "message": {
+      "content": "again"
+     },
+     "promptId": "N2",
+     "promptSource": "typed",
+     "timestamp": "2026-08-17T20:53:30.000Z",
+     "type": "user",
+     "userType": "external"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "text": "again",
+        "type": "text"
+       }
+      ],
+      "id": "n2",
+      "model": "claude-opus-5",
+      "stop_reason": "end_turn",
+      "usage": {
+       "cache_creation_input_tokens": 10,
+       "cache_read_input_tokens": 110,
+       "input_tokens": 1,
+       "output_tokens": 5
+      }
+     },
+     "requestId": "req-n2",
+     "timestamp": "2026-08-17T20:53:32.000Z",
+     "type": "assistant"
+    },
+    {
+     "customTitle": "Status\nline  two",
+     "sessionId": "S1",
+     "type": "custom-title"
+    }
+   ]
+  },
+  {
+   "args": [
     "tests/fixtures/records/inputs/own.jsonl"
    ],
    "fn": "inbox_classify",

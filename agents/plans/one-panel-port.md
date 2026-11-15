@@ -170,8 +170,11 @@ every row.
   the columns the figures leave and is cut with `…`, so on a narrow
   terminal the update shrinks first and no figure moves. The path
   `chat.progress` hides the update.
-- **The root's label** is the workspace: 📦 the project, 🌿 the branch and
-  🔀 the pull request, each a link to it on GitHub. The 💳 row keeps the
+- **The root's label** is 📛 the session's name, in the colour Claude
+  Code gives the session (read off the main transcript's latest
+  `custom-title`, else `agent-name`, and `agent-color`), then the
+  workspace: 📦 the project, 🌿 the branch and 🔀 the pull request, each
+  a link to it on GitHub. The name takes no click. The 💳 row keeps the
   account alone.
 - **Folding.** Every row with children folds and opens on a click: its
   mark takes the place of the `─` in its tree line, `├⊟` opened and `├⊞`

@@ -58,7 +58,7 @@ import {
   renderAgentSplit, renderBackground, renderInbox, runningParents, treeShape,
 } from "./claude_subagent_render.ts";
 import type { Eta } from "./claude_subagent_render.ts";
-import { workspacePieces } from "./cells.ts";
+import { sessionNamePieces, workspacePieces } from "./cells.ts";
 import type { Workspace } from "./cells.ts";
 import { preparedOf } from "./subagent_tasks.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
@@ -90,10 +90,12 @@ export type TreeAgents = {
  * `mainProgress` the first line of the last text it wrote, and
  * `turnPrompt` the prompt typed last, drawn after 🎤's name.  `cap` is the most subagent rows drawn, and `folds` the folds
  * kept, by key.  `repo` is the repository's address on GitHub, which 📦 🌿
- * 🔀 link to; null or absent, they link nowhere.  `stamped` draws the
- * tree as the turn's receipt stamps it: the agents as stampedNodes picks
- * them, every row opened, no fold marks, `cap`, `folds` and `repo` not
- * read, and nothing pressing. */
+ * 🔀 link to; null or absent, they link nowhere.  `sessionName` and
+ * `sessionColour` are the session's name and Claude Code's colour for it,
+ * drawn on 🎮's label before 📦 (sessionNamePieces); absent, none.
+ * `stamped` draws the tree as the turn's receipt stamps it: the agents as
+ * stampedNodes picks them, every row opened, no fold marks, `cap`,
+ * `folds` and `repo` not read, and nothing pressing. */
 export type TreeInput = {
   readonly session: Row | null;
   readonly main: Row | null;
@@ -109,6 +111,8 @@ export type TreeInput = {
   readonly folds?: Folds;
   readonly repo?: string | null;
   readonly stamped?: boolean;
+  readonly sessionName?: string;
+  readonly sessionColour?: string;
 };
 
 /** The folds the person left, by key: true folded, false opened.  A key
@@ -314,6 +318,7 @@ export function treeRows(st: Settings, inp: TreeInput,
     drawNode({ folded, kids: folded ? [] : top, fold,
       row: { ...inp.session, label: [
         { path: "name.label", spans: [span(E_SESSION + " ")], drop: 0 },
+        ...sessionNamePieces(inp.sessionName ?? "", inp.sessionColour ?? ""),
         ...linked(ws, stamped ? null : inp.repo ?? null,
           inp.workspace)] } }, [], out, !stamped);
   } else {

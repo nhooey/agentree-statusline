@@ -28,7 +28,9 @@ import {
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
 import { stampedSplit } from "../src/band_tree.ts";
-import { draw } from "../src/grid.ts";
+import { draw, labelText } from "../src/grid.ts";
+import { SESSION_COLOUR_NONE, SESSION_COLOURS } from "../src/cells.ts";
+import * as spec from "../src/spec.ts";
 import type { Row } from "../src/grid.ts";
 import { bandRows, fixedKeys, treeOf } from "../src/band.ts";
 import type { BandOpts, Live, Phase } from "../src/band.ts";
@@ -242,6 +244,48 @@ test("the tree draws 🎮 with the workspace, then 🧵 main, and under it " +
   assert.match(lines[1], /^╰⊟ 🧵🟢 main  Checking the binary/u);
   assert.match(lines[2], /^   ├─ 🎤🟢 turn$/u);
 });
+
+test("🎮 draws 📛 and the session's name before 📦, in its colour, with " +
+  "no press; none without a name, and workspace.name hides it", () => {
+  const named = { agents: null, sessionName: "Statusline",
+    sessionColour: "purple" };
+  assert.match(tree("03-tree@220", named)[0],
+    /^⊟ 🎮 📛Statusline 📦repo 🌿main  🔀#38/u);
+  assert.match(tree("03-tree@220", { agents: null })[0],
+    /^⊟ 🎮 📦repo 🌿main  🔀#38/u);
+  assert.match(tree("03-tree@220", named, ["session.workspace.name"])[0],
+    /^⊟ 🎮 📦repo 🌿main  🔀#38/u);
+  const root = (colour: string) => treeRows(ST, { session: { scope: "session",
+    label: [], cells: {} }, main: null, turn: null, workspace: null,
+    mainPhase: "🟢", mainInbox: 0, mainProgress: "", turnPhase: "🟢",
+    agents: null, cap: 6, sessionName: "Statusline",
+    sessionColour: colour }, [])[0];
+  const badge = (colour: string) => root(colour).label
+    .find((p) => p.path === "workspace.name")!;
+  for (const [name, token] of Object.entries(SESSION_COLOURS)) {
+    assert.equal(badge(name).spans[0].colour, token, name);
+  }
+  assert.equal(badge("").spans[0].colour, SESSION_COLOUR_NONE);
+  assert.equal(badge("teal").spans[0].colour, SESSION_COLOUR_NONE);
+  assert.deepEqual(badge("purple").spans.map((s) => s.press), [undefined]);
+  assert.equal(visWidth(spec.E_NAME, ST.widths), 2);
+});
+
+test("on a narrow 🎮 label the name gives way after 🔀 and before 📦",
+  () => {
+    const row: Row = treeRows(ST, { session: { scope: "session", label: [],
+      cells: {} }, main: null, turn: null,
+    workspace: { project: "repo", branch: "main", dirty: false, dir: "",
+      pr: "38", style: "" }, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
+    turnPhase: "🟢", agents: null, cap: 6, sessionName: "Statusline",
+    sessionColour: "purple" }, [])[0];
+    const at = (room: number) => stripAnsi(join(labelText(ST, row, [],
+      room)));
+    assert.equal(at(60), "🎮 📛Statusline 📦repo 🌿main  🔀#38  ");
+    assert.equal(at(36), "🎮 📛Statusline 📦repo 🌿main  ");
+    assert.equal(at(22), "🎮 📦repo 🌿main  ");
+    assert.equal(at(12), "🎮 📦repo …");
+  });
 
 test("🎤 alone under 🧵 main gives 🧵 a fold mark", () => {
   const lines = tree("03-tree@220", { agents: null });

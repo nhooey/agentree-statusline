@@ -299,6 +299,24 @@ test("a prompt delivered mid-turn stays in the turn running", () => {
     "also check the docs");
 });
 
+// records.py's names.jsonl: the session's name is the latest custom-title,
+// else the latest agent-name, and its colour the latest agent-color,
+// "default" none; a /rename's later record wins.
+test("the session's name and colour are the latest records' own", () => {
+  const records = cr._records(path.join(DIR, "inputs/names.jsonl"));
+  const at = (n: number) => {
+    const tr = cr.transcriptOf(records.slice(0, n), []);
+    return [tr.session_name, tr.session_color];
+  };
+  assert.deepEqual(at(0), ["", ""]);
+  assert.deepEqual(at(1), ["Worker", ""]);
+  assert.deepEqual(at(2), ["Worker", "purple"]);
+  assert.deepEqual(at(5), ["Statusline", "purple"]);
+  assert.deepEqual(at(6), ["Worker", "purple"]);
+  assert.deepEqual(at(7), ["Worker", ""]);
+  assert.deepEqual(at(records.length), ["Status¶ line two", "cyan"]);
+});
+
 // The mod reads an agent's file as it grows, folding only what was appended
 // since its last read: cut anywhere, mid-line included, the file folded
 // piece by piece reads as the Python reads it whole.
