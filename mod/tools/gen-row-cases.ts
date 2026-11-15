@@ -11,9 +11,13 @@
 //
 // The inputs are the committed figures documents, tests/fixtures/figures/,
 // by id (`<suite>/<name>`), each filled out as mod/test/figures_doc.ts
-// fills one.  One file per terminal profile, profiles whose cases come out
-// the same sharing one.
-// Each holds:
+// fills one.  The first terminal profile's file holds every case.  The
+// other profiles' hold a sample, the cases a profile can change: each
+// status document at SAMPLE_COLS in each phase, and every receipt; a padded
+// icon is a cell's, not a width's.  Profiles whose samples come out the
+// same share one file.  The start and account cases, which no profile
+// changes, are written once, in the first; mod/test/rows.test.ts replays
+// them under every profile.  Each file holds:
 //
 //   settings  the profiles, each with the environment it is read from
 //   band      one case a line: a status document, `doc`, drawn
@@ -23,15 +27,18 @@
 //             prompt, where the case has them, the band's tree with the
 //             subagents of the panel corpus's case `agents`, the main
 //             thread's progress update `progress` and the cap `cap`;
-//             `rows`, each row's spans top to bottom, and `lines`, the
-//             same joined with their escape codes
+//             `rows`, each row's spans top to bottom
 //   receipt   one case a line: a cost document drawn at `cols` under
-//             `hide`; its lines as spans, `rows`, and joined, `lines`
+//             `hide`; its lines as spans, `rows`
 //   start     one case a line: a status document's start line under
-//             `hide`, as `spans` and as `line`
+//             `hide`, as `spans`
 //   account   one case a line: a status document's 💳 row drawn at `cols`
-//             under `hide`, `indent` blanks in, as `row` and as `line`;
-//             the last ones two documents at widths that shed their pieces
+//             under `hide`, `indent` blanks in, as `row`; the last ones
+//             two documents at widths that shed their pieces
+//
+// The first case of each kind in a file also has its spans joined with
+// their escape codes, `lines` or `line`; tests/fixtures/formatting/
+// spans.json pins the joining for the rest.
 //
 // Each document's clock is drawn in its own `clock.tz`.  A span is written
 // as the grid's cases write one.
@@ -63,6 +70,8 @@ const HIDES: readonly (readonly string[])[] = [
   ["turn", "main.name", "*.plan"],
 ];
 const HIDE_COLS = 155;
+// The width a second profile's sample draws each status document at.
+const SAMPLE_COLS = 155;
 // The start line's: none, and 🔋 hidden on the tag lines alone.
 const START_HIDES: readonly string[][] = [[], ["tag.plan.five_hour"]];
 // The Fable window's own: hidden, and the weekly window hidden, which
@@ -296,41 +305,54 @@ function receiptCases(doc: string): ReceiptCase[] {
 const rowsJson = (rows: Span[][]): unknown[][] =>
   rows.map((r) => r.map(spanJson));
 
+/** A case's text: the case, its spans, and `joined` for the first case of
+ * its kind in the file, the spans joined with their escape codes. */
+function caseText(c: object, spans: Dict, joined: Dict | null): string {
+  return JSON.stringify({ ...c, ...spans, ...joined });
+}
+
 /** The cases under one profile's settings, as the file's text after its
- * settings line. */
-function cases(st: Settings): string {
+ * settings line: every case, or under `sample` the cases a profile can
+ * change, each status document at SAMPLE_COLS in each phase and every
+ * receipt, and no start or account case, which no profile changes. */
+function cases(st: Settings, sample: boolean): string {
   const band: string[] = [], receipt: string[] = [], start: string[] = [];
   const account: string[] = [];
+  const bandCase = (c: BandCase, fig: Dict): string => {
+    const rows = drawBand(st, fig, c);
+    return caseText(c, { rows: rowsJson(rows) },
+      band.length ? null : { lines: rows.map((r) => join(r)) });
+  };
   const accountCase = (c: AccountCase, fig: Dict): string => {
     const row = drawAccount(st, fig, c);
-    return JSON.stringify({ ...c, row: row.map(spanJson), line: join(row) });
+    return caseText(c, { row: row.map(spanJson) },
+      account.length ? null : { line: join(row) });
   };
   for (const [id, fig] of documents("status")) {
     for (const c of bandCases(id)) {
-      const rows = drawBand(st, fig, c);
-      band.push(JSON.stringify({ ...c, rows: rowsJson(rows),
-        lines: rows.map((r) => join(r)) }));
+      if (sample && !(c.cols === SAMPLE_COLS && !c.hide.length &&
+        c.rate === null && c.place === undefined)) continue;
+      band.push(bandCase(c, fig));
     }
+    if (sample) continue;
     for (const c of accountCases(id, fig)) account.push(accountCase(c, fig));
     for (const hide of START_HIDES) {
       const s = drawStart(st, fig, hide);
-      start.push(JSON.stringify({ doc: id, hide, spans: s.map(spanJson),
-        line: join(s) }));
+      start.push(caseText({ doc: id, hide }, { spans: s.map(spanJson) },
+        start.length ? null : { line: join(s) }));
     }
   }
-  for (const c of shedCases()) {
-    account.push(accountCase(c, document(c.doc)));
-  }
-  for (const c of treeCases()) {
-    const rows = drawBand(st, document(c.doc), c);
-    band.push(JSON.stringify({ ...c, rows: rowsJson(rows),
-      lines: rows.map((r) => join(r)) }));
+  if (!sample) {
+    for (const c of shedCases()) {
+      account.push(accountCase(c, document(c.doc)));
+    }
+    for (const c of treeCases()) band.push(bandCase(c, document(c.doc)));
   }
   for (const [id, fig] of documents("cost")) {
     for (const c of receiptCases(id)) {
       const got = drawReceipt(st, fig, c);
-      receipt.push(JSON.stringify({ ...c, rows: rowsJson(got),
-        lines: got.map((r) => join(r)) }));
+      receipt.push(caseText(c, { rows: rowsJson(got) },
+        receipt.length ? null : { lines: got.map((r) => join(r)) }));
     }
   }
   const list = (name: string, lines: string[]): string =>
@@ -340,11 +362,15 @@ function cases(st: Settings): string {
     list("account", account)].join(",\n") + "}\n";
 }
 
-/** Every file, by name; see gen-grid-cases.ts's generate. */
+/** Every file, by name: the first profile's every case, and the other
+ * profiles' samples, profiles whose samples come out the same sharing a
+ * file, as gen-grid-cases.ts's generate shares them. */
 export function generate(): Map<string, string> {
-  const groups = new Map<string, string[]>();
-  for (const name of Object.keys(PROFILES)) {
-    const body = cases(settings(PROFILES[name]));
+  const [first, ...rest] = Object.keys(PROFILES);
+  const groups = new Map<string, string[]>(
+    [[cases(settings(PROFILES[first]), false), [first]]]);
+  for (const name of rest) {
+    const body = cases(settings(PROFILES[name]), true);
     groups.set(body, [...(groups.get(body) ?? []), name]);
   }
   return new Map([...groups].map(([body, names]) => [

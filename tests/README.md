@@ -403,16 +403,22 @@ drawn at `cols` under the `--hide` patterns in a `phase`, with `rate`, the 🛫
 the mod works out itself and passes in; each `receipt` case is a cost document
 at `cols` under `hide`, with the 📦 🌿 of the status document named by
 `workspace`, which stands for the band's last one; each `start` case is a
-status document's start line. Out come the spans of each row and the rows
-joined into escape codes. The matrix is 200, 155, 120 and 80 columns, both
-phases, three hide sets at 155 and a 🛫 at 200; HOME is `${HOME}`, the
-placeholder the documents' paths are written under, and each clock is drawn
-in the document's own zone. A file is one terminal profile's, profiles whose
-cases come out the same sharing one, as the grid's do.
+status document's start line. Out come the spans of each row; the first case
+of each kind in a file also has its rows joined into escape codes, since
+`fixtures/formatting/spans.json` pins the joining for the rest. The matrix is
+200, 155, 120 and 80 columns, both phases, three hide sets at 155 and a 🛫 at
+200; HOME is `${HOME}`, the placeholder the documents' paths are written
+under, and each clock is drawn in the document's own zone. `unknown.json`
+holds the whole matrix. The other profiles hold a sample, the cases a profile
+can change: each status document at 155 columns in both phases, and every
+receipt, profiles whose samples come out the same sharing one file
+(`iterm-tmux.json`); a padded icon is a cell's, not a width's. The start and
+account cases, which no profile changes, are written once.
 
-`mod/test/rows.test.ts` replays every case under each of its file's profiles
-and runs the generator again in memory, failing if what it writes differs
-from what is committed. To look at the rows in a terminal:
+`mod/test/rows.test.ts` replays every case under each of its file's profiles,
+the start and account cases under every profile, and runs the generator again
+in memory, failing if what it writes differs from what is committed. To look
+at the rows in a terminal:
 
 ```sh
 node mod/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
