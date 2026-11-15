@@ -24,7 +24,7 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  foldShut, groupFold, pruneFolds, treeRows, workspaceLinks,
+  foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows, workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
 import { stampedSplit } from "../src/band_tree.ts";
@@ -792,4 +792,34 @@ test("stamped, no row presses anything", () => {
   assert.deepEqual(rows.flatMap(pressesOf), []);
   assert.match(stripAnsi(join(rows[0].label.flatMap((p) => p.spans))),
     /^🎮 📦repo/u);
+});
+
+/** The tree over 02-parked@220's agents at `now`, with Sage (s1) ended
+ * as `status` on its own last report `eta` and its last record 200s
+ * before NOW, as plain lines. */
+function endedTree(status: string, eta: readonly number[],
+  now: number): string[] {
+  const doc = corpusAgents("02-parked@220", "");
+  const tasks = (doc.tasks as TreeTask[]).map((t) => t.task.id === "s1"
+    ? { ...t, task: { ...t.task, status },
+      usage: { ...(t.usage as Dict), eta, last_epoch: NOW - 200,
+        background: [] } } as TreeTask : t);
+  const rows = treeRows(ST, { session: null, main: null, turn: null,
+    workspace: null, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
+    turnPhase: "🟢", agents: { tasks, limits: LIMITS, now,
+      turnStart: NOW - 3600 }, cap: 10,
+    folds: { [groupFold(MAIN_FOLD, "done")]: false } }, []);
+  const keys = fixedKeys(ST, 200, []);
+  return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
+}
+
+test("an ended agent that signed off at zero draws no ⛳, and one that " +
+  "did not keeps its overrun frozen at its end", () => {
+  const sage = (ls: string[]) => ls.find((l) => l.includes("Sage"))!;
+  assert.ok(!sage(endedTree("completed", [NOW - 300, 0], NOW))
+    .includes("⛳"));
+  for (const at of [NOW, NOW + 600]) {
+    assert.match(sage(endedTree("killed", [NOW - 500, 120], at)),
+      /⛳ {2}\+3m/u);
+  }
 });

@@ -710,6 +710,13 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
   const signedOff = pyTruthy(ownEta) && ownEta![1] === 0 &&
     pyTruthy(shownEta) &&
     etaFinish(shownEta!)! <= etaFinish(ownEta!)! + 1e-6;
+  // An agent that has ended has its ⛳ read at its end, as its ⌛ is; one
+  // that signed off at zero draws none.  See the Python.
+  const etaNow = end === null ? now
+    : Math.min(now === null ? Date.now() / 1000 : now, end);
+  const etaCell = !live && signedOff ? [] : renderAgentEta(st, shownEta,
+    task.startTime, etaNow, status,
+    ua(usage, "last_epoch") as number | null, signedOff);
   const cells: [string, SpanLike][] = [
     // The model and effort, right before the 💰 they priced.
     ["model", renderAgentModel(st, model,
@@ -726,8 +733,7 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
     // ⌛ ⛳ 🤖 🔧 🚦, right before the 5h and 1w it spent.
     ["clock", clocked
       ? renderAgentElapsed(st, task.startTime, now, end, first) : []],
-    ["eta", renderAgentEta(st, shownEta, task.startTime, now, status,
-      ua(usage, "last_epoch") as number | null, signedOff)],
+    ["eta", etaCell],
     ["split", renderAgentSplit(clocked
       ? agentElapsed(task.startTime, now, end, first) : null,
       ua(usage, "model_s") as number | null,

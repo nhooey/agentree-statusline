@@ -532,6 +532,13 @@ def agent_cells(task, usage, meta, shares, limits, now=None, eta=False, waiting_
     # Signed off: its own last report is zero and no descendant pushed the
     # finish past it, so the zero is what the figure counts to.
     signed_off=bool(own_eta) and own_eta[1] == 0 and bool(shown_eta) and eta_finish(shown_eta) <= eta_finish(own_eta) + 1e-6
+    # An agent that has ended has its ⛳ read at its end, as its ⌛ is, so an
+    # overrun stops with it rather than counting on to now; one that signed
+    # off at zero draws none, as the main thread's does once idle.
+    eta_now=now if end is None else min(time.time() if now is None else now, end)
+    eta_cell=[] if not live and signed_off else render_agent_eta(
+        shown_eta, task.get("startTime"), eta_now, status,
+        getattr(usage,"last_epoch",None), signed_off)
     cells = (
         # The model and effort, right before the 💰 they priced.
         ("model", render_agent_model(model, str(task.get("effort") or "") or getattr(usage,"effort", ""))),
@@ -546,8 +553,7 @@ def agent_cells(task, usage, meta, shares, limits, now=None, eta=False, waiting_
         # status line's ⌛ row in the same order, with shares where it has
         # figures.
         ("clock", render_agent_elapsed(task.get("startTime"), now, end, first) if clocked else []),
-        ("eta", render_agent_eta(shown_eta, task.get("startTime"), now, status,
-                                 getattr(usage,"last_epoch",None), signed_off)),
+        ("eta", eta_cell),
         ("split", render_agent_split(agent_elapsed(task.get("startTime"), now, end, first) if clocked else None,
                                      getattr(usage,"model_s",None), getattr(usage,"tool_s",0.0))),
         ("five", render_agent_limit(E_SESS, limits.session_pct, shares.get("sess"), "F_LIM_SESS", billed, light)),
