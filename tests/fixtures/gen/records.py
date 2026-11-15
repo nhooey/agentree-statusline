@@ -513,6 +513,14 @@ def handmade():
         result(46, "c7", toolUseResult={"backgroundTaskId": "b7"}),
         note(47, "<task-notification><task-id>b7</task-id>"
                  "<status>completed</status></task-notification>"),
+        # A Monitor that runs out its timeout: its last notification says
+        # it expired, and carries no status.
+        result(48, "x", toolUseResult={"taskId": "m5",
+                                       "timeoutMs": 1800000}),
+        note(49, "<task-notification><task-id>m5</task-id><summary>Monitor"
+                 " event: \"x\"</summary><event>[Monitor expired after 30m"
+                 " with 1 event delivered. Re-arm it if you still need the"
+                 " watch.]</event></task-notification>"),
     ])
     put("queue.jsonl", [
         queue(0, "enqueue", "typed while busy"),

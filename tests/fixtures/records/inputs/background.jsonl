@@ -28,3 +28,5 @@
 {"type": "user", "timestamp": "2026-08-17T20:54:05.000Z", "message": {"content": [{"type": "tool_result", "tool_use_id": "c5"}]}, "toolUseResult": {"backgroundTaskId": "b6"}}
 {"type": "user", "timestamp": "2026-08-17T20:54:06.000Z", "message": {"content": [{"type": "tool_result", "tool_use_id": "c7"}]}, "toolUseResult": {"backgroundTaskId": "b7"}}
 {"type": "user", "timestamp": "2026-08-17T20:54:07.000Z", "message": {"content": [{"type": "text", "text": "<task-notification><task-id>b7</task-id><status>completed</status></task-notification>"}]}}
+{"type": "user", "timestamp": "2026-08-17T20:54:08.000Z", "message": {"content": [{"type": "tool_result", "tool_use_id": "x"}]}, "toolUseResult": {"taskId": "m5", "timeoutMs": 1800000}}
+{"type": "user", "timestamp": "2026-08-17T20:54:09.000Z", "message": {"content": [{"type": "text", "text": "<task-notification><task-id>m5</task-id><summary>Monitor event: \"x\"</summary><event>[Monitor expired after 30m with 1 event delivered. Re-arm it if you still need the watch.]</event></task-notification>"}]}}

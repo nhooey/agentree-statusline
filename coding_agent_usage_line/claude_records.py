@@ -1187,7 +1187,8 @@ def scan_background(r: dict, open_: Dict[str, str],
     and a Monitor says `taskId` beside its `timeoutMs`.  It closes on a
     `<task-notification>` for that id that carries a `<status>`: a Monitor
     sends one per event with no status, and a last one with it when its
-    stream ends.  Or on the thread ending it itself — TaskStop's result, or
+    stream ends, or one saying it expired (MONITOR_EXPIRED), with none,
+    when it runs out its timeout.  Or on the thread ending it itself — TaskStop's result, or
     TaskOutput reading it finished, which Claude Code counts as delivered
     and sends no notification for.  Its label is its call's
     (background_label), kept from the Bash or Monitor call until the
@@ -1238,10 +1239,15 @@ def scan_background(r: dict, open_: Dict[str, str],
             if is_call(c):
                 del info[c]
     text = notification_text(r)
-    if text and "<status>" in text:
+    if text and ("<status>" in text or MONITOR_EXPIRED in text):
         m = re.search(r"<task-id>([^<]+)</task-id>", text)
         if m:
             closed(m.group(1).strip())
+
+
+#: What a Monitor's last notification says when it runs out its timeout,
+#: with no `<status>`: it has ended all the same.
+MONITOR_EXPIRED = "[Monitor expired"
 
 
 def scan_agent_end(r: dict, ends: Dict[str, float]) -> None:
