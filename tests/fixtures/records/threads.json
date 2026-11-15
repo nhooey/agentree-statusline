@@ -159,6 +159,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/01-plain.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/01-plain.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -585,6 +596,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/02-compaction.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/02-compaction.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -890,6 +912,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/03-single-turn.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/03-single-turn.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -1123,6 +1156,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/04-tool-result.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -1379,6 +1423,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/05-sidechain.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/05-sidechain.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -1620,6 +1675,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/06-interrupted.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/06-interrupted.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -1825,6 +1891,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/07-empty.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -2079,6 +2156,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/08-woken.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -2660,6 +2748,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/09-agents.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/09-agents.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": [
@@ -3091,6 +3190,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/09-agents/subagents/agent-fork1.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/09-agents/subagents/agent-fork1.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -3345,6 +3455,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/09-agents/subagents/workflows/wf_9/agent-sub1.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -3641,6 +3762,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/10-turn-id.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -4016,6 +4148,17 @@
    "args": [
     "tests/fixtures/transcripts/cost/11-turn-id-late.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/cost/11-turn-id-late.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -4310,6 +4453,17 @@
    "args": [
     "tests/fixtures/transcripts/status/agents.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/agents.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -4599,6 +4753,17 @@
    "args": [
     "tests/fixtures/transcripts/status/agents/subagents/agent-fork1.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/agents/subagents/agent-fork1.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -4868,6 +5033,17 @@
    "args": [
     "tests/fixtures/transcripts/status/cache-crit.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/cache-crit.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -5109,6 +5285,17 @@
    "args": [
     "tests/fixtures/transcripts/status/cache-warn.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/cache-warn.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -5314,6 +5501,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/empty.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -7096,6 +7294,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/main.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -12844,6 +13053,17 @@
    "args": [
     "tests/fixtures/transcripts/status/queue.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/queue.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -17027,6 +17247,17 @@
    "args": [
     "tests/fixtures/transcripts/status/rounding-boundary.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/transcripts/status/rounding-boundary.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -17395,6 +17626,86 @@
      true,
      false,
      ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     "<task-notification><task-id>b7</task-id><status>completed</status></task-notification>"
     ]
    ]
   },
@@ -17407,8 +17718,44 @@
    "kw": {},
    "out": {
     "blocked": [],
-    "pending": [],
-    "tools": []
+    "pending": [
+     [
+      "c6",
+      1787000040.0,
+      "Monitor"
+     ],
+     [
+      "c8",
+      1787000040.0,
+      "['Bash']"
+     ]
+    ],
+    "tools": [
+     [
+      1787000040.0,
+      1787000041.0
+     ],
+     [
+      1787000040.0,
+      1787000042.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000045.0
+     ],
+     [
+      1787000040.0,
+      1787000046.0
+     ]
+    ]
    }
   },
   {
@@ -17420,8 +17767,52 @@
    "kw": {},
    "out": {
     "blocked": [],
-    "pending": [],
-    "tools": []
+    "pending": [
+     [
+      "c6",
+      1787000040.0,
+      "Monitor"
+     ],
+     [
+      "c8",
+      1787000040.0,
+      "['Bash']"
+     ]
+    ],
+    "tools": [
+     [
+      1787000040.0,
+      1787000041.0
+     ],
+     [
+      1787000040.0,
+      1787000042.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000045.0
+     ],
+     [
+      1787000040.0,
+      1787000046.0
+     ],
+     [
+      1787000040.0,
+      1787001000.0
+     ],
+     [
+      1787000040.0,
+      1787001000.0
+     ]
+    ]
    }
   },
   {
@@ -17431,7 +17822,32 @@
    "fn": "tool_spans",
    "kw": {},
    "out": [
-    [],
+    [
+     [
+      1787000040.0,
+      1787000041.0
+     ],
+     [
+      1787000040.0,
+      1787000042.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000045.0
+     ],
+     [
+      1787000040.0,
+      1787000046.0
+     ]
+    ],
     []
    ]
   },
@@ -17460,6 +17876,94 @@
     [
      "m3",
      "monitor"
+    ],
+    [
+     "b4",
+     "bash"
+    ],
+    [
+     "m4",
+     "monitor"
+    ],
+    [
+     "b5",
+     "bash"
+    ],
+    [
+     "b6",
+     "bash"
+    ]
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/background.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [
+     [
+      "5",
+      "bash"
+     ],
+     [
+      "m3",
+      "monitor"
+     ],
+     [
+      "b4",
+      "bash"
+     ],
+     [
+      "m4",
+      "monitor"
+     ],
+     [
+      "b5",
+      "bash"
+     ],
+     [
+      "b6",
+      "bash"
+     ]
+    ],
+    [
+     [
+      "5",
+      "",
+      1787000002.0
+     ],
+     [
+      "m3",
+      "",
+      1787000009.0
+     ],
+     [
+      "c6",
+      "still waiting",
+      null
+     ],
+     [
+      "b4",
+      "Run the tests",
+      1787000041.0
+     ],
+     [
+      "m4",
+      "tail -f log",
+      1787000042.0
+     ],
+     [
+      "b5",
+      "",
+      null
+     ],
+     [
+      "b6",
+      "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+      1787000045.0
+     ]
     ]
    ]
   },
@@ -17489,6 +17993,10 @@
     [
      "ag5",
      1787000030.0
+    ],
+    [
+     "b7",
+     1787000047.0
     ]
    ]
   },
@@ -17629,6 +18137,54 @@
      [],
      false,
      1787000032.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000040.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000041.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000042.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000043.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000043.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000045.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000046.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000047.0,
      null
     ]
    ]
@@ -17819,6 +18375,102 @@
     ],
     [
      [
+      1787000030.0,
+      1787000040.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000041.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000042.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000043.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000043.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000045.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000046.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000047.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
       null,
       null
      ],
@@ -17829,7 +18481,7 @@
       ],
       [
        1787000030.0,
-       1787000032.0
+       1787000047.0
       ]
      ]
     ]
@@ -17844,17 +18496,42 @@
      ],
      [
       1787000030.0,
-      1787000032.0
+      1787000047.0
      ]
     ],
-    [],
+    [
+     [
+      1787000040.0,
+      1787000041.0
+     ],
+     [
+      1787000040.0,
+      1787000042.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000045.0
+     ],
+     [
+      1787000040.0,
+      1787000046.0
+     ]
+    ],
     []
    ],
    "fn": "thread_clock",
    "kw": {},
    "out": [
-    22.0,
-    0.0,
+    37.0,
+    6.0,
     0.0
    ]
   },
@@ -17867,10 +18544,35 @@
      ],
      [
       1787000030.0,
-      1787000032.0
+      1787000047.0
      ]
     ],
-    [],
+    [
+     [
+      1787000040.0,
+      1787000041.0
+     ],
+     [
+      1787000040.0,
+      1787000042.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000045.0
+     ],
+     [
+      1787000040.0,
+      1787000046.0
+     ]
+    ],
     [],
     []
    ],
@@ -17880,7 +18582,32 @@
   },
   {
    "args": [
-    [],
+    [
+     [
+      1787000040.0,
+      1787000041.0
+     ],
+     [
+      1787000040.0,
+      1787000042.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000043.0
+     ],
+     [
+      1787000040.0,
+      1787000045.0
+     ],
+     [
+      1787000040.0,
+      1787000046.0
+     ]
+    ],
     [],
     1787000005.0,
     1787000120.0
@@ -17888,7 +18615,7 @@
    "fn": "turn_clock",
    "kw": {},
    "out": [
-    0.0,
+    6.0,
     0.0
    ]
   },
@@ -18166,6 +18893,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/commands.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -19145,6 +19883,17 @@
    "args": [
     "tests/fixtures/records/inputs/diffs.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/diffs.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -19739,6 +20488,23 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    [
+     [
+      "t1",
+      "",
+      null
+     ]
+    ]
+   ]
   },
   {
    "args": [
@@ -20743,6 +21509,17 @@
    "args": [
     "tests/fixtures/records/inputs/handback.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/handback.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -21386,6 +22163,17 @@
    "args": [
     "tests/fixtures/records/inputs/inbox-now.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/inbox-now.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -21683,6 +22471,17 @@
    "args": [
     "tests/fixtures/records/inputs/inbox-now/subagents/agent-b1.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/inbox-now/subagents/agent-b1.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -21889,6 +22688,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/inbox-now/subagents/agent-b2.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -22131,6 +22941,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/marks.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -22648,6 +23469,23 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/midturn.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    [
+     [
+      "t3",
+      "",
+      null
+     ]
+    ]
+   ]
   },
   {
    "args": [
@@ -23771,6 +24609,17 @@
    "args": [
     "tests/fixtures/records/inputs/own.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/own.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -24640,6 +25489,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/queue.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -25705,6 +26565,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -26962,6 +27833,17 @@
    "args": [
     "tests/fixtures/records/inputs/session/subagents/.hidden/agent-h.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/.hidden/agent-h.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -27237,6 +28119,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/agent-a1.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -27799,6 +28692,23 @@
    "args": [
     "tests/fixtures/records/inputs/session/subagents/agent-a2.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    [
+     [
+      "y3",
+      "",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/agent-a2.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -28158,6 +29068,17 @@
    "args": [
     "tests/fixtures/records/inputs/session/subagents/agent-a3.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/agent-a3.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -28411,6 +29332,23 @@
    "args": [
     "tests/fixtures/records/inputs/session/subagents/agent-a4.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    [
+     [
+      "z1",
+      "",
+      null
+     ]
+    ]
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/agent-a4.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -28625,6 +29563,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/agent-a5.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -28873,6 +29822,17 @@
    "args": [
     "tests/fixtures/records/inputs/session/subagents/workflows/wf_1/agent-w1.jsonl"
    ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/workflows/wf_1/agent-w1.jsonl"
+   ],
    "fn": "scan_agent_end",
    "kw": {},
    "out": []
@@ -29115,6 +30075,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/session/subagents/workflows/wf_1/journal.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [
@@ -29628,6 +30599,23 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/tools.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    [
+     [
+      "c1",
+      "",
+      null
+     ]
+    ]
+   ]
   },
   {
    "args": [
@@ -30202,6 +31190,17 @@
    "fn": "scan_background",
    "kw": {},
    "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/unnumbered.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
   },
   {
    "args": [

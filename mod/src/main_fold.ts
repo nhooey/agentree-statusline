@@ -17,7 +17,8 @@ import type {
   TurnsFold,
 } from "./claude_records.ts";
 import {
-  foldTranscript, foldTurns, newTranscriptFold, newTurnsFold,
+  bgInfoJson, bgInfoOf, foldTranscript, foldTurns, newTranscriptFold,
+  newTurnsFold,
 } from "./claude_records.ts";
 import { sha256Hex } from "./sha256.ts";
 import { STATE_KINDS } from "./state_spec.ts";
@@ -187,6 +188,7 @@ function headText(f: MainFold, meta: FoldMeta, counts: readonly number[],
       first: tr.first, open_at: tr.openAt, prev: tr.prev,
       eta: [e[0], e[1], e[2], e[3]], queued: tr.queued,
       compactions: tr.compactions, background: [...tr.background],
+      bg_info: bgInfoJson(tr.bgInfo),
       idle_at: tr.idleAt, last_seen: tr.lastSeen,
       opened: [tr.opened.pid, tr.opened.tidx], added: tr.added,
       removed: tr.removed,
@@ -359,6 +361,7 @@ export function foldOfSaved(
     tr.queued = h.queued;
     tr.compactions = h.compactions;
     for (const [k, v] of h.background) tr.background.set(k, v);
+    for (const [k, v] of bgInfoOf(h.bg_info)) tr.bgInfo.set(k, v);
     tr.idleAt = h.idle_at;
     tr.lastSeen = h.last_seen;
     tr.opened = { pid: h.opened[0], tidx: h.opened[1] };

@@ -19,7 +19,7 @@ files they both change. Written 2026-10-20 from:
 - [The account's dollar credits on the band](credit-balances.md), steps
   1–8: `CB1`, `CB1b`, `CB2` … `CB6`, `CB4b`.
 - [One port: Claude's figures drawn by the mod alone](one-panel-port.md),
-  steps 1–7: `OP1` … `OP7`.
+  steps 1–8: `OP1` … `OP8`.
 - Work in flight outside the plans: `CA`, the calibration cache keyed by
   account id (asked 2026-10-20, Blocked.1.A).
 
@@ -91,6 +91,7 @@ done, and move a plan to [_implemented](_implemented/) when its last node is.
 | `OP5` | The Python's Claude twins removed, `--mode status` and `--mode cost` for Claude among them | `OP2`, `OP3`, `OP4` | none | `coding_agent_usage_line/`, `tests/` |
 | `OP6` | 🧬 for the model cell, so 🤖 keeps one job | `OP5` | none | `spec/layout.jsonc`, `mod/src/` |
 | `OP7` | **Done.** The band's clicks: a label switches to its thread, a row with children folds, 📦 🌿 🔀 link | `OP3` | none | `mod/hooks/`, `mod/mod-tests/` |
+| `OP8` | **Done.** Each open background shell and Monitor a row under the thread that started it | `OP3` | none | `mod/src/`, `mod/hooks/edges.ts`, `coding_agent_usage_line/` (the folds), `spec/state.jsonc` |
 
 `RT8`'s and `RT6`/`RT7`'s edges in the plan: steps 4 to 7 land in order,
 step 8 needs steps 1 and 4 (done), step 9 needs step 1 (done).
@@ -148,6 +149,7 @@ flowchart LR
     OP1 --> OP4 --> OP5
     OP5 --> OP6
     OP3 --> OP7
+    OP3 --> OP8
     OP2 -.-> OP3
   end
 ```

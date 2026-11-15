@@ -1,6 +1,6 @@
 # One port: Claude's figures drawn by the mod alone
 
-Approved to build. Its steps are `OP1` … `OP7` in [the schedule](_schedule.md).
+Approved to build. Its steps are `OP1` … `OP8` in [the schedule](_schedule.md).
 Its decisions are taken (see [Decided](#decided)).
 
 ## Why
@@ -120,9 +120,48 @@ every row.
   🧵, 🎤 the turn, the main thread's own work, comes first, then each
   subagent under the thread that started it, in the order they started.
   🎤 is a leaf whose click shows the main conversation, folds away with
-  🧵, and is not a subagent row, so the cap does not count it. The lines
-  are `├─` `╰─` `│`, branching at the middle of the cell, three columns a
-  depth.
+  🧵, and is not a subagent row, so the cap does not count it. After a
+  thread's agents come its open background shells and Monitors (see
+  below). The lines are `├─` `╰─` `│`, branching at the middle of the
+  cell, three columns a depth.
+- **Background shells and Monitors.** Each Bash call run in the
+  background (or moved there past its timeout) and each Monitor that a
+  thread started and has not heard the end of is a leaf row under that
+  thread: under 🧵 main for the main thread's, under the agent for an
+  agent's.
+  - *What it shows.* Its kind glyph, 💻 for a shell and 📡 for a
+    Monitor, with 🟢 in the state slot as every running row has, so its
+    label starts in the column its siblings' names do; then its label,
+    the call's `description`, else the first line of its `command`, kept
+    to 120 characters and cut with `…` like any label, else `shell` or
+    `monitor`; and ⌛, how long it has run since the result that opened
+    it. No other figure: a shell bills nothing and has no context.
+  - *Where it sits.* After the thread's agents (and their `… N more`), in
+    the order they opened, and before `✅ N done`, which stays last under
+    🧵. 🎤 stays first and the agents stay in start order directly under
+    it: they are the thread's own work, and a shell is what one of them
+    waits on. A shell that starts or ends moves nothing above it.
+  - *The cap.* It counts against no cap. `subagent-rows` bounds the
+    agents, which can fan out by the dozen; a thread holds few shells,
+    and each leaves when it ends.
+  - *Folding.* It is a leaf and does not fold. Its thread folds it away:
+    a thread with only shells under it still gets its ⊟ mark.
+  - *The counts.* The 💻 📡 counts on a thread's label count its own open
+    shells and Monitors wherever their rows are not drawn under it: on a
+    folded agent or a folded 🧵, beside 👶🏻. An opened row leaves them to
+    the rows. The status line's own 💻 📡 for the main thread stay as
+    they are.
+  - *When it leaves.* When the fold sees its end: the
+    `<task-notification>` with a `<status>` for its id, TaskStop's
+    result, or TaskOutput reading it finished, as the fold already
+    counts them (`scanBackground`). It shows only where the agents do:
+    while a turn runs by default (`rows.subagents.live`), and not under
+    the `agent` hide path.
+  - *What the folds keep.* Beside each thread's open tasks by id and
+    kind, their labels and the epoch each opened (`bgInfo`); while a
+    Bash or Monitor call waits on its result, its label by tool-use id.
+    Both folds save them, the main fold's head and each agent's fold,
+    so their formats are 6 and 3.
 - **The label.** Its kind glyph and state circle (🟢 🟡 ⚫, ✅ once
   finished), its counts, its name, then the first line of the last text
   the thread wrote, dimmed: its progress update while it works, its
@@ -138,7 +177,8 @@ every row.
   mark takes the place of the `─` in its tree line, `├⊟` opened and `├⊞`
   folded, and the root's mark stands before it. A folded agent keeps its
   own figures, with 👶🏻 before its name counting every agent hidden under
-  it; 👶🏻 is drawn on folded rows alone. An agent that starts under a
+  it, and 💻 📡 its own hidden shells and Monitors; 👶🏻 is drawn on
+  folded rows alone. An agent that starts under a
   folded row stays hidden and adds to its 👶🏻, and a row stays as it was
   left for the rest of the session.
 - **`✅ N done`,** under 🧵 main, sums the subagents that finished this
@@ -245,6 +285,41 @@ Marigold folded
    (`mod/hooks/register.tsx`, `pressLine`; the presses in
    `mod/src/band_tree.ts`). Tests in `mod/mod-tests/band.test.ts` and
    `mod/test/band_tree.test.ts`.
+8. **`OP8` Background shells and Monitors in the tree.** Done: each open
+   background shell and Monitor is a row under the thread that started
+   it, as [The band's tree](#the-bands-tree) says. `scanBackground`
+   keeps each task's label and start beside its kind (`BgInfo`, in both
+   ports' folds and saves); `backgroundTasks` lists them; an agent's
+   ride on its task (`bgTasks`, `mod/src/subagent_tasks.ts`) and the main
+   thread's on the document's `agents.main_background`
+   (`mod/hooks/edges.ts`); `mod/src/band_tree.ts` draws them. Tests in
+   `mod/test/band_tree.test.ts`, `mod/test/claude_records.test.ts` (the
+   `scan_background_info` fixture), `mod/mod-tests/band.test.ts` and the
+   rows' tree cases with `background`.
+
+   Drawn at 236 columns over the panel corpus's `02-parked@220`, with a
+   shell and a Monitor of the main thread's:
+
+   ```text
+   ⊟ 🎮 📦repo 🌿golden-clean                                                                                                💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+   ╰⊟ 🧵🟢 main  Checking the binary for subagentStatusLine, then the changelog for a hook that replaces …  🤖O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+      ├─ 🎤🟢 turn  Why does the elapsed row report two durations when the session age is one number, and…  🤖O⁵🏃  🛫 220   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+      ├⊟ 🎩🟡 Parsley                                                                                       🤖O⁵🏃  💤  20m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 20m ⛳  29m 🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .022٪
+      │  ╰─ 🔍🟢 Chive                                                                                      🤖O⁵🏃  🤖   1m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 20m ⛳  29m 🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+      ├⊟ 🔩🟡 Pine                                                                                          🤖O⁵🏃  💻  16m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 17m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .022٪
+      │  ╰─ 💻🟢 Build the docs site                                                                                                                                    ⌛2.1m
+      ├⊟ 🔩🟡 Poppy                                                                                         🤖O⁵🏃  💻  16m  💰0.1   🧠 32k  16٪  🧩▴ 21k ▾1.2k  🎯93٪  ⌛ 17m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .033٪
+      │  ├─ 📡🟢 Watch the CI checks                                                                                                                                    ⌛2.1m
+      │  ╰─ 💻🟢 Build the docs site                                                                                                                                    ⌛2.1m
+      ├─ 🔍🟢 Sage                                                                                          🤖O⁵🏃  🔧 9.8m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 15m ⛳  +8m 🤖⠦⠀ 🔧⠶⠄ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+      ├─ 🔍🟢 Sorrel                                                                                        🤖O⁵🏃  🔧 3.3m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 15m ⛳  +5m 🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+      ├─ 📐🟡 Peony                                                                                         🤖O⁵🏃  ⛳   5m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 10m ⛳  15m 🤖⠶⠀ 🔧⠀⠀ 🚦⠶⠀  🔋  .01٪  🪫  .011٪
+      ├─ 💻🟢 Run the plugin tests                                                                                                                                      ⌛6.2m
+      ╰─ 📡🟢 Watch PR #38 for comments                                                                                                                                 ⌛ 25m
+   ```
+
+   With Poppy folded, its row reads `├⊞ 🔩🟡 💻1 📡1 Poppy` and its two
+   rows are hidden.
 
 ## What to watch
 
@@ -254,8 +329,8 @@ Marigold folded
   the mod both read the `window-costs` cache (`spec/state.jsonc`); its
   format must not move.
 - **The band's height.** Each running subagent adds a row above the
-  prompt, up to the cap; `rows.subagents` can be hidden like any other
-  row.
+  prompt, up to the cap, and each open background shell or Monitor one
+  more, past it; `rows.subagents` can be hidden like any other row.
 
 ## Decided
 

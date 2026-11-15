@@ -625,13 +625,15 @@ class AgentFold:
     clock's spans; the live ETA's state.  And the fields the panel reads
     besides (agent_usage_of in claude.py): the compactions, the last stamp,
     the API-error flag, the cwd, the block count, the background tasks and
-    the effort of the last request it bills.  `keys` is the request ids in
-    `recs`, for that effort; it is not saved, and is rebuilt on a load."""
+    the effort of the last request it bills; and what the band's tree
+    reads, the background tasks' labels and starts (`bg_info`).  `keys` is
+    the request ids in `recs`, for that effort; it is not saved, and is
+    rebuilt on a load."""
 
     __slots__ = ("pid", "eta_state", "span_state", "work", "pending",
                  "tools", "waiting", "recs", "wrote", "added", "removed",
                  "pos", "compactions", "last_seen", "api_error", "cwd",
-                 "blocks", "background", "effort", "keys")
+                 "blocks", "background", "bg_info", "effort", "keys")
 
     def __init__(self):
         self.pid = ""
@@ -652,6 +654,7 @@ class AgentFold:
         self.cwd = ""
         self.blocks = 0
         self.background: Dict[str, str] = {}
+        self.bg_info: Dict[str, list] = {}
         self.effort = ""
         self.keys: set = set()
 
@@ -694,7 +697,7 @@ def fold_agent_record(fold: AgentFold, length: int, r) -> None:
     live_eta(r, fold.eta_state)
     agent_span(r, fold.span_state, fold.work)
     scan_tool_spans(r, fold.pending, fold.tools, fold.waiting)
-    scan_background(r, fold.background)
+    scan_background(r, fold.background, fold.bg_info)
     a, d = diff_lines(r, fold.wrote)
     fold.added += a
     fold.removed += d
@@ -1144,9 +1147,37 @@ def notification_text(r: dict) -> str:
     return c if isinstance(c, str) and "<task-notification>" in c else ""
 
 
-def scan_background(r: dict, open_: Dict[str, str]) -> None:
+# The most characters of a call's text a background task keeps as its
+# label.
+BG_LABEL_MAX = 120
+# The tools whose calls can open a background task.
+_BG_TOOLS = frozenset({"Bash", "Monitor"})
+
+
+def background_label(inp) -> str:
+    """A background task's label off its call's input: its `description`,
+    else its `command`, each cut to its first line with text and to
+    BG_LABEL_MAX characters; "" for neither."""
+    for k in ("description", "command"):
+        v = inp.get(k) if isinstance(inp, dict) else None
+        if not isinstance(v, str):
+            continue
+        line = next((x.strip() for x in v.split("\n") if x.strip()), "")
+        if line:
+            return line[:BG_LABEL_MAX]
+    return ""
+
+
+def scan_background(r: dict, open_: Dict[str, str],
+                    info: Optional[Dict[str, list]] = None) -> None:
     """Fold one record into `open_`, {task id: "bash" or "monitor"}, the
-    background tasks a thread started and has not heard the end of.
+    background tasks a thread started and has not heard the end of, and
+    into `info`, where given, what the band's tree knows of them beyond
+    their kind, as [label, start]: by task id, of each task `open_` holds,
+    its label and the epoch it opened, None where the record that opened
+    it had no stamp; and by tool-use id, of each Bash or Monitor call
+    still waiting on its result, its label and a None start.  A key
+    `open_` does not hold is a call's.
 
     These are what keep an agent that ended its turn alive while it waits:
     Claude Code parks it on `bash:<id>` or `monitor:<id>` and marks it
@@ -1158,24 +1189,59 @@ def scan_background(r: dict, open_: Dict[str, str]) -> None:
     sends one per event with no status, and a last one with it when its
     stream ends.  Or on the thread ending it itself — TaskStop's result, or
     TaskOutput reading it finished, which Claude Code counts as delivered
-    and sends no notification for.
+    and sends no notification for.  Its label is its call's
+    (background_label), kept from the Bash or Monitor call until the
+    call's result, which opens the task or lets the call go.
     """
+    m_ = r.get("message")
+    content = m_.get("content") if isinstance(m_, dict) else None
+    calls: List[str] = []
+    if info is not None and isinstance(content, list):
+        for b in content:
+            if not isinstance(b, dict):
+                continue
+            name = b.get("name")
+            if (b.get("type") == "tool_use" and isinstance(name, str)
+                    and name in _BG_TOOLS and b.get("id")):
+                info[str(b["id"])] = [background_label(b.get("input")), None]
+            elif b.get("type") == "tool_result" and b.get("tool_use_id"):
+                calls.append(str(b["tool_use_id"]))
+
+    def is_call(c):
+        return c in info and c not in open_
+
+    def opened(tid, kind):
+        if info is not None:
+            c = next((c for c in calls if is_call(c)), None)
+            info[tid] = [info[c][0] if c is not None else "",
+                         ts_epoch(r.get("timestamp") or "")]
+        open_[tid] = kind
+
+    def closed(tid):
+        open_.pop(tid, None)
+        if info is not None:
+            info.pop(tid, None)
+
     res = r.get("toolUseResult")
     if isinstance(res, dict):
         if res.get("backgroundTaskId"):
-            open_[str(res["backgroundTaskId"])] = "bash"
+            opened(str(res["backgroundTaskId"]), "bash")
         elif res.get("taskId") and "timeoutMs" in res:
-            open_[str(res["taskId"])] = "monitor"
+            opened(str(res["taskId"]), "monitor")
         elif res.get("task_id") and "message" in res:
-            open_.pop(str(res["task_id"]), None)
+            closed(str(res["task_id"]))
         task = res.get("task")
         if isinstance(task, dict) and task.get("status") in TASK_ENDED:
-            open_.pop(str(task.get("task_id") or ""), None)
+            closed(str(task.get("task_id") or ""))
+    if info is not None:
+        for c in calls:
+            if is_call(c):
+                del info[c]
     text = notification_text(r)
     if text and "<status>" in text:
         m = re.search(r"<task-id>([^<]+)</task-id>", text)
         if m:
-            open_.pop(m.group(1).strip(), None)
+            closed(m.group(1).strip())
 
 
 def scan_agent_end(r: dict, ends: Dict[str, float]) -> None:
@@ -1672,8 +1738,8 @@ class TranscriptFold:
                  "ctx_est", "user_ts", "user_text", "asst_ts", "asst_text",
                  "spans", "tools", "blocked", "pending", "first", "open_at",
                  "prev", "eta_state", "queued", "compactions", "background",
-                 "idle_at", "last_seen", "opened", "wrote", "added",
-                 "removed", "ends", "gate")
+                 "bg_info", "idle_at", "last_seen", "opened", "wrote",
+                 "added", "removed", "ends", "gate")
 
     def __init__(self):
         self.reqs = OSet()          # request ids _dedupe_usage has kept
@@ -1694,6 +1760,7 @@ class TranscriptFold:
         self.eta_state = new_eta_state()
         self.queued = self.compactions = 0
         self.background = {}
+        self.bg_info = {}           # scan_background's, for the band's tree
         self.idle_at = self.last_seen = 0.0
         self.opened = {"pid": "", "tidx": None}   # the turn opened last
         self.wrote = OSet()         # tool-use ids diff_lines has counted
@@ -1867,7 +1934,7 @@ def _fold_clock(f: TranscriptFold, r: dict, opens: bool) -> None:
     _stamp_turn_id(f.opened, r)
     if r.get("isSidechain") is not True:
         live_eta(r, f.eta_state, opens)
-        scan_background(r, f.background)
+        scan_background(r, f.background, f.bg_info)
     t = ts_epoch(r.get("timestamp") or "")
     if t is None:
         return

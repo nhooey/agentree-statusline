@@ -19,7 +19,8 @@
 import type { EngineInterface } from 'claude-code'
 
 import {
-  agentRecordsOf, EMPTY_TRANSCRIPT, pyJoin, readPayload, transcriptFinish,
+  agentRecordsOf, backgroundTasks, EMPTY_TRANSCRIPT, pyJoin, readPayload,
+  transcriptFinish,
 } from '../src/claude_records.ts'
 import type {
   AgentEta, AgentRec, Git, Payload, Transcript, Turn,
@@ -218,9 +219,13 @@ export async function statusDoc($: $, places: Places): Promise<Dict> {
   // The mod's alone too: where on GitHub the tree's 📦 🌿 🔀 link.
   const github = await githubVia($, payload.current_dir, git)
   // The mod's alone: the subagents and the progress updates the band's
-  // tree draws (subagents.ts).
-  const agents = path && fold ? await timed($, 'tree', () => agentsDoc($,
-    path, tr, payload.current_dir, now, calib, snap)) : null
+  // tree draws (subagents.ts), and the main thread's open background
+  // shells and Monitors, which it draws under 🧵.
+  const agents = path && fold ? {
+    ...await timed($, 'tree', () => agentsDoc($, path, tr,
+      payload.current_dir, now, calib, snap)),
+    main_background: backgroundTasks(fold.tr.background, fold.tr.bgInfo),
+  } : null
   // And only when there are some: the credits the 💳 row draws, by the
   // option.
   const drawn = o === null ? [] : drawnCredits(credits.credits, o.credits,

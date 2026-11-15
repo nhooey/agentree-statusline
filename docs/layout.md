@@ -162,13 +162,14 @@ Above the prompt the rows are a tree of the session's threads: 🎮 the
 root, with where the session works (📦 🌿 🔀) on its label; under it 🧵
 main, the main thread; under 🧵 first 🎤, the turn the main thread is
 working, then the subagents it started, each under the thread that
-started it, in the order they started. 🎤 is a leaf: it folds away
+started it, in the order they started, and after a thread's agents its
+open background shells and Monitors. 🎤 is a leaf: it folds away
 with 🧵, and is not a subagent row, so the cap does not count it.
 Between turns 🎤 is gone, and 🧵 has a fold mark only while
-subagents hang under it. The rows under the footer line keep their own
-order, 🎤 then 🧵, and so does the receipt of a turn that ran no
-subagent; one that ran any stamps the same tree
-([The receipt](#the-receipt)).
+subagents, shells or Monitors hang under it. The rows under the footer
+line keep their own order, 🎤 then 🧵, and so does the receipt of a turn
+that ran no subagent; one that ran any stamps the same tree, its agents
+without their shells or Monitors ([The receipt](#the-receipt)).
 With three subagents running and four more folded past a cap of 3 (the
 render above with `--agents 01-mixed@220 --cap 3 --progress "Checking the
 binary, then the changelog" --cols 200`):
@@ -190,8 +191,9 @@ binary, then the changelog" --cols 200`):
 - **The fold marks.** A row with children has `⊟` (opened) or `⊞`
   (folded) in place of its `─`, 🎮's before its label; a click on the mark
   folds or opens its row. A folded agent keeps its own figures and draws
-  👶🏻 and how many agents are hidden under it; 🧵 folded hides 🎤 with
-  its agents. The grouped rows below
+  👶🏻 and how many agents are hidden under it, and 💻 📡 how many of its
+  own shells and Monitors; 🧵 folded hides 🎤 with its agents, and
+  counts its own shells and Monitors with 💻 📡. The grouped rows below
   start folded and every other row opened; opened, `… N more` lists the
   agents past the cap and `✅ N done` the agents that ended.
 - **The fold state.** Each row stays as it was left for the rest of the
@@ -227,6 +229,38 @@ binary, then the changelog" --cols 200`):
   since its last record ([State](#state)), not a work clock. It is live:
   it keeps its row and its progress update, counts toward the cap, and is
   never in `✅ N done`.
+- **Shells and Monitors.** Each background shell (a Bash call run in the
+  background, or moved there past its timeout) and each Monitor that a
+  thread started and has not heard the end of is a leaf under that
+  thread: under 🧵 for the main thread's, under the agent for an
+  agent's, after its agents and `… N more`, in the order they opened, and
+  before `✅ N done`. Its label is 💻 for a shell or 📡 for a Monitor,
+  🟢, then the call's `description`, else the first line of its
+  `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
+  has run. It counts against no cap, does not fold and takes no click,
+  and it leaves once the thread hears its end ([State](#state)). An
+  opened thread leaves its 💻 📡 counts to these rows; a folded one
+  hides them and counts them. With the panel corpus's `02-parked@220`,
+  whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
+  shell and a Monitor of the main thread's, at 120 columns:
+
+  ```
+  ⊟ 🎮 📦repo 🌿golden-clean…  💰 35                🧩▴2.7M ▾841k  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main  Chec…  🤖O⁵🏃  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤🟢 turn  W…  🤖O⁵🏃  💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+     ├⊟ 🎩🟡 Parsley   🤖O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 20m ⛳  29m 🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .022٪
+     │  ╰─ 🔍🟢 Chive  🤖O⁵🏃  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   ⌛ 20m ⛳  29m 🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├⊟ 🔩🟡 Pine      🤖O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 17m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .022٪
+     │  ╰─ 💻🟢 Build the docs site                                ⌛2.1m
+     ├⊟ 🔩🟡 Poppy     🤖O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 21k ▾1.2k  ⌛ 17m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .033٪
+     │  ├─ 📡🟢 Watch the CI checks                                ⌛2.1m
+     │  ╰─ 💻🟢 Build the docs site                                ⌛2.1m
+     ├─ 🔍🟢 Sage      🤖O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 15m ⛳  +8m 🤖⠦⠀ 🔧⠶⠄ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+     ├─ 🔍🟢 Sorrel    🤖O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 15m ⛳  +5m 🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+     ├─ 📐🟡 Peony     🤖O⁵🏃  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   ⌛ 10m ⛳  15m 🤖⠶⠀ 🔧⠀⠀ 🚦⠶⠀  🔋  .01٪  🪫  .011٪
+     ├─ 💻🟢 Run the plugin tests                                  ⌛6.2m
+     ╰─ 📡🟢 Watch PR #38 for comments                             ⌛ 25m
+  ```
 - **The grouped rows.** `✅ N done`, last under 🧵 while a turn runs,
   sums the subagents that ended since the turn opened; its 🛫 column is ✅ and how long ago
   the last one ended. Past `subagent-rows` live subagent rows, running or
@@ -685,7 +719,7 @@ The label, left to right:
 | state | the phase: 🟢 running, 🟡 paused or ⚫ ended. See [State](#state) |
 | 👶🏻 | how many rows hang directly under it, finished or not |
 | 🤏 | how often its window has been compacted |
-| 💻 | how many background shells it started and has not heard the end of, while it runs or is paused; not once it has failed or been killed |
+| 💻 | how many background shells it started and has not heard the end of, while it runs or is paused; not once it has failed or been killed. In the tree, only on a folded row: an opened one draws each shell as a row under it |
 | 📡 | the same for its Monitors |
 | 📨 | messages sent to it with SendMessage and not yet delivered: Claude Code's own "N queued". See [Inbox](#inbox) |
 | name | the task's name, or its description; then 🌿 and the branch of a worktree it works in apart from the session's, in full where the label has room; then what it is doing now. A label that only repeats the description is not drawn |

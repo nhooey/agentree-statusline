@@ -3292,6 +3292,38 @@
     [
      "",
      false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
+    ],
+    [
+     "",
+     false
     ]
    ]
   },
@@ -3653,6 +3685,190 @@
       "backgroundTaskId": ""
      },
      "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "id": "c1",
+        "input": {
+         "command": "npm test",
+         "description": "Run the tests\nx",
+         "run_in_background": true
+        },
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c2",
+        "input": {
+         "command": "  \n  tail -f log  \nmore",
+         "description": " "
+        },
+        "name": "Monitor",
+        "type": "tool_use"
+       },
+       {
+        "id": "c3",
+        "input": {
+         "command": "ls"
+        },
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c4",
+        "input": {
+         "description": "not a background tool"
+        },
+        "name": "Read",
+        "type": "tool_use"
+       },
+       {
+        "id": "c5",
+        "input": {
+         "command": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        },
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c6",
+        "input": {
+         "command": "still waiting"
+        },
+        "name": "Monitor",
+        "type": "tool_use"
+       },
+       {
+        "id": "c7",
+        "input": "no dict",
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "input": {},
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c8",
+        "name": [
+         "Bash"
+        ],
+        "type": "tool_use"
+       },
+       "no block"
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:00.000Z",
+     "type": "assistant"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c1",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:01.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": "b4"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c2",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:02.000Z",
+     "toolUseResult": {
+      "taskId": "m4",
+      "timeoutMs": 5
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c3",
+        "type": "tool_result"
+       },
+       {
+        "tool_use_id": "c4",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:03.000Z",
+     "toolUseResult": {
+      "stdout": "x"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "zz",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "toolUseResult": {
+      "backgroundTaskId": "b5"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c5",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:05.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": "b6"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c7",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:06.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": "b7"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "text": "<task-notification><task-id>b7</task-id><status>completed</status></task-notification>",
+        "type": "text"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:07.000Z",
+     "type": "user"
     }
    ]
   },
@@ -3969,6 +4185,193 @@
        "status": "running",
        "task_id": "m3"
       }
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "x",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:53:52.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": ""
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "id": "c1",
+        "input": {
+         "command": "npm test",
+         "description": "Run the tests\nx",
+         "run_in_background": true
+        },
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c2",
+        "input": {
+         "command": "  \n  tail -f log  \nmore",
+         "description": " "
+        },
+        "name": "Monitor",
+        "type": "tool_use"
+       },
+       {
+        "id": "c3",
+        "input": {
+         "command": "ls"
+        },
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c4",
+        "input": {
+         "description": "not a background tool"
+        },
+        "name": "Read",
+        "type": "tool_use"
+       },
+       {
+        "id": "c5",
+        "input": {
+         "command": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+        },
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c6",
+        "input": {
+         "command": "still waiting"
+        },
+        "name": "Monitor",
+        "type": "tool_use"
+       },
+       {
+        "id": "c7",
+        "input": "no dict",
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "input": {},
+        "name": "Bash",
+        "type": "tool_use"
+       },
+       {
+        "id": "c8",
+        "name": [
+         "Bash"
+        ],
+        "type": "tool_use"
+       },
+       "no block"
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:00.000Z",
+     "type": "assistant"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c1",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:01.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": "b4"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c2",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:02.000Z",
+     "toolUseResult": {
+      "taskId": "m4",
+      "timeoutMs": 5
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c3",
+        "type": "tool_result"
+       },
+       {
+        "tool_use_id": "c4",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:03.000Z",
+     "toolUseResult": {
+      "stdout": "x"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "zz",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "toolUseResult": {
+      "backgroundTaskId": "b5"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c5",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:05.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": "b6"
+     },
+     "type": "user"
+    },
+    {
+     "message": {
+      "content": [
+       {
+        "tool_use_id": "c7",
+        "type": "tool_result"
+       }
+      ]
+     },
+     "timestamp": "2026-08-17T20:54:06.000Z",
+     "toolUseResult": {
+      "backgroundTaskId": "b7"
      },
      "type": "user"
     }

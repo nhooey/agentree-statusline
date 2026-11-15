@@ -72,7 +72,8 @@ def fold_text(f: cr.AgentFold, seq: int, tail: str) -> str:
         "compactions": f.compactions, "last_seen": f.last_seen,
         "api_error": f.api_error, "cwd": f.cwd, "blocks": f.blocks,
         "background": [[k, v] for k, v in f.background.items()],
-        "effort": f.effort})
+        "effort": f.effort,
+        "bg_info": [[k, label, t] for k, (label, t) in f.bg_info.items()]})
 
 
 def fold_of_text(text: Optional[str]):
@@ -107,6 +108,7 @@ def fold_of_text(text: Optional[str]):
         f.cwd, f.blocks = o["cwd"], o["blocks"]
         f.background = {k: v for k, v in o["background"]}
         f.effort = o["effort"]
+        f.bg_info = {k: [label, _fl(t)] for k, label, t in o["bg_info"]}
         f.keys = {r[7] for r in f.recs}
     except (ValueError, TypeError, KeyError, IndexError):
         return None
