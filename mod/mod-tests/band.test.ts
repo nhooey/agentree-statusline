@@ -46,6 +46,7 @@ import {
   foldLoad, foldMain, foldMeta, foldSave, foldWrites, newMainFold, partName,
 } from '../src/main_fold.ts'
 import type { FoldMeta, MainFold } from '../src/main_fold.ts'
+import { INBOX_SLOTS, inboxFoldDir, inboxFoldLoad } from '../src/inbox_fold.ts'
 import { statePath } from '../src/state.ts'
 import {
   _windowCostsFiles, _windowCostsText, seedLimitsSnapshot,
@@ -1994,6 +1995,65 @@ test('an agent that ends takes its fold with it, and 🧵\'s grouped row ' +
   expect(after.some((r) => /├⊟ 🔍.* Parent/u.test(r.text))).toBe(true)
   expect(after.some((r) => r.text.includes('Kid'))).toBe(true)
   expect(after.some((r) => /⊟ ✅ 1 done/u.test(r.text))).toBe(true)
+})
+
+/** A transcript line holding SendMessage's answer that its message waits
+ * for agent `id`, at `ts`. */
+const queuedFor = (id: string, ts: string) => JSON.stringify({ type: 'user',
+  timestamp: ts, message: { content: [{ type: 'tool_result',
+    tool_use_id: 'sm-' + id + ts }] },
+  toolUseResult: { success: true,
+    message: `Message queued for delivery to ${id} at its next tool round.` },
+}) + '\n'
+
+/** An agent's file line holding a message from the main thread taken off
+ * its inbox, at `ts`. */
+const deliveredAt = (ts: string) => JSON.stringify({ type: 'attachment',
+  timestamp: ts, attachment: { type: 'queued_command', prompt: 'more',
+    origin: { kind: 'coordinator' } } }) + '\n'
+
+test('an agent with messages waiting draws 📨N, and one whose messages ' +
+  'were delivered draws none, the counts saved for a reload', async ($, on) => {
+  const { w } = clicking(on, [PARENT, KID])
+  const path = sessionFile('-inbox')
+  place(w, STATUS, path)
+  const dir = path.slice(0, -'.jsonl'.length) + '/subagents/'
+  const agent = w.files.get(
+    '/fixtures/transcripts/status/agents/subagents/agent-fork1.jsonl')!
+  const join = (...parts: (Uint8Array | string)[]) => {
+    const bytes = parts.map((p) => typeof p === 'string'
+      ? encoder.encode(p) : p)
+    const out = new Uint8Array(bytes.reduce((n, b) => n + b.length, 0))
+    let at = 0
+    for (const b of bytes) {
+      out.set(b, at)
+      at += b.length
+    }
+    return out
+  }
+  // Two sends to the parent, neither delivered; one to the kid, taken
+  // off its inbox after.
+  w.files.set(path, join(w.files.get(path)!,
+    queuedFor('p1', '2026-08-16T01:40:00Z'),
+    queuedFor('p1', '2026-08-16T01:40:10Z'),
+    queuedFor('c1', '2026-08-16T01:40:20Z')))
+  w.files.set(dir + 'agent-p1.jsonl', agent)
+  w.files.set(dir + 'agent-c1.jsonl',
+    join(agent, deliveredAt('2026-08-16T01:41:00Z')))
+  await start($, w, 'terminal', path)
+  const { band } = await clickBand($, w)
+  const rows = await drawnRows(band)
+  expect(rows.some((r) => /🔍🟢 📨2 Parent/u.test(r.text))).toBe(true)
+  const kid = rows.find((r) => r.text.includes('Kid'))
+  expect(kid?.text.includes('📨')).toBe(false)
+  // Saved as inbox_fold writes it, so a reload reads on from the save.
+  const saved = inboxFoldLoad(INBOX_SLOTS.map((n) => {
+    const b = w.files.get(inboxFoldDir(STATE, path) + '/' + n)
+    return b ? new TextDecoder().decode(b) : null
+  }))[0]
+  expect(saved.get(path)?.sends.map(([, id]) => id))
+    .toEqual(['p1', 'p1', 'c1'])
+  expect(saved.get(dir + 'agent-c1.jsonl')?.got.length).toBe(1)
 })
 
 /** `$.process.run` in a git repository at CWD on the branch `feat/x`,

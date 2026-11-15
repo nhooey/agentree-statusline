@@ -204,9 +204,10 @@ Marigold folded
    `mod/hooks/subagents.ts`), its usage checked against `agent_usage_of`,
    and draws its cells with the renderer's. Each thread's progress update
    is the first line of the last text block in its transcript's tail.
-   The agents' 📨 counts are 0 in the mod: the inbox fold reads with
-   Node alone. Tests in `mod/test/band_tree.test.ts`, the rows' cases and
-   `docs/layout.md`.
+   Each agent's 📨 is counted as the panel counts it, off the inbox fold
+   read on through `$` (`mod/hooks/inbox.ts`) and saved under its
+   `inbox-fold` row. Tests in `mod/test/band_tree.test.ts`, the rows'
+   cases and `docs/layout.md`.
 4. **`OP4` The mod's fold worker in TypeScript.** `transcripts.ts` folds
    large transcripts in Node in place of `python3 .../agent_lines.py`.
 5. **`OP5` Remove the Python's Claude twins.** Delete the modules `OP1`
