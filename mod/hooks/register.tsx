@@ -39,7 +39,8 @@ import {
 } from '../src/band.ts'
 import type { Place, RowsLive, RowsPlace } from '../src/band.ts'
 import {
-  billedNothing, newestBilled, receiptScoped, startTag, tagsHidden, turnKey,
+  billedNothing, newestBilled, receiptScoped, stampedOf, startTag,
+  tagsHidden, turnKey,
   withEngineDuration,
 } from '../src/receipt.ts'
 import type { TurnEnd } from '../src/receipt.ts'
@@ -555,8 +556,11 @@ async function stamp($: $, durationMs: number, prompt: string,
     // rows whose rows.<row>.transcript is true, and the tag line under
     // rows.tag.transcript.
     const stamped = ROW_NAMES.filter((r) => o.rows[r].transcript)
+    // The turn's subagents under 🧵, as the band's tree drew them, from
+    // the same document, where rows.subagents.transcript stamps them.
     const rows = receiptScoped(st, fig, bandCols || 80, o.hide,
-      true, main, stamped, o.hintInset, tagsShown(o))
+      true, main, stamped, o.hintInset, tagsShown(o),
+      o.rows.subagents.transcript ? stampedOf(doc as Dict | null) : null)
     await remember($, 'receipts', key, true)
     await remember($, 'receipts', receiptAt(durationMs),
       { rows } satisfies FiledReceipt)

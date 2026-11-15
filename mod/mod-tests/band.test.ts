@@ -65,7 +65,7 @@ import {
   ROW_NAMES, accountLine, bandLines, bandRows, rootDrawn,
 } from '../src/band.ts'
 import {
-  receiptLines, startLine, withEngineDuration,
+  receiptLines, stampedOf, startLine, withEngineDuration,
 } from '../src/receipt.ts'
 import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
@@ -1365,7 +1365,8 @@ async function receiptOf(w: World, now: number): Promise<Span[][]> {
   Intl.DateTimeFormat().resolvedOptions().timeZone), ASKED_MS)
   const main = bandRows(BAND_ST, doc,
     { rate: null, phase: 'done' }).main
-  return receiptLines(BAND_ST, fig, COLS, HIDE, true, main, STAMPED, INSET)
+  return receiptLines(BAND_ST, fig, COLS, HIDE, true, main, STAMPED, INSET,
+    true, OPTIONS.rows.subagents.transcript ? stampedOf(doc) : null)
 }
 
 /** The closing line of a turn that took `durationMs`, as drawn. */
@@ -1421,6 +1422,47 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     expect(await closing($, ASKED_MS)).toEqual(expected(want))
     expect(logOf(w)).not.toContain('no receipt')
   })
+
+test('a turn that ran subagents stamps them under 🧵 on its receipt, ' +
+  'with 🎤 first and nothing to press', async ($, on) => {
+  const w = world(on)
+  on('agent.list', () => ({ value: [
+    PARENT, { ...KID, status: 'completed' }] }))
+  resumed(w)
+  await $.session.start({ cwd: CWD, surface: 'terminal',
+    isInteractive: true })
+  await settle()
+  await $.ui.mount({ plugin: 'usage-band', surface: 'terminal',
+    component: 'AbovePrompt', props: BAND })
+  await askLive($, w, true)
+  await until(w, 5_000)
+  expect(stamped(w)).toBe(true)
+  const want = await receiptOf(w, w.clock.now() / 1000)
+  // 🎮 where the options stamp it, the tree's root; 🧵 under it, 🎤 🏁
+  // first under 🧵, then the parent still running, with the kid that
+  // ended, 🏁, under it; then the blank row and the 🔺🔖 tag line.
+  const rows = want.map((l) => text(l).slice(INSET))
+  const root = STAMPED.includes('session') ? 1 : 0
+  const pad = ' '.repeat(3 * root)
+  expect(rows.length).toBe(6 + root)
+  if (root) expect(rows[0].startsWith(spec.E_SESSION)).toBe(true)
+  expect(rows[root].startsWith((root ? '╰─ ' : '') + spec.E_THREAD +
+    spec.E_PHASE_END + ' main  Done.')).toBe(true)
+  expect(rows[root + 1].startsWith(pad + '├─ ' + spec.E_TURN +
+    spec.E_PHASE_DONE + ' turn  ' + ASKED)).toBe(true)
+  expect(rows[root + 2].startsWith(pad + '╰─ 🔍🟢 Parent')).toBe(true)
+  expect(rows[root + 3].startsWith(pad + '   ╰─ 🔍' + spec.E_PHASE_DONE +
+    ' Kid')).toBe(true)
+  expect(rows[root + 4]).toBe('')
+  expect(await closing($, ASKED_MS)).toEqual(expected(want))
+  const receipt = await $.ui.mount({ plugin: 'usage-band',
+    surface: 'terminal', component: 'TurnDuration',
+    props: { word: 'Worked', durationMs: ASKED_MS },
+    viewport: { columns: COLS, rows: 40 } })
+  expect(await receipt.findAll({ type: 'Button' })).toEqual([])
+  await w.clock.advance(5_000)
+  expect(logOf(w)).not.toContain('no receipt')
+})
 
 test('a turn a task notification follows still gets its receipt and tag',
   async ($, on) => {

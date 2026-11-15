@@ -472,7 +472,8 @@
               "transcript. Above the prompt the rows are a tree, 🎮 the",
               "root, then 🧵 with 🎤 and the subagents under it; under the",
               "footer line they go in one order: 💳, 🎤, 🧵, 🎮. The",
-              "subagents are always above the prompt and never stamped,",
+              "subagents are always above the prompt and always stamped,",
+              "the receipt of a turn that ran any drawing them under 🧵,",
               "and `always` as shipped: between turns the running and",
               "paused ones stay in the tree, and the ended ones are left",
               "to the turn's receipt."]

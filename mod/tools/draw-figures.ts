@@ -44,7 +44,8 @@
 // "03-tree@220", in the band's tree above the prompt, each task's `label`
 // standing for its latest progress update; --progress is the main
 // thread's.  The corpus's clock is the figures documents'.  --cap is
-// subagent-rows.
+// subagent-rows.  With --part receipt they go in the --status document,
+// and the receipt stamps the turn's agents under 🧵.
 //
 // The clock is drawn in the document's `clock.tz`, as the edge would set
 // it, and the terminal's profile is read from the environment.
@@ -61,7 +62,7 @@ import {
   rootDrawn,
 } from "../src/band.ts";
 import type { Live, Phase, Place } from "../src/band.ts";
-import { receiptLines, startLine } from "../src/receipt.ts";
+import { receiptLines, stampedOf, startLine } from "../src/receipt.ts";
 import { RIGHT_EDGE } from "../src/spec.ts";
 import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
 import type { Rows } from "../src/config.ts";
@@ -222,9 +223,13 @@ if (part === "band") {
   lines = [startLine(st, fig, hide)];
 } else if (part === "receipt") {
   const status = statusFile ? read(statusFile) : null;
+  if (status && (agentsCase || progress)) {
+    status.agents = corpusAgents(agentsCase, progress);
+  }
   const main = status
     ? bandRows(st, status, { rate: null, phase: "done" }).main : null;
-  lines = receiptLines(st, fig, cols, hide, false, main, stamped, inset);
+  lines = receiptLines(st, fig, cols, hide, false, main, stamped, inset,
+    true, rows.subagents.transcript ? stampedOf(status) : null);
 } else {
   fail("--part: invalid choice: '" + part + "'");
 }

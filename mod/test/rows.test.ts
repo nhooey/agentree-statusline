@@ -20,12 +20,15 @@ import {
   phaseRows,
   workspaceOf,
 } from "../src/band.ts";
-import { receiptLines, receiptTurn, startLine } from "../src/receipt.ts";
+import {
+  receiptLines, receiptScoped, receiptTurn, stampedOf, startLine,
+} from "../src/receipt.ts";
+import type { RowName } from "../src/band.ts";
 import { decodeTurn } from "../src/claude_cost.ts";
 import { spanFrom, spanJson } from "../tools/gen-grid-cases.ts";
 import {
-  FIGURES, OUT, document, drawAccount, drawBand, drawReceipt, drawStart,
-  generate, inZone,
+  FIGURES, OUT, corpusAgents, document, drawAccount, drawBand, drawReceipt,
+  drawStart, generate, inZone,
 } from "../tools/gen-row-cases.ts";
 import type { AccountCase, BandCase, ReceiptCase }
   from "../tools/gen-row-cases.ts";
@@ -194,6 +197,48 @@ test("each row's live and transcript pick the band's rows and the receipt's",
       false, main, ["turn"], 0, false));
     assert.deepEqual(marks(untagged), ["🎤"]);
   });
+
+test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " +
+  "and one that ran none stamps its rows as before", () => {
+  const st = settings({});
+  const status = document("status/01-baseline@196");
+  const cost = document("cost/09-agents@196");
+  const opts = { rate: null, phase: "done" as const };
+  const main = inZone(status, () => bandRows(st, status, opts).main);
+  const plain = (lines: { scope: string; spans: Span[] }[]) =>
+    lines.map((l) => stripAnsi(join(l.spans)));
+  const receipt = (fig: Dict | null, stamped: RowName[] = ["turn"],
+    hide: string[] = []) => inZone(cost, () => receiptScoped(st, cost, 196,
+    hide, false, main, stamped, 0, true, stampedOf(fig)));
+  const flat = receipt(null);
+  assert.deepEqual(flat.map((l) => l.scope), ["turn", "blank", "tag"]);
+  // No agents in the document, or none the turn ran: as before.
+  assert.deepEqual(receipt(status), flat);
+  const ran = { ...status,
+    agents: corpusAgents("01-mixed@220", "All four suites pass") };
+  assert.deepEqual(receipt({ ...ran, transcript: { ...(status.transcript as
+    Dict), turn_s: 1786847000 } }), flat);
+  const tree = receipt(ran);
+  const lines = plain(tree);
+  assert.deepEqual(tree.map((l) => l.scope), ["main", "turn", "agent",
+    "agent", "agent", "agent", "blank", "tag"]);
+  assert.match(lines[0], /^🧵⚫ main  All four suites pass/u);
+  assert.match(lines[1], /^├─ 🎤🏁 turn  /u);
+  // The agents the turn opened at 1786846520 ran, in the order they
+  // started, none pressing.
+  for (const [i, name] of [[2, "Bluebell"], [3, "Thistle"], [5, "Quince"]] as
+    const) assert.match(lines[i], new RegExp("^[├╰]─ .*" + name, "u"));
+  assert.ok(lines[5].startsWith("╰─ "));
+  assert.ok(!tree.some((l) => l.spans.some((s) => s.press)));
+  // The rows keep the receipt's columns: 💰 where the flat 🎤 has it.
+  const col = (l: string) => visWidth(l.slice(0, l.indexOf("💰")), st.widths);
+  assert.equal(col(lines[1]), col(plain(flat)[0]));
+  // 🎮 stamped is the tree's root; the agents hidden, the rows as before.
+  const rooted = plain(receipt(ran, ["turn", "session"]));
+  assert.match(rooted[0], /^🎮 /u);
+  assert.match(rooted[1], /^╰─ 🧵⚫ main/u);
+  assert.deepEqual(receipt(ran, ["turn"], ["agent"]), flat);
+});
 
 test("the receipt's rows inset keep the columns of the rows at none", () => {
   // The band's rows are laid out at the full width wherever they start,
