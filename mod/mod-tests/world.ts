@@ -39,6 +39,8 @@ const encoder = new TextEncoder()
 export type World = {
   files: Map<string, Uint8Array>
   store: Map<string, unknown>
+  // Each key the mod set in `$.store`, oldest first, once per set.
+  stored: string[]
   // Each status document the mod filed in `$.state`, oldest first.
   docs: Dict[]
   // Whether `$.session.usage` is refused, and, while `hung` holds a list,
@@ -92,9 +94,11 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   files.set(USER_FILE, encoder.encode(JSON.stringify(USER_SETTINGS)))
   const clock = mock.clock(on, { now: NOW * 1000 })
   const store = new Map<string, unknown>()
+  const stored: string[] = []
   on('store.get', ($, e) => ({ value: store.get(e.key) }))
   on('store.set', ($, e) => {
     store.set(e.key, e.value)
+    stored.push(e.key)
     return { value: undefined }
   })
   on('store.delete', ($, e) => {
@@ -212,6 +216,6 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     ;(e.to === 'debug' ? debug : logged).push(e.text)
     return { value: undefined }
   })
-  return { files, store, docs, usage, debug, logged, clock, session,
+  return { files, store, stored, docs, usage, debug, logged, clock, session,
     oauth, reads, lists, runs, mtimes }
 }

@@ -19,11 +19,11 @@
 import type { EngineInterface } from 'claude-code'
 
 import {
-  agentRecordsOf, backgroundTasks, EMPTY_TRANSCRIPT, endedTasks, pyJoin, readPayload,
-  transcriptFinish,
+  _recordsOf, agentRecordsOf, backgroundTasks, EMPTY_TRANSCRIPT, endedTasks,
+  pyJoin, readPayload, transcriptFinish, turnStartText,
 } from '../src/claude_records.ts'
 import type {
-  AgentEta, AgentRec, Git, Payload, Transcript, Turn,
+  AgentEta, AgentRec, Git, Payload, Rec, Transcript, Turn,
 } from '../src/claude_records.ts'
 import { githubRepo } from '../src/github.ts'
 import { FABLE_WINDOW } from '../src/sources.ts'
@@ -144,6 +144,37 @@ export async function permissionModeOf($: $, path: string):
 
 // How far back from the transcript's end permissionModeOf looks.
 const MODE_TAIL = 256 * 1024
+
+/** How long the session's last main-thread turn ran, once it has
+ * finished: the durationMs of the turn_duration record Claude Code writes
+ * after a turn's records, the one its closing line is drawn with.  null
+ * where a record that opens a turn (turnStartText) comes after the newest
+ * one, a turn still running, or none is in the transcript's last
+ * MODE_TAIL bytes. */
+export async function lastFinishedMs($: $, path: string):
+  Promise<number | null> {
+  const size = await fileSize($, path)
+  if (!size) return null
+  const from = Math.max(0, size - MODE_TAIL)
+  let bytes = await readRange($, path, from, size)
+  // A line cut by the tail's start is not a record.
+  if (from > 0) bytes = bytes.subarray(bytes.indexOf(10) + 1)
+  return finishedMs(_recordsOf(bytes))
+}
+
+/** lastFinishedMs over `records`, the transcript's newest last. */
+export function finishedMs(records: readonly Rec[]): number | null {
+  for (let i = records.length - 1; i >= 0; i--) {
+    const r = records[i]
+    if (r.isSidechain === true) continue
+    if (turnStartText(r) !== null) return null
+    if (r.type === 'system' && r.subtype === 'turn_duration') {
+      const ms = r.durationMs
+      return typeof ms === 'number' && ms > 0 ? ms : null
+    }
+  }
+  return null
+}
 
 /** detect_git through `$.process.run`, in the session's directory. */
 async function gitVia($: $, cwd: string) {

@@ -613,6 +613,15 @@ tests/fixtures/figures/status/18-agents.json`):
 No fixture pairs a cost document with a status document of the same
 session, so here the 🧵 row comes from another one's.
 
+The stamp waits for Claude Code to write the turn's records, which it
+does after the turn ends, so a reload or restart in that window, such as
+a `/reload-plugins` queued during the turn, can stop it short. When the
+mod loads, it looks at the session's last turn: if the transcript shows
+it finished (a `turn_duration` record after its prompt) and no receipt
+is filed for it, the mod stamps it then, with that record's duration, so
+the turn's closing line draws it. A turn still running is left to its
+own end. The mod's log says `receipt stamped on load` when it does.
+
 A turn that ran subagents stamps them too, as the band's tree draws them:
 🧵 the parent, stamped whatever `rows` says of it, under it 🎤 first,
 then every agent the turn ran that had finished by the time it was

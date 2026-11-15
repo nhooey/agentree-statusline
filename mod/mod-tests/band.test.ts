@@ -28,7 +28,7 @@ import {
   WINDOW, world,
 } from './world.ts'
 import type { Ran, Run, World } from './world.ts'
-import { partsOf, startKey } from '../hooks/register.tsx'
+import { partsOf, receiptKey, startKey } from '../hooks/register.tsx'
 import { drawingNote, ioText } from '../hooks/profile.ts'
 import { LOG_NAME } from '../hooks/log.ts'
 import { CONFIG } from '../hooks/config.ts'
@@ -65,7 +65,7 @@ import {
   ROW_NAMES, accountLine, bandLines, bandRows, rootDrawn,
 } from '../src/band.ts'
 import {
-  receiptLines, stampedOf, startLine, withEngineDuration,
+  receiptLines, stampedOf, startLine, turnKey, withEngineDuration,
 } from '../src/receipt.ts'
 import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
@@ -2011,6 +2011,95 @@ test('a turn whose records never land logs why and stamps nothing',
     await blankClosing($, 'Worked', ASKED_MS)
     expect(logOf(w)).toContain('no receipt: the turn was not billed ' +
       'within 30s')
+  })
+
+/** The records Claude Code writes once a turn's answer is done: its Stop
+ * hooks' summary, then the turn's clock, which its closing line is drawn
+ * with. */
+const TURN_DONE = [
+  { isSidechain: false, subtype: 'stop_hook_summary', type: 'system',
+    timestamp: '2026-08-16T02:20:05.100Z' },
+  { durationMs: ASKED_MS, isSidechain: false, subtype: 'turn_duration',
+    type: 'system', timestamp: '2026-08-16T02:20:05.200Z' },
+]
+
+/** The turn askAndAnswer runs, written whole to the transcript before the
+ * mod's load sees it, as a reload just after its end finds it. */
+function answered(w: World) {
+  resumed(w)
+  grow(w, { message: { content: ASKED }, promptId: 'p-resume',
+    promptSource: 'typed', timestamp: '2026-08-16T02:20:00Z', type: 'user',
+    userType: 'external' }, ANSWER, ...TURN_DONE)
+}
+
+/** How many times the mod filed a receipt for a closing line. */
+function filedCount(w: World): number {
+  return w.stored.filter((k) => k.startsWith('receipt-at:')).length
+}
+
+test('a load stamps the last finished turn its turn.complete never stamped',
+  async ($, on) => {
+    const w = world(on)
+    answered(w)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await until(w, 5_000)
+    expect(w.store.has('receipt-at:' + ASKED_MS)).toBe(true)
+    expect(logOf(w)).toContain('receipt stamped on load: ' +
+      'p-resume'.slice(0, 8))
+    expect(logOf(w)).not.toContain('no receipt')
+    await w.clock.advance(5_000)
+    expect(filedCount(w)).toBe(1)
+  })
+
+test('a load stamps nothing for a last turn already stamped',
+  async ($, on) => {
+    const w = world(on)
+    answered(w)
+    const records = _recordsOf(bytesOf(w, RESUMED))
+    const readings = readingsOf(w, RESUMED)
+    const turns = turnsOf(records, (s) => agentRecordsOf(readings, s, null),
+      null, new Map(), labelIn(w))
+    w.store.set(receiptKey(SESSION, turnKey(turns)), true)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await until(w, 5_000)
+    expect(stamped(w)).toBe(false)
+    expect(logOf(w)).not.toContain('receipt stamped on load')
+  })
+
+test('a load stamps nothing while the last turn is still running',
+  async ($, on) => {
+    const w = world(on)
+    // A turn before it finished, then a prompt with no clock after it.
+    answered(w)
+    grow(w, { message: { content: 'And again.' }, promptId: 'p-running',
+      promptSource: 'typed', timestamp: '2026-08-16T02:21:00Z',
+      type: 'user', userType: 'external' })
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await until(w, 5_000)
+    expect(stamped(w)).toBe(false)
+    expect(logOf(w)).not.toContain('receipt stamped on load')
+  })
+
+test('a turn.complete arriving with the load stamps its turn once',
+  async ($, on) => {
+    const w = world(on)
+    answered(w)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await $.turn.complete(COMPLETE)
+    await settle()
+    await until(w, 5_000)
+    expect(w.store.has('receipt-at:' + ASKED_MS)).toBe(true)
+    await w.clock.advance(5_000)
+    await settle()
+    expect(filedCount(w)).toBe(1)
+    expect(logOf(w)).not.toContain('no receipt')
   })
 
 /** A prompt sent before it was finished, as the transcript held it live
