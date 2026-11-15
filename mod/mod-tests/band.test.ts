@@ -732,6 +732,39 @@ test('the main thread\'s open background shell is in the document and ' +
     .toBe(true)
 })
 
+test('a shell that closed stays drawn, ended, for finished-linger, and ' +
+  'goes when it runs out with no read in between', async ($, on) => {
+  const w = world(on)
+  const path = withShell(w, '2026-08-16T01:44:00Z')
+  // Its closing notification, 2 s before the clock's now.
+  const close = JSON.stringify({ type: 'user',
+    timestamp: new Date((NOW - 2) * 1000).toISOString(),
+    message: { content: '<task-notification><task-id>bsh1</task-id>' +
+      '<status>completed</status></task-notification>' } }) + '\n'
+  const was = w.files.get(path)!
+  const extra = encoder.encode(close)
+  const bytes = new Uint8Array(was.length + extra.length)
+  bytes.set(was)
+  bytes.set(extra, was.length)
+  w.files.set(path, bytes)
+  await start($, w, 'terminal', path)
+  const agents = lastDoc(w).agents as Dict
+  expect(agents.main_background).toEqual([])
+  expect(agents.main_background_ended).toEqual([{ id: 'bsh1', kind: 'bash',
+    label: 'Build the docs', start: Date.parse('2026-08-16T01:44:00Z') / 1000,
+    end: NOW - 2 }])
+  const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
+  const shell = async () => (await drawnRows(ui.above))
+    .some((r) => /💻⚫ Build the docs/u.test(r.text))
+  expect(await shell()).toBe(true)
+  // The clock alone moves it on: no document is read before it goes.
+  const docs = w.docs.length
+  await w.clock.advance(4_000)
+  await settle()
+  expect(w.docs.length).toBe(docs)
+  expect(await shell()).toBe(false)
+})
+
 /** Each mark in `row`, a drawn row standing `from` columns in from the
  * terminal's left edge, by the terminal column it starts on; a mark drawn
  * twice is left out. */

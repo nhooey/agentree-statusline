@@ -19,7 +19,7 @@
 import type { EngineInterface } from 'claude-code'
 
 import {
-  agentRecordsOf, backgroundTasks, EMPTY_TRANSCRIPT, pyJoin, readPayload,
+  agentRecordsOf, backgroundTasks, EMPTY_TRANSCRIPT, endedTasks, pyJoin, readPayload,
   transcriptFinish,
 } from '../src/claude_records.ts'
 import type {
@@ -233,11 +233,14 @@ export async function statusDoc($: $, places: Places): Promise<Dict> {
   const github = await githubVia($, payload.current_dir, git)
   // The mod's alone: the subagents and the progress updates the band's
   // tree draws (subagents.ts), and the main thread's open background
-  // shells and Monitors, which it draws under 🧵.
+  // shells and Monitors, which it draws under 🧵, and the ones it last
+  // closed, which it keeps drawn for `finished-linger`.
+  const ended = path && fold ? endedTasks(fold.tr.bgEnded) : []
   const agents = path && fold ? {
     ...await timed($, 'tree', () => agentsDoc($, path, tr,
       payload.current_dir, now, calib, snap)),
     main_background: backgroundTasks(fold.tr.background, fold.tr.bgInfo),
+    ...ended.length ? { main_background_ended: ended } : {},
   } : null
   // And only when there are some: the credits the 💳 row draws, by the
   // option.

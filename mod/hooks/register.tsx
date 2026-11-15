@@ -806,6 +806,7 @@ async function bandNow($: $, isWorking: boolean, place: Place):
       { rate: await read($, rate), phase: running ? 'running' : 'done',
         live: liveOf(o), place, places: rowPlacesOf(o), inset, indent,
         agents: o.rows.subagents.live, cap: o.subagentRows,
+        linger: o.finishedLinger,
         folds: place === 'above' ? await read($, folds) : {} })]
 }
 

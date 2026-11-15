@@ -380,6 +380,15 @@ OPTIONS = {
         "doc-table": None,
         "doc": "How many subagent rows the band's tree draws at most. Past it, the later siblings under one parent are summed on that parent's `… N more` row; every shown row's parents stay.",
     },
+    "finished-linger": {
+        "type": "int",
+        "minimum": 0,
+        "ports": ("mod",),
+        "file": True,
+        "flag": None,
+        "doc-table": None,
+        "doc": "How many seconds a row of the band's tree that finished stays drawn where it stood, ended: a subagent that ended, before it goes into `✅ N done`, and a background shell or Monitor that closed, before it goes. Counted from when it finished, its last record or the record that closed it; 0 moves it at once. A lingering subagent row counts toward `subagent-rows` as a live one does.",
+    },
     "account-place": {
         "type": "enum",
         "items": ("row", "tail"),
