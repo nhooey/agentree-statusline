@@ -103,6 +103,12 @@
   // Claude Code sets and the mod never sees; drawn under usage-source
   // "auto" over Claude Code's own reading.
   "plan-usage": true,
+  // The other weekly windows on the 💳 row after 🦊, each where the usage
+  // source gives it: 🎼 seven_day_opus, 🎭 seven_day_sonnet, 🍳
+  // seven_day_omelette, 🔌 seven_day_oauth_apps, 🤝 seven_day_cowork.  A
+  // file may turn on one alone; the rest stay off.
+  "weekly-windows": {"opus": false, "sonnet": false, "omelette": false,
+                     "oauth_apps": false, "cowork": false},
   // The account's credits on the 💳 row (docs/options.md, "The credits").
   // A condition is {field, op, value, unit}: field "balance" (unit "usd"
   // or "percent"), "spent" ("usd") or "expiry" ("days", "hours",

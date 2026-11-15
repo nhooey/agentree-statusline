@@ -734,6 +734,16 @@ export function cacheNamespace(spec: string, account: string, context: unknown,
 // window a week long that the 💳 row draws apart from the plan's own.
 export const FABLE_WINDOW = "seven_day_overage_included";
 
+// The other weekly windows the 💳 row can draw after the Fable one, each
+// by its key in the `weekly-windows` option and the `hide` group `plan`,
+// with the window's id.  A seven_day_* window not named here is kept in
+// the reading but drawn nowhere: it has no mark of its own.
+export const WEEKLY_WINDOWS = [["opus", "seven_day_opus"],
+  ["sonnet", "seven_day_sonnet"], ["omelette", "seven_day_omelette"],
+  ["oauth_apps", "seven_day_oauth_apps"],
+  ["cowork", "seven_day_cowork"]] as const;
+export type WeeklyKey = typeof WEEKLY_WINDOWS[number][0];
+
 // Translate a transcript/native quota snapshot without inventing fields.
 export function nativeWindows(value: unknown): Dict[] {
   const raw = isDict(value) ? pyGet(value, "rate_limits", value) : {};
@@ -741,8 +751,10 @@ export function nativeWindows(value: unknown): Dict[] {
   if (!isDict(raw)) return windows;
   const sourceBucket = pyStr(pyTruthy(raw.limit_id) ? raw.limit_id
     : pyTruthy(raw.limitId) ? raw.limitId : "default");
-  for (const key of ["five_hour", "seven_day", FABLE_WINDOW, "primary",
-                     "secondary"]) {
+  const others: string[] = WEEKLY_WINDOWS.map(([, id]) => id);
+  const weekly = ["seven_day", FABLE_WINDOW, ...others];
+  for (const key of ["five_hour", "seven_day", FABLE_WINDOW, ...others,
+                     "primary", "secondary"]) {
     const item = pyGet(raw, key);
     if (!isDict(item)) continue;
     const usage = pyGet(item, "used_percentage", pyGet(item, "used_percent"));
@@ -756,7 +768,7 @@ export function nativeWindows(value: unknown): Dict[] {
       duration = n !== null ? n * 60 : null;
     }
     if (duration === null && key === "five_hour") duration = 5 * 3600;
-    if (duration === null && (key === "seven_day" || key === FABLE_WINDOW)) {
+    if (duration === null && weekly.includes(key)) {
       duration = 7 * 86400;
     }
     windows.push({

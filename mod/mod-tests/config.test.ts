@@ -174,6 +174,8 @@ test('with no configuration file the options are the defaults', () => {
     finishedLinger: 5,
     accountPlace: 'row',
     planUsage: true,
+    weeklyWindows: { opus: false, sonnet: false, omelette: false,
+      oauth_apps: false, cowork: false },
     credits: {
       place: 'account',
       show: {

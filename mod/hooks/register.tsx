@@ -39,7 +39,8 @@ import { foldShut, pruneFolds, stampedSplit } from '../src/band_tree.ts'
 import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
-  ROW_NAMES, accountLine, bandRows, bandScoped, footerRuler, footerTail,
+  ROW_NAMES, accountHide, accountLine, bandRows, bandScoped, footerRuler,
+  footerTail,
   modeOfHint, rootDrawn,
 } from '../src/band.ts'
 import type { Place, RowsLive, RowsPlace } from '../src/band.ts'
@@ -831,8 +832,8 @@ async function bandNow($: $, isWorking: boolean, place: Place):
   const running = isWorking || await read($, held)
   const account = o.accountPlace === 'row' &&
     o.rows.account.place === place && accountedIn(o, running)
-    ? accountLine(st, fig, o.hide, cols - inset, await home($), indent,
-      rootedIn(o, running)) : []
+    ? accountLine(st, fig, accountHide(o.hide, o.weeklyWindows),
+      cols - inset, await home($), indent, rootedIn(o, running)) : []
   return [...account.length ? [{ scope: 'account', spans: account }] : [],
     ...bandScoped(st, fig, cols, o.hide,
       { rate: await read($, rate), phase: running ? 'running' : 'done',
@@ -1161,8 +1162,8 @@ export const register: Register = on => {
       const running = e.props.isWorking || await read($, held)
       const accounted = accountedIn(o, running)
       const text = accounted && o.accountPlace === 'tail' ? footerTail(st, fig,
-        o.hide, e.props.hint, cols, mode, await home($),
-        rootedIn(o, running)) : ''
+        accountHide(o.hide, o.weeklyWindows), e.props.hint, cols, mode,
+        await home($), rootedIn(o, running)) : ''
       const tail = o.footerRuler && text ? footerRuler(st, text, cols)
         : text
       // What the padding was worked out from, each time it changes, so a

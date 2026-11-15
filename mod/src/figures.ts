@@ -30,8 +30,8 @@ import type { Dict } from "./py.ts";
 // `accounting.own`, the session's `start_s`, the main thread's own figures
 // on its transcript (`own_parts` and `own_est`), the Turn's `eta`, and the
 // session's name and colour on its transcript; 5 the Limits' weekly Fable
-// window.  claude.py says which.
-export const FIGURES_SCHEMA = 5;
+// window; 6 the Limits' other weekly windows.  claude.py says which.
+export const FIGURES_SCHEMA = 6;
 
 // ════════════════════════════════════════════════════════════════════════════
 // Records.
@@ -73,12 +73,15 @@ const GIT: Fields = {
   main_root: "str", is_worktree: "value",
 };
 
-// _FIG_STAMPS: the three reset times, carried as epochs.
+// _FIG_STAMPS: the reset times, carried as epochs.
 const LIMITS: Fields = {
   session_pct: "str", session_reset: "stamp", session_share: "str",
   weekly_pct: "str", weekly_reset: "stamp", weekly_share: "str",
   session_turn: "str", weekly_turn: "str", fable_pct: "str",
-  fable_reset: "stamp",
+  fable_reset: "stamp", opus_pct: "str", opus_reset: "stamp",
+  sonnet_pct: "str", sonnet_reset: "stamp", omelette_pct: "str",
+  omelette_reset: "stamp", oauth_apps_pct: "str", oauth_apps_reset: "stamp",
+  cowork_pct: "str", cowork_reset: "stamp",
 };
 
 const CACHE_SHARES: Fields = {

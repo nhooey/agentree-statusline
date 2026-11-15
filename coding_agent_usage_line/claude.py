@@ -2819,8 +2819,10 @@ def _cost_check(pay: Payload, session: Optional[dict]) -> str:
 # compactions in its own cost.  The grid's rows draw them, as the plan's
 # "Where each row's figures come from" lays out.  4: the Transcript's
 # `session_name` and `session_color`, which the band's 🎮 row draws.  5:
-# the Limits' weekly Fable window, `fable_pct` and `fable_reset`.
-FIGURES_SCHEMA = 5
+# the Limits' weekly Fable window, `fable_pct` and `fable_reset`.  6: the
+# Limits' other weekly windows, `<key>_pct` and `<key>_reset` for each key
+# of sources.WEEKLY_WINDOWS.
+FIGURES_SCHEMA = 6
 
 # Where a run writes its figures as well as drawing them.  For the shared
 # cases only, like the calibration override above: tests/run-cases.py sets
@@ -2836,7 +2838,8 @@ _FIG_MISSING = {
 }
 # Record fields holding a STAMP_FMT local time, written as an epoch: the
 # document carries no zone but the clock's, and a port has no strptime.
-_FIG_STAMPS = {"Limits": ("session_reset", "weekly_reset", "fable_reset")}
+_FIG_STAMPS = {"Limits": ("session_reset", "weekly_reset") + tuple(
+    f for f in SIDE_WINDOW_FIELDS if f.endswith("_reset"))}
 
 
 def _stamp_epoch(s: str) -> Optional[int]:

@@ -347,6 +347,9 @@ NATIVE = [
         "rateLimits": {"limitId": "codex", "primary": {
             "usedPercent": 1, "windowDurationMins": 300}}}),
     ("rate_limits key nested", {"rate_limits": CLAUDE_LIMITS}),
+    ("claude weekly windows", dict(CLAUDE_LIMITS, seven_day_opus={
+        "used_percentage": 30, "resets_at": PIN_NOW + 90000},
+        seven_day_cowork={"used_percentage": 2, "duration_seconds": 3600})),
     ("claude fable window", dict(CLAUDE_LIMITS, seven_day_overage_included={
         "used_percentage": 12.5, "resets_at": PIN_NOW + 90000})),
     ("rate_limits null", {"rate_limits": None}),
@@ -695,6 +698,19 @@ LIMITS = [
         window("seven_day_overage_included", 604800, 12.5, PIN_NOW + 90000),
         window("five_hour", 18000, 41, PIN_NOW + 400),
         window("seven_day", 604800, 63, PIN_NOW + 160000))),
+    # The other weekly windows, told by their ids too: a per-model week
+    # ahead of the plan's is not taken for it, and one with no mark of its
+    # own is left out.
+    ("weekly windows", default_bucket(
+        window("seven_day_opus", 604800, 30, PIN_NOW + 90000),
+        window("seven_day", 604800, 63, PIN_NOW + 160000),
+        window("seven_day_sonnet", 604800, 55.5, None),
+        window("seven_day_unheard_of", 604800, 9, None))),
+    ("weekly window only", default_bucket(
+        window("seven_day_oauth_apps", 604800, 1, PIN_NOW))),
+    ("unknown weekly window not the plan's", default_bucket(
+        window("seven_day_unheard_of", 604800, 9, None),
+        window("five_hour", 18000, 41, PIN_NOW + 400))),
     ("fable only", default_bucket(
         window("seven_day_overage_included", 604800, 5, None))),
     ("fable missing and expired skipped", default_bucket(

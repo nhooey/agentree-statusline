@@ -218,6 +218,7 @@ different on one readout, the table says so.
 | 🔋 | 5-hour | share of the 5-hour window | ✓ | ✓ | ✓ |
 | 🪫 | Weekly | share of the weekly window | ✓ | ✓ | ✓ |
 | 🦊 | Fable | share of the weekly Fable window, where the account has one, on the 💳 row | ✓ | | |
+| 🎼 🎭 🍳 🔌 🤝 | Weekly windows | share of the weekly Opus, Sonnet, Omelette, OAuth-apps and Cowork windows, each where the account has one and `weekly-windows` turns it on (all off by default), on the 💳 row | ✓ | | |
 | 🔜 | Reset | time until the window resets, on the 💳 row | ✓ | | |
 | 💯 | Full | a full 100٪ | ✓ | ✓ | ✓ |
 | `?` | Unknown | a share that cannot be derived yet | ✓ | ✓ | ✓ |

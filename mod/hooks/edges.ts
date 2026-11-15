@@ -26,7 +26,7 @@ import type {
   AgentEta, AgentRec, Git, Payload, Rec, Transcript, Turn,
 } from '../src/claude_records.ts'
 import { githubRepo } from '../src/github.ts'
-import { FABLE_WINDOW } from '../src/sources.ts'
+import { FABLE_WINDOW, WEEKLY_WINDOWS } from '../src/sources.ts'
 import { drawnCredits } from '../src/credits.ts'
 import { seedLimitsSnapshot } from '../src/claude_calib.ts'
 import {
@@ -96,7 +96,9 @@ export async function payloadOf($: $, transcript: string): Promise<{
     ...(seen.effort ? { effort: { level: seen.effort } } : {}),
     rate_limits: { five_hour: limit('five_hour'),
       seven_day: limit('seven_day'),
-      [FABLE_WINDOW]: limit(FABLE_WINDOW) },
+      [FABLE_WINDOW]: limit(FABLE_WINDOW),
+      ...Object.fromEntries(WEEKLY_WINDOWS.map(([, kind]) =>
+        [kind, limit(kind)])) },
   }
   return { raw, payload: readPayload(JSON.stringify(raw)) }
 }

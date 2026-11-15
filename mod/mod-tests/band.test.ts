@@ -393,6 +393,42 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
     expect((lastDoc(w).limits as Dict).fable_pct).toBe(null)
   })
 
+/** The 💳 row under the footer line, as JSON, of a session whose usage
+ * names the plan's week and the weekly Opus window, under the file
+ * `config`; and the Opus window's share in its document. */
+async function weeklyOpus($: any, on: On, config: string) {
+  const w = world(on)
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode(config))
+  w.usage.rateLimits = [
+    { kind: 'seven_day', percentUsed: 87,
+      resetsAt: '2026-08-18T01:00:00+00:00' },
+    { kind: 'seven_day_opus', percentUsed: 30,
+      resetsAt: '2026-08-18T01:00:00+00:00' }]
+  await start($, w, 'terminal', STATUS)
+  const drawn = JSON.stringify(await drawnOf(await $.ui.mount({
+    plugin: 'usage-band', surface: 'terminal', component: 'PromptHint',
+    props: { isDraft: false, isWorking: false, hint: '-- INSERT --' } })))
+  return { drawn, opus: (lastDoc(w).limits as Dict).opus_pct }
+}
+
+test('the other weekly windows reach the document but not the 💳 row, ' +
+  'a file\'s own hide replacing the defaults\' list', async ($, on) => {
+    const got = await weeklyOpus($, on, '{"usage-source": "native", ' +
+      '"hide": ["*.plan.five_hour"]}')
+    expect(String(got.opus)).toMatch(/^30/)
+    expect(got.drawn).toContain(spec.E_WEEK)
+    expect(got.drawn).not.toContain(spec.E_OPUS)
+  })
+
+test('weekly-windows turns one weekly window on beside a file\'s hide, ' +
+  'under 🪫\'s 🔜 where they reset together', async ($, on) => {
+    const got = await weeklyOpus($, on, '{"usage-source": "native", ' +
+      '"hide": ["*.plan.five_hour"], "weekly-windows": {"opus": true}}')
+    expect(got.drawn).toContain(spec.E_OPUS)
+    expect(got.drawn.split(spec.E_RESET).length - 1).toBe(1)
+  })
+
 test('under auto, with no native reading, the plan comes from the usage ' +
   'endpoint, asked as the session, once per 5 minutes for every session ' +
   'on the account, with plan-usage off', async ($, on) => {

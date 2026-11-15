@@ -222,7 +222,7 @@ removes it.
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main`, `session`, `agent`, and `tag` for the turn tag lines, 🔻🔖 and 🔺🔖 |
-| group | `plan` (🔋 🪫, and 🦊 `fable` on the 💳 row), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫, and on agent rows the 👶🏻 🤏 💻 📡 📨 counts), `chat` (the activity, and the progress update in the band's tree), `workspace` (🌿), `name` (the name and the kind) |
+| group | `plan` (🔋 🪫, and on the 💳 row 🦊 `fable` and the other weekly windows, 🎼 `opus`, 🎭 `sonnet`, 🍳 `omelette`, 🔌 `oauth_apps` and 🤝 `cowork`), `cost` (💰), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫, and on agent rows the 👶🏻 🤏 💻 📡 📨 counts), `chat` (the activity, and the progress update in the band's tree), `workspace` (🌿), `name` (the name and the kind) |
 
 On an agent row:
 
@@ -375,6 +375,27 @@ subscription. Under `usage-source` `auto` it draws them over Claude Code's
 own reading, which names only the plan's week, so the weekly Fable window
 (🦊 on 💳) shows without the Claude Usage Tracker. `false` turns it off; see
 [The plan's windows under the mod](usage-sources.md#the-plans-windows-under-the-mod).
+
+`weekly-windows` holds a field for each of the other weekly windows the
+usage source can give beside the plan's week and the Fable one, all
+`false` in the defaults:
+
+| Field | Window | Mark |
+|---|---|---|
+| `opus` | `seven_day_opus` | 🎼 |
+| `sonnet` | `seven_day_sonnet` | 🎭 |
+| `omelette` | `seven_day_omelette` | 🍳 |
+| `oauth_apps` | `seven_day_oauth_apps` | 🔌 |
+| `cowork` | `seven_day_cowork` | 🤝 |
+
+A field set `true` draws its window on the 💳 row after 🦊 wherever the
+source gives it ([The rows](layout.md#the-rows)). It is a record, so it
+merges per field: a file that sets `{"opus": true}` leaves the other four
+off. The windows are kept off here rather than in `hide`, since a file's
+`hide` replaces the defaults' list whole and would turn them all on.
+`hide` still hides one that is on, `account.plan.opus` and the like. A
+`seven_day_*` window not in the table is kept in the reading and drawn
+nowhere.
 
 `rows.subagents.live` is `"always"` in the defaults: background subagents
 keep running between turns, so the band's tree keeps the running and

@@ -238,7 +238,10 @@ def values():
             # changes nothing.
             cr.NO_LIMITS._replace(fable_pct="5",
                                   fable_reset="2026-08-18 01:00"),
-            cr.NO_LIMITS._replace(weekly_pct="63", fable_pct="5")]
+            cr.NO_LIMITS._replace(weekly_pct="63", fable_pct="5"),
+            # Nor are the other weekly windows.
+            cr.NO_LIMITS._replace(opus_pct="30",
+                                  opus_reset="2026-08-18 01:00")]
     readings = [None, "text", {},
                 {"source": "cmd", "account_name": "me",
                  "period_start": 1786800000},

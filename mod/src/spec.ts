@@ -200,6 +200,22 @@ export const E_FABLE = "🦊";        // the weekly Fable window consumed, Claud
                                     // read share, nor 📜, which reads as a log.
                                     // U+1F98A, Emoji_Presentation=Yes, inside EAW_WIDE,
                                     // above the U+1F90C split: two columns everywhere.
+// The other weekly windows the usage endpoint reports beside the plan's
+// week, on the 💳 row after 🦊, each off until the option
+// `weekly-windows` turns it on.  Each a picture of its name rather than
+// a container, since none is one of the plan's pair.  All five are
+// Emoji_Presentation=Yes, inside EAW_WIDE: two columns everywhere.
+export const E_OPUS = "🎼";         // `seven_day_opus`: an opus, a musical score.
+                                    // U+1F3BC.
+export const E_SONNET = "🎭";       // `seven_day_sonnet`: the stage a sonnet's poet
+                                    // wrote for.  Not 📜, which reads as a log.
+                                    // U+1F3AD.
+export const E_OMELETTE = "🍳";     // `seven_day_omelette`: the pan.  U+1F373.
+export const E_OAUTH_APPS = "🔌";   // `seven_day_oauth_apps`: the apps plugged into
+                                    // the account.  Not 🔑, which reads as a secret.
+                                    // U+1F50C.
+export const E_COWORK = "🤝";       // `seven_day_cowork`: working together.
+                                    // U+1F91D, above the U+1F90C split.
 // The three scopes column 4 reports, widening left to right: what the turn
 // just answered consumed, what this session has consumed, what the account
 // has.  Each MARKS a figure rather than naming a metric, so each is emitted
@@ -520,6 +536,13 @@ export const F_MSG = "#ffffff";                          // white, that row's te
 export const F_LIM_SESS = F_GRN;                         // the 🔋 5-hour row
 export const F_LIM_WEEK = F_RED;                         // the 🪫 weekly row
 export const F_LIM_FABLE = F_PUR;                        // the 🦊 Fable window, on 💳
+// The other weekly windows, on 💳 after 🦊: a hue each, none of the 💳
+// row's own (🔋 green, 🪫 red, 🦊 purple, 📁 blue, 📦 coral, 🔀 🎨 cyan).
+export const F_LIM_OPUS = F_TUP;                         // 🎼 teal
+export const F_LIM_SONNET = F_TDN;                       // 🎭 pink
+export const F_LIM_OMELETTE = F_RATE;                    // 🍳 mint
+export const F_LIM_OAUTH_APPS = F_PRW;                   // 🔌 periwinkle
+export const F_LIM_COWORK = F_CRM;                       // 🤝 cream
 // Column 3's 📖 and 📝 rows, ONE colour for the pair: the cost line's
 // share_half paints these same two figures amber and a quantity keeps its
 // ink across the readouts as it keeps its glyph.  Not one hue per row as the
@@ -1333,9 +1356,20 @@ export const TAG_SCOPE = "tag";
 // of the label it is.  One renderer draws all three readouts, so one path
 // means the same everywhere.
 export const HIDE_GROUPS = {
-  "plan": ["five_hour", "week", "fable", "reset"],      // 🔋 🪫, 🦊 on the
-                                                        //  💳 label, and
-                                                        //  their 🔜 there
+  "plan": [
+    "five_hour",
+    "week",
+    "fable",
+    "opus",
+    "sonnet",
+    "omelette",
+    "oauth_apps",
+    "cowork",
+    "reset",
+  ],                                                    // 🔋 🪫, 🦊 🎼 🎭 🍳
+                                                        //  🔌 🤝 on the 💳
+                                                        //  label, and their
+                                                        //  🔜 there
   "cost": ["cost"],                                     // 💰
   "tokens": ["io", "cache"],                            // 🧩 ▴ ▾, 🎯
   "context": ["size", "share"],                         // 🧠, and its ٪
@@ -1430,6 +1464,11 @@ export const TRUE_COLOURS: { readonly [name: string]: string } = {
   "F_LIM_SESS": "#78c850",
   "F_LIM_WEEK": "#ff5a5a",
   "F_LIM_FABLE": "#c882ff",
+  "F_LIM_OPUS": "#78c8dc",
+  "F_LIM_SONNET": "#dc8cc8",
+  "F_LIM_OMELETTE": "#64e1b4",
+  "F_LIM_OAUTH_APPS": "#8c96ff",
+  "F_LIM_COWORK": "#d3d7cf",
   "F_SHARE": "#ffc800",
   "F_SUM": "#4c4c4c",
   "F_RULE": "#4c4c4c",

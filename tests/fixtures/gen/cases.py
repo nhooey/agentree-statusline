@@ -187,6 +187,9 @@ def status_cases():
     # gen/status.py.  Last, so no case after them reads it from the cache.
     case("fable-own-reset", "fable-own-reset", 196)
     case("fable-shared-reset", "fable-shared-reset", 196)
+    # The other weekly windows, which only the 💳 row draws, and only once
+    # the option weekly-windows turns them on.
+    case("weekly-windows", "weekly-windows", 196)
     return out
 
 
