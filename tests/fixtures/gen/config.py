@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the shared configuration cases, tests/fixtures/config/cases.json,
 which pin coding_agent_usage_line/config.py and the mod's port of it to one
-answer (agents/plans/config-merge.md, "Shared cases").
+answer (agents/plans/open/config-merge.md, "Shared cases").
 
     /usr/bin/python3 tests/fixtures/gen/config.py
 

@@ -108,7 +108,7 @@ E_RESET = "🔜"         # marks a duration as time UNTIL: the figure beside it
 E_CLOUD = "⛅"         # the account's credits, on the 💳 row: the cloud
 E_PROMO = "🎁"         # session credit, the Console's promotional and
 E_PREPAID = "💵"       # prepaid credits, extra usage and the guest passes
-E_EXTRA = "💸"         # (agents/plans/credit-balances.md).  ⛅ U+26C5 is
+E_EXTRA = "💸"         # (agents/plans/open/credit-balances.md).  ⛅ U+26C5 is
 E_PASSES = "🎫"        # the one cloud drawn two columns wide with no
                        # variation selector; ☁ and 🛰 draw one.
 E_EFF_LOW = "🐢"       # effort ladder, legible as a picture: the pace of the
@@ -1290,7 +1290,7 @@ MODEL_FAMILIES = ("Opus", "Sonnet", "Haiku", "Fable", "Mythos")
 #
 # One scope per row, one column per metric: the band, the receipt and the
 # agent panel draw these columns in this order on every row.  The design is
-# agents/plans/_implemented/redesign.md's; mod/tools/layout-mockup.ts draws
+# agents/plans/closed/redesign.md's; mod/tools/layout-mockup.ts draws
 # it from made-up figures.
 # ════════════════════════════════════════════════════════════════════════════
 

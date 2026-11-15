@@ -1,5 +1,5 @@
 // The configuration files: where they are, what they say, what is wrong
-// with them, and the options merged from them (agents/plans/config-merge.md,
+// with them, and the options merged from them (agents/plans/open/config-merge.md,
 // "Files" and "Merge semantics").
 //
 // A port of coding_agent_usage_line/config.py, of options.merge and of

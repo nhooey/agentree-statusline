@@ -1,5 +1,5 @@
 // Every option either port takes: the Python's flags, and the settings a
-// configuration file may give either port (agents/plans/config-merge.md).
+// configuration file may give either port (agents/plans/open/config-merge.md).
 //
 // tools/gen-spec.py writes this out as coding_agent_usage_line/
 // options_spec.py and as mod/src/options_spec.ts, as it writes

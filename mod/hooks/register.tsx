@@ -1,6 +1,6 @@
 // The usage band: the usage line's grid drawn in Claude Code's own screen.
 //
-// agents/plans/_implemented/redesign.md has the design, and docs/layout.md
+// agents/plans/closed/redesign.md has the design, and docs/layout.md
 // what is drawn.  Three places are drawn:
 //
 //   AbovePrompt   the band, bandLines over the last status document, at the
@@ -175,7 +175,7 @@ async function inTime<T>($: $, what: string, p: Promise<T>): Promise<T> {
 }
 
 // What the receipts trial has logged, so each shape is logged once
-// (agents/plans/agent-compact-receipts.md, AR1).
+// (agents/plans/open/agent-compact-receipts.md, AR1).
 const tried = new Set<string>()
 
 /** `what` and `shape`, logged the first time that pair is seen. */

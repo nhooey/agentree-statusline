@@ -1,3 +1,9 @@
+---
+title: Fewer fixtures, and none that a new field rewrites
+state: approved
+kind: end-state
+---
+
 # Fewer fixtures, and none that a new field rewrites
 
 A plan to cut the committed test data from 750 files and 25.7 MB to about
@@ -404,7 +410,7 @@ generator to Node only where a step below keeps its family.
    dropped. `tools/diff-grid-fixtures.py` follows the shape.
 
 Then `tests/README.md` and `docs/tests.md` describe the layout as it is,
-and this plan moves to `_implemented/`.
+and this plan moves to `closed/`.
 
 ## What each cut gives up
 

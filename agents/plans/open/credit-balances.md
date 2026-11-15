@@ -1,6 +1,12 @@
+---
+title: The account's dollar credits on the band
+state: approved
+kind: end-state
+---
+
 # The account's dollar credits on the band
 
-Approved to build. Its steps are `CB1` … `CB5` in [the schedule](_schedule.md).
+Approved to build. Its steps are `CB1` … `CB5` in [the schedule](build-schedule.md).
 
 ## Why
 

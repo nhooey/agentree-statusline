@@ -1,3 +1,9 @@
+---
+title: Redesign: one grid for all three readouts
+state: implemented
+kind: end-state
+---
+
 # Redesign: one grid for all three readouts
 
 Built: every step of [the build order](#the-build-order) is done (2026-10-20),

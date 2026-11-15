@@ -15,9 +15,9 @@ one per subagent, hang in the band's tree, drawn by
 the same order, so a figure stands on the same screen column wherever it
 is drawn. Claude Code's own agent panel draws its rows itself. Why it is
 laid out this way is in
-[the plan it was built from](../agents/plans/_implemented/redesign.md),
+[the plan it was built from](../agents/plans/closed/redesign.md),
 and the tree in
-[The band's tree](../agents/plans/one-panel-port.md#the-bands-tree).
+[The band's tree](../agents/plans/open/one-panel-port.md#the-bands-tree).
 
 All examples below are the programs' own output against the test fixtures
 (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile),

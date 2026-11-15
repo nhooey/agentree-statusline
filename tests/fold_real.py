@@ -18,7 +18,7 @@ cut there does, and the fold completed must read as the whole.
 One line a file, then a total; the exit status is the number of files that
 broke.  mod/tools/check-fold.ts is the TypeScript's side; `check-folds` in
 the dev shell runs both.  See
-agents/plans/_implemented/saved-running-totals.md.
+agents/plans/closed/saved-running-totals.md.
 """
 
 import argparse

@@ -1,6 +1,6 @@
 // The band's tree of threads above the prompt.
 //
-// agents/plans/one-panel-port.md, "The band's tree", has the design.  🎮
+// agents/plans/open/one-panel-port.md, "The band's tree", has the design.  🎮
 // the session is the root, its label the workspace; 🧵 the main thread is
 // its child, and under 🧵 come 🎤, the main thread's turn, first, then
 // each subagent under the thread that started it, in the order they

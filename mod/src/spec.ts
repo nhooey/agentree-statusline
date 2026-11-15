@@ -108,7 +108,7 @@ export const E_RESET = "🔜";         // marks a duration as time UNTIL: the fi
 export const E_CLOUD = "⛅";         // the account's credits, on the 💳 row: the cloud
 export const E_PROMO = "🎁";         // session credit, the Console's promotional and
 export const E_PREPAID = "💵";       // prepaid credits, extra usage and the guest passes
-export const E_EXTRA = "💸";         // (agents/plans/credit-balances.md).  ⛅ U+26C5 is
+export const E_EXTRA = "💸";         // (agents/plans/open/credit-balances.md).  ⛅ U+26C5 is
 export const E_PASSES = "🎫";        // the one cloud drawn two columns wide with no
                                      // variation selector; ☁ and 🛰 draw one.
 export const E_EFF_LOW = "🐢";       // effort ladder, legible as a picture: the pace of the
@@ -1290,7 +1290,7 @@ export const MODEL_FAMILIES = ["Opus", "Sonnet", "Haiku", "Fable", "Mythos"];
 //
 // One scope per row, one column per metric: the band, the receipt and the
 // agent panel draw these columns in this order on every row.  The design is
-// agents/plans/_implemented/redesign.md's; mod/tools/layout-mockup.ts draws
+// agents/plans/closed/redesign.md's; mod/tools/layout-mockup.ts draws
 // it from made-up figures.
 // ════════════════════════════════════════════════════════════════════════════
 

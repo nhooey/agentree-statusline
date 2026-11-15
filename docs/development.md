@@ -207,7 +207,7 @@ directory, with the format number its name is keyed by: `state.state_path` and
 the mod's `statePath` (`mod/src/state.ts`) give the same name. Bump a kind's
 format when what is written in it changes.
 
-`mod/tools/layout-mockup.ts` draws the [redesign](../agents/plans/_implemented/redesign.md)'s proposal inside a
+`mod/tools/layout-mockup.ts` draws the [redesign](../agents/plans/closed/redesign.md)'s proposal inside a
 mocked Claude Code screen: `node mod/tools/layout-mockup.ts --cols 150`. It
 uses the mod's ported cell renderers on made-up figures and lays them out
 with the grid, `mod/src/grid.ts`; it reads nothing but the terminal. Its
