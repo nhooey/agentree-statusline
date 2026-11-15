@@ -20,6 +20,8 @@ files they both change. Written 2026-10-20 from:
   1–8: `CB1`, `CB1b`, `CB2` … `CB6`, `CB4b`.
 - [One port: Claude's figures drawn by the mod alone](one-panel-port.md),
   steps 1–8: `OP1` … `OP8`.
+- [Fewer fixtures, and none that a new field rewrites](test-fixture-simplification.md),
+  steps 1–7: `TF1` … `TF7`.
 - Work in flight outside the plans: `CA`, the calibration cache keyed by
   account id (asked 2026-10-20, Blocked.1.A).
 
@@ -92,6 +94,13 @@ done, and move a plan to [_implemented](_implemented/) when its last node is.
 | `OP6` | 🧬 for the model cell, so 🤖 keeps one job | `OP5` | none | `spec/layout.jsonc`, `mod/src/` |
 | `OP7` | **Done.** The band's clicks: a label switches to its thread, a row with children folds, 📦 🌿 🔀 link | `OP3` | none | `mod/hooks/`, `mod/mod-tests/` |
 | `OP8` | **Done.** Each open background shell and Monitor a row under the thread that started it | `OP3` | none | `mod/src/`, `mod/hooks/edges.ts`, `coding_agent_usage_line/` (the folds), `spec/state.jsonc` |
+| `TF1` | The saved folds as one file of digests, `fold-saves.json` | the plan's approval | none | `tests/fixtures/gen/state.py`, `tests/fold.py`, `mod/test/*_fold.test.ts`, `tests/fixtures/{state,agent-state,inbox-state}/` |
+| `TF2` | One figures document per distinct document, sparse | the plan's approval | none | `tests/run-cases.py`, `tests/fixtures/gen/cases.py`, `tests/fixtures/figures/`, `mod/test/`, `mod/tools/gen-row-cases.ts`, `mod/tools/draw-figures.ts` |
+| `TF3` | `rows/` in one form, the second profile a sample | the plan's approval | `TF2` (it regenerates `rows/`) | `mod/tools/gen-row-cases.ts`, `mod/test/rows.test.ts`, `tests/fixtures/rows/` |
+| `TF4` | The status line, the old receipt and the panel removed from the TypeScript, with their goldens | `OP5`, and the plan's decision 1 | none | `mod/src/claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts`, `figures.ts`, `tests/golden/`, `tests/fixtures/{receipt,render}/` |
+| `TF5` | The panel's inputs as tree cases | `TF4` | `TF3` | `tests/fixtures/panel/`, `mod/tools/gen-row-cases.ts`, `tests/fixtures/rows/` |
+| `TF6` | The differential families written once, by the TypeScript | `OP5` | `TF4` (`render/`) | `mod/tools/`, `tests/fixtures/{records,calib,formatting,render,claude}/` |
+| `TF7` | `grid/` in one form, on fewer widths | `OP5` | none | `mod/tools/gen-grid-cases.ts`, `tests/fixtures/grid/`, `tools/diff-grid-fixtures.py` |
 
 `RT8`'s and `RT6`/`RT7`'s edges in the plan: steps 4 to 7 land in order,
 step 8 needs steps 1 and 4 (done), step 9 needs step 1 (done).
@@ -152,6 +161,17 @@ flowchart LR
     OP3 --> OP8
     OP2 -.-> OP3
   end
+  subgraph test-fixture-simplification
+    TF2 -.-> TF3
+    TF4 --> TF5
+    TF3 -.-> TF5
+    TF4 -.-> TF6
+  end
+  OP5 --> TF4
+  OP5 --> TF6
+  OP5 --> TF7
+  TF1 -.-> OP5
+  TF2 -.-> OP5
 ```
 
 Solid arrows are logical edges, dotted ones file edges.
@@ -188,6 +208,20 @@ nodes waits on the configuration plan's `CM8`, which changes no file):
 - `RP2` and `RP4` both regenerate the row cases (`tests/fixtures/rows/`),
   generated files: whichever lands second regenerates them after its
   rebase rather than merging them by hand.
+
+The fixture plan's waves, once the user approves it:
+
+| Wave | Nodes, in parallel | Starts when |
+|---|---|---|
+| T0 | `TF1`, `TF2` | the plan is approved; they share no file |
+| T1 | `TF3`, then `OP5` | `TF2` lands, and `TF1` for `OP5` |
+| T2 | `TF4`, `TF7` | `OP5` lands, and the plan's decision 1 for `TF4` |
+| T3 | `TF5`, `TF6` | `TF4` lands |
+
+- **`TF1`, `TF2` ⇢ `OP5`:** `OP5` moves or removes `gen/state.py` and
+  `run-cases.py`, which these change; they go first so `OP5` moves 276
+  fewer files. If `OP5` starts first, they rebase across it onto the
+  TypeScript's tests alone.
 
 - **`CK2 ⇢ CM6`:** both change how `register.tsx` draws rows; the
   clickable rows go first, so `CM6` rewrites `CONFIG.x` over them.
