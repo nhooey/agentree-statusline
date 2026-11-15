@@ -13,11 +13,20 @@
 // kept, and an ask that is due starts after it, whose answer the next
 // document takes.  The reading is kept in `$.store`, under the signed-in
 // account, so every session on the account shares one ask a minute.
+//
+// `$.store` has no compare-and-set, so two sessions that look at it
+// together could both ask.  The ask is taken under a lock directory in the
+// state directory instead, made with `mkdir`, which is atomic across
+// processes: the session whose `mkdir` lands asks, and the others take its
+// answer from the store a minute later.  A lock older than
+// PLAN_USAGE_LOCK_STALE seconds is a session's that died holding it.
 import type { EngineInterface } from 'claude-code'
 
 import { claudeOauthReading, pyJsonLoads } from '../src/sources.ts'
 import type { Reading } from '../src/sources.ts'
 import { isDict, pyGet } from '../src/py.ts'
+import { sha256Hex } from '../src/sha256.ts'
+import { placesOf, runVia } from './engine.ts'
 import { log } from './log.ts'
 
 type $ = EngineInterface
@@ -26,8 +35,13 @@ export const PLAN_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 export const PLAN_USAGE_HEADERS = { 'anthropic-beta': 'oauth-2025-04-20' }
 /** Seconds between asks. */
 export const PLAN_USAGE_EVERY = 60
-/** Seconds a failed ask waits before the next. */
+/** Seconds a failed ask waits before the next, where the answer gives no
+ * `Retry-After`. */
 export const PLAN_USAGE_BACKOFF = 300
+/** The longest `Retry-After` taken, in seconds. */
+export const PLAN_USAGE_RETRY_MAX = 3600
+/** Seconds after which a lock directory is taken as abandoned. */
+export const PLAN_USAGE_LOCK_STALE = 30
 /** Seconds a reading stands in for Claude Code's own: past one backoff and
  * the ask after it, the native reading is the fresher. */
 export const PLAN_USAGE_FRESH = PLAN_USAGE_BACKOFF + 2 * PLAN_USAGE_EVERY
@@ -35,6 +49,10 @@ export const PLAN_USAGE_FRESH = PLAN_USAGE_BACKOFF + 2 * PLAN_USAGE_EVERY
 /** What `$.store` keeps per account: the reading, when it was asked for,
  * and, after a failure, when the next ask may be. */
 type Kept = { reading?: Reading; fetched_at?: number; retry_at?: number }
+
+/** The opaque credential handle `$.session.authorize()` answers. */
+type Handle = NonNullable<Awaited<ReturnType<$['session']['authorize']>>>[
+  'handle']
 
 /** The mod's memory of the asks, for this load. */
 const plan = {
@@ -104,24 +122,88 @@ export function recentAnswer(now: number, within: number): unknown {
   return a && now - a.at < within && now >= a.at ? a.raw : null
 }
 
-/** planUsageVia's ask: the store's reading where another session asked
- * within the minute or a failure's wait is not over, else the endpoint's
- * answer, kept; a failure logged once and waited out. */
-async function ask($: $, key: string, now: number): Promise<void> {
+/** The seconds a `Retry-After` header `value` asks to wait, as a number
+ * of seconds or an HTTP date, from `now` in seconds; null for none or one
+ * that does not parse.  Held to PLAN_USAGE_EVERY..PLAN_USAGE_RETRY_MAX. */
+export function retryAfter(value: string | undefined, now: number):
+  number | null {
+  if (!value) return null
+  const v = value.trim()
+  const secs = /^\d+$/.test(v) ? Number(v)
+    : Number.isNaN(Date.parse(v)) ? null : Date.parse(v) / 1000 - now
+  return secs === null ? null
+    : Math.min(PLAN_USAGE_RETRY_MAX, Math.max(PLAN_USAGE_EVERY, secs))
+}
+
+/** The store's reading for `key`, and whether it is fresh: another
+ * session asked within the minute, or a failure's wait is not over. */
+async function keptIfFresh($: $, key: string, now: number):
+  Promise<{ kept: Kept; fresh: boolean }> {
   const stored = await $.store.get(key).catch(() => undefined)
   const kept: Kept = isDict(stored) ? stored as Kept : {}
-  plan.kept = kept
   const fetched = kept.fetched_at
-  if (typeof fetched === 'number' && now - fetched < PLAN_USAGE_EVERY &&
-      now >= fetched) return
-  if (typeof kept.retry_at === 'number' && now < kept.retry_at) return
+  const fresh = (typeof fetched === 'number' &&
+      now - fetched < PLAN_USAGE_EVERY && now >= fetched) ||
+    (typeof kept.retry_at === 'number' && now < kept.retry_at)
+  return { kept, fresh }
+}
+
+/** The lock directory for `key`, under the state directory. */
+async function lockDir($: $, key: string): Promise<string> {
+  return (await placesOf($)).stateDir + '/plan-usage-' +
+    sha256Hex(key).slice(0, 16) + '.lock'
+}
+
+/** Takes the lock at `dir`, true where this session holds it now: a
+ * `mkdir` that lands, or one that lands again after an abandoned lock is
+ * removed. */
+async function takeLock($: $, dir: string, now: number): Promise<boolean> {
+  const made = async () => (await runVia($, ['/bin/mkdir', '--', dir],
+    { timeoutMs: 5_000 })).exitCode === 0
+  if (await made()) return true
+  const st = await $.fs.stat(dir).catch(() => null)
+  if (st && now - st.mtimeMs / 1000 < PLAN_USAGE_LOCK_STALE) return false
+  await runVia($, ['/bin/rmdir', '--', dir], { timeoutMs: 5_000 })
+    .catch(() => undefined)
+  return made()
+}
+
+/** planUsageVia's ask: the store's reading where another session asked
+ * within the minute or a failure's wait is not over, else, under the lock,
+ * the endpoint's answer, kept; a failure logged once and waited out for
+ * its `Retry-After`, or PLAN_USAGE_BACKOFF, by every session. */
+async function ask($: $, key: string, now: number): Promise<void> {
+  const first = await keptIfFresh($, key, now)
+  plan.kept = first.kept
+  if (first.fresh) return
+  const auth = await $.session.authorize().catch(() => null)
+  // No plan usage with no first-party credential, nor with an API key.
+  if (!auth || auth.kind !== 'bearer') return
+  const dir = await lockDir($, key)
+  if (!await takeLock($, dir, now).catch(() => false)) return
   try {
-    const auth = await $.session.authorize()
-    // No plan usage with no first-party credential, nor with an API key.
-    if (!auth || auth.kind !== 'bearer') return
-    const r = await $.http.fetch(PLAN_USAGE_URL, { auth: auth.handle,
+    // Another session may have asked between the look and the lock.
+    const again = await keptIfFresh($, key, now)
+    plan.kept = again.kept
+    if (again.fresh) return
+    await askHeld($, key, now, auth.handle, again.kept)
+  } finally {
+    await runVia($, ['/bin/rmdir', '--', dir], { timeoutMs: 5_000 })
+      .catch(() => undefined)
+  }
+}
+
+/** The ask itself, made while holding the lock. */
+async function askHeld($: $, key: string, now: number, handle: Handle,
+  kept: Kept): Promise<void> {
+  let wait = PLAN_USAGE_BACKOFF
+  try {
+    const r = await $.http.fetch(PLAN_USAGE_URL, { auth: handle,
       headers: { ...PLAN_USAGE_HEADERS } })
-    if (!r.ok) throw new Error('HTTP ' + r.status)
+    if (!r.ok) {
+      wait = retryAfter(r.headers?.['retry-after'], now) ?? wait
+      throw new Error('HTTP ' + r.status)
+    }
     let raw: unknown
     try {
       raw = pyJsonLoads(r.text)
@@ -143,7 +225,7 @@ async function ask($: $, key: string, now: number): Promise<void> {
       plan.errors.add(what)
       await log($, 'plan usage failed: ' + what)
     }
-    plan.kept = { ...kept, retry_at: now + PLAN_USAGE_BACKOFF }
+    plan.kept = { ...kept, retry_at: now + wait }
     await $.store.set(key, plan.kept).catch(() => {})
   }
 }

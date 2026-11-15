@@ -253,11 +253,18 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   kept, and an ask that is due starts after it, whose answer the next
   document takes. The reading is kept in the mod's store under the signed-in
   account, so every session on the account shares one ask a minute.
+- **One session asks at a time.** The ask is made under a lock directory,
+  `plan-usage-<hash>.lock` in the state directory, which `mkdir` makes
+  atomically: the session that makes it asks, and the others take its answer
+  from the store. A lock left for over 30 seconds, by a session that died
+  holding it, is taken over.
 - **Drawn under `auto` over Claude Code's own reading** while it is at most
   seven minutes old; past that, `auto` goes on as above.
 - **A failed ask** keeps the last reading, is written to `usage-band.log`
-  once per distinct failure (`plan usage failed: HTTP 503`), and the next ask
-  waits five minutes.
+  once per distinct failure (`plan usage failed: HTTP 429`), and the next ask,
+  from any session on the account, waits as long as the answer's
+  `Retry-After` says, from one minute to an hour, or five minutes where it
+  says nothing.
 - **The window keys are logged** once per load, and again when they change:
   `plan usage: five_hour seven_day · no reading: seven_day_opus`. The keys
   with a utilization come first, then those that are null or hold none. Key
