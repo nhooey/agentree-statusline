@@ -645,7 +645,7 @@ The label, left to right:
 | 💻 | how many background shells it started and has not heard the end of, while it runs or is paused; not once it has failed or been killed |
 | 📡 | the same for its Monitors |
 | 📨 | messages sent to it with SendMessage and not yet delivered: Claude Code's own "N queued". See [Inbox](#inbox) |
-| name | the task's name, or its description; then 🌿 and the branch of a worktree it works in apart from the session's; then what it is doing now. A label that only repeats the description is not drawn |
+| name | the task's name, or its description; then 🌿 and the branch of a worktree it works in apart from the session's, in full where the label has room; then what it is doing now. A label that only repeats the description is not drawn |
 
 👶🏻, 🤏, 💻, 📡 and 📨 are drawn only while some subagent row needs one,
 and then on every row, padded to the widest, so the names after them

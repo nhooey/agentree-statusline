@@ -1197,12 +1197,13 @@ def run(tmp):
     pieces = lambda br: [(p.path, unpainted(p.spans)) for p in sr.agent_label(
         task("x", label="Reading"), NS(branch=br), {})[1:]]
     check("🌿 and the branch after the name, ahead of the activity, a long "
-          "one cut to A_BRANCH_W",
+          "one in full, for the row's label to cut only where it runs out "
+          "of room",
           (pieces("fix-inbox"), pieces("feature/a-long-branch-name")[1][1]),
           ([("name.label", "Marigold  "),
             ("workspace.branch", "\U0001F33Ffix-inbox  "),
             ("chat.doing", "Reading")],
-           "\U0001F33F" + sl.fit_cols("feature/a-long-branch-name", sr.A_BRANCH_W) + "  "))
+           "\U0001F33Ffeature/a-long-branch-name  "))
 
     rc, rows = render(sl, pay, ["--usage-source", "native"])
     check("no plan reading: the 🔋 and 🪫 cells are blank, the rest stands",

@@ -29,7 +29,7 @@ import {
   E_CACHE, E_DIFF, CHROME_DEPTH, GRID_CELLS, LABEL_MIN,
 } from "./spec.ts";
 import {
-  cacheColor, decAlign, durFmt, fitCols, humanize, limitPct, magDim, padVal,
+  cacheColor, decAlign, durFmt, humanize, limitPct, magDim, padVal,
   seg, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
@@ -74,8 +74,6 @@ export const A_CTX_PCT_W = 4;
 // The 🤖 state trades its rate for how long the agent has been quiet; see
 // renderDoing.
 export const A_SILENT_S = QUIET_S, A_SILENT_WARN_S = QUIET_WARN_S;
-// The most a worktree's branch spends of the label, 🌿 not counted.
-export const A_BRANCH_W = 16;
 // The blanks between the label's name, branch and activity.
 export const A_LABEL_GAP = 2;
 
@@ -787,7 +785,7 @@ export function agentLabel(st: Settings, task: Dict, usage: unknown,
   const words = ([
     ["name.label", name, "F_BLU"],
     ["workspace.branch",
-      branch ? E_GIT_OK + fitCols(st, branch, A_BRANCH_W) : "", "F_GRN"],
+      branch ? E_GIT_OK + branch : "", "F_GRN"],
     ["chat.doing", act, "F_CHAT_B"],
   ] as const).filter(([, t]) => t);
   words.forEach(([path, text, colour], i) => {

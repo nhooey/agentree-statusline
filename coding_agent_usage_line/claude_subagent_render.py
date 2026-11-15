@@ -44,8 +44,6 @@ A_CTX_PCT_W = 4
 # that no tool round or request it is still waiting on explains it by itself.
 # See render_doing.
 A_SILENT_S, A_SILENT_WARN_S = QUIET_S, QUIET_WARN_S
-# The most a worktree's branch spends of the label, 🌿 not counted.
-A_BRANCH_W = 16
 # The blanks between the label's name, branch and activity.
 A_LABEL_GAP = 2
 KIND_MARK = {"general-purpose":"🔩", "claude":"🎩", "Explore":"🔍", "Plan":"📐",
@@ -596,7 +594,7 @@ def agent_label(task, usage, meta, waiting_on=False, kids=0, kids_w=0, widths=No
     branch=str(getattr(usage,"branch","") or "")
     words = [(p, t, c) for p, t, c in (
         ("name.label", name, "F_BLU"),
-        ("workspace.branch", E_GIT_OK + fit_cols(branch, A_BRANCH_W) if branch else "", "F_GRN"),
+        ("workspace.branch", E_GIT_OK + branch if branch else "", "F_GRN"),
         ("chat.doing", act, "F_CHAT_B")) if t]
     for i, (path, text, colour) in enumerate(words):
         gap = [Span(" " * A_LABEL_GAP)] if i < len(words) - 1 else []
