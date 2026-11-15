@@ -1,9 +1,9 @@
 // inbox_fold.ts against inbox_fold.py: each fixture file's inbox entry,
-// folded at each line end, is the text tests/fixtures/inbox-state/ holds,
-// which the Python writes (tests/fixtures/gen/state.py) and tests/fold.py
-// holds the Python to; the counts read on from the fold are the counts of
-// the whole files; and the two ports save the same bytes to the same files
-// and read on from each other's.
+// folded at each line end, digests as tests/fixtures/fold-saves.json holds
+// it, which the Python writes (tests/fixtures/gen/state.py) and
+// tests/fold.py holds the Python to; the counts read on from the fold are
+// the counts of the whole files; and the two ports save the same bytes to
+// the same files and read on from each other's.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -17,49 +17,61 @@ import {
   inboxEntryText, inboxFoldDir, inboxFoldLoad, inboxFoldOf, inboxFoldText,
   inboxTailDigest, newInboxEntry,
 } from "../src/inbox_fold.ts";
+import { digest, foldSaves, lineEnds } from "./fold_saves.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
 process.chdir(REPO);
 
-type Fixture = {
-  format: number; file: string; main: boolean; texts: [number, string][];
-};
-
-function fixtures(): Fixture[] {
-  const dir = "tests/fixtures/inbox-state";
-  return fs.readdirSync(dir).sort().map((f) =>
-    JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8")));
-}
+type Fixture = { file: string; main: boolean; texts: [number, string][] };
 
 function tailAt(data: Uint8Array, k: number): string {
   return inboxTailDigest(data.subarray(Math.max(0, k - INBOX_CHECK_BYTES), k));
 }
 
-// The format honest, and the two ports' texts byte for byte the same.
-test("each fixture file's inbox entry folds as tests/fixtures/inbox-state/ " +
-  "holds it", () => {
+let folded: Fixture[] | null = null;
+
+/** Each file tests/fixtures/fold-saves.json names, its inbox entry folded
+ * from the start at each line end: a session's own transcript as `main`,
+ * whose deliveries are not folded.  Which files hold an inbox mark is the
+ * Python's to say. */
+function fixtures(): Fixture[] {
+  folded ??= Object.keys(foldSaves("inbox-fold").saves).sort().map((file) => {
+    const data = fs.readFileSync(file);
+    const main = !path.basename(file).startsWith("agent-");
+    const e = newInboxEntry();
+    const texts: [number, string][] = [];
+    let at = 0;
+    for (const k of lineEnds(data)) {
+      foldInboxEntry(e, data.subarray(at, k), main);
+      at = k;
+      e.tail = tailAt(data, k);
+      texts.push([k, inboxEntryText(file, e)]);
+    }
+    return { file, main, texts };
+  });
+  return folded;
+}
+
+// The format honest, and the two ports' texts byte for byte the same: the
+// Python's digest is of the texts it wrote.
+test("each fixture file's inbox entry folds as " +
+  "tests/fixtures/fold-saves.json holds it", () => {
+  const want = foldSaves("inbox-fold");
+  assert.equal(want.format, INBOX_FOLD_FORMAT,
+    "run tests/fixtures/gen/state.py");
   const all = fixtures();
   assert.ok(all.length > 3);
   for (const fx of all) {
-    assert.equal(fx.format, INBOX_FOLD_FORMAT,
-      `${fx.file}: run tests/fixtures/gen/state.py`);
-    const data = fs.readFileSync(fx.file);
-    const e = newInboxEntry();
-    let at = 0;
-    for (const [k, text] of fx.texts) {
-      foldInboxEntry(e, data.subarray(at, k), fx.main);
-      at = k;
-      e.tail = tailAt(data, k);
-      assert.equal(inboxEntryText(fx.file, e), text,
-        `${fx.file} at ${k}: the fold changed; bump "inbox-fold" in ` +
-        "spec/state.jsonc");
-    }
+    assert.equal(digest(fx.texts), want.saves[fx.file],
+      `${fx.file}: the fold changed; bump "inbox-fold" in ` +
+      "spec/state.jsonc");
   }
 });
 
-// The Python's entry at each line end, read here, reads on to its last.
-test("the Python's saved inbox entry reads on here", () => {
+// The entry at each line end, the Python's too, read here, reads on to the
+// last.
+test("the saved inbox entry reads on here", () => {
   for (const fx of fixtures()) {
     const data = fs.readFileSync(fx.file);
     const [end, last] = fx.texts[fx.texts.length - 1];

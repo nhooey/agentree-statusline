@@ -12,6 +12,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import * as cr from "../src/claude_records_node.ts";
 import * as mf from "../src/main_fold.ts";
+import { digest, foldSaves, lineEnds } from "./fold_saves.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -103,24 +104,25 @@ function saved(f: mf.MainFold, data: Uint8Array, end: number,
   return { parts: got.parts.map(([, t]) => t), head: got.head };
 }
 
-/** Where tests/fixtures/state/ keeps `p`'s saved fold. */
-function fixtureOf(p: string): { format: number } & Texts {
-  return JSON.parse(fs.readFileSync(path.join("tests/fixtures/state",
-    path.relative("tests/fixtures", p).replaceAll("/", "--") + ".json"),
-  "utf-8"));
-}
-
-function lineEnds(data: Uint8Array): number[] {
-  const out: number[] = [];
-  for (let at = data.indexOf(10); at >= 0; at = data.indexOf(10, at + 1)) {
-    out.push(at + 1);
-  }
-  return out;
-}
-
 function foldMain(f: mf.MainFold, records: readonly cr.Rec[]): mf.MainFold {
   for (const r of records) mf.foldMain(f, r);
   return f;
+}
+
+const WHOLE = new Map<string, Texts>();
+
+/** A first save of `p`'s whole fold, to its last newline: the texts whose
+ * digest tests/fixtures/fold-saves.json holds, so the Python's too. */
+function fixtureOf(p: string): Texts {
+  let got = WHOLE.get(p);
+  if (!got) {
+    const data = fs.readFileSync(p);
+    const end = data.lastIndexOf(10) + 1;
+    got = saved(foldMain(mf.newMainFold(),
+      cr._recordsOf(data.subarray(0, end))), data, end);
+    WHOLE.set(p, got);
+  }
+  return got;
 }
 
 /** A saved fold in `dir`, read as the mod reads one. */
@@ -158,21 +160,22 @@ test("a float is written as JSON.stringify writes it", () => {
 });
 
 // The format honest: a change to either fold, or to what is saved of it,
-// changes the text, and the fixtures fail until the format is bumped and
-// tests/fixtures/gen/state.py run.
-test("each fixture's fold saves as tests/fixtures/state/ holds it", () => {
-  for (const p of FILES) {
-    const want = fixtureOf(p);
+// changes the text, and the digests fail until the format is bumped and
+// tests/fixtures/gen/state.py run.  The Python's digest is of the texts it
+// wrote, so the two ports write each byte for byte.
+test("each fixture's fold saves as tests/fixtures/fold-saves.json holds it",
+  () => {
+    const want = foldSaves("main-fold");
     assert.equal(want.format, mf.MAIN_FOLD_FORMAT,
-      `${p}: run tests/fixtures/gen/state.py`);
-    const data = fs.readFileSync(p);
-    const end = data.lastIndexOf(10) + 1;
-    assert.deepEqual(saved(foldMain(mf.newMainFold(),
-      cr._recordsOf(data.subarray(0, end))), data, end),
-    { parts: want.parts, head: want.head },
-    `${p}: the fold changed; bump "main-fold" in spec/state.jsonc`);
-  }
-});
+      "run tests/fixtures/gen/state.py");
+    assert.deepEqual(Object.keys(want.saves).sort(), [...FILES].sort(),
+      "run tests/fixtures/gen/state.py");
+    for (const p of FILES) {
+      const got = fixtureOf(p);
+      assert.equal(digest([...got.parts, got.head]), want.saves[p],
+        `${p}: the fold changed; bump "main-fold" in spec/state.jsonc`);
+    }
+  });
 
 // The Python's state at every line end, in parts of 300 bytes, is what
 // this writes there, byte for byte, and read here goes on to the fixture.

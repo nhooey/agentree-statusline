@@ -12,8 +12,8 @@ A reader takes the newer slot that parses and still fits the file, and
 else the other.  Numbers are written as JavaScript writes them
 (main_fold.js_dumps); reading back, each float field is made a float again,
 and each tuple a tuple, so the fold reads on as it was.
-tests/fixtures/agent-state/ holds the text of each fixture agent's fold at
-each line end, which both ports must write byte for byte.
+tests/fixtures/fold-saves.json holds a digest of each fixture agent's fold
+at each line end, which both ports must write byte for byte.
 """
 import hashlib
 import json
