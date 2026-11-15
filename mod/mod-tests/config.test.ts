@@ -172,6 +172,7 @@ test('with no configuration file the options are the defaults', () => {
     },
     subagentRows: 6,
     accountPlace: 'row',
+    planUsage: true,
     credits: {
       place: 'account',
       show: {

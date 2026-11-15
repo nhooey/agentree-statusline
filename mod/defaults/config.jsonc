@@ -93,6 +93,11 @@
   // rows.account.place puts it, in its colours, or "tail", at the footer
   // line's right end, plain and dim, whatever rows.account.place says.
   "account-place": "row",
+  // Ask api.anthropic.com for the plan's windows, the weekly Fable one
+  // among them, once a minute with the session's own credential, which
+  // Claude Code sets and the mod never sees; drawn under usage-source
+  // "auto" over Claude Code's own reading.
+  "plan-usage": true,
   // The account's credits on the 💳 row (docs/options.md, "The credits").
   // A condition is {field, op, value, unit}: field "balance" (unit "usd"
   // or "percent"), "spent" ("usd") or "expiry" ("days", "hours",

@@ -85,7 +85,9 @@ footer line in place of its rows (see
 [Starting from the defaults](../docs/options.md#starting-from-the-defaults)).
 Every option the mod reads is listed in `spec/options.jsonc`, `"mod"`
 among its ports: the
-usage source, the account and period, the `hide` paths, `mark-spacing`
+usage source, `plan-usage` (the plan's windows asked of api.anthropic.com
+once a minute; see [Usage sources](../docs/usage-sources.md#the-plans-windows-under-the-mod)),
+the account and period, the `hide` paths, `mark-spacing`
 and `subscript-decimals`, the `rows` table (for each of 🎤, 🧵, 🎮, the subagents, the
 🔖 tag lines and 💳, where it is drawn, above the prompt or under the
 footer line, when, and whether a turn's end stamps it into the

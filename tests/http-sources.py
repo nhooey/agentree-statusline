@@ -70,4 +70,8 @@ assert sources.openai_admin(0, 1, opener_for(op)) == {}
 os.environ["CLAUDE_OAUTH_ACCESS_TOKEN"]="x"
 c=sources.experimental_claude_oauth(opener_for({"/api/oauth/usage?":{"five_hour":{"utilization":1},"seven_day":{"utilization":2},"seven_day_overage_included":{"utilization":3}}}))
 assert [(x["id"], x["duration_seconds"]) for b in c["buckets"] for x in b["windows"]] == [("five_hour", 18000.0), ("seven_day", 604800.0), ("seven_day_overage_included", 604800.0)]
+# Every seven_day_* window with a utilization, the plan's three first and the
+# rest by name; mod/test/sources.test.ts holds the TypeScript to the same.
+c=sources.experimental_claude_oauth(opener_for({"/api/oauth/usage?":{"seven_day_sonnet":{"utilization":4},"seven_day_omelette":{"utilization":5},"seven_day_opus":None,"seven_day_zz":{"utilization":None},"extra_usage":{"utilization":9},"seven_day":{"utilization":2},"five_hour":{"utilization":1}}}))
+assert [(x["id"], x["used_percent"]) for b in c["buckets"] for x in b["windows"]] == [("five_hour", 1.0), ("seven_day", 2.0), ("seven_day_omelette", 5.0), ("seven_day_sonnet", 4.0)]
 print("ok HTTP sources")

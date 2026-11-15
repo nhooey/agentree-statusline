@@ -23,6 +23,7 @@ import {
 } from './engine.ts'
 import type { Places } from './engine.ts'
 import { defaultsFault, options } from './configuration.ts'
+import { planUsageVia, PLAN_USAGE_EVERY, recentAnswer } from './plan_usage.ts'
 
 type $ = EngineInterface
 
@@ -186,14 +187,21 @@ export async function preparedVia($: $, places: Places, raw: Dict,
     save: (a, s, c, p, v) => storeSave($, dir, a, s, c, p, v),
     findCompatible: (a, c, p) => storeFind($, dir, a, c, p),
   }
+  // Under plan-usage, the plan's windows the mod asks for itself once a
+  // minute (plan_usage.ts), which auto takes over Claude Code's own; and
+  // the fallback below then asks nothing, the endpoint being plan_usage's.
+  const planOn = o.planUsage && (spec || 'auto') === 'auto'
+  const preferred = planOn
+    ? planUsageVia($, await configAccountVia($, places.home), now) : null
   const fetch: Fetch = (selected, ctx) =>
-    fetchOne($, places.home, selected, ctx)
+    planOn && selected === 'experimental-claude-oauth' ? Promise.resolve({})
+      : fetchOne($, places.home, selected, ctx)
   const env: Env = {}
   // Under auto, the account's own usage endpoint in place of the tracker
   // app, which need not be running: the mod can ask it as the session.
   return prepareClaudeReading(spec, account, accountPeriod, context,
     now, env, store, fetch, () => configAccountVia($, places.home),
-    'experimental-claude-oauth')
+    'experimental-claude-oauth', preferred)
 }
 
 /** Whether an ask for the credits is under way, so a document doesn't
@@ -241,8 +249,16 @@ async function askCredits($: $, places: Places, who: string,
   const found: unknown[] = []
   let answered = false
   try {
-    const auth = signedIn ? await $.session.authorize() : null
-    if (auth) {
+    // The answer plan_usage.ts had within the minute, rather than asking
+    // the endpoint a second time.
+    const recent = signedIn ? recentAnswer(now, PLAN_USAGE_EVERY) : null
+    const auth = signedIn && recent === null
+      ? await $.session.authorize() : null
+    if (recent !== null) {
+      const got = creditsReading(recent, now)
+      found.push(...(Array.isArray(got.credits) ? got.credits : []))
+      answered = true
+    } else if (auth) {
       const r = await $.http.fetch(OAUTH_USAGE_URL, { auth: auth.handle,
         headers: { 'anthropic-beta': 'oauth-2025-04-20' } })
       if (r.ok) {

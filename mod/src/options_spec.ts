@@ -389,6 +389,14 @@ export const OPTIONS = {
     "doc-table": null,
     "doc": "Where the 💳 account is drawn when `rows.account.live` draws it: `row`, a row of its own where `rows.account.place` puts it, in its colours, or `tail`, in plain text at the right end of Claude Code's footer line, whatever `rows.account.place` says.",
   },
+  "plan-usage": {
+    "type": "bool",
+    "ports": ["mod"],
+    "file": true,
+    "flag": null,
+    "doc-table": null,
+    "doc": "Ask the account's usage endpoint for the plan's windows, the weekly Fable one and the per-model weeks among them, once a minute, as Claude Usage.app does, and draw them under `usage-source` `auto` in place of Claude Code's own reading, which names only the plan's week. One request a minute to api.anthropic.com, sent by Claude Code with the session's own credential (the mod never sees it), and only for a signed-in subscription; see [Usage sources](usage-sources.md).",
+  },
   // A record merges per field across layers; `show` merges per credit,
   // and each list of conditions is replaced whole, as a list is.
   "credits": {
@@ -517,6 +525,7 @@ export type Options = {
   };
   readonly subagentRows: number;
   readonly accountPlace: "row" | "tail";
+  readonly planUsage: boolean;
   readonly credits: {
     readonly place: "account" | "none";
     readonly show: { readonly cloud: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly promo: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly prepaid: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly extra: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; readonly passes: readonly { readonly field: string; readonly op: string; readonly value: number; readonly unit: string }[]; };

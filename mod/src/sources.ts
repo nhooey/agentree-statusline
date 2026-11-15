@@ -920,14 +920,26 @@ export interface Store {
 
 // Runs one collector.  `failure` may be given a retry_after, as the HTTP
 // sources do; none of the ported ones sets it.
+/** oauth_window_names: the plan windows of /api/oauth/usage's answer `raw`
+ * to read, in order: the 5-hour one, the plan's week and the Fable week,
+ * then every other `seven_day_*` key, by name, since the answer adds
+ * per-model weeks under names of its own (seven_day_opus,
+ * seven_day_sonnet, seven_day_omelette, …).  The plan's week comes before
+ * the others, which are as long. */
+export function oauthWindowNames(raw: Dict): string[] {
+  const first = ["five_hour", "seven_day", FABLE_WINDOW];
+  return [...first, ...Object.keys(raw)
+    .filter((k) => k.startsWith("seven_day_") && !first.includes(k))
+    .sort()];
+}
+
 /** experimental_claude_oauth's reading of /api/oauth/usage's answer `raw`,
- * taken at `now`: each window with a utilization, the 5-hour one and the
- * four 7-day ones. */
+ * taken at `now`: each window oauthWindowNames names that has a
+ * utilization. */
 export function claudeOauthReading(raw: unknown, now: number): Reading {
   if (!isDict(raw)) return {};
   const windows: Dict[] = [];
-  for (const name of ["five_hour", "seven_day", FABLE_WINDOW,
-                      "seven_day_opus", "seven_day_sonnet"]) {
+  for (const name of oauthWindowNames(raw)) {
     const item = pyGet(raw, name, {});
     if (isDict(item) && pyGet(item, "utilization") !== null) {
       windows.push({ id: name,
@@ -999,7 +1011,11 @@ const HTTP_SOURCES = ["anthropic-admin", "openai-admin",
 // Collect one selected reading with source/account/UTC-period isolation.
 // Under auto, Claude's fallback is `claudeFallback`: the tracker, as the
 // Python has it, or for the mod, which can ask with the session's own
-// credential, experimental-claude-oauth.
+// credential, experimental-claude-oauth.  The mod alone may also pass
+// `preferred`, the plan's usage windows it asked the account's usage
+// endpoint for itself (hooks/plan_usage.ts), which auto takes over the
+// native reading, since Claude Code's native reading names only the plan's
+// week; null, as the Python has it, for none.
 //
 // The cache and the collectors are arguments, so this decides and they do.
 // Python takes a non-blocking flock around the refresh, so two renders do
@@ -1014,11 +1030,12 @@ export async function collect(agent: string, spec: string | null,
                               context: unknown, now: number, store: Store,
                               fetch: Fetch, env: Env = {},
                               configAccount: AccountOf = () => "",
-                              claudeFallback = "claude-usage-tracker"):
+                              claudeFallback = "claude-usage-tracker",
+                              preferred: Reading | null = null):
     Promise<Reading> {
   return accountHigh(agent, await collectOne(agent, spec, account, period,
-    context, now, store, fetch, env, configAccount, claudeFallback), now,
-    store);
+    context, now, store, fetch, env, configAccount, claudeFallback,
+    preferred), now, store);
 }
 
 // A plan window's use only rises until it resets, so the highest any
@@ -1109,7 +1126,8 @@ async function collectOne(agent: string, spec: string | null,
                           context: unknown, now: number, store: Store,
                           fetch: Fetch, env: Env,
                           configAccount: AccountOf,
-                          claudeFallback: string):
+                          claudeFallback: string,
+                          preferred: Reading | null):
     Promise<Reading> {
   spec = validateSource(agent, spec);
   const [start, end] = periodBounds(period, now);
@@ -1138,6 +1156,18 @@ async function collectOne(agent: string, spec: string | null,
     saved.fetched_at = now;
     await store.save(agent, "native", namespace, periodKey, saved);
     cachedNative = currentNative = saved;
+  }
+  // The mod's own reading of the account's usage endpoint, under auto,
+  // over the native one: shared by every session on the account, as the
+  // HTTP sources' are.
+  if (spec === "auto" && agent === "claude" && preferred !== null &&
+      hasReading(preferred)) {
+    const id = await configAccount();
+    const mine = cachedReading(preferred, "experimental-claude-oauth", now,
+                               300);
+    if (id) mine.account_id = id;
+    return tagIdentity(mine, agent, "experimental-claude-oauth",
+                       id || namespace, periodKey);
   }
   // Auto starts with active native data, then only its native cache;
   // external fallback is deliberately restricted to the local managed

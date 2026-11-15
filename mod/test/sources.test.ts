@@ -8,7 +8,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import {
-  accountHigh, cachedReading, creditsReading, cacheName, claudeUsageTracker, commandReading, epoch,
+  accountHigh, cachedReading, claudeOauthReading, creditsReading, cacheName, claudeUsageTracker, commandReading, epoch,
   hasReading, isCacheName, nativeReading, normalise, number, periodBounds,
   HIGHS_PERIOD, HIGHS_SOURCE, pyJsonLoads,
 } from "../src/sources_node.ts";
@@ -132,6 +132,22 @@ test("credits_reading", () => {
     count("credits");
   }
 });
+
+test("claude_oauth_reading: every seven_day_* window, the plan's first",
+  () => {
+    // The answer tests/http-sources.py gives experimental_claude_oauth.
+    const raw = { seven_day_sonnet: { utilization: 4 },
+      seven_day_omelette: { utilization: 5 }, seven_day_opus: null,
+      seven_day_zz: { utilization: null }, extra_usage: { utilization: 9 },
+      seven_day: { utilization: 2 }, five_hour: { utilization: 1 } };
+    const r = claudeOauthReading(raw, 1_700_000_000) as Dict;
+    const windows = (r.buckets as Dict[]).flatMap((b) => b.windows as Dict[]);
+    assert.deepEqual(windows.map((w) => [w.id, w.used_percent]),
+      [["five_hour", 1], ["seven_day", 2], ["seven_day_omelette", 5],
+       ["seven_day_sonnet", 4]]);
+    assert.deepEqual(windows.map((w) => w.duration_seconds),
+      [18000, 604800, 604800, 604800]);
+  });
 
 test("credits: met, shown and colour", () => {
   const d = load("conditions.json") as unknown as Dict;

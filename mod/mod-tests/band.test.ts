@@ -394,10 +394,10 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
 
 test('under auto, with no native reading, the plan comes from the usage ' +
   'endpoint, asked as the session, once per 5 minutes for every session ' +
-  'on the account', async ($, on) => {
+  'on the account, with plan-usage off', async ($, on) => {
     const w = world(on)
     w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
-      encoder.encode('{"usage-source": "auto"}'))
+      encoder.encode('{"usage-source": "auto", "plan-usage": false}'))
     w.files.set('/claude/.claude.json', encoder.encode(
       '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
     w.oauth.body = JSON.stringify({
@@ -408,7 +408,8 @@ test('under auto, with no native reading, the plan comes from the usage ' +
       seven_day_opus: null })
     await start($, w, 'terminal', STATUS)
     expect(w.oauth.asked[0]).toEqual({
-      url: 'https://api.anthropic.com/api/oauth/usage', auth: 'test-handle' })
+      url: 'https://api.anthropic.com/api/oauth/usage', auth: 'test-handle',
+      headers: { 'anthropic-beta': 'oauth-2025-04-20' } })
     expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^24/)
     expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^6/)
     // Read again within the 5 minutes: the cached reading, nothing asked.
@@ -427,6 +428,121 @@ test('under auto, with no native reading, the plan comes from the usage ' +
     await settle()
     expect(w.oauth.asked.length).toBe(asked)
     expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^24/)
+  })
+
+/** A world under auto whose session names only the plan's week, at 87٪,
+ * as Claude Code's does, with the usage endpoint answering `answer`. */
+function planWorld(on: On, answer: Dict | null, settings = '{}'): World {
+  const w = world(on)
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode(JSON.stringify({ 'usage-source': 'auto',
+      ...JSON.parse(settings) })))
+  w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 87,
+    resetsAt: '2026-08-18T01:00:00+00:00' }]
+  w.oauth.body = answer === null ? null : JSON.stringify(answer)
+  return w
+}
+
+const PLAN_ANSWER: Dict = {
+  five_hour: { utilization: 18.0, resets_at: '2026-08-16T05:00:00+00:00' },
+  seven_day: { utilization: 24.0, resets_at: '2026-08-18T01:00:00+00:00' },
+  seven_day_overage_included: { utilization: 6.0,
+    resets_at: '2026-08-19T01:00:00+00:00' },
+  seven_day_omelette: { utilization: 3.0,
+    resets_at: '2026-08-19T01:00:00+00:00' },
+  seven_day_opus: null,
+  seven_day_sonnet: { utilization: null },
+}
+
+const PLAN_URL = 'https://api.anthropic.com/api/oauth/usage'
+
+test('under plan-usage, the plan\'s windows are asked of the usage ' +
+  'endpoint as the session once a minute, the Fable week among them, and ' +
+  'drawn over Claude Code\'s own; their keys are logged once, then as ' +
+  'they change', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked).toEqual([{ url: PLAN_URL, auth: 'test-handle',
+      headers: { 'anthropic-beta': 'oauth-2025-04-20' } }])
+    await w.clock.advance(31_000)
+    await settle()
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^24/)
+    expect(String(limits.session_pct)).toMatch(/^18/)
+    expect(String(limits.fable_pct)).toMatch(/^6/)
+    // Every seven_day_* window with a utilization is kept, by its key.
+    const kept = w.store.get('plan-usage:default') as Dict
+    const ids = (((kept.reading as Dict).buckets as Dict[])[0]
+      .windows as Dict[]).map((x) => x.id)
+    expect(ids).toEqual(['five_hour', 'seven_day',
+      'seven_day_overage_included', 'seven_day_omelette'])
+    // Within the minute, nothing asked; after it, asked again.
+    expect(w.oauth.asked.length).toBe(1)
+    await w.clock.advance(31_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    const line = 'plan usage: five_hour seven_day seven_day_omelette ' +
+      'seven_day_overage_included\n'
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // The keys alone, never a figure.
+    expect(logOf(w)).not.toContain('utilization')
+    // The Fable window gone from the answer: logged again.
+    const { seven_day_overage_included: _, ...noFable } = PLAN_ANSWER
+    w.oauth.body = JSON.stringify(noFable)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(logOf(w)).toContain(
+      'plan usage: five_hour seven_day seven_day_omelette\n')
+  })
+
+for (const kind of ['none', 'api-key'] as const) {
+  test(`plan-usage asks nothing of a session with ${kind === 'none'
+    ? 'no first-party credential' : 'an API key'}`, async ($, on) => {
+      const w = planWorld(on, kind === 'none' ? null : PLAN_ANSWER)
+      if (kind === 'api-key') w.oauth.kind = 'api-key'
+      await start($, w, 'terminal', STATUS)
+      await w.clock.advance(61_000)
+      await settle()
+      expect(w.oauth.asked).toEqual([])
+      expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^87/)
+      expect(logOf(w)).not.toContain('plan usage')
+    })
+}
+
+test('plan-usage off asks nothing, and draws Claude Code\'s own',
+  async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER, '{"plan-usage": false}')
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked).toEqual([])
+    expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^87/)
+  })
+
+test('a failed plan-usage ask is logged once and waited out for 5 ' +
+  'minutes, the last reading kept meanwhile', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    w.oauth.status = 503
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    const line = 'plan usage failed: HTTP 503\n'
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // The last reading, still fresh, is still drawn.
+    expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^6/)
+    // Nothing asked for the 5 minutes after the failure.
+    for (let i = 0; i < 4; i++) {
+      await w.clock.advance(61_000)
+      await settle()
+    }
+    expect(w.oauth.asked.length).toBe(2)
+    // After them, asked again; the same failure is not logged again.
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(3)
+    expect(logOf(w).split(line).length - 1).toBe(1)
   })
 
 test('the credits are asked of the usage endpoint once per 5 minutes, ' +

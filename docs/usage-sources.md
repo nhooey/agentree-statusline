@@ -38,6 +38,11 @@ A source for the other agent is rejected with exit 2 — `--agent claude
 
 ### What `auto` does
 
+Under the mod with `plan-usage` on (the default), the plan's windows the
+mod asked the account's usage endpoint for in the last seven minutes come
+first, over the steps below; see
+[The plan's windows under the mod](#the-plans-windows-under-the-mod).
+
 1. Use native data if this invocation has fresh native data.
 2. Otherwise use a native reading cached by an earlier invocation in the last
    60 seconds.
@@ -209,8 +214,11 @@ They may break without notice, and are used only when named. The token must be
 supplied in the environment. The program doesn't read credential stores or
 browser cookies, and doesn't refresh tokens.
 
-`experimental-claude-oauth` reads the five-hour and seven-day windows, plus
-the Opus and Sonnet weekly sub-limits when present.
+`experimental-claude-oauth` reads the five-hour window and every seven-day
+one the answer holds with a utilization: `seven_day`, the weekly Fable
+window `seven_day_overage_included`, then every other `seven_day_*` key by
+name (`seven_day_opus`, `seven_day_sonnet`, …), so a per-model week under a
+new name is kept too.
 
 The mod asks it as the session, with no token in the environment: the
 engine adds the session's own credential and sends it only to Anthropic's
@@ -219,7 +227,45 @@ while no session is making requests, as use on another machine or on
 claude.ai moves it. A reading is kept for five minutes in the shared state
 directory, under the account Claude Code is signed in to (`oauthAccount` in
 its `.claude.json`), so the machine asks once per five minutes, whatever the
-number of sessions.
+number of sessions. With `plan-usage` on, the mod's own ask below stands in
+for this fallback, which then asks nothing.
+
+### The plan's windows under the mod
+
+Claude Code gives the mod only the plan's week (`seven_day`) through
+`$.session.usage()`, so the weekly Fable window that 🦊 draws on the 💳 row,
+the five-hour window and the per-model weeks would need the Claude Usage
+Tracker or another app. With `plan-usage` on, the default, the mod asks the
+account's usage endpoint for them itself, as Claude Usage.app does:
+
+- **One request a minute** to `https://api.anthropic.com/api/oauth/usage`,
+  with the header `anthropic-beta: oauth-2025-04-20`, and once at each load.
+- **With the session's own credential, via the engine.** The mod asks
+  `$.session.authorize()` for an opaque handle and passes it to
+  `$.http.fetch`, which sets the credential header itself, over https to
+  Anthropic's host only. The mod never sees the credential, and reads no
+  keychain or credential file.
+- **Only for a signed-in subscription.** With no first-party credential (a
+  third-party provider, a gateway, no login) or with an API key, nothing is
+  asked. With `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set, Claude Code
+  refuses the request.
+- **Never on a drawing's path.** Each status document takes the reading
+  kept, and an ask that is due starts after it, whose answer the next
+  document takes. The reading is kept in the mod's store under the signed-in
+  account, so every session on the account shares one ask a minute.
+- **Drawn under `auto` over Claude Code's own reading** while it is at most
+  seven minutes old; past that, `auto` goes on as above.
+- **A failed ask** keeps the last reading, is written to `usage-band.log`
+  once per distinct failure (`plan usage failed: HTTP 503`), and the next ask
+  waits five minutes.
+- **The window keys are logged** once per load, and again when they change:
+  `plan usage: five_hour seven_day seven_day_overage_included`. Key names
+  only, never a figure or a header. The line says which key carries a window
+  when one is in doubt.
+
+Turn it off with `"plan-usage": false` in a configuration file. The
+[credits](#the-accounts-credits) are read from a session's answer of the
+last minute, where it has one, rather than asked for again.
 
 ## Claude Usage Tracker
 
@@ -262,6 +308,7 @@ labels; see the
 |---|---|
 | native, `cmd:`, tracker, app-server | 60 seconds |
 | admin and experimental sources | 300 seconds |
+| the mod's `plan-usage` | 60 seconds |
 
 Between refreshes the cached reading is used. A failed refresh keeps the last
 good reading and backs off exponentially, up to five minutes, and longer if
