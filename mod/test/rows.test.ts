@@ -13,6 +13,7 @@ import { join, width } from "../src/spans.ts";
 import { RIGHT_EDGE, STALE_MARK_S } from "../src/spec.ts";
 import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";
+import { workspacePieces } from "../src/cells.ts";
 import { draw } from "../src/grid.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import { panelLayout } from "../src/claude_subagent_render.ts";
@@ -537,21 +538,33 @@ test("a hidden context.share leaves 🧠's size and drops its ٪", () => {
   }
 });
 
-test("📁 draws the project's root as 📦", () => {
+test("📁 draws the whole path, the project's own folder in 📦's colour", () => {
   const fig = document("status/01-baseline@196");
-  const at = (dir: string, git: Dict) => workspaceOf({ ...fig,
+  const ws = (dir: string, git: Dict) => workspaceOf({ ...fig,
     git: { ...(fig.git as Dict), in_git: true, ...git },
-    payload: { ...(fig.payload as Dict), current_dir: dir } }, "/home/u").dir;
+    payload: { ...(fig.payload as Dict), current_dir: dir } }, "/home/u");
+  // The path as drawn, the project's folder in [brackets].
+  const at = (dir: string, git: Dict) => {
+    const w = ws(dir, git);
+    if (!w.dirProject) return w.dir;
+    const [a, b] = w.dirProject;
+    return w.dir.slice(0, a) + "[" + w.dir.slice(a, b) + "]" + w.dir.slice(b);
+  };
   const repo = { toplevel: "/home/u/repo", main_root: "/home/u/repo" };
-  assert.equal(at("/home/u/repo", repo), "~/📦");
-  assert.equal(at("/home/u/repo/mod", repo), "~/📦/mod");
+  assert.equal(at("/home/u/repo", repo), "~/[repo]");
+  assert.equal(at("/home/u/repo/mod", repo), "~/[repo]/mod");
   assert.equal(at("/home/u/repository", repo), "~/repository");
   assert.equal(at("/srv/repo/mod", { toplevel: "/srv/repo",
-    main_root: "/srv/repo" }), "/srv/📦/mod");
+    main_root: "/srv/repo" }), "/srv/[repo]/mod");
   // A worktree's paths are the main checkout's project, under its root.
   assert.equal(at("/home/u/repo/.claude/worktrees/w/mod",
     { toplevel: "/home/u/repo/.claude/worktrees/w", main_root: "/home/u/repo" }),
-  "~/📦/.claude/worktrees/w/mod");
+  "~/[repo]/.claude/worktrees/w/mod");
+  // Drawn: 📁 and the path in blue, the project's folder in 📦's colour.
+  const dir = workspacePieces(ws("/home/u/repo/mod", repo))
+    .find((p) => p.path === "workspace.dir")!;
+  assert.deepEqual(dir.spans.map((s) => [s.text, s.colour]),
+    [["📁~/", "F_BLU"], ["repo", "F_PROJ"], ["/mod  ", "F_BLU"]]);
 });
 
 test("🎤's ⛳ is the turn's own report alone; 🤖's takes a live agent's", () => {

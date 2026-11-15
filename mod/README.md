@@ -50,8 +50,8 @@ This folder is the mod. `.claude-plugin/plugin.json` names it `usage-band`,
   under it, in colour: 💳, the account and where the session works but
   for what the tree's root draws, on a row of its own (`account-place`
   `"row"`; `"tail"` puts it dim at the line's right end). 📁 on 💳 draws
-  the project's root as 📦 under its parent, so `📁~/git/📦/mod` is the
-  project's `mod/` folder. 🧵 draws the model and effort its next turn
+  the whole path, the project's own folder in 📦's colour, so in
+  `📁~/git/repo/mod` the `repo` stands out as the project. 🧵 draws the model and effort its next turn
   runs on, between turns too, and while a turn runs, its answering or
   waiting time is in 🛫's column.
 - **The closing line,** `✻ Worked for 1m 5s`, as the receipt: as a turn
