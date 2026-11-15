@@ -262,9 +262,10 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   seven minutes old; past that, `auto` goes on as above.
 - **A failed ask** keeps the last reading, is written to `usage-band.log`
   once per distinct failure (`plan usage failed: HTTP 429`), and the next ask,
-  from any session on the account, waits as long as the answer's
-  `Retry-After` says, from one minute to an hour, or five minutes where it
-  says nothing.
+  from any session on the account, waits: two minutes after the first
+  failure in a row, doubling with each failure after it up to an hour, or as
+  long as the answer's `Retry-After` says where that is longer. An answer
+  ends the run. An ask with no answer in 20 seconds counts as failed.
 - **The window keys are logged** once per load, and again when they change:
   `plan usage: five_hour seven_day · no reading: seven_day_opus`. The keys
   with a utilization come first, then those that are null or hold none. Key
