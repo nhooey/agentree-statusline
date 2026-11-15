@@ -640,9 +640,9 @@ class AgentFold:
     besides (agent_usage_of in claude.py): the compactions, the last stamp,
     the API-error flag, the cwd, the block count, the background tasks and
     the effort of the last request it bills; and what the band's tree
-    reads, the background tasks' labels and starts (`bg_info`).  `keys` is
-    the request ids in `recs`, for that effort; it is not saved, and is
-    rebuilt on a load."""
+    reads, the background tasks' labels, starts, commands and output
+    files (`bg_info`).  `keys` is the request ids in `recs`, for that
+    effort; it is not saved, and is rebuilt on a load."""
 
     __slots__ = ("pid", "eta_state", "span_state", "work", "pending",
                  "tools", "waiting", "recs", "wrote", "added", "removed",
@@ -1164,8 +1164,18 @@ def notification_text(r: dict) -> str:
 # The most characters of a call's text a background task keeps as its
 # label.
 BG_LABEL_MAX = 120
+# The most characters of a call's command a background task keeps, the
+# last of them `…` where it was cut.
+BG_COMMAND_MAX = 300
+# What stands for each line break in a command kept on one line.
+BG_NEWLINE = " ⏎ "
 # The tools whose calls can open a background task.
 _BG_TOOLS = frozenset({"Bash", "Monitor"})
+# Where a background Bash call's result names the file its output is
+# written to.
+_BG_OUTPUT = re.compile(r"Output is being written to: (\S+?)\.?(?=\s|$)")
+# Where a `<task-notification>` names its task's output file.
+_TASK_OUTPUT = re.compile(r"<output-file>([^<]+)</output-file>")
 
 
 def background_label(inp) -> str:
@@ -1182,16 +1192,42 @@ def background_label(inp) -> str:
     return ""
 
 
+def background_command(inp) -> str:
+    """A background task's command off its call's input, on one line: its
+    lines with text, each stripped, joined by BG_NEWLINE, cut to
+    BG_COMMAND_MAX characters with `…` last where it was longer; "" for
+    none."""
+    v = inp.get("command") if isinstance(inp, dict) else None
+    if not isinstance(v, str):
+        return ""
+    cs = BG_NEWLINE.join(x.strip() for x in v.split("\n") if x.strip())
+    return (cs[:BG_COMMAND_MAX - 1] + "…" if len(cs) > BG_COMMAND_MAX
+            else cs)
+
+
+def background_output(block: dict) -> str:
+    """The output file a tool result block names, as a background Bash
+    call's result states it; "" for none."""
+    c = block.get("content")
+    if isinstance(c, list):
+        c = "".join(str(b.get("text") or "") for b in c
+                    if isinstance(b, dict))
+    m = _BG_OUTPUT.search(c) if isinstance(c, str) else None
+    return m.group(1) if m else ""
+
+
 def scan_background(r: dict, open_: Dict[str, str],
                     info: Optional[Dict[str, list]] = None) -> None:
     """Fold one record into `open_`, {task id: "bash" or "monitor"}, the
     background tasks a thread started and has not heard the end of, and
     into `info`, where given, what the band's tree knows of them beyond
-    their kind, as [label, start]: by task id, of each task `open_` holds,
-    its label and the epoch it opened, None where the record that opened
-    it had no stamp; and by tool-use id, of each Bash or Monitor call
-    still waiting on its result, its label and a None start.  A key
-    `open_` does not hold is a call's.
+    their kind, as [label, start, command, output]: by task id, of each
+    task `open_` holds, its label, the epoch it opened, None where the
+    record that opened it had no stamp, its call's command on one line
+    (background_command) and the file its output is written to, "" where
+    no record has named one yet; and by tool-use id, of each Bash or
+    Monitor call still waiting on its result, its label, a None start, its
+    command and "".  A key `open_` does not hold is a call's.
 
     These are what keep an agent that ended its turn alive while it waits:
     Claude Code parks it on `bash:<id>` or `monitor:<id>` and marks it
@@ -1204,13 +1240,17 @@ def scan_background(r: dict, open_: Dict[str, str],
     stream ends, or one saying it expired (MONITOR_EXPIRED), with none,
     when it runs out its timeout.  Or on the thread ending it itself — TaskStop's result, or
     TaskOutput reading it finished, which Claude Code counts as delivered
-    and sends no notification for.  Its label is its call's
-    (background_label), kept from the Bash or Monitor call until the
-    call's result, which opens the task or lets the call go.
+    and sends no notification for.  Its label and command are its call's
+    (background_label, background_command), kept from the Bash or Monitor
+    call until the call's result, which opens the task or lets the call
+    go.  Its output file is the one a Bash call's result names
+    (background_output), or else the `<output-file>` of the first
+    `<task-notification>` for it that names one, as each of a Monitor's
+    does.
     """
     m_ = r.get("message")
     content = m_.get("content") if isinstance(m_, dict) else None
-    calls: List[str] = []
+    calls: List[Tuple[str, str]] = []
     if info is not None and isinstance(content, list):
         for b in content:
             if not isinstance(b, dict):
@@ -1218,18 +1258,21 @@ def scan_background(r: dict, open_: Dict[str, str],
             name = b.get("name")
             if (b.get("type") == "tool_use" and isinstance(name, str)
                     and name in _BG_TOOLS and b.get("id")):
-                info[str(b["id"])] = [background_label(b.get("input")), None]
+                inp = b.get("input")
+                info[str(b["id"])] = [background_label(inp), None,
+                                      background_command(inp), ""]
             elif b.get("type") == "tool_result" and b.get("tool_use_id"):
-                calls.append(str(b["tool_use_id"]))
+                calls.append((str(b["tool_use_id"]), background_output(b)))
 
     def is_call(c):
         return c in info and c not in open_
 
     def opened(tid, kind):
         if info is not None:
-            c = next((c for c in calls if is_call(c)), None)
-            info[tid] = [info[c][0] if c is not None else "",
-                         ts_epoch(r.get("timestamp") or "")]
+            c = next((c for c in calls if is_call(c[0])), None)
+            got = info[c[0]] if c is not None else ["", None, "", ""]
+            info[tid] = [got[0], ts_epoch(r.get("timestamp") or ""), got[2],
+                         c[1] if c is not None else ""]
         open_[tid] = kind
 
     def closed(tid):
@@ -1249,14 +1292,19 @@ def scan_background(r: dict, open_: Dict[str, str],
         if isinstance(task, dict) and task.get("status") in TASK_ENDED:
             closed(str(task.get("task_id") or ""))
     if info is not None:
-        for c in calls:
+        for c, _ in calls:
             if is_call(c):
                 del info[c]
     text = notification_text(r)
-    if text and ("<status>" in text or MONITOR_EXPIRED in text):
-        m = re.search(r"<task-id>([^<]+)</task-id>", text)
-        if m:
-            closed(m.group(1).strip())
+    m = re.search(r"<task-id>([^<]+)</task-id>", text) if text else None
+    if m:
+        tid = m.group(1).strip()
+        got = info.get(tid) if info is not None and tid in open_ else None
+        out = _TASK_OUTPUT.search(text)
+        if got and not got[3] and out:
+            got[3] = out.group(1).strip()
+        if "<status>" in text or MONITOR_EXPIRED in text:
+            closed(tid)
 
 
 #: What a Monitor's last notification says when it runs out its timeout,

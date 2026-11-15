@@ -24,7 +24,7 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  bgText, foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows,
+  bgPath, bgText, foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows,
   workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
@@ -677,7 +677,8 @@ test("each open shell's and Monitor's label toasts what the band knows " +
     turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
     mainProgress: "", turnPhase: "🟢", agents: {
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW,
-      turnStart: null, mainBackground: doc.main_background as BgTask[] },
+      turnStart: null, mainBackground: doc.main_background as BgTask[],
+      home: "/Users/u" },
     cap: 10 }, []);
   const bg = (doc.main_background as BgTask[]).map((b) => b.id);
   const tail = rows.slice(-bg.length);
@@ -692,8 +693,10 @@ test("each open shell's and Monitor's label toasts what the band knows " +
     return p?.kind === "task" ? p.text : "";
   });
   assert.deepEqual(texts, [
-    "💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests",
-    "📡 Monitor · 🟢 running · ⌛ 25m · Watch PR #38 for comments"]);
+    "💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · " +
+      "$ npm test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output",
+    "📡 Monitor · 🟢 running · ⌛ 25m · Watch PR #38 for comments · " +
+      "$ gh pr view 38 --comments ⏎ sleep 30 · ⤷ ~/.cache/tasks/mmon.output"]);
 });
 
 test("a task's toast leaves out ⌛ where its start is not known", () => {
@@ -703,6 +706,31 @@ test("a task's toast leaves out ⌛ where its start is not known", () => {
     "💻 shell · 🟢 running · shell");
   assert.equal(bgText(ST, b("monitor", NOW - 5), "monitor", NOW),
     "📡 Monitor · 🟢 running · ⌛ 5s · monitor");
+});
+
+test("a task's toast gives its command once: the label is left out where " +
+  "it is the command's own first line", () => {
+  const b: BgTask = { id: "x", kind: "bash", label: "make docs",
+    start: NOW - 5, command: "make docs ⏎ open site", output: "" };
+  assert.equal(bgText(ST, b, "make docs", NOW),
+    "💻 shell · 🟢 running · ⌛ 5s · $ make docs ⏎ open site");
+  assert.equal(bgText(ST, { ...b, label: "Build", end: NOW - 1 }, "Build",
+    NOW, "/Users/u"),
+  "💻 shell · ⚫ ended · ⌛ 4s · Build · $ make docs ⏎ open site");
+});
+
+test("a task's output file is drawn with ~ for home, and a long one as its " +
+  "first two folders and its file name", () => {
+  assert.equal(bgPath("/Users/u/x/y.output", "/Users/u"), "~/x/y.output");
+  assert.equal(bgPath("/Users/uv/y.output", "/Users/u"), "/Users/uv/y.output");
+  assert.equal(bgPath("/Users/u/x/y.output"), "/Users/u/x/y.output");
+  const long = "/private/tmp/" + "d".repeat(80) + "/tasks/b1.output";
+  assert.equal(bgPath(long, "/Users/u"), "/private/tmp/…/b1.output");
+  // Too few folders to leave any out: drawn whole however long.
+  assert.equal(bgPath("/Users/u/" + "d".repeat(80) + "/b1.output",
+    "/Users/u"), "~/" + "d".repeat(80) + "/b1.output");
+  assert.equal(bgPath("/Users/u/a/" + "d".repeat(80) + "/b1.output",
+    "/Users/u"), "~/a/…/b1.output");
 });
 
 test("the presses change nothing drawn", () => {

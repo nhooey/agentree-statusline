@@ -495,6 +495,26 @@ def run(tmp):
         "task": {"task_id": "a9", "status": "completed"}}}, open_)
     check("TaskOutput reading it finished ends it, as Claude Code counts it "
           "delivered", open_, {})
+    open_, info = {}, {}
+    for r in ({"type": "assistant", "message": {"content": [
+                  {"type": "tool_use", "id": "t1", "name": "Bash",
+                   "input": {"description": "Run the tests",
+                             "command": "npm test \\\n  -- --watch"}}]}},
+              {"type": "user", "timestamp": "2026-08-17T20:53:21.000Z",
+               "message": {"content": [{"type": "tool_result",
+                                        "tool_use_id": "t1", "content":
+                   "Command running in background with ID: b9. Output is "
+                   "being written to: /tmp/t/b9.output. You will be "
+                   "notified."}]},
+               "toolUseResult": {"backgroundTaskId": "b9"}}):
+        sl.scan_background(r, open_, info)
+    check("a shell keeps its description, its whole command on one line and "
+          "the output file its call's result names",
+          info, {"b9": ["Run the tests", 1787000001.0,
+                        "npm test \\ ⏎ -- --watch", "/tmp/t/b9.output"]})
+    check("a command longer than BG_COMMAND_MAX is cut with …",
+          sl.background_command({"command": "x" * 400}),
+          "x" * 299 + "…")
 
     print("--- the ETA an agent reports ---")
     quoted = agent_result(14, "t9")

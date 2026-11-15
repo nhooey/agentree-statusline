@@ -685,27 +685,41 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(logOf(w)).toContain('right-edge 2 (derived)')
 })
 
+/** Where withShell's shell writes its output. */
+const SHELL_OUTPUT = '/private/tmp/claude-501/p/tasks/bsh1.output'
+
 /** The session file with a background shell the main thread opened,
- * `bsh1` labelled `Build the docs` and started at `stamp`, and with
- * `monitor` a Monitor after it, `mon1`, labelled `Watch the CI checks`
- * and started at `monitor`, placed as the status line's; its path. */
+ * `bsh1` labelled `Build the docs` and started at `stamp`, its call's
+ * result naming SHELL_OUTPUT, and with `monitor` a Monitor after it,
+ * `mon1`, labelled `Watch the CI checks` and started at `monitor`, an
+ * event's notification naming its output file under HOME, placed as the
+ * status line's; its path. */
 function withShell(w: World, stamp: string, monitor?: string): string {
   const path = sessionFile('-shell')
   place(w, STATUS, path)
   const call = (ts: string, id: string, name: string, input: Dict) => ({
     type: 'assistant', timestamp: ts, message: { id: 'req-' + id,
       content: [{ type: 'tool_use', id, name, input }] } })
-  const result = (ts: string, id: string, res: Dict) => ({ type: 'user',
-    timestamp: ts, message: { content: [
-      { type: 'tool_result', tool_use_id: id }] }, toolUseResult: res })
+  const result = (ts: string, id: string, res: Dict, content = '') => ({
+    type: 'user', timestamp: ts, message: { content: [
+      { type: 'tool_result', tool_use_id: id, content }] },
+    toolUseResult: res })
   const records = [
-    call(stamp, 'tu-bg', 'Bash', { command: 'make docs',
+    call(stamp, 'tu-bg', 'Bash', { command: 'make docs\n  && open site',
       description: 'Build the docs', run_in_background: true }),
-    result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' }),
+    result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' },
+      'Command running in background with ID: bsh1. Output is being ' +
+      'written to: ' + SHELL_OUTPUT + '. You will be notified when it ' +
+      'completes.'),
     ...(monitor === undefined ? [] : [
       call(monitor, 'tu-mon', 'Monitor', { command: 'make watch',
         description: 'Watch the CI checks' }),
-      result(monitor, 'tu-mon', { taskId: 'mon1', timeoutMs: 300_000 })]),
+      result(monitor, 'tu-mon', { taskId: 'mon1', timeoutMs: 300_000 },
+        'Monitor started (task mon1).'),
+      { type: 'user', timestamp: monitor, message: { content:
+        '<task-notification><task-id>mon1</task-id><output-file>' + HOME +
+        '/tasks/mon1.output</output-file><event>green</event>' +
+        '</task-notification>' } }]),
   ]
   const extra = encoder.encode(records
     .map((r) => JSON.stringify(r) + '\n').join(''))
@@ -725,7 +739,8 @@ test('the main thread\'s open background shell is in the document and ' +
   await start($, w, 'terminal', path)
   expect((lastDoc(w).agents as Dict).main_background).toEqual([
     { id: 'bsh1', kind: 'bash', label: 'Build the docs',
-      start: Date.parse(stamp) / 1000 }])
+      start: Date.parse(stamp) / 1000, command: 'make docs ⏎ && open site',
+      output: SHELL_OUTPUT }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
   const rows = (await drawnRows(ui.above)).map((r) => r.text)
   expect(rows.some((r) => /^ *   [├╰]─ 💻🟢 Build the docs /u.test(r)))
@@ -752,6 +767,7 @@ test('a shell that closed stays drawn, ended, for finished-linger, and ' +
   expect(agents.main_background).toEqual([])
   expect(agents.main_background_ended).toEqual([{ id: 'bsh1', kind: 'bash',
     label: 'Build the docs', start: Date.parse('2026-08-16T01:44:00Z') / 1000,
+    command: 'make docs ⏎ && open site', output: SHELL_OUTPUT,
     end: NOW - 2 }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
   const shell = async () => (await drawnRows(ui.above))
@@ -2484,7 +2500,8 @@ async function shellBand($: any, on: On) {
 }
 
 test('a press on an open shell\'s or Monitor\'s row toasts what the band ' +
-  'knows of it, and runs no command', async ($, on) => {
+  'knows of it, its command and output file too, and runs no command',
+async ($, on) => {
   const { band, toasts, ran } = await shellBand($, on)
   const keys: string[] = (await band.findAll({ type: 'Button' }))
     .map((b: { key?: string }) => b.key ?? '')
@@ -2494,9 +2511,11 @@ test('a press on an open shell\'s or Monitor\'s row toasts what the band ' +
   await band.press({ key: 'task:mon1' })
   await settle()
   expect(toasts).toEqual([
-    { text: '💻 shell · 🟢 running · ⌛ 39m · Build the docs',
+    { text: '💻 shell · 🟢 running · ⌛ 39m · Build the docs · ' +
+        '$ make docs ⏎ && open site · ⤷ ' + SHELL_OUTPUT,
       timeoutMs: CONFIG.taskToastMs },
-    { text: '📡 Monitor · 🟢 running · ⌛ 33m · Watch the CI checks',
+    { text: '📡 Monitor · 🟢 running · ⌛ 33m · Watch the CI checks · ' +
+        '$ make watch · ⤷ ~/tasks/mon1.output',
       timeoutMs: CONFIG.taskToastMs }])
   expect(ran).toEqual([])
 })

@@ -317,6 +317,38 @@ test("the session's name and colour are the latest records' own", () => {
   assert.deepEqual(at(records.length), ["Status¶ line two", "cyan"]);
 });
 
+// records.py's background.jsonl: a shell with a description keeps its whole
+// command on one line and the output file its call's result names, a
+// Monitor the first its notifications name, and the mod's own BgEnded
+// keeps both for a task once it has closed.
+test("a background task keeps its command and output file, open and " +
+  "closed", () => {
+  const records = cr._records(path.join(DIR, "inputs/background.jsonl"));
+  const open = new Map<string, string>();
+  const info: cr.BgInfo = new Map();
+  const ended: cr.BgEnded = new Map();
+  for (const r of records) cr.scanBackground(r, open, info, ended);
+  const tasks = cr.backgroundTasks(open, info);
+  const b4 = tasks.find((t) => t.id === "b4")!;
+  assert.equal(b4.label, "Run the tests");
+  assert.equal(b4.command, "npm test -- --watch ⏎ && echo done");
+  assert.equal(b4.output, "/private/tmp/claude-501/p/tasks/b4.output");
+  assert.equal(tasks.find((t) => t.id === "m4")!.output,
+    "/private/tmp/claude-501/p/tasks/m4.output");
+  const b6 = tasks.find((t) => t.id === "b6")!;
+  assert.equal(b6.command, "é".repeat(299) + "…");
+  assert.equal(b6.output, "/Users/u/tasks/b6.output");
+  // Closed: b4's notification after it, at a stamp.
+  cr.scanBackground({ type: "user", timestamp: "2026-08-17T20:55:00.000Z",
+    message: { content: "<task-notification><task-id>b4</task-id>" +
+      "<status>completed</status></task-notification>" } }, open, info,
+  ended);
+  const gone = cr.endedTasks(ended).find((t) => t.id === "b4")!;
+  assert.equal(gone.command, b4.command);
+  assert.equal(gone.output, b4.output);
+  assert.equal(open.has("b4"), false);
+});
+
 // The mod reads an agent's file as it grows, folding only what was appended
 // since its last read: cut anywhere, mid-line included, the file folded
 // piece by piece reads as the Python reads it whole.
