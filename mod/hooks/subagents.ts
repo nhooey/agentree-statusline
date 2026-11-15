@@ -2,21 +2,23 @@
 // `$.agent.list()` and each agent file of the session's `subagents/`
 // folder whose last record is in the turn, with its sidecar, its fold
 // (transcripts.ts, which agentReadings has just read on), the branch of a
-// worktree it works in apart from the session's, and its latest progress
-// update, off its transcript's tail.  src/subagent_tasks.ts works them out
-// as the renderer's prepared tasks.  The document carries them as
-// `agents`, with the main thread's own progress update.
+// worktree it works in apart from the session's, the messages waiting in
+// its inbox (inbox.ts, over every file that can send), and its latest
+// progress update, off its transcript's tail.  src/subagent_tasks.ts works
+// them out as the renderer's prepared tasks.  The document carries them
+// as `agents`, with the main thread's own progress update.
 import type { EngineInterface } from 'claude-code'
 
 import { _agentDir, agentLabelId } from '../src/claude_records.ts'
 import type { Transcript } from '../src/claude_records.ts'
 import type { Calib, Snapshot } from '../src/claude_calib.ts'
 import { ctxWindowFor } from '../src/claude.ts'
-import { progressOf, treeTasks } from '../src/subagent_tasks.ts'
+import { inboxTargets, progressOf, treeTasks } from '../src/subagent_tasks.ts'
 import type { AgentInput, ListedAgent } from '../src/subagent_tasks.ts'
 import type { Dict } from '../src/py.ts'
 import { agentsNow } from './senders.ts'
 import { agentFiles, agentFolds, sidecarOf } from './transcripts.ts'
+import { inboxNow } from './inbox.ts'
 import { fileSize, readRange, readText } from './engine.ts'
 
 type $ = EngineInterface
@@ -45,21 +47,26 @@ export async function agentsDoc($: $, transcript: string, tr: Transcript,
       tr.turn_s && seen !== null && seen >= tr.turn_s) ids.add(id)
   }
   const sessionRoot = (await gitHead($, cwd))[0]
-  const inputs: AgentInput[] = []
+  const drafts: Omit<AgentInput, 'inbox'>[] = []
   for (const id of ids) {
     const path = pathOf.get(id) ?? ''
     const fold = path ? folds.get(path) ?? null : null
     const listedAgent = byId.get(id) ?? null
-    inputs.push({
+    drafts.push({
       id, listed: listedAgent, fold,
       meta: path ? await sidecarOf($, path) : null,
-      inbox: 0,
       branch: fold?.cwd ? await branchApart($, fold.cwd, sessionRoot) : '',
       // Its last text: what it is saying while it works, its final
       // answer once it has ended.
       progress: path ? await progressAt($, path) : '',
     })
   }
+  // 📨: the messages waiting for each agent's next turn, counted over
+  // every file that can send.
+  const [targets, since] = inboxTargets(drafts, (id) => pathOf.get(id) ?? '')
+  const inbox = await inboxNow($, transcript, files, targets, since)
+  const inputs: AgentInput[] = drafts.map((d) =>
+    ({ ...d, inbox: inbox.get(d.id) ?? 0 }))
   return {
     tasks: treeTasks(inputs, now, (m) => ctxWindowFor('', m), calib, snap),
     main_progress: await progressAt($, transcript),

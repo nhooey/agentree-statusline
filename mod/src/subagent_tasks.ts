@@ -162,6 +162,30 @@ export type AgentInput = {
   readonly progress: string;
 };
 
+/** The agents of `agents` whose inbox is counted, each by its id to its
+ * file, `pathOf(id)`, and the earliest any of them started, in epoch
+ * seconds (null for none): prepare_subagent_tasks's targets and firsts.  A
+ * killed or failed agent's inbox is dropped with it, and one with no file
+ * has none. */
+export function inboxTargets(
+  agents: readonly Pick<AgentInput, "id" | "listed" | "fold">[],
+  pathOf: (id: string) => string): [Map<string, string>, number | null] {
+  const targets = new Map<string, string>();
+  const firsts: number[] = [];
+  for (const a of agents) {
+    const status = a.listed ? taskStatus(a.listed.status) : "completed";
+    const path = pathOf(a.id);
+    if (!path || status === "killed" || status === "failed") continue;
+    targets.set(a.id, path);
+    // Its first span, open or closed, or its last record: taskOf's start.
+    const f = a.fold;
+    const starts = f === null ? [] : [f.work[0]?.[0], f.spanState[0],
+      f.lastSeen].filter((t): t is number => typeof t === "number");
+    if (starts.length) firsts.push(Math.min(...starts));
+  }
+  return [targets, firsts.length ? Math.min(...firsts) : null];
+}
+
 /** One prepared task and its latest progress update, as the band's
  * document carries them (`agents.tasks`). */
 export type TreeTask = {

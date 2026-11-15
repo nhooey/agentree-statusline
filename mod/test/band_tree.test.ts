@@ -17,8 +17,10 @@ import type { Dict } from "../src/py.ts";
 import { githubRepo } from "../src/github.ts";
 import { foldAgentBytes, newAgentFold } from "../src/claude_records.ts";
 import {
-  agentClock, agentShares, agentUsageOf, progressOf, taskStatus, treeTasks,
+  agentClock, agentShares, agentUsageOf, inboxTargets, progressOf,
+  taskStatus, treeTasks,
 } from "../src/subagent_tasks.ts";
+import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
   foldShut, groupFold, pruneFolds, treeRows, workspaceLinks,
@@ -130,6 +132,75 @@ test("treeTasks builds each task from the list and the fold, and the " +
   assert.deepEqual([t.usage.inbox, t.usage.branch, t.usage.eta,
     t.usage.ctx_window], [2, "b", null, 0]);
   assert.equal(t.progress, "Reading");
+});
+
+/** The 03-tree fixture's agents as the hooks read them, each listed with
+ * `status` (or `statuses[id]`) under the name `N<id>`, its inbox counted
+ * over the main transcript and every agent's file as inboxTargets picks
+ * the targets, drawn in the tree as plain lines at 200 columns. */
+function inboxTree(statuses: { [id: string]: string } = {}): string[] {
+  const main = path.join(REPO, "tests/fixtures/transcripts/subagent/" +
+    "03-tree.jsonl");
+  const dir = main.slice(0, -".jsonl".length) + "/subagents/";
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".jsonl"))
+    .sort().map((f) => dir + f);
+  const idOf = (f: string) => path.basename(f).slice("agent-".length,
+    -".jsonl".length);
+  const drafts = files.map((f) => {
+    const fold = newAgentFold();
+    foldAgentBytes(fold, fs.readFileSync(f));
+    const id = idOf(f);
+    return { id, fold, listed: { id, name: "N" + id,
+      status: statuses[id] ?? "running" },
+    meta: JSON.parse(fs.readFileSync(f.slice(0, -".jsonl".length) +
+      ".meta.json", "utf-8")), branch: "", progress: "" };
+  });
+  const [targets, since] = inboxTargets(drafts, (id) => dir + `agent-${id}.jsonl`);
+  const inbox = inboxCounts([main, ...files], targets, since);
+  const tasks = treeTasks(drafts.map((d) =>
+    ({ ...d, inbox: inbox.get(d.id) ?? 0 })), NOW, () => 200000, null, null);
+  const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
+  const rows = treeRows(ST, { session: blank("session"),
+    main: blank("main"), turn: blank("turn"), workspace: null,
+    mainPhase: "🟢", mainInbox: 0, mainProgress: "", turnPhase: "🟢",
+    agents: { tasks, limits: LIMITS, now: NOW, turnStart: null }, cap: 20 },
+  []);
+  const keys = fixedKeys(ST, 200, []);
+  return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
+}
+
+test("an agent with messages queued for it draws 📨N, and one with none " +
+  "draws no 📨", () => {
+  const lines = inboxTree();
+  const row = (id: string) => lines.find((l) => l.includes("N" + id + " "))!;
+  assert.match(row("t2"), /📨1 Nt2/u);
+  assert.match(row("t3"), /📨2 Nt3/u);
+  for (const id of ["g1", "t1", "t4", "t5"]) {
+    assert.ok(!row(id).includes("📨"), id);
+  }
+});
+
+test("a killed or failed agent's inbox is dropped with it", () => {
+  const lines = inboxTree({ t2: "killed", t3: "failed" });
+  assert.ok(!lines.some((l) => l.includes("📨")));
+});
+
+test("inboxTargets counts each agent with a file that was not killed or " +
+  "failed, from the earliest any of them started", () => {
+  const fold = (t: number) => {
+    const f = newAgentFold();
+    f.lastSeen = t;
+    return f;
+  };
+  const [targets, since] = inboxTargets([
+    { id: "a", listed: { id: "a", status: "running" }, fold: fold(30) },
+    { id: "b", listed: { id: "b", status: "killed" }, fold: fold(10) },
+    { id: "c", listed: null, fold: fold(20) },
+    { id: "d", listed: { id: "d", status: "waiting" }, fold: null },
+    { id: "e", listed: { id: "e", status: "running" }, fold: fold(5) },
+  ], (id) => id === "e" ? "" : "/s/agent-" + id + ".jsonl");
+  assert.deepEqual([...targets.keys()], ["a", "c", "d"]);
+  assert.equal(since, 20);
 });
 
 /** The tree over a corpus case's tasks, under 🧵 main, as plain lines at
