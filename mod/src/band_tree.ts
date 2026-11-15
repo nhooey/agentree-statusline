@@ -26,7 +26,8 @@
 //
 // The spans carry what a press on them does (Press): a fold mark toggles
 // its row's fold, an agent's label switches the transcript to it, and 🧵
-// main's and 🎤 turn's to the main conversation, and on 🎮's label 📦 🌿 🔀 link to the
+// main's and 🎤 turn's to the main conversation, a shell's or a Monitor's
+// shows what the band knows of it as a toast, and on 🎮's label 📦 🌿 🔀 link to the
 // repository on GitHub, where its address is known.
 //
 // Stamped (TreeInput's `stamped`), the same tree is the turn's receipt
@@ -205,17 +206,33 @@ function ageCell(st: Settings, age: number): Span[] {
     magDim(age, MAG_DUR_S))];
 }
 
+/** What a press on an open background task's row shows, one line: its
+ * glyph and kind, 🟢 running, ⌛ how long it has run where its start is
+ * known, and `label`, its call's description, else its command's first
+ * line (backgroundLabel). */
+export function bgText(st: Settings, b: BgTask, label: string,
+  now: number): string {
+  const shell = b.kind === "bash";
+  return [shell ? E_MODE_SHELL + " shell" : E_MODE_MONITOR + " Monitor",
+    E_PHASE_RUN + " running",
+    ...(b.start === null ? []
+      : [E_IDLE + " " + durFmt(st, Math.max(0, now - b.start)).trim()]),
+    label].join(" · ");
+}
+
 /** The row of an open background task: 💻 for a shell, 📡 for a Monitor,
  * with 🟢 as every running thread has, then its call's label, or else
  * its kind; ⌛ how long it has run, where its start is known.  A leaf
- * that presses nothing: it has no transcript to switch to. */
+ * whose label shows bgText as a toast: it has no transcript to switch to,
+ * and no call opens one task's own view. */
 function bgNode(st: Settings, b: BgTask, now: number): Node {
   const shell = b.kind === "bash";
   const label = squash(b.label).trim() || (shell ? "shell" : "monitor");
   return { folded: false, kids: [], row: { scope: "agent",
-    label: [headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
+    label: pressingAll([headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
       E_PHASE_RUN),
     { path: "name.label", spans: [span(label)], drop: 0 }],
+    { kind: "task", row: b.id, text: bgText(st, b, label, now) }),
     cells: b.start === null ? {}
       : { clock: ageCell(st, Math.max(0, now - b.start)) } } };
 }

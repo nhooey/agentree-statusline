@@ -569,26 +569,43 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(logOf(w)).toContain('right-edge 2 (derived)')
 })
 
-test('the main thread\'s open background shell is in the document and ' +
-  'drawn under 🧵, labelled by its call', async ($, on) => {
-  const w = world(on)
+/** The session file with a background shell the main thread opened,
+ * `bsh1` labelled `Build the docs` and started at `stamp`, and with
+ * `monitor` a Monitor after it, `mon1`, labelled `Watch the CI checks`
+ * and started at `monitor`, placed as the status line's; its path. */
+function withShell(w: World, stamp: string, monitor?: string): string {
   const path = sessionFile('-shell')
   place(w, STATUS, path)
-  const stamp = '2026-08-16T01:44:00Z'
-  const call = { type: 'assistant', timestamp: stamp, message: {
-    id: 'req-bg', content: [{ type: 'tool_use', id: 'tu-bg', name: 'Bash',
-      input: { command: 'make docs', description: 'Build the docs',
-        run_in_background: true } }] } }
-  const result = { type: 'user', timestamp: stamp, message: { content: [
-    { type: 'tool_result', tool_use_id: 'tu-bg' }] },
-  toolUseResult: { backgroundTaskId: 'bsh1' } }
-  const extra = encoder.encode([call, result]
+  const call = (ts: string, id: string, name: string, input: Dict) => ({
+    type: 'assistant', timestamp: ts, message: { id: 'req-' + id,
+      content: [{ type: 'tool_use', id, name, input }] } })
+  const result = (ts: string, id: string, res: Dict) => ({ type: 'user',
+    timestamp: ts, message: { content: [
+      { type: 'tool_result', tool_use_id: id }] }, toolUseResult: res })
+  const records = [
+    call(stamp, 'tu-bg', 'Bash', { command: 'make docs',
+      description: 'Build the docs', run_in_background: true }),
+    result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' }),
+    ...(monitor === undefined ? [] : [
+      call(monitor, 'tu-mon', 'Monitor', { command: 'make watch',
+        description: 'Watch the CI checks' }),
+      result(monitor, 'tu-mon', { taskId: 'mon1', timeoutMs: 300_000 })]),
+  ]
+  const extra = encoder.encode(records
     .map((r) => JSON.stringify(r) + '\n').join(''))
   const was = w.files.get(path)!
   const bytes = new Uint8Array(was.length + extra.length)
   bytes.set(was)
   bytes.set(extra, was.length)
   w.files.set(path, bytes)
+  return path
+}
+
+test('the main thread\'s open background shell is in the document and ' +
+  'drawn under 🧵, labelled by its call', async ($, on) => {
+  const w = world(on)
+  const stamp = '2026-08-16T01:44:00Z'
+  const path = withShell(w, stamp)
   await start($, w, 'terminal', path)
   expect((lastDoc(w).agents as Dict).main_background).toEqual([
     { id: 'bsh1', kind: 'bash', label: 'Build the docs',
@@ -2205,6 +2222,45 @@ test('a press on a label switches the transcript to its agent, and 🧵 ' +
   await band.press({ key: 'view:p1' })
   await band.press({ key: 'view:turn' })
   expect(views).toEqual([{ agentId: 'c1' }, {}, { agentId: 'p1' }, {}])
+})
+
+/** The band above the prompt over a session with an open background
+ * shell, `bsh1`, and Monitor, `mon1`, mounted; each `$.ui.toast` kept in
+ * `toasts`, and each command run in `ran`. */
+async function shellBand($: any, on: On) {
+  const { w } = clicking(on, [])
+  const toasts: Dict[] = []
+  const ran: string[] = []
+  on('ui.toast', ($, e) => {
+    toasts.push({ ...e })
+    return { value: undefined }
+  })
+  on('command.run', ($, e) => {
+    ran.push(e.command)
+    return {}
+  })
+  await start($, w, 'terminal',
+    withShell(w, '2026-08-16T01:44:00Z', '2026-08-16T01:50:00Z'))
+  const { band } = await clickBand($, w)
+  return { band, toasts, ran }
+}
+
+test('a press on an open shell\'s or Monitor\'s row toasts what the band ' +
+  'knows of it, and runs no command', async ($, on) => {
+  const { band, toasts, ran } = await shellBand($, on)
+  const keys: string[] = (await band.findAll({ type: 'Button' }))
+    .map((b: { key?: string }) => b.key ?? '')
+  expect(keys.filter((k) => k.startsWith('task:')))
+    .toEqual(['task:bsh1', 'task:mon1'])
+  await band.press({ key: 'task:bsh1' })
+  await band.press({ key: 'task:mon1' })
+  await settle()
+  expect(toasts).toEqual([
+    { text: '💻 shell · 🟢 running · ⌛ 39m · Build the docs',
+      timeoutMs: CONFIG.taskToastMs },
+    { text: '📡 Monitor · 🟢 running · ⌛ 33m · Watch the CI checks',
+      timeoutMs: CONFIG.taskToastMs }])
+  expect(ran).toEqual([])
 })
 
 test('an agent that ends takes its fold with it, and 🧵\'s grouped row ' +

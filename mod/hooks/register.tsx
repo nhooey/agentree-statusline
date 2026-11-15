@@ -706,13 +706,15 @@ function pressKey(p: Press | undefined): string {
   if (!p) return ''
   if (p.kind === 'fold') return 'fold:' + p.key
   if (p.kind === 'view') return 'view:' + (p.row ?? p.agent ?? 'main')
+  if (p.kind === 'task') return 'task:' + p.row
   return 'link:' + p.href
 }
 
 /** What a press on a run does, in a Button's onPress: a fold toggles the
  * fold kept under its key, against its row's default where none is kept
  * (the update reads it, so two presses before a redraw both land); a view
- * switches the transcript, and logs why where it would not. */
+ * switches the transcript, and logs why where it would not; a task shows
+ * its text as a toast, for CONFIG.taskToastMs. */
 function onPressOf($: $, p: Press): () => Promise<void> {
   if (p.kind === 'fold') {
     return async () => {
@@ -728,13 +730,19 @@ function onPressOf($: $, p: Press): () => Promise<void> {
       }
     }
   }
+  if (p.kind === 'task') {
+    return async () => {
+      $.ui.toast(p.text, { timeoutMs: CONFIG.taskToastMs })
+    }
+  }
   return async () => {}
 }
 
 /** A row of the band's tree as `line` draws it, where any of its spans
  * presses something: a row Box of its runs, each run of spans as line's
- * nested Texts, a fold's or a view's in a plain Button keyed by its press,
- * which draws its children alone, and a link's in a Link inside a Text.
+ * nested Texts, a fold's, a view's or a task's in a plain Button keyed
+ * by its press, which draws its children alone, and a link's in a Link
+ * inside a Text.
  * The Box adds no column: each run is as wide as its spans, so every
  * figure stands where line would draw it.  A row that presses nothing is
  * line's. */
