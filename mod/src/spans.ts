@@ -27,13 +27,15 @@ export const UNBOLD = "\x1b[22m";          // 22 (bold off) and not 0 (all
  * `fold` toggles the fold kept under `key`, folded where none is kept if
  * `shut`; a `view` switches the transcript to the agent `agent`, or to the
  * main conversation for null, `row` naming the row it is pressed from where
- * two rows switch to the same one; a `link` opens `href`.  `at`, where given,
- * is the part of the span's text that presses, as code points from and
- * to; the rest of it presses nothing.  Absent, all of it presses. */
+ * two rows switch to the same one; a `task` shows `text`, what the band
+ * knows of the background task `row`, as a toast; a `link` opens `href`.
+ * `at`, where given, is the part of the span's text that presses, as code
+ * points from and to; the rest of it presses nothing.  Absent, all of it presses. */
 export type Press = (
   | { readonly kind: "fold"; readonly key: string; readonly shut: boolean }
   | { readonly kind: "view"; readonly agent: string | null;
       readonly row?: string }
+  | { readonly kind: "task"; readonly row: string; readonly text: string }
   | { readonly kind: "link"; readonly href: string }
 ) & { readonly at?: readonly [number, number] };
 

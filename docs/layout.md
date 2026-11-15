@@ -211,7 +211,12 @@ binary, then the changelog" --cols 200`):
 - **The clicks.** A click on an agent's label (its kind, name and progress
   update) switches the transcript to that agent, as Claude Code's tasks
   list does, and one on 🧵 main's or 🎤 turn's goes back to the main
-  conversation, since the turn is the main thread's. 🎮 and the grouped
+  conversation, since the turn is the main thread's. A click on a
+  shell's or a Monitor's row shows what the band knows of it as a toast
+  for 8 seconds, one line: its glyph and kind, 🟢 running, ⌛ how long
+  it has run where its start is known, and its label, as in
+  `💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests`. Claude Code
+  offers mods no way to open one task's own view. 🎮 and the grouped
   rows have no label click, and 📛 the session's name takes none. On
   🎮's label 📦 the
   project, 🌿 the branch and 🔀 the pull request link to them on GitHub,
@@ -244,10 +249,11 @@ binary, then the changelog" --cols 200`):
   before `✅ N done`. Its label is 💻 for a shell or 📡 for a Monitor,
   🟢, then the call's `description`, else the first line of its
   `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
-  has run. It counts against no cap, does not fold and takes no click,
-  and it leaves once the thread hears its end ([State](#state)). An
-  opened thread leaves its 💻 📡 counts to these rows; a folded one
-  hides them and counts them. With the panel corpus's `02-parked@220`,
+  has run. It counts against no cap and does not fold; a click on it
+  shows it as a toast (see the clicks above), and it leaves once the
+  thread hears its end ([State](#state)). An opened thread leaves its 💻
+  📡 counts to these rows; a folded one hides them and counts them. With
+  the panel corpus's `02-parked@220`,
   whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
   shell and a Monitor of the main thread's, at 120 columns:
 

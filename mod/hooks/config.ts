@@ -33,6 +33,9 @@ export const CONFIG = {
   // slowToastMs.
   slowReadMs: 2_000,
   slowToastMs: 60_000,
+  // How long the toast a press on a shell's or a Monitor's row shows stays:
+  // twice Claude Code's default, long enough to read a command's line.
+  taskToastMs: 8_000,
   // What the mod asked of the engine since the last refresh, its reads'
   // bytes or its processes, past which the refresh is logged with them,
   // though it was quick: an idle refresh reads a few small files.

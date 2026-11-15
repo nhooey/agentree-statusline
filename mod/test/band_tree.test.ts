@@ -24,7 +24,8 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows, workspaceLinks,
+  bgText, foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows,
+  workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
 import { stampedSplit } from "../src/band_tree.ts";
@@ -575,6 +576,7 @@ function pressesOf(r: Row): string[] {
     const p = s.press;
     const k = !p ? "" : p.kind === "fold" ? "fold:" + p.key + ":" + p.shut
       : p.kind === "view" ? "view:" + (p.agent ?? "main")
+      : p.kind === "task" ? "task:" + p.row
       : "link:" + p.href;
     if (k && out.at(-1) !== k) out.push(k);
   }
@@ -599,6 +601,42 @@ test("every row with children presses its fold, under its key, with its " +
     ["⊞"]);
   const done = treeOfCase("01-mixed@220", {}, NOW - 3600);
   assert.deepEqual(pressesOf(done.at(-1)!), ["fold:main/done:true"]);
+});
+
+test("each open shell's and Monitor's label toasts what the band knows " +
+  "of it, the whole of the label pressing", () => {
+  const doc = withBackground(corpusAgents("02-parked@220", ""), NOW);
+  const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
+  const rows = treeRows(ST, { session: null, main: blank("main"),
+    turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
+    mainProgress: "", turnPhase: "🟢", agents: {
+      tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW,
+      turnStart: null, mainBackground: doc.main_background as BgTask[] },
+    cap: 10 }, []);
+  const bg = (doc.main_background as BgTask[]).map((b) => b.id);
+  const tail = rows.slice(-bg.length);
+  assert.deepEqual(tail.map(pressesOf), bg.map((id) => ["task:" + id]));
+  // Every span after the tree line presses it, the kind glyph included.
+  for (const r of tail) {
+    assert.ok(r.label.slice(1).every((p) => p.spans.every((s) =>
+      s.press?.kind === "task" && s.press.at === undefined)));
+  }
+  const texts = tail.map((r) => {
+    const p = r.label[1].spans[0].press;
+    return p?.kind === "task" ? p.text : "";
+  });
+  assert.deepEqual(texts, [
+    "💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests",
+    "📡 Monitor · 🟢 running · ⌛ 25m · Watch PR #38 for comments"]);
+});
+
+test("a task's toast leaves out ⌛ where its start is not known", () => {
+  const b = (kind: string, start: number | null): BgTask =>
+    ({ id: "x", kind, label: "", start });
+  assert.equal(bgText(ST, b("bash", null), "shell", NOW),
+    "💻 shell · 🟢 running · shell");
+  assert.equal(bgText(ST, b("monitor", NOW - 5), "monitor", NOW),
+    "📡 Monitor · 🟢 running · ⌛ 5s · monitor");
 });
 
 test("the presses change nothing drawn", () => {
