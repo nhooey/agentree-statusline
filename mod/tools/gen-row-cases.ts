@@ -115,7 +115,7 @@ export function inZone<T>(fig: Dict, f: () => T): T {
 
 export type BandCase = { doc: string; cols: number; hide: string[];
   phase: Phase; rate: number | null; place?: Place; places?: RowsPlace;
-  agents?: string; progress?: string; cap?: number };
+  agents?: string; progress?: string; cap?: number; background?: boolean };
 
 /** The panel's corpus, tests/fixtures/panel/corpus.json: its cases' tasks
  * are the band's tree's subagents (corpusAgents). */
@@ -148,12 +148,35 @@ export function drawAccount(st: Settings, fig: Dict, c: AccountCase):
     c.indent));
 }
 
+/** `doc`, a document's `agents`, with open background tasks the tree draws
+ * under their threads: a shell and a Monitor of the main thread's, and
+ * for each task its usage's, each labelled and opened a while before
+ * `now`. */
+export function withBackground(doc: Dict, now: number): Dict {
+  const label = (kind: string): string =>
+    kind === "bash" ? "Build the docs site" : "Watch the CI checks";
+  return { ...doc, main_background: [
+    { id: "msh", kind: "bash", label: "Run the plugin tests",
+      start: now - 372 },
+    { id: "mmon", kind: "monitor", label: "Watch PR #38 for comments",
+      start: now - 1500 }],
+  tasks: (doc.tasks as Dict[]).map((t) => ({ ...t,
+    bgTasks: ((t.usage as Dict).background as [string, string][] ?? [])
+      .map(([id, kind]) => ({ id, kind, label: label(kind),
+        start: now - 125 })) })) };
+}
+
 /** The band case's rows: with `agents` or `progress`, the document's
- * `agents` from the corpus (corpusAgents), drawn in the tree under `cap`. */
+ * `agents` from the corpus (corpusAgents), drawn in the tree under `cap`,
+ * with open background tasks under `background` (withBackground). */
 export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
+  const agents = (): Dict => {
+    const doc = corpusAgents(c.agents ?? "", c.progress ?? "");
+    return c.background
+      ? withBackground(doc, (fig0.clock as Dict).now as number) : doc;
+  };
   const fig = c.agents !== undefined || c.progress !== undefined
-    ? { ...fig0, agents: corpusAgents(c.agents ?? "", c.progress ?? "") }
-    : fig0;
+    ? { ...fig0, agents: agents() } : fig0;
   return inZone(fig, () => bandLines(st, fig, c.cols, c.hide,
     { rate: c.rate, phase: c.phase, place: c.place, places: c.places,
       cap: c.cap }));
@@ -162,7 +185,8 @@ export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
 /** The band's tree with subagents, on TREE_DOC: each case of the corpus
  * that has some, at each width, with the main thread's progress update;
  * one under a cap that folds siblings into `… N more`; one that hides the
- * progress updates; and once between turns. */
+ * progress updates; once between turns; and with open background shells
+ * and Monitors under the main thread and the agents that started them. */
 function treeCases(): BandCase[] {
   const base = { doc: TREE_DOC, hide: [] as string[], phase: "running" as
     Phase, rate: RATE, place: "above" as Place, places: PLACES,
@@ -176,6 +200,10 @@ function treeCases(): BandCase[] {
   out.push({ ...base, cols: 200, agents: TREE_AGENTS[1],
     hide: ["*.chat.progress"] });
   out.push({ ...base, cols: 200, agents: TREE_AGENTS[1], phase: "done" });
+  for (const cols of [236, 120]) {
+    out.push({ ...base, cols, agents: TREE_AGENTS[2], cap: 10,
+      background: true });
+  }
   return out;
 }
 

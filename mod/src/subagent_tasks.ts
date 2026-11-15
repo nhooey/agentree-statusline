@@ -10,9 +10,9 @@
 // Pure: the reads are the hooks' (hooks/subagents.ts), and `now` comes in.
 import {
   W_CACHE_READ, W_CACHE_WRITE, _usd, closeAgentSpan, ETA_LINE,
-  openToolSpans, threadClock,
+  backgroundTasks, openToolSpans, threadClock,
 } from "./claude_records.ts";
-import type { AgentFold, Span } from "./claude_records.ts";
+import type { AgentFold, BgTask, Span } from "./claude_records.ts";
 import { _naiveTimestamp, _windowStarts } from "./claude_calib.ts";
 import type { Calib, Snapshot } from "./claude_calib.ts";
 import { isDict, pyGet, pyTruthy } from "./py.ts";
@@ -186,14 +186,16 @@ export function inboxTargets(
   return [targets, firsts.length ? Math.min(...firsts) : null];
 }
 
-/** One prepared task and its latest progress update, as the band's
- * document carries them (`agents.tasks`). */
+/** One prepared task, its latest progress update and the background
+ * shells and Monitors it has open, in the order they opened (none where
+ * absent), as the band's document carries them (`agents.tasks`). */
 export type TreeTask = {
   readonly task: Dict;
   readonly usage: Dict;
   readonly meta: Dict;
   readonly shares: { sess: number | null; week: number | null };
   readonly progress: string;
+  readonly bgTasks?: readonly BgTask[];
 };
 
 /** The task the renderer reads, from the agent list and the fold: its id,
@@ -254,7 +256,9 @@ export function treeTasks(agents: readonly AgentInput[], now: number,
       meta.parentAgentId = a.listed.parentId;
     }
     return { task, usage: filled, meta,
-      shares: agentShares(filled, calib, snap), progress: a.progress };
+      shares: agentShares(filled, calib, snap), progress: a.progress,
+      bgTasks: a.fold ? backgroundTasks(a.fold.background, a.fold.bgInfo)
+        : [] };
   });
 }
 

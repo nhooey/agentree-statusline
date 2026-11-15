@@ -16,6 +16,7 @@ import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";
 import { githubRepo } from "../src/github.ts";
 import { foldAgentBytes, newAgentFold } from "../src/claude_records.ts";
+import type { BgTask } from "../src/claude_records.ts";
 import {
   agentClock, agentShares, agentUsageOf, inboxTargets, progressOf,
   taskStatus, treeTasks,
@@ -30,7 +31,7 @@ import { draw } from "../src/grid.ts";
 import type { Row } from "../src/grid.ts";
 import { bandRows, fixedKeys, treeOf } from "../src/band.ts";
 import type { BandOpts, Live, Phase } from "../src/band.ts";
-import { corpusAgents } from "../tools/gen-row-cases.ts";
+import { corpusAgents, withBackground } from "../tools/gen-row-cases.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -379,6 +380,87 @@ test("a waiting agent's progress update stays drawn", () => {
   const keys = fixedKeys(ST, 200, []);
   const lines = rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
   assert.ok(lines.some((l) => /🔍🟡 Yarrow  Held/u.test(l)));
+});
+
+/** The tree under 🧵 main over corpus case `id`'s agents with open
+ * background tasks (withBackground: a shell and a Monitor of the main
+ * thread's, and each agent's usage's), `edit` changing the document
+ * first, as plain lines at 200 columns. */
+function bgTree(id: string, over: Partial<TreeInput> = {},
+  hide: string[] = [], turnStart: number | null = null,
+  edit: (doc: Dict) => Dict = (d) => d): string[] {
+  const doc = edit(withBackground(corpusAgents(id, ""), NOW));
+  const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
+  const rows = treeRows(ST, { session: null, main: blank("main"),
+    turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
+    mainProgress: "", turnPhase: "🟢", agents: {
+      tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart,
+      mainBackground: doc.main_background as BgTask[] }, cap: 10, ...over },
+  hide);
+  const keys = fixedKeys(ST, 200, hide);
+  return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, hide)))
+    .trimEnd());
+}
+
+test("each open shell and Monitor is a leaf under the thread that " +
+  "started it, after its agents, with its label and how long it has run",
+() => {
+  const lines = bgTree("02-parked@220");
+  const at = (text: string) => lines.findIndex((l) => l.includes(text));
+  // Under 🧵 main: 🎤 first, its agents, then its shell and its Monitor.
+  assert.match(lines[1], /^├─ 🎤🟢 turn/u);
+  assert.match(lines.at(-2)!, /^├─ 💻🟢 Run the plugin tests +⌛6\.2m$/u);
+  assert.match(lines.at(-1)!, /^╰─ 📡🟢 Watch PR #38 for comments +⌛ 25m$/u);
+  assert.ok(at("Peony") < at("Run the plugin tests"));
+  // Under Poppy, its Monitor and its shell, in the order they opened.
+  const poppy = at("Poppy");
+  assert.match(lines[poppy + 1], /^│  ├─ 📡🟢 Watch the CI checks +⌛2\.1m$/u);
+  assert.match(lines[poppy + 2], /^│  ╰─ 💻🟢 Build the docs site +⌛2\.1m$/u);
+  // Before ✅ N done, which stays last under 🧵.
+  const done = bgTree("01-mixed@220", {}, [], NOW - 3600);
+  assert.match(done.at(-2)!, /📡🟢 Watch PR #38/u);
+  assert.match(done.at(-1)!, /✅ 4 done/u);
+});
+
+test("a shell with no label draws its kind, and one with no start no ⌛",
+() => {
+  const lines = bgTree("02-parked@220", {}, [], null, (d) => ({ ...d,
+    main_background: [{ id: "a", kind: "bash", label: " ", start: null },
+      { id: "b", kind: "monitor", label: "", start: NOW - 5 }] }));
+  assert.match(lines.at(-2)!, /^├─ 💻🟢 shell$/u);
+  assert.match(lines.at(-1)!, /^╰─ 📡🟢 monitor +⌛  5s$/u);
+});
+
+test("shells and Monitors count against no cap", () => {
+  const capped = bgTree("02-parked@220", { cap: 2 });
+  assert.ok(capped.some((l) => /… \d+ more/u.test(l)));
+  assert.ok(capped.some((l) => l.includes("Run the plugin tests")));
+  assert.ok(capped.some((l) => l.includes("Watch PR #38")));
+  const none = bgTree("02-parked@220", { cap: 0 });
+  assert.equal(none.filter((l) => /[💻📡]🟢/u.test(l)).length, 2);
+});
+
+test("an opened thread leaves its 💻 📡 counts to its rows, and a folded " +
+  "one hides the rows and counts them", () => {
+  const opened = bgTree("02-parked@220");
+  const row = (lines: string[], name: string) =>
+    lines.find((l) => l.includes(name))!;
+  assert.match(row(opened, "Pine"), /├⊟ 🔩🟡 Pine/u);
+  assert.match(row(opened, "Poppy"), /├⊟ 🔩🟡 Poppy/u);
+  assert.match(row(opened, "main"), /^⊟ 🧵🟢 main/u);
+  const folded = bgTree("02-parked@220", { folds: { p1: true, p2: true } });
+  assert.match(row(folded, "Pine"), /├⊞ 🔩🟡 💻1 Pine/u);
+  assert.match(row(folded, "Poppy"), /├⊞ 🔩🟡 💻1 📡1 Poppy/u);
+  assert.ok(!folded.some((l) => l.includes("Build the docs site")));
+  const main = bgTree("02-parked@220", { folds: { main: true } });
+  assert.deepEqual(main, [main[0]]);
+  assert.match(main[0], /^⊞ 🧵🟢 💻1 📡1 main/u);
+});
+
+test("the agent hide path hides the shells and Monitors with the agents",
+() => {
+  const lines = bgTree("02-parked@220", {}, ["agent"]);
+  assert.ok(!lines.some((l) => /[💻📡]🟢/u.test(l)));
 });
 
 /** The band's tree over the baseline status document, its turn opened an

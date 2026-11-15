@@ -10,7 +10,9 @@
 // torn.  A reader takes the newer slot that parses and still fits the
 // file, and else the other.
 import type { AgentFold, AgentRaw } from "./claude_records.ts";
-import { newAgentFold, pyJoin } from "./claude_records.ts";
+import {
+  bgInfoJson, bgInfoOf, newAgentFold, pyJoin,
+} from "./claude_records.ts";
 import { sha256Hex } from "./sha256.ts";
 import { stateName } from "./state.ts";
 import { STATE_KINDS } from "./state_spec.ts";
@@ -55,6 +57,7 @@ export function agentFoldText(f: AgentFold, seq: number, tail: string):
     added: f.added, removed: f.removed, compactions: f.compactions,
     last_seen: f.lastSeen, api_error: f.apiError, cwd: f.cwd,
     blocks: f.blocks, background: [...f.background], effort: f.effort,
+    bg_info: bgInfoJson(f.bgInfo),
   });
 }
 
@@ -82,6 +85,7 @@ export function agentFoldOf(text: string | null):
       compactions: o.compactions, lastSeen: o.last_seen,
       apiError: Boolean(o.api_error), cwd: o.cwd, blocks: o.blocks,
       background: new Map(o.background), effort: o.effort,
+      bgInfo: bgInfoOf(o.bg_info),
       keys: new Set(recs.map((r) => r[7])) };
     return [o.seq, o.tail, f];
   } catch {

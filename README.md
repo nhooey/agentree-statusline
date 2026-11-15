@@ -13,7 +13,9 @@ sessions at a glance.
 Drawn by the `usage-band` mod in [`mod/`](mod/README.md), one scope a row.
 Above the prompt, the session's threads as a tree: 🎮 the session at its
 root, then 🧵 the main thread with, under it, 🎤 its turn while it runs
-and the subagents it started; under Claude Code's own footer line, the 💳
+and the subagents it started, and under each thread the background
+shells (💻) and Monitors (📡) it has open; under Claude Code's own footer
+line, the 💳
 account, just over the agent panel, whose rows Claude Code draws itself.
 Here the two places are drawn together, the prompt between them left out:
 
@@ -233,6 +235,12 @@ different on one readout, the table says so.
 Both are drawn while the agent runs and while it is paused, and not once it
 has failed or been killed. Paused, the state mark after 🟡 still says which
 one it waits on; the count says how many.
+
+In the band's tree each open shell and Monitor is also a row of its own,
+under the thread that started it (🧵 main or the agent), after its
+agents: 💻 or 📡, the call's description (else its command's first line)
+and ⌛ how long it has run. It leaves when the thread hears its end. The
+counts then stand only on a folded row, whose shells' rows are hidden.
 
 ### Agent kind
 

@@ -536,6 +536,36 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(logOf(w)).toContain('right-edge 2 (derived)')
 })
 
+test('the main thread\'s open background shell is in the document and ' +
+  'drawn under 🧵, labelled by its call', async ($, on) => {
+  const w = world(on)
+  const path = sessionFile('-shell')
+  place(w, STATUS, path)
+  const stamp = '2026-08-16T01:44:00Z'
+  const call = { type: 'assistant', timestamp: stamp, message: {
+    id: 'req-bg', content: [{ type: 'tool_use', id: 'tu-bg', name: 'Bash',
+      input: { command: 'make docs', description: 'Build the docs',
+        run_in_background: true } }] } }
+  const result = { type: 'user', timestamp: stamp, message: { content: [
+    { type: 'tool_result', tool_use_id: 'tu-bg' }] },
+  toolUseResult: { backgroundTaskId: 'bsh1' } }
+  const extra = encoder.encode([call, result]
+    .map((r) => JSON.stringify(r) + '\n').join(''))
+  const was = w.files.get(path)!
+  const bytes = new Uint8Array(was.length + extra.length)
+  bytes.set(was)
+  bytes.set(extra, was.length)
+  w.files.set(path, bytes)
+  await start($, w, 'terminal', path)
+  expect((lastDoc(w).agents as Dict).main_background).toEqual([
+    { id: 'bsh1', kind: 'bash', label: 'Build the docs',
+      start: Date.parse(stamp) / 1000 }])
+  const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
+  const rows = (await drawnRows(ui.above)).map((r) => r.text)
+  expect(rows.some((r) => /^ *   [├╰]─ 💻🟢 Build the docs /u.test(r)))
+    .toBe(true)
+})
+
 /** Each mark in `row`, a drawn row standing `from` columns in from the
  * terminal's left edge, by the terminal column it starts on; a mark drawn
  * twice is left out. */

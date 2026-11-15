@@ -90,6 +90,12 @@ const RUN: Record<string, (c: Case) => unknown> = {
     for (const r of cr._records(c.args[0])) cr.scanBackground(r, open);
     return [...open];
   },
+  scan_background_info: (c) => {
+    const open = new Map<string, string>();
+    const info: cr.BgInfo = new Map();
+    for (const r of cr._records(c.args[0])) cr.scanBackground(r, open, info);
+    return [[...open], cr.bgInfoJson(info)];
+  },
   scan_agent_end: (c) => {
     const ends = new Map<string, number>();
     for (const r of cr._records(c.args[0])) cr.scanAgentEnd(r, ends);

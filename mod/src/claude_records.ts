@@ -802,8 +802,73 @@ export function notificationText(r: Rec): string {
 
 const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
 
+/** What a thread knows of its background tasks beyond their kind, for the
+ * band's tree, as [label, start]: by task id, of each task scanBackground's
+ * `open` holds, its label and the epoch it opened, null where the record
+ * that opened it had no stamp; and by tool-use id, of each Bash or Monitor
+ * call still waiting on its result, its label and a null start.  A key
+ * `open` does not hold is a call's. */
+export type BgInfo = Map<string, [string, number | null]>;
+
+/** An open background task as the band's tree draws it: its task id, its
+ * kind, "bash" or "monitor", its label and the epoch it opened, null
+ * where that is not known. */
+export type BgTask = {
+  readonly id: string;
+  readonly kind: string;
+  readonly label: string;
+  readonly start: number | null;
+};
+
+/** The most characters of a call's text a background task keeps as its
+ * label. */
+export const BG_LABEL_MAX = 120;
+
+/** The tools whose calls can open a background task. */
+const BG_TOOLS: ReadonlySet<unknown> = new Set(["Bash", "Monitor"]);
+
+/** A background task's label off its call's input: its `description`,
+ * else its `command`, each cut to its first line with text and to
+ * BG_LABEL_MAX characters; "" for neither. */
+export function backgroundLabel(input: unknown): string {
+  for (const k of ["description", "command"]) {
+    const v = pyGet(input, k);
+    if (typeof v !== "string") continue;
+    const line = v.split("\n").map(pyStrip).find((l) => l) ?? "";
+    if (line) return Array.from(line).slice(0, BG_LABEL_MAX).join("");
+  }
+  return "";
+}
+
+/** The open tasks of `open`, in the order they opened, each with what
+ * `info` knows of it. */
+export function backgroundTasks(open: ReadonlyMap<string, string>,
+  info: BgInfo): BgTask[] {
+  return [...open].map(([id, kind]) => {
+    const got = info.get(id);
+    return { id, kind, label: got?.[0] ?? "", start: got?.[1] ?? null };
+  });
+}
+
+/** `info` as a save writes it: [key, label, start] for each entry. */
+export function bgInfoJson(info: BgInfo): [string, string, number | null][] {
+  return [...info].map(([k, [label, t]]) => [k, label, t]);
+}
+
+/** A BgInfo read back from bgInfoJson's entries. */
+export function bgInfoOf(xs: readonly [string, string, number | null][]):
+  BgInfo {
+  return new Map(xs.map(([k, label, t]) => [k, [label, t]]));
+}
+
+/** A copy of `info` that folding on leaves `info` as it was. */
+export function copyBgInfo(info: BgInfo): BgInfo {
+  return new Map([...info].map(([k, [l, t]]) => [k, [l, t]]));
+}
+
 /** Fold one record into `open`, {task id: "bash" or "monitor"}, the
- * background tasks a thread started and has not heard the end of.
+ * background tasks a thread started and has not heard the end of, and
+ * into `info`, where given, their labels and starts (BgInfo).
  *
  * These are what keep an agent that ended its turn alive while it waits:
  * Claude Code parks it on `bash:<id>` or `monitor:<id>` and marks it
@@ -812,26 +877,61 @@ const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
  * background, `taskId` beside `timeoutMs` for a Monitor.  It closes on a
  * `<task-notification>` for that id that carries a `<status>`, or on the
  * thread ending it itself: TaskStop's result, or TaskOutput reading it
- * finished. */
-export function scanBackground(r: Rec, open: Map<string, string>): void {
+ * finished.  Its label is its call's (backgroundLabel), kept from the
+ * Bash or Monitor call until the call's result, which opens the task or
+ * lets the call go. */
+export function scanBackground(r: Rec, open: Map<string, string>,
+  info: BgInfo | null = null): void {
+  const content = pyDig(r, "message", "content");
+  const calls: string[] = [];
+  if (info && Array.isArray(content)) {
+    for (const b of content) {
+      if (!isDict(b)) continue;
+      const type = pyGet(b, "type");
+      if (type === "tool_use" && BG_TOOLS.has(pyGet(b, "name")) &&
+        pyTruthy(pyGet(b, "id"))) {
+        info.set(pyStr(pyGet(b, "id")),
+          [backgroundLabel(pyGet(b, "input")), null]);
+      } else if (type === "tool_result" &&
+        pyTruthy(pyGet(b, "tool_use_id"))) {
+        calls.push(pyStr(pyGet(b, "tool_use_id")));
+      }
+    }
+  }
+  const call = (c: string): boolean => info!.has(c) && !open.has(c);
+  const opened = (id: string, kind: string): void => {
+    if (info) {
+      const c = calls.find(call);
+      info.set(id, [c === undefined ? "" : info.get(c)![0],
+        tsEpoch(pyOr(pyGet(r, "timestamp"), ""))]);
+    }
+    open.set(id, kind);
+  };
+  const closed = (id: string): void => {
+    open.delete(id);
+    info?.delete(id);
+  };
   const res = pyGet(r, "toolUseResult");
   if (isDict(res)) {
     if (pyTruthy(pyGet(res, "backgroundTaskId"))) {
-      open.set(pyStr(pyGet(res, "backgroundTaskId")), "bash");
+      opened(pyStr(pyGet(res, "backgroundTaskId")), "bash");
     } else if (pyTruthy(pyGet(res, "taskId")) && pyHas(res, "timeoutMs")) {
-      open.set(pyStr(pyGet(res, "taskId")), "monitor");
+      opened(pyStr(pyGet(res, "taskId")), "monitor");
     } else if (pyTruthy(pyGet(res, "task_id")) && pyHas(res, "message")) {
-      open.delete(pyStr(pyGet(res, "task_id")));
+      closed(pyStr(pyGet(res, "task_id")));
     }
     const task = pyGet(res, "task");
     if (isDict(task) && TASK_ENDED.has(pyGet(task, "status"))) {
-      open.delete(pyStr(pyOr(pyGet(task, "task_id"), "")));
+      closed(pyStr(pyOr(pyGet(task, "task_id"), "")));
     }
+  }
+  if (info) {
+    for (const c of calls) if (call(c)) info.delete(c);
   }
   const text = notificationText(r);
   if (text && text.includes("<status>")) {
     const m = TASK_ID.exec(text);
-    if (m) open.delete(pyStrip(m[1]));
+    if (m) closed(pyStrip(m[1]));
   }
 }
 
@@ -1577,8 +1677,9 @@ export function _readAgentBytes(data: Uint8Array): AgentReading {
  * agentRecordsOf reads, it keeps what the Python's agent panel reads
  * (agent_usage_of): the compactions, the last stamp, the API-error flag,
  * the cwd, the block count, the background tasks and the effort of the
- * last request it bills.  `keys` is the request ids in `recs`, for that
- * effort; it is not saved, and is rebuilt on a load. */
+ * last request it bills; and what the band's tree reads, the background
+ * tasks' labels and starts (`bgInfo`).  `keys` is the request ids in
+ * `recs`, for that effort; it is not saved, and is rebuilt on a load. */
 export interface AgentFold {
   pid: unknown;
   etaState: EtaState;
@@ -1598,6 +1699,7 @@ export interface AgentFold {
   cwd: string;
   blocks: number;
   readonly background: Map<string, string>;
+  readonly bgInfo: BgInfo;
   effort: unknown;
   readonly keys: Set<unknown>;
 }
@@ -1607,7 +1709,7 @@ export function newAgentFold(): AgentFold {
     work: [], pending: new Map(), tools: [], waiting: [], recs: [],
     wrote: new Set(), added: 0, removed: 0, pos: 0, compactions: 0,
     lastSeen: null, apiError: false, cwd: "", blocks: 0,
-    background: new Map(), effort: "", keys: new Set() };
+    background: new Map(), bgInfo: new Map(), effort: "", keys: new Set() };
 }
 
 /** A copy of `fold` that folds on apart from it. */
@@ -1618,7 +1720,8 @@ export function copyAgentFold(fold: AgentFold): AgentFold {
   work: fold.work.slice(), pending: new Map(fold.pending),
   tools: fold.tools.slice(), waiting: fold.waiting.slice(),
   recs: fold.recs.slice(), wrote: new Set(fold.wrote),
-  background: new Map(fold.background), keys: new Set(fold.keys) };
+  background: new Map(fold.background), bgInfo: copyBgInfo(fold.bgInfo),
+  keys: new Set(fold.keys) };
 }
 
 /** Fold `data`, the file's bytes from `fold.pos` on, into `fold`.  Short
@@ -1661,7 +1764,7 @@ export function foldAgentRecord(fold: AgentFold, length: number,
   liveEta(r, fold.etaState);
   agentSpan(r, fold.spanState, fold.work);
   scanToolSpans(r, fold.pending, fold.tools, fold.waiting);
-  scanBackground(r, fold.background);
+  scanBackground(r, fold.background, fold.bgInfo);
   const [a, d] = diffLines(r, fold.wrote);
   fold.added += a;
   fold.removed += d;
@@ -2072,6 +2175,8 @@ export interface TranscriptFold {
   queued: number;
   compactions: number;
   background: Map<string, string>;
+  /** scanBackground's labels and starts, for the band's tree. */
+  bgInfo: BgInfo;
   idleAt: number;
   lastSeen: number;
   /** The turn opened last, for its promptId alone. */
@@ -2092,7 +2197,8 @@ export function newTranscriptFold(): TranscriptFold {
     firstCtx: 0, ctxEst: false, userTs: "", userText: "", asstTs: "",
     asstText: "", spans: [], tools: [], blocked: [], pending: new Map(),
     first: null, openAt: null, prev: null, etaState: newEtaState(),
-    queued: 0, compactions: 0, background: new Map(), idleAt: 0.0,
+    queued: 0, compactions: 0, background: new Map(), bgInfo: new Map(),
+    idleAt: 0.0,
     lastSeen: 0.0, opened: { pid: "", tidx: null }, wrote: new Set(),
     added: 0, removed: 0, ends: new Map(), gate: newTurnGate() };
 }
@@ -2114,7 +2220,8 @@ export function copyTranscriptFold(f: TranscriptFold): TranscriptFold {
     blocked: f.blocked.slice(), pending: new Map(f.pending),
     etaState: [f.etaState[0].slice(), f.etaState[1], f.etaState[2],
       f.etaState[3]],
-    background: new Map(f.background), opened: { ...f.opened },
+    background: new Map(f.background), bgInfo: copyBgInfo(f.bgInfo),
+    opened: { ...f.opened },
     wrote: new Set(f.wrote), ends: new Map(f.ends),
     gate: [f.gate[0], f.gate[1], f.gate[2], f.gate[3]] };
 }
@@ -2273,7 +2380,7 @@ function foldClock(f: TranscriptFold, r: Rec, opens: boolean): void {
   _stampTurnId(f.opened, r);
   if (pyGet(r, "isSidechain") !== true) {
     liveEta(r, f.etaState, opens);
-    scanBackground(r, f.background);
+    scanBackground(r, f.background, f.bgInfo);
   }
   const t = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
   if (t === null) return;

@@ -27,7 +27,9 @@ import { pyFloat } from "./sources.ts";
 import {
   W_CACHE_READ, W_CACHE_WRITE, etaFinish, tsEpoch,
 } from "./claude_records.ts";
-import type { Git, Payload, Transcript, Turn } from "./claude_records.ts";
+import type {
+  BgTask, Git, Payload, Transcript, Turn,
+} from "./claude_records.ts";
 import type { Accounting } from "./claude_calib.ts";
 import {
   ETA_LIVE_S, inheritEta, mainDoing, projectName,
@@ -507,7 +509,8 @@ export function treeOf(st: Settings, fig: Dict, rows: BandRows,
     turnPrompt: tr.user_text,
     agents: shown ? { tasks: (doc.tasks ?? []) as TreeTask[],
       limits: decodeLimits(fig.limits), now,
-      turnStart: running ? tr.turn_s || null : null } : null,
+      turnStart: running ? tr.turn_s || null : null,
+      mainBackground: (doc.main_background ?? []) as BgTask[] } : null,
     cap: opts.cap ?? SUBAGENT_ROWS,
     folds: opts.folds,
     repo: typeof fig.github === "string" ? fig.github : null,

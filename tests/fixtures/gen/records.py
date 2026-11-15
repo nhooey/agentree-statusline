@@ -479,6 +479,40 @@ def handmade():
         result(31, "x", toolUseResult={"task": {"task_id": "m3",
                                                 "status": "running"}}),
         result(32, "x", toolUseResult={"backgroundTaskId": ""}),
+        # The calls whose labels the band's tree draws: a description, a
+        # command's first line with text, a long one cut, an input that is
+        # no dict, a foreground call let go, and a call still waiting.
+        {"type": "assistant", "timestamp": stamp(40), "message": {
+            "content": [
+                {"type": "tool_use", "id": "c1", "name": "Bash", "input": {
+                    "command": "npm test", "description": "Run the tests\nx",
+                    "run_in_background": True}},
+                {"type": "tool_use", "id": "c2", "name": "Monitor",
+                 "input": {"command": "  \n  tail -f log  \nmore",
+                           "description": " "}},
+                {"type": "tool_use", "id": "c3", "name": "Bash",
+                 "input": {"command": "ls"}},
+                {"type": "tool_use", "id": "c4", "name": "Read",
+                 "input": {"description": "not a background tool"}},
+                {"type": "tool_use", "id": "c5", "name": "Bash",
+                 "input": {"command": "é" * 130}},
+                {"type": "tool_use", "id": "c6", "name": "Monitor",
+                 "input": {"command": "still waiting"}},
+                {"type": "tool_use", "id": "c7", "name": "Bash",
+                 "input": "no dict"},
+                {"type": "tool_use", "name": "Bash", "input": {}},
+                {"type": "tool_use", "id": "c8", "name": ["Bash"]},
+                "no block"]}},
+        result(41, "c1", toolUseResult={"backgroundTaskId": "b4"}),
+        result(42, "c2", toolUseResult={"taskId": "m4", "timeoutMs": 5}),
+        result(43, "c3", "c4", toolUseResult={"stdout": "x"}),
+        {"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "zz"}]},
+         "toolUseResult": {"backgroundTaskId": "b5"}},
+        result(45, "c5", toolUseResult={"backgroundTaskId": "b6"}),
+        result(46, "c7", toolUseResult={"backgroundTaskId": "b7"}),
+        note(47, "<task-notification><task-id>b7</task-id>"
+                 "<status>completed</status></task-notification>"),
     ])
     put("queue.jsonl", [
         queue(0, "enqueue", "typed while busy"),
@@ -969,6 +1003,11 @@ def section_threads(files):
             cr.scan_background(r, open_)
             cr.scan_agent_end(r, ends)
         s.raw("scan_background", [p], list(open_.items()))
+        open_, info = {}, {}
+        for r in recs:
+            cr.scan_background(r, open_, info)
+        s.raw("scan_background_info", [p], [
+            list(open_.items()), [[k] + v for k, v in info.items()]])
         s.raw("scan_agent_end", [p], list(ends.items()))
 
         state = cr.new_eta_state()
