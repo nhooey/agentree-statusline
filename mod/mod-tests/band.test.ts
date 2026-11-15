@@ -1602,6 +1602,96 @@ test('a turn a task notification follows still gets its receipt and tag',
     expect(logOf(w)).not.toContain('no receipt')
   })
 
+/** The receipt an answer block of `text` draws under itself: the rows of
+ * the column Box under the engine's row, none where it draws none. */
+async function underAnswerRows($: any, text: string) {
+  const tree = await (await $.ui.mount({ plugin: 'usage-band',
+    surface: 'terminal', component: 'AssistantMessage',
+    props: { text, isFirstOfReply: true },
+    viewport: { columns: COLS, rows: 40 } })).drawn() as Drawn
+  const box = (tree?.children ?? []).find((c): c is Drawn =>
+    typeof c !== 'string' && c.type === 'Box' && c.props?.marginTop === 1)
+  return box ? drawnRows({ drawn: async () => box }) : []
+}
+
+test('a turn a task notification opens while an agent still runs, which ' +
+  'Claude Code closes with no line, gets its receipt under its answer',
+  async ($, on) => {
+    const w = world(on)
+    resumed(w)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await $.ui.mount({ plugin: 'usage-band', surface: 'terminal',
+      component: 'AbovePrompt', props: BAND })
+    // The turn before ended waiting on one background agent, and the
+    // notification opens the next with that agent still running: Claude
+    // Code drops the second turn_duration, `Waiting for 1 background
+    // agent` again, and draws no TurnDuration for it.
+    const NOTICE = '<task-notification>\n<task-id>a1</task-id>\n' +
+      '<status>completed</status>\n</task-notification>'
+    const WAKE_MS = 7_000
+    grow(w, { durationMs: 9_000, isSidechain: false,
+      pendingBackgroundAgentCount: 1, subtype: 'turn_duration',
+      timestamp: '2026-08-16T02:19:00Z', type: 'system' },
+    { message: { content: NOTICE }, origin: { kind: 'task-notification' },
+      promptId: 'p-wake', promptSource: 'system',
+      timestamp: '2026-08-16T02:20:00Z', type: 'user',
+      userType: 'external' })
+    await $.turn.start({ text: NOTICE, turnId: 't-wake' })
+    await settle()
+    await $.turn.complete({ answer: 'Still running.', durationMs: WAKE_MS,
+      isAborted: false, turnId: 't-wake', reason: 'answer' })
+    await settle()
+    await w.clock.settle()
+    grow(w, { ...ANSWER, message: { ...ANSWER.message, id: 'req-w1',
+      content: [{ text: 'Still running.', type: 'text' }] },
+    requestId: 'req-w1', timestamp: '2026-08-16T02:20:06Z' },
+    { durationMs: WAKE_MS, isSidechain: false,
+      pendingBackgroundAgentCount: 1, subtype: 'turn_duration',
+      timestamp: '2026-08-16T02:20:07Z', type: 'system' })
+    await until(w, 5_000)
+    expect(stamped(w)).toBe(true)
+    await w.clock.advance(1_000)
+    const filed = w.store.get('receipt-at:' + WAKE_MS) as
+      { rows: { spans: Span[] }[]; under?: string }
+    expect(filed.under).toBe('answer')
+    const want = filed.rows.map((r) => r.spans)
+    expect(text(want.at(-1)!)).toContain('p-wake')
+    // Under the answer's last block, whitespace as the row draws it.
+    expect(await underAnswerRows($, '  Still   running. ')).toEqual(
+      expected(want))
+    expect(await underAnswerRows($, 'Done.')).toEqual([])
+    // A closing line drawn after all, as the ctrl+o transcript draws one,
+    // leaves the receipt to the answer.
+    await blankClosing($, 'Worked', WAKE_MS)
+    await w.clock.advance(5_000)
+    expect(logOf(w)).not.toContain('no receipt')
+  })
+
+test('a turn whose closing line Claude Code draws keeps its receipt there, ' +
+  'not under its answer', async ($, on) => {
+    const w = world(on)
+    resumed(w)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await $.ui.mount({ plugin: 'usage-band', surface: 'terminal',
+      component: 'AbovePrompt', props: BAND })
+    await askLive($, w, true)
+    grow(w, { durationMs: ASKED_MS, isSidechain: false,
+      subtype: 'turn_duration', timestamp: '2026-08-16T02:20:06Z',
+      type: 'system' })
+    await until(w, 5_000)
+    expect(stamped(w)).toBe(true)
+    const want = await receiptOf(w, w.clock.now() / 1000)
+    await w.clock.advance(1_000)
+    expect(await closing($, ASKED_MS)).toEqual(expected(want))
+    expect(await underAnswerRows($, 'Done.')).toEqual([])
+    expect([...w.store.keys()].some((k) => k.startsWith('receipt-answer:')))
+      .toBe(false)
+  })
+
 test('a task notification written before turn.complete does not take the receipt',
   async ($, on) => {
     const w = world(on)

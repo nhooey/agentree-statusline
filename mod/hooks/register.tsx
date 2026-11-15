@@ -9,6 +9,8 @@
 //                 take a press, and 🎮's 📦 🌿 🔀 are links (pressLine);
 //   TurnDuration  the turn's closing line: the turn's receipt, blank until
 //                 it is stamped;
+//   AssistantMessage  under the answer of a turn Claude Code closes with
+//                 no line, the turn's receipt (underAnswer);
 //   UserMessage   under a prompt typed at the composer, its turn's tag;
 //                 and a message another agent sent, folded, as that
 //                 agent's task and the message's first line.
@@ -32,6 +34,7 @@ import type { Env, Settings } from '../src/formatting.ts'
 import { hexOf } from '../src/spans.ts'
 import type { Press, Span } from '../src/spans.ts'
 import { foldShut, pruneFolds, stampedSplit } from '../src/band_tree.ts'
+import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
   ROW_NAMES, accountLine, bandRows, bandScoped, footerRuler, footerTail,
@@ -39,8 +42,8 @@ import {
 } from '../src/band.ts'
 import type { Place, RowsLive, RowsPlace } from '../src/band.ts'
 import {
-  billedNothing, newestBilled, receiptScoped, stampedOf, startTag,
-  tagsHidden, turnKey,
+  answerText, billedNothing, closingLine, newestBilled, receiptScoped,
+  stampedOf, startTag, tagsHidden, turnKey,
   withEngineDuration,
 } from '../src/receipt.ts'
 import type { TurnEnd } from '../src/receipt.ts'
@@ -49,7 +52,9 @@ import { messageBlock, messageSpans, taskOf } from '../src/agent_message.ts'
 import { sha256Hex } from '../src/sha256.ts'
 import type { Dict } from '../src/py.ts'
 import { CONFIG } from './config.ts'
-import { forgetPlaces, placesFor, steps } from './engine.ts'
+import {
+  fileSize, forgetPlaces, placesFor, readRange, steps,
+} from './engine.ts'
 import {
   drawEnd, drawNext, drawStart, ioSinceLast, ioText, noteDrawing,
 } from './profile.ts'
@@ -69,6 +74,9 @@ const generation = atom({ plugin: 'usage-band', key: 'generation' } as const, 0)
 const status = atom({ plugin: 'usage-band', key: 'status' } as const, null)
 const rate = atom({ plugin: 'usage-band', key: 'rate' } as const, null)
 const filed = atom({ plugin: 'usage-band', key: 'filed' } as const, 0)
+// Bumped by each receipt filed under its turn's answer (underAnswer), so
+// the answers draw again only then, and not on every receipt.
+const answered = atom({ plugin: 'usage-band', key: 'answered' } as const, 0)
 const clockNow = atom({ plugin: 'usage-band', key: 'now' } as const, 0)
 const held = atom({ plugin: 'usage-band', key: 'held' } as const, false)
 // Bumped by each read of the configuration files that changes the
@@ -489,9 +497,51 @@ const stamping = new Set<string>()
  * duration, which the line is drawn with and turn.complete carries. */
 const receiptAt = (durationMs: number) => 'receipt-at:' + durationMs
 
-/** A receipt as filed under receiptAt: its lines, each with its scope.
- * One filed as bare lines draws the same. */
-type FiledReceipt = { rows: { scope: string; spans: Span[] }[] }
+/** The store's key for the receipt drawn under a turn's answer, for a
+ * turn the engine closes with no line (underAnswer): the answer's text. */
+export const answerKey = (text: string) =>
+  'receipt-answer:' + sha256Hex(answerText(text)).slice(0, 32)
+
+/** A receipt as filed under receiptAt: its lines, each with its scope,
+ * and `under: "answer"` where its turn's answer draws it instead
+ * (underAnswer).  One filed as bare lines draws the same. */
+type FiledReceipt = { rows: { scope: string; spans: Span[] }[];
+  under?: 'answer' }
+
+// How much of the transcript's end underAnswer reads for the turn's
+// closing line, the previous turn's and the records between.
+const CLOSING_TAIL = 4 * 1024 * 1024
+
+/** Files `receipt` under the turn's answer as well, when the engine draws
+ * no closing line for the turn that took `durationMs` (closingLine): a
+ * turn a task notification or an agent's hand-back opened while an agent
+ * still runs.  The transcript at `path` is read every
+ * CONFIG.receiptPollMs until its turn_duration has landed, up to
+ * `deadline`.  The receipt under receiptAt is marked, so a closing line
+ * that is drawn after all (the ctrl+o transcript) draws it once. */
+async function underAnswer($: $, path: string, durationMs: number,
+  receipt: FiledReceipt, deadline: number): Promise<void> {
+  for (;;) {
+    const size = await fileSize($, path)
+    if (size === null) return
+    const from = Math.max(0, size - CLOSING_TAIL)
+    let data = await readRange($, path, from, size, size)
+    if (from > 0) data = data.subarray(data.indexOf(10) + 1)
+    const end = closingLine(_recordsOf(data), durationMs)
+    if (end) {
+      if (!end.hidden || !end.answer) return
+      await remember($, 'receipts', answerKey(end.answer), receipt)
+      await remember($, 'receipts', receiptAt(durationMs),
+        { ...receipt, under: 'answer' } satisfies FiledReceipt)
+      await update($, answered, (n) => n + 1)
+      await log($, 'receipt under the answer: no closing line for ' +
+        durationMs + 'ms')
+      return
+    }
+    if ((await $.clock.now()) >= deadline) return
+    await $.clock.sleep(CONFIG.receiptPollMs)
+  }
+}
 
 /** Stamps the receipt of the turn that opened with `prompt` (its id, ""
  * for any) into the transcript.  Claude Code writes a turn's assistant
@@ -579,6 +629,10 @@ async function stamp($: $, durationMs: number, prompt: string,
     }
     await remember($, 'receipts', receiptAt(durationMs),
       { rows } satisfies FiledReceipt)
+    // Not awaited: the band's hold on the turn's rows ends with the stamp.
+    void underAnswer($, got!.path, durationMs, { rows },
+      (await $.clock.now()) + CONFIG.receiptWaitMs)
+      .catch((err) => log($, 'no receipt under the answer', err))
   } finally {
     stamping.delete(key)
   }
@@ -972,7 +1026,8 @@ export const register: Register = on => {
       const got = (await $.store.get(receiptAt(e.props.durationMs))) as
         FiledReceipt | Span[][] | undefined
       const rows = Array.isArray(got)
-        ? got.map((spans) => ({ scope: '', spans })) : got?.rows ?? []
+        ? got.map((spans) => ({ scope: '', spans }))
+        : got?.under === 'answer' ? [] : got?.rows ?? []
       if (rows.length) {
         // A blank row above, so the receipt stands apart from the answer,
         // and one under its tag line, which goes with the
@@ -987,6 +1042,35 @@ export const register: Register = on => {
       return (
         <Box height={1}>
           <Text> </Text>
+        </Box>
+      )
+    } finally {
+      drawEnd(draw)
+    }
+  })
+
+  // A turn the engine closes with no line (underAnswer): its receipt under
+  // its answer's last block, as the closing line would draw it there, a
+  // blank row above it and one under its tag line.  Every other block is
+  // Claude Code's own.
+  on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
+    const draw = drawStart('AssistantMessage')
+    try {
+      const row = await drawNext(draw, () => next(e))
+      if (e.props.isSummary || !e.props.text.trim()) return row
+      await read($, answered)
+      await read($, configured)
+      const got = (await $.store.get(answerKey(e.props.text))) as
+        FiledReceipt | undefined
+      if (!got?.rows?.length) return row
+      const { Box, Text } = $.ui.resolve(e)
+      return (
+        <Box flexDirection="column">
+          {row}
+          <Box flexDirection="column" marginTop={1}
+            marginBottom={tagsShown(options()) ? 1 : 0}>
+            {got.rows.map((l, i) => line(Text, l.spans, 'receipt' + i))}
+          </Box>
         </Box>
       )
     } finally {
