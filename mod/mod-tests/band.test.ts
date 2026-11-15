@@ -1453,8 +1453,9 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     expect(logOf(w)).not.toContain('no receipt')
   })
 
-test('a turn that ran subagents stamps them under 🧵 on its receipt, ' +
-  'with 🎤 first and nothing to press', async ($, on) => {
+test('a turn that ran subagents stamps the ended ones under 🧵 on its ' +
+  'receipt, with 🎤 first and nothing to press, and owes the rest',
+async ($, on) => {
   const w = world(on)
   on('agent.list', () => ({ value: [
     PARENT, { ...KID, status: 'completed' }] }))
@@ -1469,21 +1470,24 @@ test('a turn that ran subagents stamps them under 🧵 on its receipt, ' +
   expect(stamped(w)).toBe(true)
   const want = await receiptOf(w, w.clock.now() / 1000)
   // 🎮 where the options stamp it, the tree's root; 🧵 under it, 🎤 🏁
-  // first under 🧵, then the parent still running, with the kid that
-  // ended, 🏁, under it; then the blank row and the 🔺🔖 tag line.
+  // first under 🧵, then the kid that ended, 🏁, under 🧵, its parent
+  // still running and left for a later receipt; then the blank row and
+  // the 🔺🔖 tag line.
   const rows = want.map((l) => text(l).slice(INSET))
   const root = STAMPED.includes('session') ? 1 : 0
   const pad = ' '.repeat(3 * root)
-  expect(rows.length).toBe(6 + root)
+  expect(rows.length).toBe(5 + root)
   if (root) expect(rows[0].startsWith(spec.E_SESSION)).toBe(true)
   expect(rows[root].startsWith((root ? '╰─ ' : '') + spec.E_THREAD +
     spec.E_PHASE_END + ' main  Done.')).toBe(true)
   expect(rows[root + 1].startsWith(pad + '├─ ' + spec.E_TURN +
     spec.E_PHASE_DONE + ' turn  ' + ASKED)).toBe(true)
-  expect(rows[root + 2].startsWith(pad + '╰─ 🔍🟢 Parent')).toBe(true)
-  expect(rows[root + 3].startsWith(pad + '   ╰─ 🔍' + spec.E_PHASE_DONE +
+  expect(rows[root + 2].startsWith(pad + '╰─ 🔍' + spec.E_PHASE_DONE +
     ' Kid')).toBe(true)
-  expect(rows[root + 4]).toBe('')
+  expect(rows[root + 3]).toBe('')
+  // The parent, still at work, is owed a row on a later receipt.
+  const owed = [...w.store].filter(([k]) => k.startsWith('receipt-owed:'))
+  expect(owed.map(([, v]) => v)).toEqual([['p1']])
   expect(await closing($, ASKED_MS)).toEqual(expected(want))
   const receipt = await $.ui.mount({ plugin: 'usage-band',
     surface: 'terminal', component: 'TurnDuration',

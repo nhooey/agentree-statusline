@@ -27,6 +27,7 @@ import {
   foldShut, groupFold, pruneFolds, treeRows, workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
+import { stampedSplit } from "../src/band_tree.ts";
 import { draw } from "../src/grid.ts";
 import type { Row } from "../src/grid.ts";
 import { bandRows, fixedKeys, treeOf } from "../src/band.ts";
@@ -643,12 +644,18 @@ test("the repository's address on GitHub is read off its remote, in each " +
 });
 
 /** The stamped tree of a corpus case, as the receipt draws it: 🧵 the
- * parent, 🎤 🏁 under it, the agents the turn opened at `turnStart` ran. */
+ * parent, 🎤 🏁 under it, the agents the turn opened at `turnStart` ran,
+ * with each agent's status as `statuses` gives it. */
 function stamped(id: string, turnStart: number | null = null,
-  over: Partial<TreeInput> = {}): string[] {
+  over: Partial<TreeInput> = {},
+  statuses: { [id: string]: string } = {}): string[] {
   return tree(id, { session: null, mainPhase: "⚫", turnPhase: "🏁",
-    stamped: true, cap: 2, ...over }, [], turnStart);
+    stamped: true, cap: 2, ...over }, [], turnStart, statuses);
 }
+
+/** 03-tree@220 with every agent completed. */
+const TREE_DONE = Object.fromEntries(
+  ["t1", "t2", "t3", "t4", "t5", "m1"].map((id) => [id, "completed"]));
 
 /** Each line's tree line: what stands before its first glyph. */
 function lines(drawn: readonly string[]): string[] {
@@ -657,7 +664,7 @@ function lines(drawn: readonly string[]): string[] {
 
 test("stamped, the tree lists every agent opened, each under the agent " +
   "that started it, with no cap, no grouped rows and no fold marks", () => {
-  const drawn = stamped("03-tree@220");
+  const drawn = stamped("03-tree@220", null, {}, TREE_DONE);
   assert.deepEqual(lines(drawn), ["", "├─ ", "├─ ", "│  ╰─ ", "├─ ",
     "│  ├─ ", "│  ╰─ ", "│     ╰─ ", "│        ╰─ ", "╰─ "]);
   assert.match(drawn[0], /^🧵⚫ main  Checking the binary/u);
@@ -665,12 +672,33 @@ test("stamped, the tree lists every agent opened, each under the agent " +
   // An ended agent keeps the agents it started, and draws 🏁.
   assert.match(drawn[2], /🏁 Gourd/u);
   assert.match(drawn[3], /🏁 Garlic/u);
-  assert.match(drawn[4], /🟢 🤏2 Trunk/u);
-  assert.match(drawn[9], /🟢 Moss/u);
+  assert.match(drawn[4], /🏁 🤏2 Trunk/u);
+  assert.match(drawn[9], /🏁 Moss/u);
   assert.ok(!drawn.some((l) => /more|done|👶🏻/u.test(l)));
   // Folds kept for the band change nothing stamped.
   assert.deepEqual(stamped("03-tree@220", null,
-    { folds: { t1: true, main: true } }), drawn);
+    { folds: { t1: true, main: true } }, TREE_DONE), drawn);
+});
+
+test("stamped, an agent still running or paused is left for a later " +
+  "receipt, and one it started that has ended hangs from the next one up",
+() => {
+  const drawn = stamped("03-tree@220");
+  assert.deepEqual(lines(drawn), ["", "├─ ", "╰─ ", "   ╰─ "]);
+  assert.ok(!drawn.some((l) => /🟢|🟡/u.test(l)));
+  // Thorn runs: Tendril, ended, stands under 🧵 with Tip under it.
+  const under = stamped("03-tree@220", null, {},
+    { t4: "completed", t5: "completed" });
+  const at = (name: string): number =>
+    under.findIndex((l) => l.includes(name));
+  assert.match(lines(under)[at("Tendril")], /^[├╰]─ $/u);
+  assert.match(lines(under)[at("Tip")], /^[│ ]  ╰─ $/u);
+  assert.equal(at("Tip"), at("Tendril") + 1);
+  assert.match(under[at("Tendril")], /🏁 Tendril/u);
+  assert.ok(!under.some((l) => /Trunk|Thorn/u.test(l)));
+  // One with a running agent under it is still at work: not stamped.
+  assert.ok(!stamped("03-tree@220", null, {}, { t3: "completed" })
+    .some((l) => l.includes("Thorn")));
 });
 
 test("stamped, the tree holds only the agents the turn ran, and 🏁 on " +
@@ -683,9 +711,36 @@ test("stamped, the tree holds only the agents the turn ran, and 🏁 on " +
   // Started, or last seen, since the turn opened.
   const turn = stamped("01-mixed@220", 1786845500);
   assert.ok(!turn.some((l) => l.includes("Daisy") || l.includes("Fern")));
-  for (const name of ["Kale", "Elm", "Clover", "Quince"]) {
+  for (const name of ["Kale", "Elm"]) {
     assert.ok(turn.some((l) => l.includes(name)), name);
   }
+  // Running, or not yet started, so not stamped.
+  for (const name of ["Clover", "Quince"]) {
+    assert.ok(!turn.some((l) => l.includes(name)), name);
+  }
+});
+
+test("stampedSplit owes a row to an agent still at work, and stamps it " +
+  "on the first receipt after it ends, though it wrote nothing in that turn",
+() => {
+  const doc = corpusAgents("01-mixed@220", "x");
+  const tasks = doc.tasks as TreeTask[];
+  const a = (turnStart: number | null, owed: string[] = [],
+    done: string[] = []) => ({ limits: LIMITS, now: NOW,
+    turnStart, owed, tasks: tasks.map((t) => done.includes(String(t.task.id))
+      ? { ...t, task: { ...t.task, status: "completed" } } : t) });
+  // At the turn's end Clover runs: owed, not stamped.
+  const first = stampedSplit(a(1786845500));
+  assert.ok(first.owe.includes("r4"));
+  assert.ok(!first.stamp.has("r4"));
+  // It ends between turns; the next turn opens after its last record.
+  const quiet = 1786846990;
+  assert.ok(!stampedSplit(a(quiet, [], ["r4"])).stamp.has("r4"));
+  const next = stampedSplit(a(quiet, first.owe as string[], ["r4"]));
+  assert.ok(next.stamp.has("r4"));
+  assert.ok(!next.owe.includes("r4"));
+  // The ones still running stay owed.
+  assert.ok(next.owe.includes("r1"));
 });
 
 test("stamped, no row presses anything", () => {

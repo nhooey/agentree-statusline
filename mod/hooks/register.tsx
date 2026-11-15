@@ -31,7 +31,7 @@ import { settings } from '../src/formatting.ts'
 import type { Env, Settings } from '../src/formatting.ts'
 import { hexOf } from '../src/spans.ts'
 import type { Press, Span } from '../src/spans.ts'
-import { foldShut, pruneFolds } from '../src/band_tree.ts'
+import { foldShut, pruneFolds, stampedSplit } from '../src/band_tree.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
   ROW_NAMES, accountLine, bandRows, bandScoped, footerRuler, footerTail,
@@ -475,6 +475,12 @@ function noteMode($: $, from: string, mode: string | undefined): void {
 export const receiptKey = (session: string, turn: string) =>
   'receipt:' + sha256Hex(session + '\0' + turn).slice(0, 32)
 
+/** Where the session's owed agents are kept: the ones a receipt left out
+ * while they were still at work, stamped on the first receipt after they
+ * end (stampedSplit). */
+export const receiptOwedKey = (session: string) =>
+  'receipt-owed:' + sha256Hex(session).slice(0, 32)
+
 // The receipts being stamped, so two turn.completes over one turn stamp it
 // once even before the first has filed its key.
 const stamping = new Set<string>()
@@ -558,10 +564,19 @@ async function stamp($: $, durationMs: number, prompt: string,
     const stamped = ROW_NAMES.filter((r) => o.rows[r].transcript)
     // The turn's subagents under 🧵, as the band's tree drew them, from
     // the same document, where rows.subagents.transcript stamps them.
+    const owedKey = receiptOwedKey(await $.session.id())
+    const owed = ((await $.store.get(owedKey)) as string[] | undefined) ?? []
+    const agents = o.rows.subagents.transcript
+      ? stampedOf(doc as Dict | null, owed) : null
     const rows = receiptScoped(st, fig, bandCols || 80, o.hide,
-      true, main, stamped, o.hintInset, tagsShown(o),
-      o.rows.subagents.transcript ? stampedOf(doc as Dict | null) : null)
+      true, main, stamped, o.hintInset, tagsShown(o), agents)
     await remember($, 'receipts', key, true)
+    // The agents still at work, owed a row on the first receipt after
+    // they end; with no document, what was owed stays owed.
+    if (agents) {
+      await remember($, 'receipts', owedKey,
+        stampedSplit(agents.agents).owe)
+    }
     await remember($, 'receipts', receiptAt(durationMs),
       { rows } satisfies FiledReceipt)
   } finally {

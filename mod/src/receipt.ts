@@ -355,8 +355,10 @@ export type Stamped = {
 
 /** What the receipt stamps of the subagents from a status document `fig`,
  * the band's last: its `agents` as the tree reads them, the turn opened at
- * `transcript.turn_s`; null where it has none. */
-export function stampedOf(fig: Dict | null): Stamped | null {
+ * `transcript.turn_s`, and `owed`, the agents an earlier receipt left out
+ * while they were at work (stampedSplit); null where it has none. */
+export function stampedOf(fig: Dict | null,
+  owed: readonly string[] = []): Stamped | null {
   const doc = fig?.agents as Dict | undefined;
   if (!fig || !doc) return null;
   const tr = decodeTranscript(fig.transcript);
@@ -364,7 +366,7 @@ export function stampedOf(fig: Dict | null): Stamped | null {
     agents: { tasks: (doc.tasks ?? []) as TreeTask[],
       limits: decodeLimits(fig.limits),
       now: (fig.clock as Dict).now as number,
-      turnStart: tr.turn_s || null },
+      turnStart: tr.turn_s || null, owed },
     mainProgress: typeof doc.main_progress === "string"
       ? doc.main_progress : "",
   };

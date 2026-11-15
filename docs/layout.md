@@ -491,7 +491,8 @@ whether it is drawn while a turn runs (`live` `"running"`), always
 (`transcript`), apart; as the mod ships, 🎤 is drawn while a turn runs and
 stamped, 🧵, 🎮 and 💳 are always drawn and not stamped, and the
 subagents are always drawn, between turns only those running or paused,
-and always stamped, every one the turn ran, with 🧵 over them.
+and always stamped, every one the turn ran that had finished, with 🧵
+over them.
 `"rows": {"subagents": {"live": "running"}}` draws no subagent between
 turns.
 `"rows": {"session": {"live": "running"}}` leaves the band empty between
@@ -573,20 +574,23 @@ session, so here the 🧵 row comes from another one's.
 
 A turn that ran subagents stamps them too, as the band's tree draws them:
 🧵 the parent, stamped whatever `rows` says of it, under it 🎤 first,
-then every agent the turn ran, each under the agent that started it, in
-the order they started. An agent the turn ran started after the turn
-opened, or wrote its last record after it. The receipt's tree is drawn
-whole: no `… N more` cap, no `✅ N done`, no fold marks and every agent
-opened, an ended agent keeping the agents it started under it. 🏁 marks
-each thread that had finished when the turn's end stamped it, 🎤 always
-and each agent that had completed, failed or been killed; one still
-running or paused keeps its 🟢 or 🟡, and 🧵 its ⚫. 🎤 is followed by
+then every agent the turn ran that had finished by the time it was
+stamped, each under the nearest agent above it stamped too, in the
+order they started. An agent the turn ran started after the turn
+opened, or wrote its last record after it; it had finished once it had
+completed, failed or been killed, with no agent under it still at work.
+One still running or paused is owed a row instead: the mod keeps it,
+and the first receipt stamped after it ends draws it, even when it
+wrote nothing in that turn, as an agent that ends between turns does. The receipt's tree is drawn whole: no
+`… N more` cap, no `✅ N done`, no fold marks and every agent opened. 🏁
+marks 🎤 and each agent, and 🧵 keeps its ⚫. 🎤 is followed by
 the prompt the turn answered, 🧵 and each agent by the first line of the
 last text it wrote. With 🎮 stamped, the tree hangs from it; a turn that
 ran no subagent, or one whose agents are hidden (`--hide agent`), stamps
 its rows as above. At 200 columns, the same with `--agents 01-mixed@220
---progress "All four suites pass"` and `--cols 200`, every agent of the
-case running or ending in the turn:
+--progress "All four suites pass"` and `--cols 200`: the agents of the
+case that had ended, with the ones still running owed to a later
+receipt:
 
 ```
   🧵⚫ main  All four suites pass                                 🤖O⁵🏃           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
@@ -594,14 +598,7 @@ case running or ending in the turn:
   ├─ 🔍🏁 Daisy                                                   🤖O⁵🏃  ✅  42m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
   ├─ 🔩🏁 Fern                                                    🤖O⁵🏃  ❌  32m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
   ├─ 🔩🏁 Kale                                                    🤖O⁵🏃  🛑  23m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ├─ 🔍🏁 Elm                                                     🤖O⁵🏃  💥  18m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ├─ 🎩🟢 Clover                                                  🤖O⁵🏃  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ├─ 🔍🟢 Marigold  Running the suite                             🤖O⁵🏃  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-  ├─ 👥🟢 Willow                                                  🤖H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-  ├─ 🔩🟢 Bluebell                                                🤖So🐢  🤖 333   💰 0.1   🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
-  ├─ 📐🟢 Thistle                                                 🤖O⁵🏃  🚦 4.7m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
-  ├─ 🐚🟢 sleep 300 && make test                                                                                                 ⌛  2m
-  ╰─ 👥🟡 Quince                                                  🤖O⁵🏃  🥚  30s
+  ╰─ 🔍🏁 Elm                                                     🤖O⁵🏃  💥  18m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
@@ -621,8 +618,8 @@ line and one after it.
   of each window. The model and 🛫 are not drawn: they were the turn's
   state.
 - **🧵** is the main thread as the mod's 🧵 row last drew it.
-- **The subagents** are each agent the turn ran, as the band's tree last
-  drew it, with 🏁 for its ⚫ once it had ended.
+- **The subagents** are each agent the turn ran that had finished, as
+  the band's tree last drew it, with 🏁 for its ⚫.
 - **🎮** is the session as it stood when the turn ended; it includes every
   row above it.
 

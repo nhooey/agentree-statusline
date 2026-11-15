@@ -77,6 +77,10 @@ export type TreeAgents = {
   readonly now: number;
   readonly turnStart: number | null;
   readonly mainBackground?: readonly BgTask[];
+  /** The agents an earlier receipt left out while they were still at
+   * work, by id: the stamped tree owes each its row once it has ended
+   * (stampedSplit). */
+  readonly owed?: readonly string[];
 };
 
 /** What the tree is drawn from.  The rows `session`, `main` and `turn` are
@@ -471,18 +475,20 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
   return nodes;
 }
 
-/** The subagents as the stamped tree's nodes under 🧵 main: every agent
- * the turn ran, one that started since `a.turnStart` or whose last record
- * is since then, or one with no record yet (every agent, with no
- * turnStart), each under the nearest
- * agent above it that the turn ran too, else under 🧵, in the order they
- * started.  Every row opened, none pressing, no cap and no grouped rows;
- * an agent that had ended draws 🏁 in place of its ⚫. */
-function stampedNodes(st: Settings, a: TreeAgents): Node[] {
-  const prepared = preparedOf(a.tasks);
-  const busy = runningParents(prepared);
-  const etas = inheritedEtas(prepared);
+/** Which agents a turn's receipt stamps, by id, and which it owes a row
+ * to later.  The turn ran an agent that started since `a.turnStart` or
+ * whose last record is since then, one with no record yet, or, with no
+ * turnStart, every agent; an earlier receipt's `a.owed` count as run too.
+ * Of those, each that has ended (completed, failed or killed, with no
+ * agent under it at work) is stamped, and each still running or paused
+ * is owed, so the first receipt after it ends stamps it, whether or not
+ * it wrote anything in that turn. */
+export function stampedSplit(a: TreeAgents):
+  { readonly stamp: ReadonlySet<string>; readonly owe: readonly string[] } {
+  const busy = runningParents(preparedOf(a.tasks));
+  const owed = new Set(a.owed ?? []);
   const ran = (t: TreeTask): boolean => {
+    if (owed.has(String(t.task.id))) return true;
     const end = t.usage.last_seen ?? t.usage.last_epoch;
     const begun = typeof t.task.startTime === "number";
     if (a.turnStart === null || (!begun && typeof end !== "number")) {
@@ -491,9 +497,29 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
     return (begun && (t.task.startTime as number) / 1000 >= a.turnStart) ||
       (typeof end === "number" && end >= a.turnStart);
   };
+  const stamp = new Set<string>();
+  const owe: string[] = [];
+  for (const t of a.tasks.filter(ran)) {
+    const id = String(t.task.id);
+    if (ended(t.task, t.usage, busy)) stamp.add(id);
+    else owe.push(id);
+  }
+  return { stamp, owe };
+}
+
+/** The subagents as the stamped tree's nodes under 🧵 main: the agents
+ * stampedSplit stamps, each under the nearest agent above it stamped
+ * too, else under 🧵, in the order they started.  Every row opened, none
+ * pressing, no cap and no grouped rows; each draws 🏁 in place of its
+ * ⚫. */
+function stampedNodes(st: Settings, a: TreeAgents): Node[] {
+  const prepared = preparedOf(a.tasks);
+  const busy = runningParents(prepared);
+  const etas = inheritedEtas(prepared);
+  const { stamp } = stampedSplit(a);
   const all = new Map(a.tasks.map((t) => [String(t.task.id), t]));
-  const byId = new Map(a.tasks.filter(ran).map((t) =>
-    [String(t.task.id), t]));
+  const byId = new Map(a.tasks.filter((t) => stamp.has(String(t.task.id)))
+    .map((t) => [String(t.task.id), t]));
   // The nearest agent above `id` that the turn ran, through the ones it
   // did not; "" for 🧵.
   const parentOf = (id: string): string => {
@@ -520,9 +546,8 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
     const t = byId.get(id)!;
     const waitingOn = busy.has(id);
     const eta: Eta | false = etas.has(id) ? etas.get(id)! : false;
-    const done = ended(t.task, t.usage, busy);
     const label = agentLabel(st, t.task, t.usage, t.meta, waitingOn, 0, 0,
-      null, true).map((p) => done && p.path === "name.kind"
+      null, true).map((p) => p.path === "name.kind"
       ? { ...p, spans: p.spans.map((s) => ({ ...s,
         text: s.text.replace(E_PHASE_END, E_PHASE_DONE) })) } : p);
     return { scope: "agent",

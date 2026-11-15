@@ -196,9 +196,10 @@ every row.
   threads come and go.
 - **The receipt.** A turn that ran subagents stamps the same tree on its
   receipt, frozen at the turn's end (`treeRows` with `stamped`): 🧵 the
-  parent, 🎤 first under it, then every agent the turn ran, opened, with
-  no cap, no `✅ N done`, no fold marks and no clicks. 🏁 marks each
-  thread that had finished, 🎤 and every ended agent. A turn that ran
+  parent, 🎤 first under it, then every agent the turn ran that had
+  ended, opened, with no cap, no `✅ N done`, no fold marks and no
+  clicks, 🏁 on 🎤 and each agent. One still at work is owed: the first
+  receipt after it ends stamps it (`stampedSplit`). A turn that ran
   none stamps its rows as `rows` says, 🎤 alone as shipped.
 
 Drawn at 236 columns, with Marigold opened, then folded:

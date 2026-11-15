@@ -159,7 +159,7 @@ never (`live`), and whether the receipt stamps it (`transcript`), apart;
 `"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}`
 stamps 🧵 and 🎮 under 🎤. A turn that ran subagents stamps the band's
 tree, drawn whole and pressing nothing: 🧵 the parent, under it 🎤 and
-then every agent the turn ran, 🏁 on each that had finished, from the
+then every agent the turn ran that had finished, 🏁, from the
 band's last status document (`--agents` with `--status` draws it;
 [docs/layout.md](../docs/layout.md#the-receipt)). The receipt is Text in the transcript rather
 than a `$.ui.log` line, which Claude Code draws as its own notice,
