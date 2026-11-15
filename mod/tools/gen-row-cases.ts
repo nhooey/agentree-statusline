@@ -10,13 +10,13 @@
 // change them.
 //
 // The inputs are the committed figures documents, tests/fixtures/figures/,
-// by id (`<suite>/<case>`).  Documents whose text is the same are one
-// input, under the first id, with the others in `same`.  One file per
-// terminal profile, profiles whose cases come out the same sharing one.
+// by id (`<suite>/<name>`), each filled out as mod/test/figures_doc.ts
+// fills one.  One file per terminal profile, profiles whose cases come out
+// the same sharing one.
 // Each holds:
 //
 //   settings  the profiles, each with the environment it is read from
-//   band      one case a line: a status document (`doc`, and `same`) drawn
+//   band      one case a line: a status document, `doc`, drawn
 //             at `cols` under `hide` in `phase` with the mod's 🛫, `rate`,
 //             and, where the case has them, only the rows `places` (the
 //             defaults file's rows.*.place) puts in `place`; above the
@@ -35,8 +35,7 @@
 //
 // Each document's clock is drawn in its own `clock.tz`.  A span is written
 // as the grid's cases write one.
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync }
-  from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join as pathJoin } from "node:path";
 import { fileURLToPath } from "node:url";
 import { settings } from "../src/formatting.ts";
@@ -50,11 +49,11 @@ import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
 import type { Rows } from "../src/config.ts";
 import { receiptLines, startLine } from "../src/receipt.ts";
 import { PROFILES, spanJson } from "./gen-grid-cases.ts";
+import { FIGURES, figuresNames, readFigures } from "../test/figures_doc.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const OUT = pathJoin(HERE, "..", "..", "tests", "fixtures", "rows");
-export const FIGURES = pathJoin(HERE, "..", "..", "tests", "fixtures",
-  "figures");
+export { FIGURES };
 const COLS = [200, 155, 120, 80];
 // Each scope's figures hidden, a group on every row, a label piece, and a
 // whole scope with a label part of another, at one width.
@@ -68,7 +67,7 @@ const HIDE_COLS = 155;
 const START_HIDES: readonly string[][] = [[], ["tag.plan.five_hour"]];
 // A document with every piece of the 💳 row, 🔀 and 🎨 among them, drawn at
 // widths that shed them one by one.
-const SHED_DOC = "status/04-pr-and-style@196";
+const SHED_DOC = "status/04-pr-and-style";
 // The 🛫 the mod would pass, at one width: the documents carry the counts
 // it works one out from, never the rate itself.
 const RATE = 220, RATE_COLS = 200;
@@ -81,23 +80,16 @@ export const PLACES: RowsPlace = Object.fromEntries(
     [r, DEFAULT_ROWS[r].place as Place]));
 const PLACE_COLS = 155;
 
-/** The documents of `suite`, by id, deduplicated by text: [id, the ids
- * with the same text, the document]. */
-export function documents(suite: string): [string, string[], Dict][] {
-  const byText = new Map<string, string[]>();
-  for (const f of readdirSync(pathJoin(FIGURES, suite)).sort()) {
-    if (!f.endsWith(".json")) continue;
-    const text = readFileSync(pathJoin(FIGURES, suite, f), "utf8");
-    byText.set(text, [...(byText.get(text) ?? []),
-      suite + "/" + f.slice(0, -5)]);
-  }
-  return [...byText].map(([text, ids]) =>
-    [ids[0], ids.slice(1), JSON.parse(text) as Dict]);
+/** The documents of `suite`: [id, the document]. */
+export function documents(suite: string): [string, Dict][] {
+  return figuresNames(suite).map((name) =>
+    [suite + "/" + name, readFigures(suite, name)]);
 }
 
 /** A document by id. */
 export function document(id: string): Dict {
-  return JSON.parse(readFileSync(pathJoin(FIGURES, id + ".json"), "utf8"));
+  const [suite, name] = id.split("/");
+  return readFigures(suite, name);
 }
 
 /** Draw `fig` with its clock in its own zone, as the edge sets it. */
@@ -224,7 +216,7 @@ function treeCases(): BandCase[] {
 
 // The tree's cases: a document, the corpus cases whose tasks are its
 // subagents, and the main thread's progress update.
-const TREE_DOC = "status/01-baseline@196";
+const TREE_DOC = "status/01-baseline";
 const TREE_AGENTS = ["01-mixed@220", "03-tree@220", "02-parked@220"];
 const TREE_PROGRESS = "Checking the binary for subagentStatusLine, then " +
   "the changelog for a hook that replaces it";
@@ -297,36 +289,35 @@ const rowsJson = (rows: Span[][]): unknown[][] =>
 function cases(st: Settings): string {
   const band: string[] = [], receipt: string[] = [], start: string[] = [];
   const account: string[] = [];
-  const accountCase = (c: AccountCase, fig: Dict, same: string[]): string => {
+  const accountCase = (c: AccountCase, fig: Dict): string => {
     const row = drawAccount(st, fig, c);
-    return JSON.stringify({ ...c, same, row: row.map(spanJson),
-      line: join(row) });
+    return JSON.stringify({ ...c, row: row.map(spanJson), line: join(row) });
   };
-  for (const [id, same, fig] of documents("status")) {
+  for (const [id, fig] of documents("status")) {
     for (const c of bandCases(id)) {
       const rows = drawBand(st, fig, c);
-      band.push(JSON.stringify({ ...c, same, rows: rowsJson(rows),
+      band.push(JSON.stringify({ ...c, rows: rowsJson(rows),
         lines: rows.map((r) => join(r)) }));
     }
-    for (const c of accountCases(id)) account.push(accountCase(c, fig, same));
+    for (const c of accountCases(id)) account.push(accountCase(c, fig));
     for (const hide of START_HIDES) {
       const s = drawStart(st, fig, hide);
-      start.push(JSON.stringify({ doc: id, same, hide, spans: s.map(spanJson),
+      start.push(JSON.stringify({ doc: id, hide, spans: s.map(spanJson),
         line: join(s) }));
     }
   }
   for (const c of shedCases()) {
-    account.push(accountCase(c, document(c.doc), []));
+    account.push(accountCase(c, document(c.doc)));
   }
   for (const c of treeCases()) {
     const rows = drawBand(st, document(c.doc), c);
-    band.push(JSON.stringify({ ...c, same: [], rows: rowsJson(rows),
+    band.push(JSON.stringify({ ...c, rows: rowsJson(rows),
       lines: rows.map((r) => join(r)) }));
   }
-  for (const [id, same, fig] of documents("cost")) {
+  for (const [id, fig] of documents("cost")) {
     for (const c of receiptCases(id)) {
       const got = drawReceipt(st, fig, c);
-      receipt.push(JSON.stringify({ ...c, same, rows: rowsJson(got),
+      receipt.push(JSON.stringify({ ...c, rows: rowsJson(got),
         lines: got.map((r) => join(r)) }));
     }
   }

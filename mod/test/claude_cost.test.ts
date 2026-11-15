@@ -1,7 +1,7 @@
 // claude_cost.ts and claude_cost_render.ts against the cost goldens.
 //
-// For each cost case in tests/fixtures/cases.json this draws the case's
-// committed figures document at its width and flags, as run-cases.py's
+// For each cost case in tests/fixtures/cases.json this draws the
+// committed figures document it names at its width and flags, as run-cases.py's
 // render stage has the Python draw it with --from-figures, and compares
 // the systemMessage with tests/golden/cost/<id>.txt byte for byte.
 import { test } from "node:test";
@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import { settings } from "../src/formatting.ts";
 import { _cols, _costOpts, renderCostFigures } from "../src/claude_cost.ts";
 import type { CostFigures } from "../src/claude_cost.ts";
+import { readFigures } from "./figures_doc.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -20,6 +21,7 @@ const FIXTURES = path.join(REPO, "tests/fixtures");
 
 type Case = {
   id: string; suite: string; env: string; cols: number; flags: string[];
+  figures: string;
 };
 
 /** run-cases.py's fill: the placeholders back to paths.  None of them is
@@ -44,8 +46,7 @@ for (const c of cases) {
   test(c.id, () => {
     const env = JSON.parse(fs.readFileSync(
       path.join(FIXTURES, "env", c.env + ".json"), "utf-8"));
-    const fig: CostFigures = JSON.parse(fill(fs.readFileSync(
-      path.join(FIXTURES, "figures/cost", c.id + ".json"), "utf-8")));
+    const fig = readFigures<CostFigures>("cost", c.figures, fill);
     // The argv the render stage is run with, then the edge's work: the
     // terminal profile from the case's environment, the switches cli.py
     // applies before anything renders, and the document's zone.
@@ -80,8 +81,7 @@ const receipt: { [k: string]: any }[] = JSON.parse(fs.readFileSync(
 
 receipt.forEach((c, i) => {
   test(`receipt ${i}: ${c.figures} @${c.cols} ${c.flags.join(" ")}`, () => {
-    const fig: CostFigures = JSON.parse(fill(fs.readFileSync(
-      path.join(FIXTURES, "figures/cost", c.figures), "utf-8")));
+    const fig = readFigures<CostFigures>("cost", c.figures, fill);
     const argv = ["--cols", String(c.cols), ...c.flags];
     const st = settings(c.terminal, !argv.includes("--no-mark-spacing"),
       argv.includes("--subscript-decimals"));

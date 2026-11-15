@@ -1,0 +1,249 @@
+{
+  "accounting": {
+    "open_turn": {
+      "blocked_s": 0,
+      "cost_usd": 25.700000000000003,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "model_s": 1200,
+      "read_share": 1,
+      "sess_share": 4.672727272727273,
+      "tool_s": 0,
+      "week_share": 6.26829268292683,
+      "write_share": 2
+    },
+    "own": {
+      "cost_usd": 25.700000000000003,
+      "sess_share": 4.672727272727273,
+      "week_share": 6.26829268292683
+    },
+    "session": {
+      "blocked_s": 0,
+      "cost_usd": 25.700000000000003,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "model_s": 1200,
+      "read_share": 1,
+      "sess_share": 4.672727272727273,
+      "start_s": 1786843400,
+      "tool_s": 0,
+      "week_share": 6.26829268292683,
+      "write_share": 2
+    },
+    "turn": {
+      "blocked_s": 0,
+      "cost_usd": 25.700000000000003,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "model_s": 1200,
+      "read_share": 1,
+      "sess_share": 4.672727272727273,
+      "tool_s": 0,
+      "week_share": 6.26829268292683,
+      "write_share": 2
+    }
+  },
+  "cache_shares": {
+    "sess_read": 1,
+    "sess_write": 2,
+    "turn_read": 1,
+    "turn_write": 2
+  },
+  "clock": {
+    "now": 1786847000,
+    "tz": "UTC"
+  },
+  "context_window": 1000000,
+  "git": {
+    "branch": "golden-clean",
+    "dirty": false,
+    "in_git": true,
+    "is_worktree": false,
+    "main_root": "${SCRATCH}/repo",
+    "toplevel": "${SCRATCH}/repo"
+  },
+  "limits": {
+    "session_pct": "15",
+    "session_reset": 1786847400,
+    "session_share": "4.67273",
+    "session_turn": "4.67273",
+    "weekly_pct": "87",
+    "weekly_reset": 1787014800,
+    "weekly_share": "6.26829",
+    "weekly_turn": "6.26829"
+  },
+  "mode": "status",
+  "open_turn": {
+    "agent": false,
+    "agent_calls": 0,
+    "agent_ids": [],
+    "agent_model_s": 0,
+    "agent_tool_s": 0,
+    "blocked_s": 0,
+    "cache_read": 600000,
+    "cache_write": 40000,
+    "calls": 2,
+    "compact": false,
+    "ctx": 321000,
+    "dur_s": 1200,
+    "eta": [],
+    "fresh": 2000,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "out": 999600,
+    "parts": [
+      [
+        1786844000,
+        12.855
+      ],
+      [
+        1786844600,
+        12.845
+      ]
+    ],
+    "reported": false,
+    "text": "Something long.",
+    "tool_s": 0,
+    "ts": "2026-08-16T01:23:20Z",
+    "usd_cr": 0.3,
+    "usd_cw": 0.4,
+    "usd_in": 0.01,
+    "usd_out": 24.990000000000002
+  },
+  "payload": {
+    "cost_usd": "114.63436755000001",
+    "ctx_window": "1000000",
+    "current_dir": "${HOME}/src/statusline-fixture/deep/tree",
+    "effort": "high",
+    "lines_added": "3443",
+    "lines_removed": "214",
+    "model": "Opus 5 (1M context)",
+    "model_id": "claude-opus-5[1m]",
+    "output_style": "default",
+    "project_dir": "${HOME}/src/statusline-fixture/deep/tree",
+    "rl_session_pct": "15",
+    "rl_session_reset": "1786847400",
+    "rl_weekly_pct": "87",
+    "rl_weekly_reset": "1787014800",
+    "session_id": "f1xture0-0000-4000-8000-00000000c0de",
+    "transcript": "${FIXTURES}/transcripts/status/rounding-boundary.jsonl"
+  },
+  "rate": null,
+  "transcript": {
+    "agent_etas": [],
+    "asst_text": "Done.",
+    "asst_ts": "2026-08-16T01:33:20Z",
+    "blocked_s": 0,
+    "busy_s": 1200,
+    "cache_pct": 93,
+    "compactions": 0,
+    "ctx_est": false,
+    "ctx_tokens": 321000,
+    "eta": [],
+    "last_seen": 1786844600,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "monitors": 0,
+    "own_cache_pct": 93,
+    "own_est": false,
+    "own_parts": [
+      [
+        1786844000,
+        12.855
+      ],
+      [
+        1786844600,
+        12.845
+      ]
+    ],
+    "own_tok_down": 999600,
+    "own_tok_up": 142000,
+    "own_usd": 25.700000000000003,
+    "queued": 0,
+    "shells": 0,
+    "start_s": 1786843400,
+    "tok_down": 999600,
+    "tok_up": 142000,
+    "tool_s": 0,
+    "turn_s": 1786843400,
+    "user_text": "Something long.",
+    "user_ts": "2026-08-16T01:23:20Z"
+  },
+  "turn": {
+    "agent": false,
+    "agent_calls": 0,
+    "agent_ids": [],
+    "agent_model_s": 0,
+    "agent_tool_s": 0,
+    "blocked_s": 0,
+    "cache_read": 600000,
+    "cache_write": 40000,
+    "calls": 2,
+    "compact": false,
+    "ctx": 321000,
+    "dur_s": 1200,
+    "eta": [],
+    "fresh": 2000,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "out": 999600,
+    "parts": [
+      [
+        1786844000,
+        12.855
+      ],
+      [
+        1786844600,
+        12.845
+      ]
+    ],
+    "reported": false,
+    "text": "Something long.",
+    "tool_s": 0,
+    "ts": "2026-08-16T01:23:20Z",
+    "usd_cr": 0.3,
+    "usd_cw": 0.4,
+    "usd_in": 0.01,
+    "usd_out": 24.990000000000002
+  },
+  "usage": {
+    "account_text": null,
+    "plan": {
+      "session_pct": 15,
+      "session_resets_at": 1786847400,
+      "weekly_pct": 87,
+      "weekly_resets_at": 1787014800
+    },
+    "reading": {
+      "account": {},
+      "account_name": "session:f1xture0-0000-4000-8000-00000000c0de",
+      "agent": "claude",
+      "as_of": 1786847000,
+      "buckets": [
+        {
+          "id": "default",
+          "label": "default",
+          "windows": [
+            {
+              "duration_seconds": 18000,
+              "id": "five_hour",
+              "resets_at": 1786847400,
+              "used_percent": 15
+            },
+            {
+              "duration_seconds": 604800,
+              "id": "seven_day",
+              "resets_at": 1787014800,
+              "used_percent": 87
+            }
+          ]
+        }
+      ],
+      "fetched_at": 1786847000,
+      "period_start": "1786838400",
+      "schema_version": 1,
+      "source": "native",
+      "stale": false
+    }
+  }
+}

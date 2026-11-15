@@ -2,16 +2,12 @@
 // records only after turn.complete has fired.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import * as fs from "node:fs";
-import * as path from "node:path";
 import { receiptTurn, withEngineDuration } from "../src/receipt.ts";
 import { decodeTurn } from "../src/claude_cost.ts";
 import type { Dict } from "../src/py.ts";
+import { readFigures } from "./figures_doc.ts";
 
-const DIR = path.join(import.meta.dirname, "..", "..", "tests", "fixtures",
-                      "figures", "cost");
-const doc = JSON.parse(fs.readFileSync(
-  path.join(DIR, "10-turn-id@120.json"), "utf8")) as Dict;
+const doc = readFigures("cost", "10-turn-id");
 const i = receiptTurn((doc.turns as Dict[]).map(decodeTurn));
 const turn = (fig: Dict) => (fig.turns as Dict[])[i];
 const acc = (fig: Dict) => ((fig.accounting as Dict).turns as Dict[])[i];

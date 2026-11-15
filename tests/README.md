@@ -94,8 +94,8 @@ fixtures/
   transcripts/cost/      the Stop hook's transcripts
   transcripts/subagent/  sessions with agents, for the fold and calibration
                          fixtures; see Subagent row cases below
-  figures/<suite>/       each case's figures, written by run-cases.py; see
-                         Figures below
+  figures/<suite>/       the figures documents the cases name, written by
+                         run-cases.py; see Figures below
   panel/<group>.json     the subagent rows from the renderer's inputs;
                          see Subagent row cases below
   grid/<profiles>.json   the redesigned grid's layouts and rows, written by
@@ -134,13 +134,19 @@ on its own as well as the two together:
    and read nothing else. The live path goes through the document too, so a
    figure the rows need and the document lacks fails every golden.
 
-Between them is a figures document, one per case, committed as
-`fixtures/figures/<suite>/<id>.json`. A normal run compares the document
-each case writes with the committed one, byte for byte, then draws the
-committed one alone and compares that with the golden. `--regen` rewrites
-the documents with the goldens; `--regen-figures` rewrites only the
-documents, for a change to their shape that must not move a row. To draw
-one by hand, its placeholders filled in first:
+Between them is a figures document. A document has no width and no flags,
+so each case names one in `cases.json`'s `figures`, and the cases that come
+to the same document name the same one, committed once as
+`fixtures/figures/<suite>/<figures>.json`. A normal run compares the
+document each case writes, made sparse as below, with the one it names,
+byte for byte, so a case whose document differs fails; checks that the
+document's records have exactly their fields; then draws the committed one
+alone and compares that with the golden. `--regen` rewrites the documents
+with the goldens; `--regen-figures` rewrites only the documents, for a
+change to their shape that must not move a row; either fails two cases
+that name one document and write different ones, and removes a document no
+case names. To draw one by hand, filled out (`tests/_figures.py`'s
+`full`) and its placeholders filled in first:
 
 ```sh
 coding-agent-usage-line.py --agent claude --mode status --cols 120 \
@@ -160,10 +166,18 @@ compare, so the text is canonical:
 - **Times are epochs**; `clock.tz` is the zone the clock cells are drawn in.
 - **Paths are placeholders**: `${HOME}`, `${FIXTURES}`, and `${SCRATCH}` for
   the suite's scratch directory (the fixture repos, the `cmd:` sources).
-- **No width and no flags.** A case drawn at five widths has five identical
-  documents, except where the cases' shared state makes them differ: the
+- **No width and no flags.** A case drawn at five widths names one
+  document, except where the cases' shared state makes them differ: the
   first cost case to run a `cmd:` source records what the command printed,
   and the later ones read it back from the source cache, which keeps less.
+- **Committed sparse.** The committed text leaves out `schema`, and each
+  field of a record (a `Payload`, `Transcript`, `Git`, `Limits`,
+  `CacheShares` or `Turn`) whose value is null, so a schema number touches
+  no document and a new record field only the documents that have a value
+  for it. `tests/_figures.py` and `mod/test/figures_doc.ts` put them back,
+  each port its own schema number, and `mod/test/claude.test.ts` checks the
+  two ports' numbers agree. The other nulls, of the document's own shape,
+  stay in the text.
 
 `schema` is 4 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
 the figures the redesigned grid draws and today's rows do not: the status
@@ -380,8 +394,8 @@ says which field each cell reads. Like the grid's, these are written by the
 TypeScript, with `node mod/tools/gen-row-cases.ts`.
 
 The inputs are the committed [figures documents](#figures), by id
-(`status/01-baseline@196`); documents with the same text are one input, under
-the first id, with the rest in `same`. Each `band` case is a status document
+(`status/01-baseline`), filled out as `mod/test/figures_doc.ts` fills them.
+Each `band` case is a status document
 drawn at `cols` under the `--hide` patterns in a `phase`, with `rate`, the 🛫
 the mod works out itself and passes in; each `receipt` case is a cost document
 at `cols` under `hide`, with the 📦 🌿 of the status document named by
@@ -398,9 +412,9 @@ and runs the generator again in memory, failing if what it writes differs
 from what is committed. To look at the rows in a terminal:
 
 ```sh
-node mod/tools/draw-figures.ts tests/fixtures/figures/status/<id>.json --cols 160
-node mod/tools/draw-figures.ts tests/fixtures/figures/cost/<id>.json \
-    --status tests/fixtures/figures/status/<id>.json
+node mod/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
+node mod/tools/draw-figures.ts tests/fixtures/figures/cost/<name>.json \
+    --status tests/fixtures/figures/status/<name>.json
 ```
 
 ## Assertion suites

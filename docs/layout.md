@@ -63,7 +63,7 @@ Code can collapse with its `[-]` and ctrl+x ctrl+a (`AbovePrompt`), and
 under Claude Code's own `-- INSERT -- ⏵⏵ auto mode on` footer line, in the
 same container (`PromptHint`). While a turn runs, at 160 columns, above the
 prompt (`node mod/tools/draw-figures.ts
-tests/fixtures/figures/status/01-baseline@196.json --cols 160 --part above
+tests/fixtures/figures/status/01-baseline.json --cols 160 --part above
 --inset 2 --right-edge 5 --rate 200 --plain`):
 
 ```
@@ -571,7 +571,7 @@ place of Claude Code's `✻ <word> for <duration>`: the rows whose
 in their colours, then the turn's tag. As the mod ships that is 🎤 alone,
 since 🧵 and 🎮 stay live on screen. At 160 columns, from a cost document
 (`node mod/tools/draw-figures.ts
-tests/fixtures/figures/cost/10-turn-id@196.json --cols 160 --part receipt
+tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part receipt
 --inset 2 --right-edge 5 --plain`):
 
 ```
@@ -583,7 +583,7 @@ tests/fixtures/figures/cost/10-turn-id@196.json --cols 160 --part receipt
 With `"rows": {"agent": {"transcript": true}, "session": {"transcript":
 true}}` it stamps 🧵 and 🎮 too, under 🎤, 🧵 from a status document
 (the same with `--rows` set so and `--status
-tests/fixtures/figures/status/18-agents@196.json`):
+tests/fixtures/figures/status/18-agents.json`):
 
 ```
                          🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
@@ -661,7 +661,7 @@ once.
 The receipt's last line names the turn it bills, and the prompt that opened
 the turn carries the same tag under it, `🔻🔖`, then the account's limits
 and when the turn started, dim (`node mod/tools/draw-figures.ts
-tests/fixtures/figures/status/18-agents@196.json --part start --plain`):
+tests/fixtures/figures/status/18-agents.json --part start --plain`):
 
 ```
 🔻🔖 p-fork  💳 🔋  15٪  🪫  87٪  📅 2026-08-16  🕐 01:23:20

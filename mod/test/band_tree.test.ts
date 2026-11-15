@@ -35,6 +35,7 @@ import type { Row } from "../src/grid.ts";
 import { bandRows, fixedKeys, treeOf } from "../src/band.ts";
 import type { BandOpts, Live, Phase } from "../src/band.ts";
 import { corpusAgents, withBackground } from "../tools/gen-row-cases.ts";
+import { readFigures } from "./figures_doc.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -512,9 +513,7 @@ test("the agent hide path hides the shells and Monitors with the agents",
  * hour before the clock, with 01-mixed@220's agents, in `phase` and with
  * `rows.subagents.live` at `agents`, as plain lines at 200 columns. */
 function bandTree(phase: Phase, agents: Live): string[] {
-  const file = path.join(REPO, "tests/fixtures/figures/status/" +
-    "01-baseline@196.json");
-  const base = JSON.parse(fs.readFileSync(file, "utf8")) as Dict;
+  const base = readFigures("status", "01-baseline");
   const fig: Dict = { ...base,
     transcript: { ...base.transcript as Dict, turn_s: NOW - 3600 },
     agents: corpusAgents("01-mixed@220", "") };

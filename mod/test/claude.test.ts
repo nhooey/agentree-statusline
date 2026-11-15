@@ -4,7 +4,11 @@
 // For each status and cost case in tests/fixtures/cases.json this reads
 // the case's inputs as run-cases.py hands them to the Python, builds the
 // document with statusFigures or costFigures, and compares it with the
-// committed tests/fixtures/figures/<suite>/<id>.json field for field.
+// committed document the case names, tests/fixtures/figures/<suite>/
+// <figures>.json filled out (figures_doc.ts), field for field, so a case
+// at any width and flags must come to it; and checks the records of the
+// document built have exactly their fields, which the sparse committed
+// text cannot show.
 // What the Python read outside the transcript comes from the committed
 // document itself: the usage source's reading (sources.test.ts pins the
 // reader), the git context (claude.test.ts pins detectGit's reading of
@@ -14,6 +18,7 @@
 // window, is the TypeScript's.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -31,8 +36,10 @@ import {
   _mainRoot, _pctStr, baseLimits, costFigures, ctxWindowFor, detectGit,
   pyG, statusFigures, windowFor,
 } from "../src/claude.ts";
-import { decodeGit, decodePayload } from "../src/figures.ts";
+import { decodeGit, decodePayload, FIGURES_SCHEMA } from "../src/figures.ts";
 import { pyJsonLoads } from "../src/sources.ts";
+import type { Dict } from "../src/py.ts";
+import { keyProblems, readFigures } from "./figures_doc.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -41,7 +48,7 @@ const SCRATCH = path.join(os.tmpdir(), "claude-glue-scratch");
 
 type Case = {
   id: string; suite: string; env: string; input: string; cols: number;
-  flags: string[];
+  flags: string[]; figures: string;
 };
 
 function fill(text: string): string {
@@ -76,10 +83,16 @@ function envOf(c: Case): any {
     path.join(FIXTURES, "env", c.env + ".json"), "utf-8"));
 }
 
-/** The committed document, read as the Python reads JSON. */
+/** The committed document the case names, read as the Python reads
+ * JSON. */
 function committed(c: Case): any {
-  return pyJsonLoads(fill(fs.readFileSync(
-    path.join(FIXTURES, "figures", c.suite, c.id + ".json"), "utf-8")));
+  return readFigures(c.suite, c.figures, fill, pyJsonLoads);
+}
+
+/** `got` against the committed document, and its records' keys. */
+function same(got: unknown, want: unknown): void {
+  assert.deepEqual(keyProblems(plain(got) as Dict), []);
+  assert.deepEqual(plain(got), plain(want));
 }
 
 /** The calibration the case's planted cache gives under this snapshot, as
@@ -100,6 +113,14 @@ const cost = cases.filter((c) => c.suite === "cost");
 test("every status and cost case is here", () => {
   assert.equal(status.length, 142);
   assert.equal(cost.length, 88);
+});
+
+// The committed documents leave the schema out, so each port's own is put
+// back: the two must be one number.
+test("both ports name the same figures schema", () => {
+  const py = execFileSync("python3", ["-c", "from coding_agent_usage_line" +
+    ".claude import FIGURES_SCHEMA; print(FIGURES_SCHEMA)"], { cwd: REPO });
+  assert.equal(Number(py.toString()), FIGURES_SCHEMA);
 });
 
 for (const c of status) {
@@ -125,7 +146,7 @@ for (const c of status) {
         prepared, snap, calib: calibOf(env, snap), now: env.now,
         tz: env.tz, rate: want.rate,
       });
-      assert.deepEqual(plain(got), plain(want));
+      same(got, want);
     });
   });
 }
@@ -142,7 +163,7 @@ for (const c of cost) {
       // No status line ran in the cost suite, so none published a window.
       const got = costFigures(turns, windowFor(turns, 0),
         calibOf(env, snap), snap, prepared, env.now, env.tz);
-      assert.deepEqual(plain(got), plain(want));
+      same(got, want);
     });
   });
 }

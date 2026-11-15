@@ -29,19 +29,18 @@ import type { RowName } from "../src/band.ts";
 import { decodeTurn } from "../src/claude_cost.ts";
 import { spanFrom, spanJson } from "../tools/gen-grid-cases.ts";
 import {
-  FIGURES, OUT, corpusAgents, document, drawAccount, drawBand, drawReceipt,
+  OUT, corpusAgents, document, drawAccount, drawBand, drawReceipt,
   drawStart, generate, inZone,
 } from "../tools/gen-row-cases.ts";
 import type { AccountCase, BandCase, ReceiptCase }
   from "../tools/gen-row-cases.ts";
 
-type Same = { same: string[] };
 type File = { settings: { profiles: { [name: string]: Env } };
-  band: (BandCase & Same & { rows: unknown[][][]; lines: string[] })[];
-  receipt: (ReceiptCase & Same & { rows: unknown[][][]; lines: string[] })[];
-  start: { doc: string; same: string[]; hide: string[]; spans: unknown[][];
+  band: (BandCase & { rows: unknown[][][]; lines: string[] })[];
+  receipt: (ReceiptCase & { rows: unknown[][][]; lines: string[] })[];
+  start: { doc: string; hide: string[]; spans: unknown[][];
     line: string }[];
-  account: (AccountCase & Same & { row: unknown[][]; line: string })[] };
+  account: (AccountCase & { row: unknown[][]; line: string })[] };
 
 const files = readdirSync(OUT).filter((f) => f.endsWith(".json")).sort();
 
@@ -53,10 +52,6 @@ test("the committed cases are the generator's", () => {
       f + " differs: run node mod/tools/gen-row-cases.ts and read the diff");
   }
 });
-
-/** The text of a committed document. */
-const text = (id: string): string =>
-  readFileSync(pathJoin(FIGURES, id + ".json"), "utf8");
 
 /** Spans as the cases write them, and their joined line. */
 function same(got: readonly Span[], want: readonly unknown[][],
@@ -102,19 +97,11 @@ for (const f of files) {
   }
 }
 
-test("a case's `same` documents are its document, byte for byte", () => {
-  const data = JSON.parse(readFileSync(pathJoin(OUT, files[0]), "utf8")) as
-    File;
-  for (const c of [...data.start, ...data.receipt, ...data.account]) {
-    for (const id of c.same) assert.equal(text(id), text(c.doc), id);
-  }
-});
-
 test("the band's columns do not move with the phase or the figures", () => {
   const st = settings({});
   const keys = fixedKeys(st, 155, []);
-  for (const id of ["status/01-baseline@196", "status/03-no-transcript@196",
-    "status/18-agents@196"]) {
+  for (const id of ["status/01-baseline", "status/03-no-transcript",
+    "status/18-agents"]) {
     const fig = document(id);
     for (const phase of ["running", "done"] as const) {
       const rows = inZone(fig, () => phaseRows(bandRows(st, fig,
@@ -131,7 +118,7 @@ test("the band's columns do not move with the phase or the figures", () => {
 
 test("🧵's 📨 stands left of its mark, so the marks keep one column", () => {
   const st = settings({});
-  const base = document("status/01-baseline@196");
+  const base = document("status/01-baseline");
   const queued = { ...base,
     transcript: { ...(base.transcript as Dict), queued: 3 } };
   const markAt = (fig: Dict, mark: string) => {
@@ -154,8 +141,8 @@ test("🧵's 📨 stands left of its mark, so the marks keep one column", () => 
 test("each row's live and transcript pick the band's rows and the receipt's",
   () => {
     const st = settings({});
-    const status = document("status/01-baseline@196");
-    const cost = document("cost/09-agents@196");
+    const status = document("status/01-baseline");
+    const cost = document("cost/09-agents");
     const opts = { rate: null, phase: "done" as const };
     const main = inZone(status, () => bandRows(st, status, opts).main);
     // Each row's mark, its label being flush right; a blank row's " ".
@@ -203,8 +190,8 @@ test("each row's live and transcript pick the band's rows and the receipt's",
 test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " +
   "and one that ran none stamps its rows as before", () => {
   const st = settings({});
-  const status = document("status/01-baseline@196");
-  const cost = document("cost/09-agents@196");
+  const status = document("status/01-baseline");
+  const cost = document("cost/09-agents");
   const opts = { rate: null, phase: "done" as const };
   const main = inZone(status, () => bandRows(st, status, opts).main);
   const plain = (lines: { scope: string; spans: Span[] }[]) =>
@@ -253,7 +240,7 @@ test("the receipt's rows inset keep the columns of the rows at none", () => {
   // column drops at a width two columns short of where the band drops it.
   // Each row's first mark is its label's, which the inset's room can cut.
   const st = settings({});
-  const cost = document("cost/09-agents@196");
+  const cost = document("cost/09-agents");
   const marks = (line: string): [string, number][] => {
     const out: [string, number][] = [];
     let col = 0;
@@ -273,8 +260,8 @@ test("the receipt's rows inset keep the columns of the rows at none", () => {
 
 test("name.tag hides both tag lines and the receipt's blank row", () => {
   const st = settings({});
-  const status = document("status/01-baseline@196");
-  const cost = document("cost/09-agents@196");
+  const status = document("status/01-baseline");
+  const cost = document("cost/09-agents");
   assert.ok(startLine(st, status).length > 0);
   assert.deepEqual(startLine(st, status, ["name.tag"]), []);
   const all = inZone(cost, () => receiptLines(st, cost, 196, []));
@@ -286,8 +273,8 @@ test("name.tag hides both tag lines and the receipt's blank row", () => {
 test("the tag lines carry the account's limits as the 💳 row draws them",
   () => {
     const st = settings({});
-    const status = document("status/18-agents@196");
-    const cost = document("cost/10-turn-id@196");
+    const status = document("status/18-agents");
+    const cost = document("cost/10-turn-id");
     const start = (hide: string[] = []) =>
       stripAnsi(join(inZone(status, () => startLine(st, status, hide))));
     const end = (hide: string[] = []) => stripAnsi(join(inZone(cost, () =>
@@ -317,8 +304,8 @@ test("the tag lines carry the account's limits as the 💳 row draws them",
 
 test("a tag line with no limits known leaves 💳 out", () => {
   const st = settings({});
-  const status = document("status/18-agents@196");
-  const cost = document("cost/10-turn-id@196");
+  const status = document("status/18-agents");
+  const cost = document("cost/10-turn-id");
   const bare = { ...status, limits: { ...(status.limits as Dict),
     session_pct: null, weekly_pct: null } };
   const usage = cost.usage as Dict;
@@ -332,7 +319,7 @@ test("a tag line with no limits known leaves 💳 out", () => {
 });
 
 test("the receipt bills the cost line's turn", () => {
-  const fig = document("cost/09-agents@196");
+  const fig = document("cost/09-agents");
   const turns = (fig.turns as { [k: string]: unknown }[]).map(decodeTurn);
   const i = receiptTurn(turns);
   assert.ok(turns[i].calls && !turns[i].agent && !turns[i].compact);
@@ -342,7 +329,7 @@ test("the receipt bills the cost line's turn", () => {
 
 test("the 💳 account's own row ends where the band's rows end, in colour", () => {
   const st = settings({});
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const row = inZone(fig, () => accountLine(st, fig, [], 196));
   const text = join(row.map((s) => ({ ...s, colour: null, dim: false,
     bold: false, bg: null })));
@@ -366,7 +353,7 @@ test("the 💳 account's own row ends where the band's rows end, in colour", () 
 test("the 💳 row draws 🔀 and 🎨, each hidden by its path, and sheds in order",
   () => {
     const st = settings({});
-    const fig = document("status/04-pr-and-style@196");
+    const fig = document("status/04-pr-and-style");
     const plain = (hide: string[], cols: number) =>
       stripAnsi(join(inZone(fig, () => accountLine(st, fig, hide, cols))));
     const wide = plain([], 200);
@@ -407,7 +394,7 @@ test("rows inset under the footer line stack on the agent panel's columns", () =
   // 2026-10-20).
   for (const edge of [RIGHT_EDGE, 0]) {
     const st = settings({}, true, false, edge);
-    const fig = document("status/18-agents@196");
+    const fig = document("status/18-agents");
     const hide = ["*.plan.five_hour", "*.context.share", "*.tokens.cache"];
     const plain = (r: readonly Span[]): string => stripAnsi(join(r));
     /** The terminal column each of `marks` starts at in `line`. */
@@ -449,7 +436,7 @@ test("rows inset under the footer line stack on the agent panel's columns", () =
 
 test("the footer's tail ends on the 💳 account details where the band's rows end", () => {
   const st = settings({});
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const hint = "-- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)";
   const text = inZone(fig, () => accountText(st, fig, []));
   assert.ok(text.includes("💳"), text);
@@ -522,7 +509,7 @@ test("the footer's tail ends on the 💳 account details where the band's rows e
 
 test("a hidden context.share leaves 🧠's size and drops its ٪", () => {
   const st = settings({});
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const opts = { rate: null, phase: "running" as const };
   const ctx = (hide: string[]) => inZone(fig, () =>
     bandLines(st, fig, 196, hide, opts)).map((l) => join(l));
@@ -539,7 +526,7 @@ test("a hidden context.share leaves 🧠's size and drops its ٪", () => {
 });
 
 test("📁 draws the whole path, the project's own folder in 📦's colour", () => {
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const ws = (dir: string, git: Dict) => workspaceOf({ ...fig,
     git: { ...(fig.git as Dict), in_git: true, ...git },
     payload: { ...(fig.payload as Dict), current_dir: dir } }, "/home/u");
@@ -569,7 +556,7 @@ test("📁 draws the whole path, the project's own folder in 📦's colour", () 
 
 test("🎤's ⛳ is the turn's own report alone; 🤖's takes a live agent's", () => {
   const st = settings({});
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const opts = { rate: null, phase: "running" as const };
   const now = ((fig.clock as Dict).now as number);
   const text = (spans: readonly Span[] | undefined) =>
@@ -590,7 +577,7 @@ test("🎤's ⛳ is the turn's own report alone; 🤖's takes a live agent's", (
 test("⛳ stops at the turn's end, and a sign-off at zero is not drawn idle",
   () => {
     const st = settings({});
-    const fig = document("status/01-baseline@196");
+    const fig = document("status/01-baseline");
     const opts = { rate: null, phase: "done" as const };
     const now = ((fig.clock as Dict).now as number);
     const text = (spans: readonly Span[] | undefined) =>
@@ -614,7 +601,7 @@ test("⛳ stops at the turn's end, and a sign-off at zero is not drawn idle",
 
 test("🎤 carries the model and 🛫, and a running tool's time in 🛫's column", () => {
   const st = settings({});
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const opts = { rate: 1500, phase: "running" as const };
   const text = (spans: readonly Span[] | undefined) =>
     (spans ?? []).map((s) => s.text).join("");
@@ -643,7 +630,7 @@ test("🎤 carries the model and 🛫, and a running tool's time in 🛫's colum
 test("🎤's ⌛ counts to now while the turn runs, and is dur_s between turns",
   () => {
     const st = settings({});
-    const fig = document("status/01-baseline@196");
+    const fig = document("status/01-baseline");
     const now = ((fig.clock as Dict).now as number);
     const text = (spans: readonly Span[] | undefined) =>
       (spans ?? []).map((s) => s.text).join("");
@@ -674,7 +661,7 @@ test("🎤's ⌛ counts to now while the turn runs, and is dur_s between turns",
 test("a plan reading STALE_MARK_S old marks each 💳 figure with 🧊 and " +
   "its age, in the text", () => {
   const st = settings({});
-  const fig = document("status/01-baseline@196");
+  const fig = document("status/01-baseline");
   const now = (fig.clock as Dict).now as number;
   const read = (asOf: number) => {
     const usage = fig.usage as Dict;

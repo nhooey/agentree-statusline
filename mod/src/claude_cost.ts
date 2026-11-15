@@ -278,12 +278,12 @@ export function costTotalsGroup(st: Settings, turns: readonly Turn[],
 // here (claude.py's decode_record).  Turn has no other missing-value
 // fields, and no stamps.
 const TURN_STRS = ["ts", "text", "agent_id", "agent_name", "prompt_id"];
-const TURN_FIELDS = ["ts", "text", "fresh", "cache_write", "cache_read",
-  "out", "ctx", "calls", "dur_s", "dctx", "usd_in", "usd_out", "usd_cr",
-  "usd_cw", "compact", "reported", "parts", "agent_calls", "agent_ids",
-  "agent", "tool_s", "blocked_s", "agent_model_s", "agent_tool_s",
-  "agent_id", "agent_name", "prompt_id", "turn_index", "lines_added",
-  "lines_removed", "eta"];
+export const TURN_FIELDS: readonly string[] = ["ts", "text", "fresh",
+  "cache_write", "cache_read", "out", "ctx", "calls", "dur_s", "dctx",
+  "usd_in", "usd_out", "usd_cr", "usd_cw", "compact", "reported", "parts",
+  "agent_calls", "agent_ids", "agent", "tool_s", "blocked_s",
+  "agent_model_s", "agent_tool_s", "agent_id", "agent_name", "prompt_id",
+  "turn_index", "lines_added", "lines_removed", "eta"];
 
 /** claude.py's encode_record(Turn): its str fields null when "". */
 export function encodeTurn(t: Turn): { [k: string]: unknown } {

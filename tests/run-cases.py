@@ -16,15 +16,20 @@ systemMessage, not the JSON around it, so a diff is readable.
 Each case is checked in the two stages the program runs in besides
 (tests/README.md, "Figures"):
 
-  figures  the figures document the run wrote, compared byte for byte with
-           tests/fixtures/figures/<suite>/<id>.json;
-  render   that committed document alone, drawn again with
+  figures  the figures document the run wrote, made sparse as it is
+           committed (tests/_figures.py), compared byte for byte with the
+           one the case names, tests/fixtures/figures/<suite>/<figures>.json,
+           so a case at any width and flags must come to it; and its
+           records' keys checked, which the sparse text cannot show;
+  render   that committed document alone, filled out again and drawn with
            --from-figures at the case's width and flags, compared with the
            same golden.  Nothing but the document goes in, so this is the
            drawing checked apart from the accounting.
 
 --regen rewrites the goldens and the figures; --regen-figures the figures
 only, for when the document's shape changes and the drawing must not.
+Either fails a case whose document differs from that of an earlier case
+naming the same one, and removes the documents no case names.
 
 The `panel` suite is the subagent rows' renderer: tests/fixtures/panel/,
 the renderer's inputs and the rows it draws for them, written again by
@@ -57,6 +62,7 @@ from coding_agent_usage_line.spans import COLOUR_VARS  # noqa: E402
 # tests/, for _checks.
 sys.path.insert(0, HERE)
 from _checks import write_executable  # noqa: E402
+import _figures  # noqa: E402
 
 
 def git(*args):
@@ -302,6 +308,9 @@ def run_suite(name, cases, args, drawers):
     # an id.
     figs = os.path.join(FIGURES, name)
     os.makedirs(figs, exist_ok=True)
+    # The documents the cases name, and under --regen-figures the first
+    # case to write each, with what it wrote.
+    named, written = set(), {}
     os.makedirs(out, exist_ok=True)
     for f in os.listdir(out):   # else a stale failure looks like a live one
         if f.endswith((".got", ".want")):
@@ -316,10 +325,23 @@ def run_suite(name, cases, args, drawers):
             cid = case["id"]
             got, figures = render(args.python, suite, case)
             want_path = os.path.join(gold, cid + ".txt")
-            fig_path = os.path.join(figs, cid + ".json")
-            if regen_figures and figures is not None:
+            fig_path = _figures.path(name, case["figures"])
+            named.add(case["figures"])
+            wrote, keys = None, []
+            if figures is not None:
+                doc = json.loads(figures)
+                wrote = _figures.text(_figures.sparse(doc))
+                keys = _figures.key_problems(doc)
+            if regen_figures and wrote is not None:
+                first = written.setdefault(case["figures"], (cid, wrote))
+                if first[1] != wrote:
+                    lines.append("  FAIL  %-32s (figures differ from %s's, "
+                                 "which names %s too)"
+                                 % (cid, first[0], case["figures"]))
+                    totals["fail"] += 1
+                    continue
                 with open(fig_path, "w", encoding="utf-8") as fh:
-                    fh.write(figures)
+                    fh.write(wrote)
             if args.regen:
                 with open(want_path, "wb") as fh:
                     fh.write(got)
@@ -336,24 +358,34 @@ def run_suite(name, cases, args, drawers):
                 fails.append("rows")
                 with open(os.path.join(out, cid + ".got"), "wb") as fh:
                     fh.write(got)
-            # Figures: what the run wrote against what is committed.
+            # Figures: what the run wrote, made sparse, against the
+            # document the case names; and the records' keys, which the
+            # sparse text cannot show.
             kept = read(fig_path)
             if kept is None:
-                pending.append((cid, "  MISS  %-32s (no figures — run "
-                                "--regen-figures)" % cid, None, None, None))
+                pending.append((cid, "  MISS  %-32s (no figures %s — run "
+                                "--regen-figures)" % (cid, case["figures"]),
+                                None, None, None))
                 continue
-            if figures == kept:
+            if wrote == kept and not keys:
                 stages["figures"]["pass"] += 1
             else:
                 stages["figures"]["fail"] += 1
-                fails.append("figures")
+                fails.append("figures" if wrote != kept else
+                             "figures keys %r" % (keys,))
                 with open(os.path.join(out, cid + ".figures.got"), "w",
                           encoding="utf-8") as fh:
-                    fh.write(figures or "")
+                    fh.write(wrote or "")
             # Render: the committed figures alone, drawn again.
-            pending.append((cid, None, fails, want, drawers.draw(case, kept)))
+            pending.append((cid, None, fails, want, drawers.draw(
+                case, _figures.read_full(name, case["figures"]))))
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+    if regen_figures:
+        # A document no case names any more is gone.
+        for f in sorted(os.listdir(figs)):
+            if f.endswith(".json") and f[:-5] not in named:
+                os.remove(os.path.join(figs, f))
     for cid, miss, fails, want, drawing in pending:
         if miss:
             lines.append(miss)
