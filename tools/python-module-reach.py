@@ -14,7 +14,6 @@ and follows them from each entry:
   inside a function.
 - claude: the same launcher with --agent claude, the agent panel among its
   modes: cli.py's closure with claude.py's added.
-- fold: mod/scripts/agent_lines.py, the mod's worker for large folds.
 - tests: each Python file under tests/ and tools/ that imports a module.
 
 An import inside a function counts as reached wherever its module is
@@ -83,9 +82,6 @@ def reach():
         'codex': closure(['cli'], codex_edges),
         'claude': closure(['cli', 'claude'], edges),
     }
-    fold = os.path.join(ROOT, 'mod', 'scripts', 'agent_lines.py')
-    entries['fold'] = closure(
-        [n for n, _ in imports_of(fold, False) if n in mods], edges)
     tests = {m: [] for m in mods}
     for d in ('tests', 'tools'):
         for dirpath, dirnames, files in os.walk(os.path.join(ROOT, d)):
@@ -104,7 +100,6 @@ def reach():
         rows.append({'module': m + '.py', 'lines': lines,
                      'codex': m in entries['codex'],
                      'claude': m in entries['claude'],
-                     'fold': m in entries['fold'],
                      'tests': sorted(set(tests[m]))})
     return rows
 
@@ -118,13 +113,12 @@ def main():
         print()
         return 0
     yes = lambda b: '✅' if b else '—'
-    print('| Module | Lines | Codex | Claude | Fold worker | Test files |')
-    print('| --- | ---: | :---: | :---: | :---: | ---: |')
-    for r in sorted(rows, key=lambda r: (r['codex'], r['fold'],
-                                         -r['lines'])):
-        print('| `{}` | {} | {} | {} | {} | {} |'.format(
+    print('| Module | Lines | Codex | Claude | Test files |')
+    print('| --- | ---: | :---: | :---: | ---: |')
+    for r in sorted(rows, key=lambda r: (r['codex'], -r['lines'])):
+        print('| `{}` | {} | {} | {} | {} |'.format(
             r['module'], r['lines'], yes(r['codex']), yes(r['claude']),
-            yes(r['fold']), len(r['tests'])))
+            len(r['tests'])))
     return 0
 
 
