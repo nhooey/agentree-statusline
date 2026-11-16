@@ -89,7 +89,7 @@ blank there. The band's and the receipt's rows count too, so
 | Part | Values |
 |---|---|
 | scope | `account`, `turn`, `main`, `session`, `agent`, and `tag` for the turn tag lines, 🔻🔖 and 🔺🔖 |
-| group | `plan` (🔋 🪫, and on the 💳 row 🦊 `fable` and the other weekly windows, 🎼 `opus`, 🎭 `sonnet`, 🍳 `omelette`, 🔌 `oauth_apps` and 🤝 `cowork`), `cost` (💰, and `spend`, the credit paying for it after it), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫, and on agent rows the 👶🏻 🤏 💻 📡 📨 counts), `chat` (the activity, and the progress update in the band's tree), `workspace` (🌿), `name` (the name and the kind) |
+| group | `plan` (🔋 🪫, and on the 💳 row 🦊 `fable` and the other weekly windows, 🎼 `opus`, 🎭 `sonnet`, 🍳 `omelette`, 🔌 `oauth_apps` and 🤝 `cowork`), `cost` (💰, and `spend`, the credit paying for it after it), `tokens` (🧩 🎯), `context` (🧠), `time` (⌛ ⛳ 🤖 🔧 🚦), `work` (💾), `state` (model, 🛫, and on agent rows the 👶🏻 🤏 💻 📡 📨 counts), `chat` (the activity, and the progress update and 🎤's prompt in the band's tree), `workspace` (🌿), `clock` (📅 🕐), `name` (the name and the kind) |
 
 On an agent row:
 
@@ -100,6 +100,7 @@ On an agent row:
 | `agent.workspace.branch` | 🌿 and a worktree's branch |
 | `agent.chat.doing` | what it is doing, the activity text |
 | `agent.chat.progress`, `main.chat.progress` | the latest progress update after the name, in the band's tree |
+| `turn.chat.prompt` | the prompt typed last, after 🎤's name in the band's tree |
 | `agent.state.kids`, `.compact`, `.shells`, `.monitors`, `.inbox` | 👶🏻, 🤏, 💻, 📡, 📨 |
 | `agent.state.model`, `.rate`, `agent.cost`, `agent.cost.spend`, `agent.context`, `agent.tokens.io`, `.cache`, `agent.time.elapsed`, `.eta`, `.split`, `agent.plan.five_hour`, `.week`, `agent.work` | the columns |
 | `agent.context.share` | 🧠's ٪ of the window, its size set flush right; hidden on every scope (`*.context.share`), 🧠's column narrows by the ٪'s room |
