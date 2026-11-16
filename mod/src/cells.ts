@@ -318,9 +318,8 @@ export function turnLabel(): Piece[] {
 
 /** 🧵, and before it 📨 and `inbox`, the messages waiting for the main
  * thread's next turn, as an agent row's 📨 counts its own (agentLabel).
- * The label is drawn flush right, so 📨 goes on its left: 🧵 stays in
- * the column 🎤 and 🎮 stand in.  The band's tree draws its own label
- * (band_tree.ts). */
+ * Where the row is drawn, above the prompt, under the footer line or on
+ * the receipt, the band's tree draws its own label (band_tree.ts). */
 export function mainLabel(inbox = 0): Piece[] {
   return [
     ...(inbox ? [{ path: "state.inbox",

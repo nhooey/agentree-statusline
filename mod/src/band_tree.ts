@@ -352,7 +352,7 @@ function drawNode(n: Node, lasts: readonly boolean[], out: Row[],
   marks = true): void {
   const line = treeLine(lasts, marks && (n.kids.length > 0 || n.folded),
     n.folded, n.fold);
-  out.push({ ...n.row, left: true, label: [
+  out.push({ ...n.row, label: [
     ...(line.length ? [{ path: "tree", spans: line, drop: 0 }] : []),
     ...n.row.label] });
   if (!n.folded) walk(n.kids, lasts, out, marks);
