@@ -349,6 +349,23 @@ test("a background task keeps its command and output file, open and " +
   assert.equal(open.has("b4"), false);
 });
 
+// A Monitor's event is the watched stream's own text: one that quotes the
+// expiry line, as a Monitor tailing a transcript would, leaves it open,
+// and Claude Code's own expiry, which opens the event, closes it.
+test("a Monitor closes on its expiry, not on an event quoting it", () => {
+  const open = new Map<string, string>([["m7", "monitor"]]);
+  const note = (event: string) => ({ type: "user",
+    timestamp: "2026-08-17T20:55:00.000Z", message: { content:
+      "<task-notification><task-id>m7</task-id><summary>Monitor event: " +
+      "\"x\"</summary><event>" + event + "</event></task-notification>" } });
+  cr.scanBackground(note("grep hit: [Monitor expired after 30m with 1 " +
+    "event delivered."), open);
+  assert.equal(open.has("m7"), true);
+  cr.scanBackground(note("[Monitor expired after 30m with 1 event " +
+    "delivered. Re-arm it if you still need the watch.]"), open);
+  assert.equal(open.has("m7"), false);
+});
+
 // The mod reads an agent's file as it grows, folding only what was appended
 // since its last read: cut anywhere, mid-line included, the file folded
 // piece by piece reads as it does read whole.
