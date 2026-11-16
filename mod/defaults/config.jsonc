@@ -8,14 +8,15 @@
 // The options' types, allowed values and documentation are in
 // spec/options.jsonc and docs/options.md.
 //
-// To change a setting, copy this file to your own and edit the copy:
+// To change a setting, write only that key in your own file,
+// ~/.config/coding-agent-usage-line/config.jsonc (or a project's
+// .config/coding-agent-usage-line/config.jsonc), such as
 //
-//   cp mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
-//   diff mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
+//   {"totals": false}
 //
-// (or to a project's .config/coding-agent-usage-line/config.jsonc).  The
-// diff is then exactly what you changed.  Your file may leave keys out: a
-// key it does not set comes from here, and follows this file as it changes.
+// A key it does not set comes from here, and follows this file as it
+// changes.  A key that is no option refuses the whole file, with a
+// warning naming it.
 {
   // ── Both ports ─────────────────────────────────────────────────────────
   // Where plan and quota figures come from: auto, native, none, off,

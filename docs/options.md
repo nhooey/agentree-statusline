@@ -268,26 +268,23 @@ default and a line on what it does, by its long flag's name without the
 
 That file is the defaults: both the Python program and the mod read it at
 every run, and no default is written anywhere else. To change settings,
-copy it to your user file, or to a project's, and edit the copy:
+write only the keys you change in your user file, or in a project's; a
+table such as `rows` takes just the fields you set:
 
-```sh
-mkdir -p ~/.config/coding-agent-usage-line
-cp mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
-# or, for one project:
-cp mod/defaults/config.jsonc <root>/.config/coding-agent-usage-line/config.jsonc
+```jsonc
+// ~/.config/coding-agent-usage-line/config.jsonc
+{
+  "totals": false,
+  "rows": {"turn": {"live": "always"}}
+}
 ```
 
-A diff of the two is then exactly what you changed from the defaults:
-
-```sh
-diff mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
-```
-
-A full copy sets every option, so a later change to a default in the
-repository does not reach it; delete the lines you have not changed to
-follow the defaults instead. `right-edge` and `label` are `null` in the
-defaults file, which means "follow `rows.*.place`" and "follow
-`usage-text`"; `null` in your copy means the same, and is not a setting.
+Every key the file leaves out keeps the default, so a later change to a
+default in the repository reaches you. A full copy of the defaults file
+works too, but sets every option, so it keeps the defaults of the day you
+copied it. `right-edge` and `label` are `null` in the defaults file, which
+means "follow `rows.*.place`" and "follow `usage-text`"; `null` in your
+file means the same, and is not a setting.
 
 The defaults file is read strictly. A key missing from it, a key that is no
 option, or a value of the wrong type is an error naming the file and the
