@@ -23,11 +23,32 @@ import {
 } from './engine.ts'
 import type { Places } from './engine.ts'
 import { defaultsFault, options } from './configuration.ts'
+import { log } from './log.ts'
 import { planUsageVia, PLAN_USAGE_EVERY, recentAnswer } from './plan_usage.ts'
 
 type $ = EngineInterface
 
 const TRACKER_DOMAIN = 'HamedElfayome.Claude-Usage'
+
+/** The line logged, once a load, for a tracker store with no
+ * `profiles_v3`: the app keeps its profiles in the Keychain from 3.3 on,
+ * which the mod does not read, so the source has no reading. */
+export const TRACKER_NO_PROFILES = 'tracker: Claude Usage.app\'s settings ' +
+  'have no profiles_v3, so it gives no reading (it keeps its profiles in ' +
+  'the Keychain, which the mod does not read)'
+
+let trackerNoProfilesLogged = false
+
+/** trackerReading of `store`, logging TRACKER_NO_PROFILES the first time
+ * a store lacks `profiles_v3` this load. */
+async function trackerOf($: $, store: unknown): Promise<Dict> {
+  if (!trackerNoProfilesLogged && isDict(store) &&
+    pyGet(store, 'profiles_v3') === null) {
+    trackerNoProfilesLogged = true
+    await log($, TRACKER_NO_PROFILES)
+  }
+  return trackerReading(store)
+}
 
 /** The Claude Usage Tracker's store, as readTracker reads it: the override
  * file through `$.fs`, else `defaults export`, since the app's own .plist
@@ -39,14 +60,15 @@ async function readTracker($: $, home: string): Promise<Dict | null> {
     const path = override.startsWith('~/') ? home + override.slice(1)
       : override
     const got = await readBytesVia($, path)
-    return trackerReading(plistLoads(fromBase64(got.base64)))
+    return trackerOf($, plistLoads(fromBase64(got.base64)))
   }
   const plist = home + '/Library/Preferences/' + TRACKER_DOMAIN + '.plist'
   if (await fileSize($, plist) === null) return null
   try {
     const r = await runVia($, ['defaults', 'export', TRACKER_DOMAIN, '-'],
       { timeoutMs: 15_000 })
-    return trackerReading(r.stdout ? plistLoads(encoder.encode(r.stdout)) : {})
+    return trackerOf($, r.stdout ? plistLoads(encoder.encode(r.stdout))
+      : {})
   } catch {
     return {}
   }
