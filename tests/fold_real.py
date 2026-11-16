@@ -16,9 +16,9 @@ line, the line's records are folded on a copy, which must read as the file
 cut there does, and the fold completed must read as the whole.
 
 One line a file, then a total; the exit status is the number of files that
-broke.  mod/tools/check-fold.ts is the TypeScript's side; `check-folds` in
-the dev shell runs both.  See
-agents/plans/_implemented/saved-running-totals.md.
+broke.  mod/tools/check-fold.ts is the TypeScript's side; `usage-dev folds`
+runs both.  See
+agents/plans/closed/saved-running-totals.md.
 """
 
 import argparse

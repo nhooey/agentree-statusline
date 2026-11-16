@@ -9,7 +9,7 @@ offset, and counts from those as inbox_counts counts from the whole files.
 mod/src/inbox_fold.ts is the port, and the Node port's inboxFoldCounts
 writes the same bytes for the same files.  spec/state.jsonc's "inbox-fold"
 row names the directory and the format;
-agents/plans/_implemented/saved-running-totals.md has the design.
+agents/plans/closed/saved-running-totals.md has the design.
 
 The fold is the whole session's, one JSON object, written to one of two
 slots in turn, each with a sequence number, as the agent folds are:

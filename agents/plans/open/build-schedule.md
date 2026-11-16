@@ -1,3 +1,9 @@
+---
+title: Integrated schedule: every open plan as one task graph
+state: approved
+kind: schedule
+---
+
 # Integrated schedule: every open plan as one task graph
 
 The open plans' remaining steps as nodes of one graph, so agents can build
@@ -5,12 +11,12 @@ them in parallel without waiting on work they do not need or colliding in
 files they both change. Written 2026-10-20 from:
 
 - [Configuration](config-merge.md), steps 1–8: `CM1` … `CM8`.
-- [Saved running totals](_implemented/saved-running-totals.md), steps 6–9
+- [Saved running totals](../closed/saved-running-totals.md), steps 6–9
   and its Decided 5: `RT6` … `RT9`, `RT8i`. Steps 1–5 were done; every
   node is now done (2026-10-21).
-- [Clickable rows](_implemented/clickable-rows.md), steps 1–3: `CK1` …
+- [Clickable rows](../closed/clickable-rows.md), steps 1–3: `CK1` …
   `CK3` (added 2026-10-20); every node is now done (2026-10-21).
-- [Colours on the 256-colour palette](_implemented/palette-256.md), steps 1–2: `PL1`,
+- [Colours on the 256-colour palette](../closed/palette-256.md), steps 1–2: `PL1`,
   `PL2` (added 2026-10-20).
 - [Row placement](row-placement.md), steps 1–8: `RP1` … `RP8` (added
   2026-10-21; approved and its decisions taken 2026-10-21).
@@ -27,7 +33,7 @@ files they both change. Written 2026-10-20 from:
 
 A plan's own build order stays the reference for what each step does; this
 file says only when it can start. Update it as nodes land: mark the node
-done, and move a plan to [_implemented](_implemented/) when its last node is.
+done, and move a plan to [closed](../closed/) when its last node is.
 
 ## How to read it
 

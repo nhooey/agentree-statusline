@@ -1,8 +1,12 @@
-"""What the assertion suites share: agents.py, rate.py and subagent.py, and
-the fixture commands of run-cases.py and app-server.py (write_executable).
+"""What the assertion suites share: every tests/*.py that checks values
+(agents.py, rate.py, subagent.py, formatting.py, the source suites and the
+rest), and the fixture commands of run-cases.py and app-server.py
+(write_executable).
 
 Each check prints a line, ok or FAIL with what it got and wanted, and is
-counted in `passed` or `failed` for the suite's closing line.
+counted in `passed` or `failed` for the suite's closing line.  A failed
+check does not stop the suite, and `python3 -O` does not remove it, as it
+would a bare `assert`.
 """
 import json
 import os
@@ -65,11 +69,22 @@ def bad(name, detail=""):
             print("          " + line)
 
 
-def check(name, got, want):
+def check(name, got, want, detail=None):
+    """`detail`, if given, is printed after got and want when they differ."""
     if got == want:
         ok(name)
     else:
-        bad(name, "got  %r\nwant %r" % (got, want))
+        bad(name, "got  %r\nwant %r" % (got, want)
+            + ("" if detail is None else "\nseen %r" % (detail,)))
+
+
+def holds(name, cond, detail=""):
+    """A check of a condition with no single value to compare: `detail`,
+    what was seen, is printed if it fails."""
+    if cond:
+        ok(name)
+    else:
+        bad(name, detail)
 
 
 def near(name, got, want, tol=1e-9):

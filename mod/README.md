@@ -1,6 +1,6 @@
 # mod
 
-The TypeScript side of the [redesign](../agents/plans/_implemented/redesign.md): the
+The TypeScript side of the [redesign](../agents/plans/closed/redesign.md): the
 Claude accounting, the usage-source reader and the cells, ported from
 `coding_agent_usage_line/` module by module, each under the same name, and
 the Claude Code mod, `usage-band`, that draws them.
@@ -92,7 +92,10 @@ and `subscript-decimals`, the `rows` table (for each of 🎤, 🧵, 🎮, the su
 🔖 tag lines and 💳, where it is drawn, above the prompt or under the
 footer line, when, and whether a turn's end stamps it into the
 transcript), `subagent-rows`, `account-place`, `weekly-windows` (the 💳 row's other weekly windows, all off by default), `right-edge` (following the rows' places),
-and the footer's layout (`hint-inset`, `hint-tuck`, `footer-ruler`). `hooks/configuration.ts` reads the
+the footer's layout (`hint-inset`, `hint-tuck`, `footer-ruler`),
+`agent-message-row`, `slow-toast` (a slow read shown as a toast as well as
+in the log) and `starts-kept` (how many start lines and receipts the
+mod's store keeps). `hooks/configuration.ts` reads the
 files at each load, on `session.start`, and every 30 seconds on the tick,
 a stat of each file, reading again only one that has changed, or the
 files of a new root after a `/cd`; a change draws everything again, with
@@ -138,9 +141,9 @@ As a turn ends the mod stamps its receipt as the turn's closing line, in
 place of Claude Code's `✻ <word> for <duration>`: the rows whose
 `transcript` is set in `rows`, frozen and dim, in their colours. As the
 mod ships that is 🎤 alone, since 🧵 and 🎮 stay live on screen
-(`node tools/draw-figures.ts
-../tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part
-receipt --inset 2 --right-edge 5 --plain`, run from `mod/`):
+(`usage-dev figures
+tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part
+receipt --inset 2 --right-edge 5 --plain`):
 
 ```
                          🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
@@ -194,7 +197,8 @@ For every session, installed from this repository's marketplace
 
 or from GitHub, in a session:
 
-    /plugin install usage-band --marketplace nhooey/claude-code-usage-statusline
+    /plugin marketplace add nhooey/claude-code-usage-statusline
+    /plugin install usage-band@claude-code-usage-statusline
 
 Installed from a local marketplace, the mod is read from `mod/` itself: a
 change here takes effect at the next session start or `/reload-plugins`,
@@ -257,13 +261,13 @@ reads, and `foldPieces` the 8 MiB pieces folded.
 `mod-tests/` runs in Claude Code's own test runner, which loads the mod as
 a session would and stands in for the engine beneath it:
 
-    cd mod && npm run test:plugin
+    usage-dev plugin-test
 
 It validates the mod and runs the harness tests from a scratch copy, since
 the runner collects every `*.test.ts` under the folder it is given and
 `test/` holds Node's. Each test answers `$.fs` from the fixture
 transcripts (`mod-tests/fixtures.gen.ts`, written by
-`node tools/gen-mod-fixtures.ts`; `test/mod-fixtures.test.ts` fails when it
+`usage-dev mod-fixtures`; `test/mod-fixtures.test.ts` fails when it
 is stale) and checks what the mod drew, the receipt's closing line among
 them, against the `src/` functions over the same bytes. It needs the
 `claude` command, which CI does not have.

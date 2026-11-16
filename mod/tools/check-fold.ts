@@ -9,7 +9,7 @@
 // turnsOf do, breaks the fold at three record boundaries, either side of
 // every compaction and once inside a line, and checks that each reads on
 // to the whole fold.  One line a file, then a total; the exit status is the
-// number of files that broke.  `check-folds` in the dev shell runs both.
+// number of files that broke.  `usage-dev folds` runs both.
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";

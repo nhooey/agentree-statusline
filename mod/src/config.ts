@@ -1,5 +1,5 @@
 // The configuration files: where they are, what they say, what is wrong
-// with them, and the options merged from them (agents/plans/config-merge.md,
+// with them, and the options merged from them (agents/plans/open/config-merge.md,
 // "Files" and "Merge semantics").
 //
 // A port of coding_agent_usage_line/config.py, of options.merge and of
@@ -710,9 +710,62 @@ function known(name: string): { option: OptionRec; why: null } |
   const option = SPEC[name];
   if (!option.file) {
     return { option: null,
-      why: `${dumps(name)} describes one run, so no file sets it` };
+      why: `${dumps(name)} is a per-run flag, which no file sets` };
   }
   return { option, why: null };
+}
+
+/** Why each key of a file's object names nothing a file may set, at any
+ * depth: an option, a table's row or a row's field, a record's field, or
+ * a key of a record's conditions-by field, each with the nearest known
+ * name.  The Python's unknown_keys gives the same words. */
+export function unknownKeys(data: Map<string, Json>): string[] {
+  const why: string[] = [];
+  for (const [name, value] of data) {
+    if (name === "version") continue;
+    const { option, why: bad } = known(name);
+    if (option === null) {
+      why.push(bad);
+      continue;
+    }
+    if (!(value instanceof Map)) continue;
+    const fields = option.fields ?? {};
+    const names = Object.keys(fields);
+    if (option.type === "table") {
+      const rows = option.rows ?? [];
+      for (const [row, rec] of value) {
+        if (!rows.includes(row)) {
+          why.push(`${dumps(`${name}.${row}`)} is no row${hint(row, rows)}`);
+          continue;
+        }
+        if (!(rec instanceof Map)) continue;
+        for (const field of rec.keys()) {
+          if (!Object.hasOwn(fields, field)) {
+            why.push(`${dumps(`${name}.${row}.${field}`)} is no field` +
+              hint(field, names));
+          }
+        }
+      }
+    } else if (option.type === "record") {
+      for (const [field, v] of value) {
+        if (!Object.hasOwn(fields, field)) {
+          why.push(`${dumps(`${name}.${field}`)} is no field` +
+            hint(field, names));
+          continue;
+        }
+        const spec = fields[field];
+        if (spec.type !== "conditions-by" || !(v instanceof Map)) continue;
+        const keys = spec.keys ?? [];
+        for (const key of v.keys()) {
+          if (!keys.includes(key)) {
+            why.push(`${dumps(`${name}.${field}.${key}`)} is no key` +
+              hint(key, keys));
+          }
+        }
+      }
+    }
+  }
+  return why;
 }
 
 /** One key of a file: the value to merge, or null to skip it, and why for
@@ -797,6 +850,11 @@ export async function readFile(path: string, fs: ConfigFs,
   }
   const { data, why } = objectOf(got.text);
   if (data === null) return skipped(why);
+  const unknown = unknownKeys(data);
+  if (unknown.length) {
+    return { values: {}, mtimeMs: st?.mtimeMs ?? null,
+      warnings: unknown.map((w) => `${path}: ${w}, so the file is skipped`) };
+  }
   const values: Layer["values"] = {};
   const warnings: string[] = [];
   for (const [name, value] of data) {

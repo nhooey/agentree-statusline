@@ -203,7 +203,7 @@ class Program(unittest.TestCase):
     def test_show_config(self):
         write(self.tmp / "user" / "config.jsonc", '{"account": "u", "hide": ["a"]}')
         write(self.project / D / "config.local.jsonc",
-              '{\n  // mine\n  "rows": {"turn": {"live": "always"}},\n  "rwos": 1,\n}')
+              '{\n  // mine\n  "rows": {"turn": {"live": "always"}},\n  "totals": "no",\n}')
         result = self.run_program("--show-config", "--hide", "b", cwd=self.project / ".git")
         self.assertEqual((result.returncode, result.stderr), (0, ""))
         lines = result.stdout.splitlines()
@@ -224,7 +224,7 @@ class Program(unittest.TestCase):
         self.assertEqual(rows["label"], ["derived", '"🎤 Usage: Prompt (last)  "'])
         self.assertNotIn("mode", rows)
         self.assertEqual(lines[lines.index("Warnings:") + 1:], [
-            '  %s: "rwos" is no option (did you mean "rows"?); skipped' % local,
+            '  %s: "totals" must be true or false; skipped' % local,
             "  %s: --hide on the command line overrides its \"hide\" here, "
             "which the mod reads" % (self.tmp / "user" / "config.jsonc")])
 
@@ -278,14 +278,14 @@ class Program(unittest.TestCase):
         write(rollout, json.dumps({"type": "session_meta", "payload": {
             "id": "root", "session_id": "s", "cwd": str(self.project)}}) + "\n")
         write(self.project / D / "config.jsonc",
-              '{"usage-source": "claude-usage-tracker", "acount": "x"}')
+              '{"usage-source": "claude-usage-tracker", "totals": "no"}')
         result = self.run_program("--agent", "codex", "--mode", "status", "--diagnose",
                                   "--transcript", str(rollout), cwd=self.tmp)
         self.assertEqual(result.returncode, 0, result.stderr)
         path = self.project / D / "config.jsonc"
         lines = result.stderr.splitlines()
         self.assertEqual(lines[:2], [
-            '%s: "acount" is no option (did you mean "account"?); skipped' % path,
+            '%s: "totals" must be true or false; skipped' % path,
             '%s: "usage-source" "claude-usage-tracker" is no source codex reads; '
             'skipped' % path])
         self.assertIn("diagnose source=auto ", lines[2])

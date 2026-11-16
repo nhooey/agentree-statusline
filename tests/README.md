@@ -43,7 +43,7 @@ honest.
 To add a case, add the payload or transcript to its generator
 (`fixtures/gen/status.py` or `fixtures/gen/cost.py`), or the case and any new
 environment to `fixtures/gen/cases.py`. Then run
-`python3 tests/fixtures/gen/all.py`, then `--regen`, and read both diffs.
+`usage-dev fixtures`, then `usage-dev goldens`, and read both diffs.
 
 ## The pinned environment
 
@@ -73,7 +73,9 @@ later payload without them reads. Anything else that runs the cases has to
 keep that order.
 
 `run-cases.py` runs the program with `/usr/bin/python3`, not the first
-`python3` on `PATH`; `--python` picks another.
+`python3` on `PATH`; `--python`, or `TEST_PYTHON` in the environment, picks
+another (`TEST_PYTHON` also runs `golden.sh` and `golden-cost.sh`
+themselves).
 
 ## The generated corpora
 
@@ -184,7 +186,7 @@ the figures the redesigned grid draws and today's rows do not: the status
 document's `turn` and `accounting`, the accounting's time and 💾 figures, the
 `Turn`'s lines and the `Transcript`'s main-thread figures. Schema 3, the same
 day, added what the decisions in the plan's
-[Where each row's figures come from](../agents/plans/_implemented/redesign.md#where-each-rows-figures-come-from)
+[Where each row's figures come from](../agents/plans/closed/redesign.md#where-each-rows-figures-come-from)
 need: the status document's `open_turn` and `accounting.open_turn`,
 `accounting.own`, the session's `start_s`, the `Transcript`'s `own_parts` and
 `own_est` with the compactions in its own cost, and the `Turn`'s `eta`. No row
@@ -358,9 +360,9 @@ again in memory, under `--python`, and compared with what is committed.
 ## Grid cases
 
 `fixtures/grid/` pins the redesigned grid
-([the plan](../agents/plans/_implemented/redesign.md)), `mod/src/grid.ts`. Unlike the rest
+([the plan](../agents/plans/closed/redesign.md)), `mod/src/grid.ts`. Unlike the rest
 of `fixtures/`, these are written by the TypeScript, with
-`node mod/tools/gen-grid-cases.ts`: the grid is built there first, and the
+`usage-dev grid-cases`: the grid is built there first, and the
 Python's `grid.py` is checked against them by `tests/grid.py`. `all.py` does not touch them.
 
 The inputs are plain data: the mockup's sample rows by id, each its scope, its
@@ -396,9 +398,9 @@ prompt (💳 🎤 🤖💬 🎮 while a turn runs, 💳 🤖💬 once it ends) a
 `mod/src/receipt.ts` draws a cost document as the receipt (its 🔺🔖 head, 📊 🎤
 and 📊 🎮) and a status document as the 🔻🔖 start line, all through the cells
 in `mod/src/cells.ts`. The plan's
-[Where each row's figures come from](../agents/plans/_implemented/redesign.md#where-each-rows-figures-come-from)
+[Where each row's figures come from](../agents/plans/closed/redesign.md#where-each-rows-figures-come-from)
 says which field each cell reads. Like the grid's, these are written by the
-TypeScript, with `node mod/tools/gen-row-cases.ts`.
+TypeScript, with `usage-dev row-cases`.
 
 The inputs are the committed [figures documents](#figures), by id
 (`status/01-baseline`), filled out as `mod/test/figures_doc.ts` fills them.
@@ -425,8 +427,8 @@ in memory, failing if what it writes differs from what is committed. To look
 at the rows in a terminal:
 
 ```sh
-node mod/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
-node mod/tools/draw-figures.ts tests/fixtures/figures/cost/<name>.json \
+usage-dev figures tests/fixtures/figures/status/<name>.json --cols 160
+usage-dev figures tests/fixtures/figures/cost/<name>.json \
     --status tests/fixtures/figures/status/<name>.json
 ```
 
@@ -494,6 +496,9 @@ These pin values rather than rows, so they assert instead of comparing files.
   in the mod's log, and that no path the mod asks for lies outside the
   test's own world.
 - **`formatting.py`, `claude-subagent-render.py`** — pure helpers, no I/O.
+- **`usage-dev.py`** — `tools/usage-dev.py`, the dev shell's `usage-dev`:
+  its argument parsing and the steps each command runs, checked as data,
+  and `run` against stand-in programs.
 - **`py39-floor.sh`** — `py_compile` over every file under 3.9 (catches
   syntax), then one render per mode under 3.9 (catches a name 3.9 lacks). It
   prefers `/usr/bin/python3`, which is 3.9 on macOS, or `PY39` if set.
@@ -529,7 +534,7 @@ it, and give it no timeout.
 ### Breaking the folds over real transcripts
 
 ```sh
-check-folds [--largest N] [--seed S] [FILE...]   # in the dev shell
+usage-dev folds [--largest N] [--seed S] [FILE...]  # both ports
 python3 tests/fold_real.py [...]                 # the Python alone
 node mod/tools/check-fold.ts [...]               # the TypeScript alone
 ```
@@ -545,7 +550,7 @@ took 173s and the TypeScript 109s; `--largest 3` takes seconds.
 ### `--selftest`
 
 ```sh
-./coding-agent-usage-line.py --selftest
+usage-dev selftest
 ```
 
 Draws specimen rows and measures them against the live terminal. It is the
@@ -556,7 +561,7 @@ from a real tab: it needs a tty to query.
 ### `probe-advance.sh`
 
 ```sh
-bash tests/probe-advance.sh
+usage-dev probe-advance
 ```
 
 Prints this terminal's cursor advance for every glyph the program uses, by

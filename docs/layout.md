@@ -15,13 +15,13 @@ one per subagent, hang in the band's tree, drawn by
 the same order, so a figure stands on the same screen column wherever it
 is drawn. Claude Code's own agent panel draws its rows itself. Why it is
 laid out this way is in
-[the plan it was built from](../agents/plans/_implemented/redesign.md),
+[the plan it was built from](../agents/plans/closed/redesign.md),
 and the tree in
-[The band's tree](../agents/plans/one-panel-port.md#the-bands-tree).
+[The band's tree](../agents/plans/open/one-panel-port.md#the-bands-tree).
 
 All examples below are the programs' own output against the test fixtures
 (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile),
-with colour stripped: `node mod/tools/draw-figures.ts` for the mod's rows,
+with colour stripped: `usage-dev figures` for the mod's rows,
 from `tests/fixtures/figures/`, with the subagents of a case of
 `tests/fixtures/panel/corpus.json` where the tree has some (`--agents`),
 and the renderer's cases in `tests/fixtures/panel/` for the subagent rows
@@ -62,7 +62,7 @@ The mod draws its rows in two places: above the prompt, in the band Claude
 Code can collapse with its `[-]` and ctrl+x ctrl+a (`AbovePrompt`), and
 under Claude Code's own `-- INSERT -- ⏵⏵ auto mode on` footer line, in the
 same container (`PromptHint`). While a turn runs, at 160 columns, above the
-prompt (`node mod/tools/draw-figures.ts
+prompt (`usage-dev figures
 tests/fixtures/figures/status/01-baseline.json --cols 160 --part above
 --inset 2 --right-edge 5 --rate 200 --plain`):
 
@@ -607,7 +607,7 @@ place of Claude Code's `✻ <word> for <duration>`: the rows whose
 `transcript` is set in `rows`, as they stood when it ended, frozen and dim,
 in their colours, then the turn's tag. As the mod ships that is 🎤 alone,
 since 🧵 and 🎮 stay live on screen. At 160 columns, from a cost document
-(`node mod/tools/draw-figures.ts
+(`usage-dev figures
 tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part receipt
 --inset 2 --right-edge 5 --plain`):
 
@@ -721,7 +721,7 @@ blank there, and the receipt stays under the answer.
 
 The receipt's last line names the turn it bills, and the prompt that opened
 the turn carries the same tag under it, `🔻🔖`, then the account's limits
-and when the turn started, dim (`node mod/tools/draw-figures.ts
+and when the turn started, dim (`usage-dev figures
 tests/fixtures/figures/status/18-agents.json --part start --plain`):
 
 ```

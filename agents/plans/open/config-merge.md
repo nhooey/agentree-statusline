@@ -1,8 +1,14 @@
+---
+title: Configuration: one set of options, merged from files and flags
+state: approved
+kind: end-state
+---
+
 # Configuration: one set of options, merged from files and flags
 
 Being built: steps 1 to 6 are done (each has its Status), so both ports
 read the files and draw from them; steps 7 and 8 are the user's, by hand.
-[Options](../../docs/options.md) is the reference for the flags and the
+[Options](../../../docs/options.md) is the reference for the flags and the
 files. This document collects the design as it is decided.
 
 ## Why
@@ -231,14 +237,15 @@ it drawing this" without reading three files by hand.
 ### Unknown keys and bad values
 
 A config file is read in a hook, and a hook never breaks a session, so
-nothing in a file stops a port from drawing. What goes wrong is skipped, at
-the smallest unit that can be, and said where the person will see it:
+nothing in a file stops a port from drawing. A key that names nothing a
+file may set refuses the file; anything else that goes wrong is skipped, at
+the smallest unit that can be. Each is said where the person will see it:
 
 | What | Effect |
 |---|---|
 | a file that is not valid JSON(C) or not an object | the whole file is skipped |
-| an unknown key | skipped; the warning names the nearest known key, so `rwos` says `rows` |
-| a key the spec knows but says `"file": false` (`mode`, `cols`) | skipped |
+| an unknown key, at any depth: an option, a table's row or field, a record's field or key | the whole file is skipped; the warning names the nearest known key, so `rwos` says `rows` |
+| a key the spec knows but says `"file": false` (`mode`, `cols`) | the whole file is skipped |
 | a value of the wrong type, out of range, or not among the enum's | that key is skipped, and the layer under it supplies the value |
 | a list with one bad item | the whole list is skipped, not the item: half a `hide` list draws something nobody asked for |
 | a key for the other port only (`rows` in the Python) | no warning: the spec knows it |
@@ -864,9 +871,9 @@ The rows table set in this project only:
       under it, the log and one transcript line say it once, and no
       figures are read or receipts stamped until the file reads whole
       (the tick looks at its `mtimeMs` with the other files').
-    - **Users' and projects' files stay lenient** (the user's call on
-      this was pending; this is the default taken): a key they leave out
+    - **Users' and projects' files are sparse:** a key they leave out
       falls through to the layers under them and the defaults file, an
-      unknown or ill-typed key is skipped with a warning, as before, and
-      a derived option's `null`, copied from the defaults file, is not a
-      setting and says nothing.
+      unknown key refuses the whole file with a warning naming it, an
+      ill-typed value is skipped alone with a warning, and a derived
+      option's `null`, copied from the defaults file, is not a setting
+      and says nothing.

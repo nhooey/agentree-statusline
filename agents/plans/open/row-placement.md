@@ -1,7 +1,13 @@
+---
+title: Row placement: each row where it reads best
+state: approved
+kind: end-state
+---
+
 # Row placement: each row where it reads best
 
 Approved to build, its nine decisions taken (see [Decided](#decided)).
-Its steps are `RP1` … `RP8` in [the schedule](_schedule.md).
+Its steps are `RP1` … `RP8` in [the schedule](build-schedule.md).
 
 ## Why
 
@@ -300,7 +306,7 @@ What the Python draws, and what it must change:
   gone from both at once (`RP2`, one commit).
 - **The status line** (`--mode status`) and **the Stop hook's receipt**
   (`--mode cost`) draw grids of their own, retired with the mod loaded
-  ([docs/layout.md](../../docs/layout.md#the-status-line-and-the-stop-hook)).
+  ([docs/layout.md](../../../docs/layout.md#the-status-line-and-the-stop-hook)).
   They draw none of these rows and do not change; their goldens hold.
 
 ## Tests and fixtures
@@ -513,4 +519,4 @@ them.
 `mod/tools/draw-figures.ts`, `mod/mod-tests/band.test.ts`,
 `tests/fixtures/gen/config.py`, `docs/layout.md`, `docs/options.md`,
 `mod/README.md`. `register.tsx` and `band.ts` are changed by several
-steps; see [the schedule](_schedule.md) for their order.
+steps; see [the schedule](build-schedule.md) for their order.
