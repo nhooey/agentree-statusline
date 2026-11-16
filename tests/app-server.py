@@ -3,7 +3,7 @@
 import os, stat, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from coding_agent_usage_line.sources import codex_app_server
-from _checks import write_executable
+from _checks import check, holds, tally, write_executable
 
 SERVER = '''#!/usr/bin/env python3
 import json, os, sys
@@ -22,9 +22,11 @@ with tempfile.TemporaryDirectory() as tmp:
     # paid inside the two seconds below (write_executable).
     write_executable(path, SERVER)
     got=codex_app_server(path, timeout=2)
-    assert [(b["id"], len(b["windows"])) for b in got["buckets"]] == [("general", 2), ("spark", 2)]
-    assert got["buckets"][0]["windows"][0]["resets_at"] != got["buckets"][1]["windows"][0]["resets_at"]
+    check('[(b["id"], len(b["windows"])) for b in got["buckets"]] == [("genera...', [(b["id"], len(b["windows"])) for b in got["buckets"]], [("general", 2), ("spark", 2)])
+    holds('got["buckets"][0]["windows"][0]["resets_at"] != got["buckets"][1]["...', got["buckets"][0]["windows"][0]["resets_at"] != got["buckets"][1]["windows"][0]["resets_at"])
     with open(path, "w") as fh: fh.write(SILENT)
     os.chmod(path, stat.S_IRWXU)
-    assert codex_app_server(path, timeout=.1) == {}
-print("ok app-server framing, buckets, silence")
+    check('codex_app_server(path, timeout=.1) == {}', codex_app_server(path, timeout=.1), {})
+line, status = tally()
+print(line)
+sys.exit(status)

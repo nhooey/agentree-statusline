@@ -3,6 +3,7 @@
 import os, sys
 from types import SimpleNamespace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _checks import holds, tally  # noqa: E402
 from coding_agent_usage_line.claude_records import NO_LIMITS
 from coding_agent_usage_line.claude_subagent_render import render_task_rows
 
@@ -12,7 +13,7 @@ rows=render_task_rows(([{"id":"task","status":"running","type":"Explore","descri
 # The row is keyed by the task's id, which the grid's label does not draw
 # (agents/plans/closed/redesign.md: kind, name, branch, activity);
 # the name, the description where there is none, is drawn.
-assert rows[0][0] == "task" and "find" in rows[0][1]
+holds('rows[0][0] == "task" and "find" in rows[0][1]', rows[0][0] == "task" and "find" in rows[0][1])
 
 # A finished task stops its clock where its transcript does, and a shell has
 # none: its ⌛ is blank, not counting a task that ended up to now.
@@ -21,8 +22,10 @@ def row(task, u, now):
     return strip_ansi(render_task_rows(([task, u, {}, {"sess":None,"week":None}],), NO_LIMITS, 160, now)[0][1])
 shell={"id":"b1","status":"completed","type":"local_bash","description":"sleep 5","startTime":0}
 early, late = row(shell, SimpleNamespace(), 10), row(shell, SimpleNamespace(), 3600)
-assert early == late and "\u231b" not in early, (early, late)
+holds('early == late and "\\u231b" not in early', early == late and "\u231b" not in early, (early, late))
 agent={"id":"a1","status":"completed","type":"local_agent","description":"x","startTime":0}
 killed=SimpleNamespace(work=((0.0, 5.0),), last_epoch=None, model_s=4.0, tool_s=0.0)
-assert row(agent, killed, 10) == row(agent, killed, 3600) and "\u231b  5s" in row(agent, killed, 3600), row(agent, killed, 3600)
-print("ok pure Claude subagent rows")
+holds('row(agent, killed, 10) == row(agent, killed, 3600) and "\\u231b  5s"...', row(agent, killed, 10) == row(agent, killed, 3600) and "\u231b  5s" in row(agent, killed, 3600), row(agent, killed, 3600))
+line, status = tally()
+print(line)
+sys.exit(status)
