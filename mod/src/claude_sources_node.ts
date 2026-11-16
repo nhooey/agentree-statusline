@@ -32,7 +32,7 @@ export async function prepareClaudeReading(
 
 const configAccounts = new Map<string, [string, string]>();
 
-// claude.config_account_id: Claude Code's signed-in account, hashed, from
+// configAccountId: Claude Code's signed-in account, hashed, from
 // its global config, kept against the file's mtime and size.
 export function configAccountId(env: Env): string {
   const dir = env.CLAUDE_CONFIG_DIR;
@@ -116,7 +116,7 @@ function defaultsExport(domain: string, timeout: number): Promise<Uint8Array> {
   });
 }
 
-// The figures sources.claude_usage_tracker reads, or null when the app is
+// The figures claudeUsageTracker reads, or null when the app is
 // not there.  The override file's errors propagate, to be no reading at
 // all; a failed `defaults export` is an empty store, as read() has it.
 export async function readTracker(env: Env): Promise<Dict | null> {

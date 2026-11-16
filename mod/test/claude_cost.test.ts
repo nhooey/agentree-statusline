@@ -1,8 +1,7 @@
 // claude_cost.ts and claude_cost_render.ts against the cost goldens.
 //
 // For each cost case in tests/fixtures/cases.json this draws the
-// committed figures document it names at its width and flags, as run-cases.py's
-// render stage has the Python draw it with --from-figures, and compares
+// committed figures document it names at its width and flags, and compares
 // the systemMessage with tests/golden/cost/<id>.txt byte for byte.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -24,8 +23,8 @@ type Case = {
   figures: string;
 };
 
-/** run-cases.py's fill: the placeholders back to paths.  None of them is
- * drawn, but the document is read as the Python reads it. */
+/** The placeholders back to paths.  None of them is drawn, but the
+ * document is read whole. */
 function fill(text: string): string {
   return text.replaceAll("${HOME}", os.homedir())
     .replaceAll("${FIXTURES}", FIXTURES)
@@ -48,8 +47,8 @@ for (const c of cases) {
       path.join(FIXTURES, "env", c.env + ".json"), "utf-8"));
     const fig = readFigures<CostFigures>("cost", c.figures, fill);
     // The argv the render stage is run with, then the edge's work: the
-    // terminal profile from the case's environment, the switches cli.py
-    // applies before anything renders, and the document's zone.
+    // terminal profile from the case's environment, the switches applied
+    // before anything renders, and the document's zone.
     const argv = ["--agent", "claude", "--mode", "cost", "--cols",
       String(c.cols), ...c.flags];
     const st = settings(env.terminal,
@@ -61,7 +60,7 @@ for (const c of cases) {
         throw new Error("no terminal to measure");
       }));
       const got = renderCostFigures(st, fig, opts);
-      // run-cases.py's stdout_of: the message, less trailing newlines.
+      // The message, less trailing newlines.
       const want = fs.readFileSync(
         path.join(REPO, "tests/golden/cost", c.id + ".txt"), "utf-8");
       assert.equal(got.replace(/\n+$/, ""), want.replace(/\n+$/, ""));
@@ -72,10 +71,10 @@ for (const c of cases) {
   });
 }
 
-// tests/fixtures/gen/receipt.py's cases: each distinct document drawn by
-// the Python's render stage in colour, flush left, without totals, under a
-// prefix and label of its own, at widths that cut the labels, and with the
-// clock in zones either side of UTC.
+// tests/fixtures/receipt/cases.json, committed data: each distinct
+// document drawn in colour, flush left, without totals, under a prefix and
+// label of its own, at widths that cut the labels, and with the clock in
+// zones either side of UTC.
 const receipt: { [k: string]: any }[] = JSON.parse(fs.readFileSync(
   path.join(FIXTURES, "receipt/cases.json"), "utf-8")).cases;
 

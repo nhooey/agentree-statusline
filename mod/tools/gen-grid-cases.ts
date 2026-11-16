@@ -2,9 +2,6 @@
 //
 //   node mod/tools/gen-grid-cases.ts
 //
-// Unlike the rest of tests/fixtures/, these are written by the TypeScript:
-// the redesigned grid is built here first, and the Python cells the agent
-// panel keeps are brought to it after, checked against these cases.
 // mod/test/grid.test.ts runs every case and fails when this generator's
 // output differs from what is committed, so regenerating is the only way
 // to change them.

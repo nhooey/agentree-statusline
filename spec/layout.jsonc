@@ -1,10 +1,9 @@
 // The layout's constants: every glyph, colour, width and cut, and the
 // terminal tables, each beside the comment that explains it.
 //
-// tools/gen-spec.py writes this out as coding_agent_usage_line/spec.py, which
-// formatting.py star-imports, and as mod/src/spec.ts for the mod, comments
-// and all.  Edit here, never there, and run `python3 tools/gen-spec.py`;
-// tests/formatting.py fails while either is out of date.
+// tools/gen-spec.py writes this out as mod/src/spec.ts, comments and all.
+// Edit here, never there, and run `python3 tools/gen-spec.py`; the `spec`
+// suite of tests/all.sh fails while it is out of date.
 //
 // One object of NAME: value, written out in this order.  An F_ or B_ name
 // holding "rgb(r, g, b)" is a foreground or background colour, and
@@ -16,16 +15,16 @@
 // channels from 0, 175, 215 and 255, black, white, or a grey from 8 to 178
 // in steps of 10.  gen-spec.py refuses any other and names the nearest, and
 // refuses a value a dim figure takes that is too dark drawn faint.  A value computed from
-// these, an S_ form or RIGHT_GRID, stays in formatting.py: those are rules,
-// and each language computes them.
+// these, an S_ form or RIGHT_GRID, stays in formatting.ts: those are rules,
+// and the code computes them.
 {
   // ════════════════════════════════════════════════════════════════════════════
   // Glyphs.
   //
   // Single source of truth for the characters.  Referenced everywhere by name,
   // never by literal — probe-advance.sh derives what to measure by parsing the
-  // E_* names out of spec.py, which is generated from this file, so a glyph
-  // left inline in a renderer is a glyph nobody measures.
+  // E_* names out of mod/src/spec.ts, which is generated from this file, so
+  // a glyph left inline in a renderer is a glyph nobody measures.
   //
   // The invariant, restated because it is the thing that keeps the override
   // tables empty: every glyph here is ONE codepoint, none newer than Unicode 9,
@@ -58,7 +57,7 @@
                            // column on some terminals and two on others -- the
                            // same property that keeps the em dash out of this
                            // file's prose.  They are absent from EAW_WIDE, so
-                           // vis_width calls them one and the terminals tried
+                           // visWidth calls them one and the terminals tried
                            // agree.  But the token field is on EVERY row of both
                            // readouts, so an Ambiguous character resolving the
                            // other way there would not be a small failure.
@@ -157,7 +156,7 @@
                            // were spent doing.
                            //
                            // It is read as a subset of the 🤖 beside it, never
-                           // as a third slice of Σ — see read_transcript — so
+                           // as a third slice of Σ — see readTranscript — so
                            // it sits before the pair that does split the age
                            // rather than inside it.
                            //
@@ -368,7 +367,7 @@
                            // The status line is where the session figure lives,
                            // and it is the one that says whether this SITTING,
                            // not this prompt, is paying to re-read itself.  See
-                           // render_cache_share.
+                           // renderCacheShare.
 
   "E_COSTLINE": "📊",      // prefix of the prompt-cost row
 
@@ -403,7 +402,7 @@
                            // rules out 🗨.
                            //
                            // It narrows exactly one field.  LIM_FIG_W cannot
-                           // follow it down, because limit_pct spends three
+                           // follow it down, because limitPct spends three
                            // characters at EVERY magnitude -- "5.4" and ".38" as
                            // much as "100" -- so drawing the hundreds case as a
                            // glyph leaves the widest percentage where it is.  What
@@ -613,7 +612,7 @@
   "F_LIM_OAUTH_APPS": {"same_as": "F_PRW"},    // 🔌 periwinkle
   "F_LIM_COWORK": {"same_as": "F_CRM"},        // 🤝 cream
   // Column 3's 📖 and 📝 rows, ONE colour for the pair: the cost line's
-  // share_half paints these same two figures amber and a quantity keeps its
+  // shareHalf paints these same two figures amber and a quantity keeps its
   // ink across the readouts as it keeps its glyph.  Not one hue per row as the
   // limits have, because the limit rows' hue answers a question -- which
   // window is this? -- that 📖 and 📝 answer by being different pictures; a
@@ -738,9 +737,9 @@
                            // would come and go with the value.  A space is a space
                            // on every reading.
                            //
-                           // Read at render time, so set_mark_spacing() can move
-                           // it after import — see the four constants it drags
-                           // along.
+                           // Read from the Settings at render time, so the
+                           // mark-spacing option can close it — see the four
+                           // constants it drags along.
   "COL3_TIGHT_W": 14,      // column 3 with MARK_SP empty: a row mark and its
                            // space, then 🎤 and 🎮 each ahead of SHARE_FIG_W,
                            // divided by one space.  Each of its two fields grows
@@ -761,7 +760,7 @@
                            // 🛫 rate, and RATE_SAMPLES the samples kept: the
                            // panel's own tick and depth (A_TICK_S, sixteen), so
                            // the status line's 🛫 and an agent row's measure the
-                           // same eighty seconds.  See session_rate.
+                           // same eighty seconds.  See sessionRate.
   "RATE_SAMPLES": 16,
   "RIGHT_MARGIN": 4,       // columns held empty at the right edge, covering two
                            // things neither the payload nor the tty reports.
@@ -792,7 +791,7 @@
   "W_MOD": 4,              // the model cell past its icon: the two-character
                            // spec and the effort's glyph, "O⁵🏃".  Held whether
                            // or not the glyph is drawn, so the 💰 beside it does
-                           // not move with the effort — see render_model_cost.
+                           // not move with the effort — see renderModelCost.
   "VAL_W": 5,              // a metric's first value field: "▴4.8M", "200/s",
                            // " 115k"
   "VAL2_W": 6,             // the second field — one wider, because one of them
@@ -802,12 +801,12 @@
                            // percentage right-align down the column.
   "PAIR_GAP": 2,           // between two metrics sharing one cell (⌛ and 🕐)
   "LIM_PCT_W": 4,          // the widest a limit percentage draws: three characters
-                           // of figure plus the ٪ — see limit_pct for why three is
+                           // of figure plus the ٪ — see limitPct for why three is
                            // enough and why the column it saves goes to "100".
   "LIM_FIG_W": 4,          // the field each of the three marks right-aligns its
                            // value in, on all three rows of column 4.  EXACTLY as
                            // wide as the widest thing that can land in one —
-                           // LIM_PCT_W above, and dur_fmt's four at digits=3 — so
+                           // LIM_PCT_W above, and durFmt's four at digits=3 — so
                            // a full-width value touches its mark and nothing is
                            // spent holding it off.
                            //
@@ -850,7 +849,7 @@
                            // account figure is a WHOLE NUMBER at both sources: the
                            // menu-bar app stores integers and Claude Code's payload
                            // has only ever been observed at whole values (see
-                           // limit_pct).  0 to 99 is two characters exactly, and
+                           // limitPct).  0 to 99 is two characters exactly, and
                            // 100 is not printed at all — E_HUNDRED draws it.  So
                            // 💳 would lose nothing at three, unlike 🎤 and 🎮,
                            // whose figures are ratios this program computes and are
@@ -858,8 +857,8 @@
                            // right-aligns, so its ٪ still lands under 🔧's unit.
   "SHARE_FIG_W": 3,        // column 3's two fields, 🎤 and 🎮 ahead of a 📖 or 📝
                            // share.  Three, because the figure is a whole percent
-                           // of a bill: turn_shares rounds it once and the cost
-                           // line's share_half already draws it in three, so this
+                           // of a bill: turnShares rounds it once and the cost
+                           // line's shareHalf already draws it in three, so this
                            // is the same reading in the same width on both
                            // readouts.  "99٪" is the widest that is spelled; a
                            // share at or over 99.5 is drawn 💯 in the same three,
@@ -872,7 +871,7 @@
                            // same thing in fewer columns.
   "RST_W": 6,              // the countdown/elapsed field — column 4's LAST, shared
                            // by 🔋 🪫 ⌛ so the three durations line up down it.
-                           // Two columns of mark and four of figure, dur_fmt's
+                           // Two columns of mark and four of figure, durFmt's
                            // widest at the default three digits ("5.8d").  🔜
                            // and 🚦, which holds it on the ⌛ row, both measure
                            // two, so the field is one shape on all three rows and
@@ -893,7 +892,7 @@
                            // for it, and two columns here does not cost a rule —
                            // it costs every alignment to the right of it on all
                            // three rows.  "|" is width 1 everywhere there is.
-                           // --selftest measures glyphs; if it ever measures
+                           // probe-advance.sh measures glyphs; if it ever measures
                            // U+2502 at 1 on this terminal, this is the one line
                            // to change.
                            //
@@ -910,7 +909,7 @@
                            // RIGHT_MARGIN, MIN_GAP and the where-group's own chrome
                            // come to 123.  At this width the project, path and
                            // branch share the 47 that are left, against the 22
-                           // allocate_left will cut them to at the floor — a bit
+                           // allocateLeft will cut them to at the floor — a bit
                            // over twice their minimum.  They are already being
                            // trimmed there and the point is not that they are not;
                            // it is that there is still enough room for the trim to
@@ -981,18 +980,18 @@
   //                    one cut here that is a percentage,
   //                    and a percentage of a figure the reader can see: it
   //                    says whether the transcript, rather than the answer,
-  //                    is what the money went on.  See cache_dims for the
+  //                    is what the money went on.  See cacheDims for the
   //                    measurement the number came from.
   // A share that could not be derived draws "?", dim whatever the cut.
   //
   // What neither touches.  The limit percentages themselves (a ceiling of
   // their own); 🎯, which is tiered and inverted, and dims its green tier by a
-  // rule of its own (cache_color); 🧠's percentage, which has no shade of its
-  // own and takes its size's (render_ctx); the 🔜 countdown, whose scale runs
+  // rule of its own (cacheColor); 🧠's percentage, which has no shade of its
+  // own and takes its size's (renderCtx); the 🔜 countdown, whose scale runs
   // the OTHER way (falling), since for a time-until it is the small figure that
   // matters; the 5-hour row's 💳, dimmed as context and not as a magnitude;
   // and the cost line, which is a different readout with a stacking of its
-  // own.  See grade and mag_dim.
+  // own.  See grade and magDim.
   "MAG_COST": 1.0,         // 💰 dollars
   // A thread that has written nothing for QUIET_S has its 🤖 state show how
   // long, in place of the token rate, amber from QUIET_WARN_S: long enough
@@ -1009,7 +1008,7 @@
   // and `as_of`, which decides which of two readings is quoted.  LOCAL time and
   // minute resolution, because that is what the readout formats in and what the
   // menu-bar app's own JSON emitted -- a channel that changed format would be a
-  // channel silently read wrong, and _window_starts parses with one strptime.
+  // channel silently read wrong, and _windowStarts parses with one strptime.
   //
   // Named once because four functions have to agree about it.
   "STAMP_FMT": "%Y-%m-%d %H:%M",
@@ -1065,7 +1064,7 @@
                    // share of the window it has to fit in
   "C_CACHE_TIGHT": 5,      // 🎯 + "97٪" with MARK_SP empty
 
-  "C_COST": 9,     // 💰 + a sign column + money_cell: three integer columns, one
+  "C_COST": 9,     // 💰 + a sign column + moneyCell: three integer columns, one
                    // fractional so the two rows' points land in one column, and
                    // one for the unit.  The ninth column is the unit's: three
                    // integer columns alone cap the row at $999, past which the
@@ -1219,7 +1218,7 @@
                                      //    docs/glyphs-and-terminals.md: a terminal that
                                      //    folds clusters (tmux, iTerm2, Ghostty) draws one
                                      //    baby in two columns; a terminal that does not
-                                     //    draws 👶 and a swatch in four.  vis_width counts
+                                     //    draws 👶 and a swatch in four.  visWidth counts
                                      //    each by its profile, so the columns hold on
                                      //    both; an unprobed terminal is counted as four.
   "E_ETA": "⛳",             // ⛳  how long an agent says it has LEFT, off the
@@ -1274,7 +1273,7 @@
   //
   // THIS IS NOT unicodedata, AND MUST NOT BE REPLACED BY IT.  It is a
   // generated East_Asian_Width table corrected against probe-advance.sh; the three corrections, and why unicodedata gets each of
-  // them wrong, are in docs/glyphs-and-terminals.md under "Why vis_width is not
+  // them wrong, are in docs/glyphs-and-terminals.md under "Why visWidth is not
   // a correct Unicode implementation".  Short version: the regional indicators are folded in at
   // two columns EACH, U+1F300–U+1FAFF is ONE range rather than a dozen with
   // gaps, and U+1FA70–U+1FAF8 is left out so it measures one column.
@@ -1313,18 +1312,18 @@
     [131072, 262141]
   ],
 
-  // term_profile's rules, first match wins: a variable, the value it must hold
+  // termProfile's rules, first match wins: a variable, the value it must hold
   // (null for any non-empty one), and the profile it selects.
   "PROFILE_RULES": [
     ["TMUX", null, "tmux"],
     ["TERM_PROGRAM", "iTerm.app", "iterm"]
   ],
 
-  // widths_for's corrections to EAW_WIDE, per profile, first match wins: the
+  // widthsFor's corrections to EAW_WIDE, per profile, first match wins: the
   // codepoints that advance ONE where the table says two (narrow), those
   // that advance TWO where it says one (icons), and whether the terminal
   // folds a grapheme cluster into one glyph (clusters).  A profile in no
-  // entry, "unknown", corrects nothing.  See widths_for for why the entries
+  // entry, "unknown", corrects nothing.  See widthsFor for why the entries
   // stay although none of the glyphs they name is drawn any more.
   "WIDTH_PROFILES": [
     {
@@ -1332,7 +1331,7 @@
                                         //  in Ghostty + tmux, which
                                         //  agrees on all four sequences
                                         //  and needs no entry of its own.
-                                        //  Note term_profile checks TMUX
+                                        //  Note termProfile checks TMUX
                                         //  first, so Ghostty reaches
                                         //  this entry only inside tmux;
                                         //  bare Ghostty is "unknown" and
@@ -1360,10 +1359,10 @@
   // where it does, the ink lands on the digit beside it.  iTerm needs a column of
   // air after the icons that carry a value directly.
   //
-  // The agent rows' 🤖 has no pad (render_agent_model), and that row's 💰
+  // The agent rows' 🤖 has no pad (renderAgentModel), and that row's 💰
   // borrows this cell and follows it.  The status line's own 💰 touches its
   // figure, as ▾ does, so the column's second figures end together; see
-  // render_model_cost.
+  // renderModelCost.
   "PAD_PROFILES": ["iterm", "tmux"],
 
   // ── subscript decimals, off by default ──────────────────────────────────────
@@ -1373,7 +1372,7 @@
   //
   // WHY IT IS A SWITCH AND NOT THE FORMAT.  Not the width, which is settled.
   // MEASURED, all ten digits, in Ghostty: one column each,
-  // which is what East Asian Width says of the block and what vis_width has
+  // which is what East Asian Width says of the block and what visWidth has
   // always returned.  Worth measuring anyway -- there is a known trap of exactly
   // that shape one plane up (see the U+1F900 note beside EAW_WIDE), where the
   // standard says Neutral and the table, which says Wide, is a column off
@@ -1385,7 +1384,7 @@
   // the reader's to answer by looking, which is what a flag is for.
   //
   // THE NAME CARRIES THE E_ PREFIX because probe-advance.sh derives what to
-  // measure by parsing the E_* assignments out of spec.py, so a glyph named
+  // measure by parsing the E_* constants out of spec.ts, so a glyph named
   // anything else is a glyph nobody measures.
   //
   // NOTHING IS RECLAIMED.  The switch does not narrow LIM_FIG_W from 4 to 3.
@@ -1409,7 +1408,7 @@
   // shifted, which is the difference between a diagnosis and a mystery.  The
   // probe says one column, so the insurance goes unclaimed.
   //
-  // THE LEADING ZERO STAYS, where limit_pct drops it.  ".38" is unambiguous
+  // THE LEADING ZERO STAYS, where limitPct drops it.  ".38" is unambiguous
   // because the point marks the figure as a fraction; "₃₈" is not -- it is the
   // same glyph sequence a reader would take for 38 in a smaller font.  So the
   // zero comes back for this form, which means a sub-1 reading saves nothing.
@@ -1424,7 +1423,7 @@
   // advance one column.  ¹ ² ³ are Latin-1 rather than
   // U+2070-2079 and the four Opus, Sonnet, Haiku and Fable versions in the
   // catalogue land on ⁴ and ⁵, so one Ambiguous digit is in live use.  None of
-  // these has been probed; see "Open issues" in docs/development.md.  vis_width
+  // these has been probed; see "Open issues" in docs/development.md.  visWidth
   // calls them one, as it does every codepoint outside its wide tables.
   "E_SUP_DIGITS": "⁰¹²³⁴⁵⁶⁷⁸⁹",
   "SUB_DEC": false,
@@ -1438,7 +1437,7 @@
 
   // Longest first is NOT required -- no name here is a prefix of another --
   // but the list is: every family in the CLI's own model catalogue as of
-  // 2.1.261.  A family missing from it falls through to short_model's
+  // 2.1.261.  A family missing from it falls through to shortModel's
   // five-character passthrough, which would draw Mythos as "Mytho" -- a
   // family name with its last letter eaten, which reads as a bug in the
   // status line rather than as a model.
@@ -1531,9 +1530,9 @@
   // `width` is the cell's own, gap aside.  A number is fixed.  A name is a
   // rule computed in code, since the terminal profile widens 🧩, 🧠 and 💰 by a
   // column (_PAD) and the marks' spacing moves them: the A_* widths are
-  // claude_subagent_render's, COST_W is vis_width(S_COST) + 4, SPEND_W the
+  // claude_subagent_render's, COST_W is visWidth(S_COST) + 4, SPEND_W the
   // widest of the paying credits' glyphs (⛅ 🎁 💵 💸) + 4, and TOK_W is
-  // vis_width(S_TOK) + VAL_W + VAL2_W.
+  // visWidth(S_TOK) + VAL_W + VAL2_W.
   "GRID_CELLS": [
     {"key": "model", "hide": "state.model", "width": 6, "gap": 2},
     {"key": "rate", "hide": "state.rate", "width": "A_RATE_W", "gap": 2},

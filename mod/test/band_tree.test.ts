@@ -1,12 +1,11 @@
 // The band's tree (band_tree.ts) and the subagents' facts it draws
-// (subagent_tasks.ts): agentUsageOf against claude.py's agent_usage_of
-// over the fixture agents, the progress update off a transcript's tail,
+// (subagent_tasks.ts): agentUsageOf against the committed answers over
+// the fixture agents, the progress update off a transcript's tail,
 // and the tree's lines, groups, cap and folds over the panel corpus's
 // tasks.  The drawn rows themselves are pinned by the rows' cases
 // (rows.test.ts, gen-row-cases.ts's tree cases).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,24 +59,27 @@ function agentFiles(): string[] {
   return out;
 }
 
-test("agentUsageOf is claude.py's agent_usage_of, field for field, over " +
-  "every fixture agent", () => {
+// tests/fixtures/claude/agent-usage.json holds each fixture agent's usage
+// as committed data, field for field.
+test("agentUsageOf is each fixture agent's committed usage, field for " +
+  "field", () => {
   const files = agentFiles();
   assert.ok(files.length > 3);
-  const py = JSON.parse(execFileSync("python3", ["-c",
-    "import sys, json\nfrom coding_agent_usage_line import claude\n" +
-    "print(json.dumps([claude.read_agent_usage(p)._asdict() " +
-    "for p in sys.argv[1:]]))", ...files], { cwd: REPO, encoding: "utf8" }));
-  files.forEach((f, i) => {
+  const want = JSON.parse(fs.readFileSync(path.join(REPO,
+    "tests/fixtures/claude/agent-usage.json"), "utf8")) as
+    Record<string, Dict>;
+  assert.deepEqual(Object.keys(want).sort(),
+    files.map((f) => path.relative(REPO, f)).sort());
+  for (const f of files) {
     const fold = newAgentFold();
     foldAgentBytes(fold, fs.readFileSync(f), true);
     const got = JSON.parse(JSON.stringify(agentUsageOf(fold))) as Dict;
-    const want = py[i] as Dict;
-    assert.deepEqual(Object.keys(got).sort(), Object.keys(want).sort(), f);
-    for (const k of Object.keys(want)) {
-      assert.deepEqual(got[k], want[k], path.basename(f) + " " + k);
+    const w = want[path.relative(REPO, f)];
+    assert.deepEqual(Object.keys(got).sort(), Object.keys(w).sort(), f);
+    for (const k of Object.keys(w)) {
+      assert.deepEqual(got[k], w[k], path.basename(f) + " " + k);
     }
-  });
+  }
 });
 
 test("agentClock runs a running agent's open span on to now, and stops a " +

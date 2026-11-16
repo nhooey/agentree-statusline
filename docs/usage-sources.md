@@ -6,35 +6,30 @@ organization sources, an account's token and dollar totals for a period.
 Everything else on the readout — tokens, cost, context, time — comes from the
 session's own transcript, whatever source you pick.
 
-Most people need no configuration. Claude Code includes the plan windows in
-the status-line payload, and Codex records them in its rollout. The default,
-`auto`, reads those.
+Most people need no configuration. Claude Code gives the mod the plan's
+week, and the mod asks the account's usage endpoint for the rest; the
+default, `auto`, reads those. To pick another, set `usage-source` in a
+[configuration file](options.md#configuration-files):
 
-```sh
---usage-source auto                         # the default
---usage-source cmd:/path/to/your-reader     # your own program
+```jsonc
+"usage-source": "auto"                       // the default
+"usage-source": "cmd:/path/to/your-reader"   // your own program
 ```
-
-or `"usage-source": "native"` in a [configuration file](options.md#configuration-files),
-which the flag overrides.
 
 ## Sources
 
-| Source | Agent | Needs | Gives |
-|---|---|---|---|
-| `auto` | both | — | native data, then a local fallback (below) |
-| `native` | both | — | only what the agent itself supplied; never runs anything |
-| `none`, `off` | both | — | native data or an existing cached reading; never refreshes |
-| `cmd:PATH` | both | your program | whatever it prints, in the [format below](#writing-a-custom-command) |
-| `claude-usage-tracker` | Claude | the [Claude Usage Tracker](#claude-usage-tracker) app (macOS) | plan windows |
-| `codex-app-server` | Codex | `codex` on `PATH`, signed in | quota buckets |
-| `anthropic-admin` | Claude | `ANTHROPIC_ADMIN_KEY` | organization totals for the period |
-| `openai-admin` | Codex | `OPENAI_ADMIN_KEY` | organization totals for the period |
-| `experimental-claude-oauth` | Claude | `CLAUDE_OAUTH_ACCESS_TOKEN` | plan windows, from an undocumented endpoint |
-| `experimental-codex-api` | Codex | `CODEX_USAGE_ACCESS_TOKEN` and `CODEX_USAGE_ACCOUNT_ID` | quota buckets, from an undocumented endpoint |
+| Source | Needs | Gives |
+|---|---|---|
+| `auto` | — | native data, then a local fallback (below) |
+| `native` | — | only what Claude Code itself supplied; never runs anything |
+| `none`, `off` | — | native data or an existing cached reading; never refreshes |
+| `cmd:PATH` | your program | whatever it prints, in the [format below](#writing-a-custom-command) |
+| `claude-usage-tracker` | the [Claude Usage Tracker](#claude-usage-tracker) app (macOS) | plan windows |
+| `anthropic-admin` | `ANTHROPIC_ADMIN_KEY` | organization totals for the period; see [Organization reports](#organization-reports) |
+| `experimental-claude-oauth` | the session's own sign-in | plan windows, from an undocumented endpoint |
 
-A source for the other agent is rejected with exit 2 — `--agent claude
---usage-source codex-app-server` is an error, not a silent fallback.
+A source the configuration names that is none of these is a warning, and
+the layer under it gives the value.
 
 ### What `auto` does
 
@@ -43,47 +38,32 @@ mod asked the account's usage endpoint for in the last seven minutes come
 first, over the steps below; see
 [The plan's windows under the mod](#the-plans-windows-under-the-mod).
 
-1. Use native data if this invocation has fresh native data.
-2. Otherwise use a native reading cached by an earlier invocation in the last
-   60 seconds.
-3. Otherwise ask the fallback: for Claude, the Claude Usage Tracker under
-   the status line and the agent panel, and the account's own usage
-   endpoint (`experimental-claude-oauth`) under the mod, asked as the
-   session; the Codex app-server for Codex.
+1. Use native data if Claude Code has given fresh native data.
+2. Otherwise use a native reading cached in the last 60 seconds.
+3. Otherwise ask the fallback: the account's own usage endpoint
+   (`experimental-claude-oauth`), asked as the session.
 4. Whichever the fallback gives, a native reading taken later wins over it,
-   stale or not: a tracker that stopped polling keeps its last reading.
+   stale or not.
 
-Under the status line and the agent panel, `auto` never picks an admin or
-experimental source just because its credential is set; you have to name
-those.
-
-For Claude, only the status line receives plan windows from Claude Code. The
-Stop hook and the agent panel get none, so they use the reading the status
-line cached — which is why step 2 exists. Close to a render the status line
-has always just drawn one; if it hasn't redrawn for more than a minute, `auto`
-goes to the tracker, and without the tracker the plan cells are blank.
-
-An agent or a skill that wants these readings runs
-`coding-agent-usage-line.py --agent claude --mode usage` (or `--agent
-codex`), which prints them as JSON through this same chain; see
-[Plan windows as JSON](options.md#plan-windows-as-json---mode-usage). The
-cache files described under [Refresh and storage](#refresh-and-storage) are
-internal and not for other programs to read.
+`auto` never picks an admin source just because its credential is set; you
+have to name it. The cache files described under
+[Refresh and storage](#refresh-and-storage) are internal and not for other
+programs to read.
 
 ### An explicit source is final
 
 Naming a source other than `auto`, `native`, `none` or `off` replaces native
 data for account readings. If that source fails, the readings are unavailable
-(or the last good reading is shown, marked stale); the program never falls
-back to a different source. The session's own figures are unaffected.
+(or the last good reading is shown, marked stale); the mod never falls back
+to a different source. The session's own figures are unaffected.
 
 `none`/`off` never run a collector, but still use native data and any
 compatible cached reading, marked stale once it is more than five minutes old.
 
 ## Writing a custom command
 
-`--usage-source cmd:PATH` runs your program and reads one JSON object from its
-stdout. This is the way to plug in anything the built-in sources don't cover.
+`"usage-source": "cmd:PATH"` runs your program and reads one JSON object from
+its stdout. This is the way to plug in anything the built-in sources don't cover.
 
 **How it is run.** `PATH` is run directly, with no shell, or through `bash` if
 the file isn't executable. It inherits the environment, so only use programs
@@ -94,13 +74,13 @@ account scope; renders in between use the cached result.
 **Input.** A small JSON object on stdin, which you are free to ignore:
 
 ```json
-{"agent": "codex", "session": "…", "model": "gpt-5.6-terra",
+{"agent": "claude", "session": "…", "model": "claude-opus-5",
  "account": "default", "period": "day",
  "period_start": 1790380800.0, "period_end": 1790419360.0}
 ```
 
 `session` and `model` are present when known. `period_start` and
-`period_end` are Unix seconds for the UTC period chosen by `--account-period`.
+`period_end` are Unix seconds for the UTC period `account-period` chooses.
 No conversation text, raw payloads or credentials are ever sent.
 
 **Output.** Version 1 of the reading format:
@@ -110,26 +90,14 @@ No conversation text, raw payloads or credentials are ever sent.
   "schema_version": 1,
   "as_of": "2026-09-26T08:00:00Z",
   "buckets": [
-    {"id": "general", "label": "General", "windows": [
-      {"id": "weekly", "duration_seconds": 604800, "used_percent": 97,
+    {"id": "default", "windows": [
+      {"id": "five_hour", "duration_seconds": 18000, "used_percent": 41,
+       "resets_at": "2026-09-26T10:15:00Z"},
+      {"id": "seven_day", "duration_seconds": 604800, "used_percent": 63,
        "resets_at": "2026-10-01T17:17:00Z"}
-    ]},
-    {"id": "spark", "label": "Spark", "windows": [
-      {"id": "five-hour", "duration_seconds": 18000, "used_percent": 100,
-       "resets_at": "2026-09-26T20:15:00Z"},
-      {"id": "weekly", "duration_seconds": 604800, "used_percent": 100,
-       "resets_at": "2026-10-01T15:15:00Z"}
     ]}
   ]
 }
-```
-
-With that reading, `--agent codex` prints:
-
-```
-quota
-  🔋 General: weekly 7d 97% 🔜 Oct 01 17:17Z
-  🔋 Spark: five-hour 5h 100% 🔜 Sep 26 20:15Z, weekly 7d 100% 🔜 Oct 01 15:15Z
 ```
 
 | Field | Required | Meaning |
@@ -146,11 +114,10 @@ quota
 | `account` | no | Organization totals; see below. |
 | `credits` | no | The account's dollar credits; see below. |
 
-Buckets stay separate all the way to the readout. The General bucket above has
-no five-hour window, and nothing will fill one in from Spark's, even though a
-window of that length exists there: two meters with the same duration are not
-the same meter. Don't give a bucket a `model` just because it is the model in
-use.
+Buckets stay separate all the way to the readout: a bucket with no
+five-hour window gets none filled in from another bucket's, even one of the
+same length, since two meters with the same duration are not the same
+meter. Don't give a bucket a `model` just because it is the model in use.
 
 The optional `account` object carries period totals: `period_start`,
 `period_end`, `input_tokens`, `cached_input_tokens`, `output_tokens`,
@@ -199,20 +166,16 @@ no `schema_version`.
 
 ## Organization reports
 
-`anthropic-admin` and `openai-admin` read your organization's usage and cost
-reports with an admin key: tokens in and out, cached input and dollars, for
-the UTC day, week (from Monday) or month to date chosen by `--account-period`.
-They cover the whole organization, not your session or your subscription, so
-they are printed on a separate labelled line and never added to session
-totals or turned into plan-window percentages.
+`anthropic-admin` names your organization's usage and cost reports, read
+with an admin key, for the UTC day, week (from Monday) or month to date that
+`account-period` chooses. The mod accepts the name and makes no request for
+it, so it gives no reading: the plan cells stay blank under it.
 
 ## Experimental subscription sources
 
-`experimental-claude-oauth` and `experimental-codex-api` call the
-undocumented endpoints the vendors' own apps use to show subscription usage.
-They may break without notice, and are used only when named. The token must be
-supplied in the environment. The program doesn't read credential stores or
-browser cookies, and doesn't refresh tokens.
+`experimental-claude-oauth` calls the undocumented endpoint Claude's own
+apps use to show subscription usage. It may break without notice. The mod
+reads no credential store or browser cookie, and refreshes no token.
 
 `experimental-claude-oauth` reads the five-hour window and every seven-day
 one the answer holds with a utilization: `seven_day`, the weekly Fable
@@ -293,9 +256,8 @@ last minute, where it has one, rather than asked for again.
 [Claude Usage Tracker](https://github.com/hamed-elfayome/Claude-Usage-Tracker)
 is a macOS menu-bar app that polls Anthropic for your plan usage and keeps the
 result in its preferences. Reading those needs no network call and no token.
-It is `auto`'s fallback for Claude, and only matters when Claude Code hasn't
-supplied the figures — in the Stop hook and the agent panel once the status
-line's reading is more than a minute old.
+Name it as the source to read the app's figures in place of Claude Code's
+and the usage endpoint's.
 
 The store is read with `defaults export` rather than by opening the `.plist`
 file, because a running app's latest preferences may not have reached the file
@@ -319,21 +281,12 @@ figure gives no Fable window.
 Set `CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST` to read an exported store
 from a file instead, for example one copied from another machine.
 
-## Codex app-server
-
-`codex-app-server` starts `codex app-server --stdio`, sends `initialize` and
-`account/rateLimits/read`, and closes it. It never starts a thread, sends a
-prompt, signs in or out, or resets anything. It uses Codex's own sign-in. The
-response's per-limit map is used as the source of bucket identities and
-labels; see the
-[app-server documentation](https://learn.chatgpt.com/docs/app-server).
-
 ## Refresh and storage
 
 | Source | Refreshed at most every |
 |---|---|
-| native, `cmd:`, tracker, app-server | 60 seconds |
-| admin and experimental sources | 300 seconds |
+| native, `cmd:`, tracker | 60 seconds |
+| `experimental-claude-oauth` | 300 seconds |
 | the mod's `plan-usage` | 60 seconds |
 
 Between refreshes the cached reading is used. A failed refresh keeps the last
@@ -342,18 +295,18 @@ the server sent `Retry-After` (also capped at five minutes). A reading older
 than its refresh interval is marked **stale** — freshness comes from the
 source's `as_of`, not from when it was fetched.
 
-Concurrent renders don't refresh the same cache twice: each refresh takes a
-lock scoped to the agent, source, account and period.
+Concurrent sessions don't refresh the same cache twice: each refresh takes a
+lock scoped to the source, account and period.
 
 Caches live under `$XDG_STATE_HOME/coding-agent-usage-line`
 (`~/.local/state/coding-agent-usage-line` by default), or
 `CODING_AGENT_USAGE_LINE_STATE_DIR`. The directory is mode 0700 and files
-0600, written atomically. Each cache is keyed by agent, source, account and
-the start of the `--account-period`, so readings never leak between them.
-With `--account default`, the account scope is the credential in use (hashed)
+0600, written atomically. Each cache is keyed by source, account and the
+start of the `account-period`, so readings never leak between them. With
+`"account": "default"`, the account scope is the credential in use (hashed)
 for a source that has one, and otherwise the session — so two sessions never
 share a reading that might belong to different accounts. Name the account
-with `--account` to share a reading across sessions.
+with `account` to share a reading across sessions.
 
 ### The account's high for each window
 
@@ -376,7 +329,7 @@ The account's dollar credits are read apart from its plan windows, since
 endpoint. Every 5 minutes the mod asks the account's usage endpoint as the
 session, as `experimental-claude-oauth` does, and keeps the `credits` it
 gives in one small file per signed-in account, source `credits`, period
-`credits`. The status line reads that file and never asks.
+`credits`.
 
 - **The cloud session credit:** each window of the answer with a dollar
   limit, taken by its fields and never its name, is a `cloud` credit: its
@@ -389,8 +342,7 @@ gives in one small file per signed-in account, source `credits`, period
 ### Calibration cache
 
 The calibration (the dollars in one percent of a plan window) is kept in its
-own file, `claude-calibration-<sha256>.cache`, which the status line and the
-mod share. It is keyed by source, account and period, but not by session:
+own file, `claude-calibration-<sha256>.cache`. It is keyed by source, account and period, but not by session:
 the cost it divides is everything spent on this machine in the window, and
 the percentage is the plan's, so every session of one account shares it.
 The account part is a hashed id, the first 24 hex digits of a sha256, from
@@ -405,31 +357,16 @@ Only those two fields are read, and only the hash is kept. The id is what
 keeps two accounts apart, since the percentage stored with a scan is one
 account's and two accounts' windows can open at the same minute. A source
 with no id, or a tracker profile without one, falls back to the reading
-cache's account scope above (for `--account default`, the session).
+cache's account scope above (for `"account": "default"`, the session).
 
 A calibration file untouched for eight days belongs to a period, account or
-session that has passed, and is removed. Both the status line and the mod
-sweep, at most once a day between them, by the stamp on
-`claude-calibration-swept`; the mod removes files with `rm`, since its file
-API cannot.
-
-HTTP sources use fixed HTTPS endpoints, refuse redirects, cap response size
-and pagination, and share one time budget per refresh.
+session that has passed, and is removed. The mod sweeps at most once a day,
+by the stamp on `claude-calibration-swept`, and removes files with `rm`,
+since its file API cannot.
 
 ## Diagnostics
 
-`--diagnose` writes one line to stderr:
-
-```
-diagnose source=native reading=available stale=False as_of=1790375136.064312 retry_at=
-```
-
-Claude's `--mode status` ends the line with this program's session cost and
-lines beside Claude Code's own totals from the payload, as a check:
-`cost_usd=… claude_cost_usd=… lines=+a/-r claude_lines=+a/-r`. A side with no
-figure is left blank.
-
-`reading=unavailable` with a `retry_at` means the source failed and is backing
-off. Codex adds `child_threads`, `child_coverage` and `ambiguous_legacy`; see
-[Codex](codex.md#diagnostics). A `cmd:` source is reported as `cmd`, without
-its path.
+The mod writes what it read and why a figure is blank to `usage-band.log`
+in the state directory: a source that failed and when it is asked again, the
+plan usage's window keys, the tracker's missing profiles. A `cmd:` source is
+logged as `cmd`, without its path.

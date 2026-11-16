@@ -299,7 +299,7 @@ export async function agentWalk($: $, dir: string, out: Listed[]): Promise<void>
 // ════════════════════════════════════════════════════════════════════════════
 
 /** Where things are: the status line's state directory and Claude Code's
- * projects directory, from HOME and the variables the Python reads. */
+ * projects directory, from HOME and the variables that move them. */
 export type Places = { home: string; stateDir: string; projectsDir: string }
 
 export async function placesOf($: $): Promise<Places> {

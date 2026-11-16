@@ -1,6 +1,6 @@
 // The usage source: the Claude Usage Tracker's store, the OAuth usage
-// answer and the dollar credits asked of it, prepared as the Python
-// prepares its reading.
+// answer and the dollar credits asked of it, each prepared into its
+// reading.
 import type { EngineInterface } from 'claude-code'
 
 import { pyJoin } from '../src/claude_records.ts'
@@ -120,7 +120,7 @@ const OAUTH_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 
 let configAccount: { path: string; stamp: string; id: string } | null = null
 
-/** config_account_id through `$`: Claude Code's signed-in account, hashed,
+/** configAccountId through `$`: Claude Code's signed-in account, hashed,
  * from its global config, kept against the file's mtime and size, since
  * the file is a quarter of a megabyte and rewritten often. */
 async function configAccountVia($: $, home: string): Promise<string> {
@@ -194,7 +194,7 @@ async function storeFind($: $, dir: string, agent: string, account: string,
   return newest
 }
 
-/** prepare_claude_reading through `$`, with the mod's configuration and
+/** prepareClaudeReading through `$`, with the mod's configuration and
  * the status line's shared cache, so the two read one reading. */
 export async function preparedVia($: $, places: Places, raw: Dict,
   sessionId: string, model: string, now: number):

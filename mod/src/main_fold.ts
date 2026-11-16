@@ -1,8 +1,7 @@
 // The main transcript's two folds saved as text, so a reload reads on
-// from where they stopped: main_fold.py's port, written byte for byte as
-// it writes them.  spec/state.jsonc's "main-fold" row names the files and
-// the format; agents/plans/closed/saved-running-totals.md has the
-// design.
+// from where they stopped.  spec/state.jsonc's "main-fold" row names the
+// files and the format; agents/plans/closed/saved-running-totals.md
+// has the design.
 //
 // What never changes once folded is a log, one JSON array a line, tagged
 // with what it adds to, in parts of at most part_bytes of UTF-8: a part

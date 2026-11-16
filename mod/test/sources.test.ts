@@ -1,6 +1,8 @@
-// The usage-source reader against the Python it ports.  Every case is in
-// tests/fixtures/sources/, written by tests/fixtures/gen/sources.py from
-// the Python reader; this runs each through the TypeScript and compares.
+// The usage-source reader against its cases.  Every case is in
+// tests/fixtures/sources/, as committed data; this runs each through the
+// TypeScript and compares.  conditions.json, limits.json and
+// projections.json hold the credits' conditions, and the limits and
+// calibration scope a reading projects to.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -24,8 +26,8 @@ import {
 const FIXTURES = path.join(import.meta.dirname, "..", "..", "tests",
                            "fixtures", "sources");
 
-// The fixtures carry NaN where Python wrote one, so they are read the way
-// Python reads JSON.
+// The fixtures carry NaN, so they are read the way Python's json.loads
+// reads JSON.
 function load(name: string): any {
   return pyJsonLoads(fs.readFileSync(path.join(FIXTURES, name), "utf8"));
 }
@@ -57,7 +59,7 @@ function scratch(): string {
 // macOS checks a new executable on its first run in one daemon the whole
 // machine shares, and the checks queue: with tests/all.sh's suites writing
 // commands side by side one took 15 seconds, past commandReading's five,
-// and the case read no reading.  See write_executable in tests/_checks.py.
+// and the case read no reading.
 function warm(file: string) {
   spawnSync(file, [], { stdio: "ignore" });
   fs.rmSync(file + ".stdin", { force: true });
@@ -72,6 +74,10 @@ function sorted(value: unknown): string {
 function setTz(tz: string) {
   process.env.TZ = tz;
 }
+
+// What the 💳 row's limits and the calibration scope of each tracker and
+// collect case's reading are, by case name (and step).
+const PROJECTIONS = load("projections.json");
 
 const counts: { [group: string]: number } = {};
 function count(group: string) {
@@ -102,7 +108,7 @@ test("values: epoch, _number, period_bounds, cache_name", () => {
 });
 
 // findCompatible opens a usage cache's name and nothing else in the state
-// directory, as state.find_compatible does.
+// directory, as findCompatible does.
 test("isCacheName", () => {
   const h = "0123456789abcdef".repeat(4);
   assert.ok(isCacheName(h + ".json"));
@@ -135,7 +141,7 @@ test("credits_reading", () => {
 
 test("claude_oauth_reading: every seven_day_* window, the plan's first",
   () => {
-    // The answer tests/http-sources.py gives experimental_claude_oauth.
+    // An answer the experimental-claude-oauth source may get.
     const raw = { seven_day_sonnet: { utilization: 4 },
       seven_day_omelette: { utilization: 5 }, seven_day_opus: null,
       seven_day_zz: { utilization: null }, extra_usage: { utilization: 9 },
@@ -203,7 +209,7 @@ test("tracker: plist store to reading", async () => {
       // both languages: neither readout falls over on it.
       const reading = await claudeUsageTracker(env);
       same(reading, c.expected, c.name);
-      same(legacyLimits(reading), c.limits, c.name);
+      same(legacyLimits(reading), PROJECTIONS.tracker[c.name], c.name);
       count("tracker");
     }
   } finally {
@@ -291,15 +297,16 @@ test("collect: scenarios over one state directory", async () => {
         const prepared = await prepareClaudeReading(
           spec, s.account, s.period, context, s.now, env);
         same(scrub(prepared.reading), s.reading, what + " reading");
-        same(prepared.limits, s.limits, what + " limits");
+        const projected = PROJECTIONS.collect[scenario.name][n - 1];
+        same(prepared.limits, projected.limits, what + " limits");
         // The calibration cache's scope, fresh or cached alike.
         const snap = seedLimitsSnapshot(
           pyTruthy(prepared.reading) ? prepared.limits : NO_LIMITS,
           prepared.reading);
-        assert.equal(scrub(String(pyGet(snap, "_scope", ""))), s.scope,
-                     what + " scope");
-        // Every cache file, as Python left it: the same contents under the
-        // same names, which is what lets the two share one cache.
+        assert.equal(scrub(String(pyGet(snap, "_scope", ""))),
+                     projected.scope, what + " scope");
+        // Every cache file, as the case pins it: the same contents under
+        // the same names.
         const files: Dict[] = [];
         for (const entry of fs.readdirSync(stateDir).sort()) {
           if (!entry.endsWith(".json")) continue;
@@ -327,8 +334,8 @@ test("collect: scenarios over one state directory", async () => {
 });
 
 test("each window reads at the highest the account has given for it", async () => {
-  // As tests/source-cache.py: sessions on 20, the OAuth reading on 21 and
-  // an idle session's stale 16 all read 21.
+  // Sessions on 20, the OAuth reading on 21 and an idle session's stale 16
+  // all read 21.
   const files: { [key: string]: Dict } = {};
   const key = (...k: string[]) => k.join("\0");
   const store = {

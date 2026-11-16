@@ -1,8 +1,7 @@
-// The defaults of coding-agent-usage-line and its usage-band mod: every
-// option a configuration file may set, with the value both ports use when
-// no file sets it.
+// The defaults of the usage-band mod: every option a configuration file
+// may set, with the value the mod uses when no file sets it.
 //
-// Both ports read this file at every run, and nothing else holds these
+// The mod reads this file at every run, and nothing else holds these
 // values: a key missing here, one that is no option, or a value of the
 // wrong type is an error, drawn where the status line or the band would be.
 // The options' types, allowed values and documentation are in
@@ -18,15 +17,17 @@
 // changes.  A key that is no option refuses the whole file, with a
 // warning naming it.
 {
-  // ── Both ports ─────────────────────────────────────────────────────────
+  // ── The usage source ───────────────────────────────────────────────────
   // Where plan and quota figures come from: auto, native, none, off,
-  // claude-usage-tracker, codex-app-server, anthropic-admin, openai-admin,
-  // experimental-claude-oauth, experimental-codex-api, or cmd:PATH.
+  // claude-usage-tracker, anthropic-admin, experimental-claude-oauth, or
+  // cmd:PATH.
   "usage-source": "auto",
   // A non-secret label that keeps cached readings for accounts apart.
   "account": "default",
   // The UTC period of the organization reports: day, week or month.
   "account-period": "day",
+
+  // ── The grid ───────────────────────────────────────────────────────────
   // Columns each grid row leaves blank at the right edge.  null
   // follows rows.*.place: 5 when any row drawn live is "above", where
   // Claude Code's [-] stands, else 2.
@@ -35,34 +36,12 @@
   // any one part (docs/options.md, "Hiding").
   "hide": [],
 
-  // ── Claude's display ───────────────────────────────────────────────────
-  // Faint | rules between the columns.
-  "column-rules": false,
   // A blank between a mark and its value.
   "mark-spacing": true,
   // The digits after a decimal point as subscripts.
   "subscript-decimals": false,
-  // Colour the cost rows.
-  "color": false,
-  // The cost line's 🎮 session-totals row.
-  "totals": true,
-  // The cost rows flush right.
-  "right-align": true,
-  // The account half of each 🔋 and 🪫 cell.
-  "account-totals": true,
-  // The cost rows' 📅 date and 🕐 time cells.
-  "datetime": true,
-  // The "Usage: …" words in the cost rows' labels.
-  "usage-text": true,
-  // Always start the cost message with a blank line.
-  "force-newline": false,
-  // The mark at the start of each cost row.
-  "prefix": "📊",
-  // The label of the cost line's prompt row.  null follows usage-text:
-  // "🎤 Usage: Prompt (last)  " when it is on, "🎤" when it is off.
-  "label": null,
 
-  // ── The mod's ──────────────────────────────────────────────────────────
+  // ── The rows ───────────────────────────────────────────────────────────
   // Each row the mod draws.  place: "above", in the band above the
   // prompt, or "footer", under Claude Code's footer line; live: "never",
   // "running" (while a turn runs) or "always"; transcript: whether a

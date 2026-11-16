@@ -9,13 +9,12 @@
 // (the main transcript's folds and the agents'), usage.ts (the usage
 // source and the credits), calibration.ts (the window costs) and
 // configuration.ts (the configuration files).  What they read this hands
-// to src/claude.ts's statusFigures and costFigures, which are the Python's
-// status_figures and cost_figures past their reads.
+// to src/claude.ts's statusFigures and costFigures, which draw the figures
+// from it and read nothing themselves.
 //
-// The reads keep what they have read in memory between documents, as the
-// Python keeps its agent cache and cost cache on disk: a transcript is only
-// ever appended to, so each document reads only the bytes past the last
-// complete line it parsed before.
+// The reads keep what they have read in memory between documents: a
+// transcript is only ever appended to, so each document reads only the
+// bytes past the last complete line it parsed before.
 import type { EngineInterface } from 'claude-code'
 
 import {
@@ -71,7 +70,7 @@ let seenKinds: string | null = null
 // ════════════════════════════════════════════════════════════════════════════
 
 /** The status line's payload, made from `$.session` and what the handlers
- * have seen, and read by readPayload as the Python reads stdin. */
+ * have seen, and read by readPayload as a payload on stdin is. */
 export async function payloadOf($: $, transcript: string): Promise<{
   raw: Dict; payload: Payload }> {
   const cwd = await $.session.cwd()
@@ -186,7 +185,7 @@ export function finishedMs(records: readonly Rec[]): number | null {
   return null
 }
 
-/** detect_git through `$.process.run`, in the session's directory. */
+/** detectGit through `$.process.run`, in the session's directory. */
 async function gitVia($: $, cwd: string) {
   return detectGit(async (args) => {
     try {
@@ -234,7 +233,7 @@ export function localZone(): string | null {
   }
 }
 
-/** status_figures through `$`. */
+/** statusFigures through `$`. */
 export async function statusDoc($: $, places: Places): Promise<Dict> {
   for (const k of Object.keys(steps)) delete steps[k]
   const now = (await $.clock.now()) / 1000
@@ -366,7 +365,7 @@ async function spendingVia($: $, session: string, doc: Dict, tr: Transcript,
     : tr.own_parts, turns, measuredFall(bracket, credit, asOf, start))
 }
 
-/** The session's turns as read_turns makes them from the transcript as it
+/** The session's turns as readTurns makes them from the transcript as it
  * stands, with the transcript's path; null with no transcript found.  No
  * settling wait: the receipt's stamp polls this until the newest prompt's
  * turn is billed. */
@@ -379,8 +378,8 @@ export async function turnsNow($: $, places: Places):
     await agentReadings($, path)) }
 }
 
-/** cost_figures through `$`, over turns turnsNow read.  `published` is the
- * band's last context window, as window_for reads the status line's. */
+/** costFigures through `$`, over turns turnsNow read.  `published` is the
+ * band's last context window, as windowFor reads the status line's. */
 export async function costDoc($: $, places: Places, path: string,
   turns: Turn[], published: number): Promise<Dict> {
   const now = (await $.clock.now()) / 1000

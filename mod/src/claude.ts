@@ -1,20 +1,16 @@
-// The glue in claude.py that strings the accounting together per render:
-// the status and cost figures documents, from what the edge has read.
+// The glue that strings the accounting together per render: the status
+// and cost figures documents, from what the edge has read.
 //
 // claude_records.ts reads a transcript, claude_calib.ts works out the plan
 // shares and their calibration, claude_sources.ts reads the usage source;
-// this is the Python's orchestration of them, `status_figures`,
-// `cost_figures`, `_with_shares`, `window_for` and `ctx_window_for`, and
-// `detect_git`'s reading of git's answers.  Each keeps its Python name in
-// camelCase, so a change to one names the place to change in the other.
+// this strings them together, in statusFigures, costFigures, _withShares,
+// windowFor and ctxWindowFor, and detectGit's reading of git's answers.
 //
-// Pure, as the modules it strings together are: the Python reads files,
-// runs git, and reads the clock and the environment inside these
-// functions, and here each of those comes in as an argument, read by the
-// edge.  The mod's edge is its handlers (mod/hooks/), which read through
-// `$`; the tests' is Node.  Where the Python catches everything around a
-// read so that a figure it cannot have is missing rather than a failed
-// render, the edge passes null for what it could not read.
+// Pure, as the modules it strings together are: the files, git, the clock
+// and the environment each come in as an argument, read by the edge.  The
+// mod's edge is its handlers (mod/hooks/), which read through `$`; the
+// tests' is Node.  So that a figure it cannot have is missing rather than
+// a failed render, the edge passes null for what it could not read.
 import { CTX_1M, CTX_DEF, RATE_SAMPLES, RATE_TICK_S } from "./spec.ts";
 import { pyFormatF, pyIntDigits, pyIsDigit } from "./py.ts";
 import type { Dict } from "./py.ts";
@@ -42,7 +38,7 @@ import { encodeTurn } from "./claude_cost.ts";
 
 /** Runs `git --no-optional-locks <args>` in the session's directory and
  * answers its stdout less the trailing newlines, or null when it fails:
- * the Python's `_git`, which the edge supplies. */
+ * the edge supplies it. */
 export type GitRun = (args: readonly string[]) => Promise<string | null>;
 
 /** Resolve --git-common-dir to the MAIN repo root, and say if we are in a
@@ -57,7 +53,7 @@ export function _mainRoot(common: string, toplevel: string):
   return [root, Boolean(toplevel && toplevel !== root)];
 }
 
-/** The git context in three invocations, as detect_git reads it.
+/** The git context in three invocations, as detectGit reads it.
  *
  * --abbrev-ref and --short cannot both be asked for in one rev-parse, so
  * the branch is a symbolic-ref of its own; a detached HEAD shows its short
@@ -144,7 +140,7 @@ export function _pctStr(v: number | null): string {
   return v === null ? "" : pyG(v);
 }
 
-/** What _with_shares adds to the status document: the turn the receipt
+/** What _withShares adds to the status document: the turn the receipt
  * would bill, the turn opened last, and the accounting of each, of the
  * session and of the main thread alone. */
 export type SharesExtra = {
@@ -173,7 +169,7 @@ const NONE: SharesExtra = { turn: null, open_turn: null,
  *
  * WHICH TURN the 🎤 figure is about is the last that made calls and is
  * neither a compaction nor an agent's, the receipt's pick, so the two
- * describe the same turn.  claude.py's docstring has the history. */
+ * describe the same turn. */
 export function _withShares(lim: Limits, turns: readonly Turn[] | null,
   main: Transcript, snap: Snapshot, calib: Calib | null):
   [Limits, CacheShares, SharesExtra] {
@@ -236,7 +232,7 @@ export function _withShares(lim: Limits, turns: readonly Turn[] | null,
 /** One sample of a token count: [epoch, tokens]. */
 export type RateSample = readonly [number, number];
 
-/** session_rate without its file (decision 1): how fast the main thread's
+/** sessionRate without its file (decision 1): how fast the main thread's
  * own tokens climb, from the samples the caller keeps in memory, one taken
  * from each status document `RATE_TICK_S` or more after the last, the
  * last RATE_SAMPLES kept.  The rate is the rise from the oldest to the
@@ -273,7 +269,7 @@ export function _figPlan(snap: Snapshot): Dict {
 }
 
 /** What the usage source gave: its version-1 reading and the plan figures
- * taken from it.  The account summary row is not ported (see
+ * taken from it.  The account summary row is not drawn (see
  * claude_sources.ts), so `account_text` is always null here. */
 export function _figUsage(prepared: PreparedClaudeReading, snap: Snapshot):
   Dict {
@@ -304,7 +300,7 @@ export type StatusInputs = {
 };
 
 /** Stage one of the status line, past its reads: the figures document the
- * band draws.  `_with_shares` over the read, the context window from the
+ * band draws.  `_withShares` over the read, the context window from the
  * payload, and the usage source's reading. */
 export function statusFigures(inp: StatusInputs): Dict {
   const [lim, cache, extra] = _withShares(baseLimits(inp.prepared),

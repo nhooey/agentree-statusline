@@ -71,7 +71,7 @@ test("a hide path names itself and every path under it", () => {
 
 test("at a right edge of 0 a row ends at the terminal's edge", () => {
   // As the mod draws the band under the footer line, where there is no
-  // [-] (asked 2026-10-20), and as tests/grid.py has it.
+  // [-] (asked 2026-10-20).
   const st0 = settings({}, true, false, 0);
   const st5 = settings({});
   assert.equal(st5.rightEdge, RIGHT_EDGE);

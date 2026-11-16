@@ -1,163 +1,40 @@
 # Options
 
-```
-coding-agent-usage-line.py --agent claude|codex [--mode status|cost|usage] [options]
-coding-agent-usage-line.py --selftest
-coding-agent-usage-line.py --show-config
-```
+Every option is a key of a [configuration file](#configuration-files),
+which the mod reads; there is no command line. Every key and its default is
+in [`mod/defaults/config.jsonc`](../mod/defaults/config.jsonc).
 
-`--agent` is required for every mode. Only `--help`, `--selftest` and
-`--show-config` run without it. Flags are validated before stdin is read, so a malformed hook
-command fails at once (exit 2) instead of waiting for input.
-
-A bare invocation draws everything but the column rules. Every other Claude
-display switch either removes something or changes spacing, so apart from
-`--column-rules` you only add flags to take things away.
-
-| I want to… | Use |
+| I want to… | Set |
 |---|---|
-| read a saved transcript by hand | `--transcript PATH`, plus `--mode cost --all` for every prompt |
-| faint `\|` rules between the columns | `--column-rules` |
-| a tighter readout on a narrow terminal | `--no-mark-spacing` |
-| shorter cost-line labels | `--no-usage-text` |
-| see why a plan figure is blank | `--diagnose` |
-| change where plan figures come from | `--usage-source SPEC` — see [Usage sources](usage-sources.md) |
-| set an option for every hook, or for one project | a [configuration file](#configuration-files) |
-| see which file set what | `--show-config` |
+| a tighter readout on a narrow terminal | `"mark-spacing": false` |
+| change where plan figures come from | `"usage-source"` — see [Usage sources](usage-sources.md) |
+| leave a column out | `"hide"` — see [Hiding](#hiding) |
+| move a row, or stop drawing it | `"rows"` — see [What a file holds](#what-a-file-holds) |
+| set an option for every session, or for one project | a [configuration file](#configuration-files) |
+| see which file set what | the mod's log, `usage-band.log` in the state directory |
 
-## Modes
+## Settings
 
-| Mode | Reads on stdin | Prints | Agents |
-|---|---|---|---|
-| `status` (default) | the status-line JSON payload | three rows, or four on a narrow terminal (Claude); a summary and quota lines (Codex) | both |
-| `cost` | the Stop-hook JSON payload | `{"systemMessage": "..."}`, or `{}` when there is nothing to report | both |
-| `usage` | nothing | the plan windows as one JSON object; see [below](#plan-windows-as-json---mode-usage) | both |
-| `--selftest` | nothing | specimen rows drawn on the terminal, and a report of where the cursor landed | — |
+The settings the table below lists apply to every row the mod draws; the
+others, which say where each row goes and what it holds, are under
+[What a file holds](#what-a-file-holds).
 
-Hooks never break a session: a missing transcript or an internal error in
-`cost` mode prints `{}` and exits 0.
-
-`--selftest` needs a real terminal tab: it draws rows on `/dev/tty` and asks
-the terminal where the cursor ended up. See
-[Glyphs and terminals](glyphs-and-terminals.md).
-
-### Plan windows as JSON (`--mode usage`)
-
-For an agent or a skill that needs the account's plan windows (the
-five-hour, the weekly, and any other the source gives, such as
-`seven_day_opus` or the Fable window, `seven_day_overage_included`), this is the command to run. It reads no stdin.
-
-```sh
-$ coding-agent-usage-line.py --agent claude --mode usage
-{"schema_version":1,"agent":"claude","source":"native","as_of":1793650981.43,"age_seconds":4.2,"stale":false,"windows":[{"id":"five_hour","bucket":"default","label":"default","used_percent":31.0,"left_percent":69.0,"resets_at":1793680000.0,"duration_seconds":18000.0,"expired":false},{"id":"seven_day","bucket":"default","label":"default","used_percent":12.5,"left_percent":87.5,"resets_at":1793900000.0,"duration_seconds":604800.0,"expired":false}]}
-```
-
-The reading comes the way the status line and the Stop hook get theirs:
-through the [usage source](usage-sources.md), `auto` by default, so a
-reading the status line cached in the last minute, else the fallback, such
-as the Claude Usage Tracker. `--usage-source`, `--account`,
-`--account-period` and the configuration files apply as in every mode. It
-writes no hook state; a fallback's refresh updates that source's cache, as
-in the other modes.
-
-Under `--account default` a cached reading belongs to one session. The
-session is `--transcript`'s (the file name for Claude, the rollout's
-session for Codex); without one, for Claude, it is
-`$CLAUDE_CODE_SESSION_ID`, which Claude Code sets for the commands it
-runs. For Codex, `--transcript PATH` gives the rollout's own quota reading;
-without it, `auto` asks the Codex app-server.
-
-| Field | Value |
-|---|---|
-| `schema_version` | `1` |
-| `agent` | `claude` or `codex` |
-| `source` | the source the reading came from, such as `native` or `claude-usage-tracker`; `null` without one |
-| `as_of` | when the source took the reading, epoch seconds |
-| `age_seconds` | how long ago that was |
-| `stale` | `true` once the reading is older than its source's refresh interval (see [Refresh and storage](usage-sources.md#refresh-and-storage)) |
-| `windows` | one object per plan window, below |
-| `reason` | only without a reading: `no-reading` |
-
-Each window has `id` (`five_hour`, `seven_day`,
-`seven_day_overage_included`, `seven_day_opus`, or a
-Codex window's `primary` or `secondary`), `bucket` and `label` (the quota
-it belongs to; `default` for Claude's), `used_percent`, `left_percent`,
-`resets_at` (epoch seconds), `duration_seconds` and `expired` (its reset
-has passed). A figure the source didn't give is `null`. No token, account
-id or session id is printed.
-
-| Exit | Meaning |
-|---|---|
-| 0 | a reading with at least one window |
-| 1 | no reading: `windows` is `[]`, `source`, `as_of`, `age_seconds` and `stale` are `null`, and `reason` says why |
-| 2 | a usage error, such as an unknown flag or a source the agent can't read |
-
-## Shared options
-
-These work for both agents.
-
-<!-- options:begin shared -->
-| Option | Default | Effect |
+<!-- options:begin settings -->
+| Key | Default | Effect |
 |---|---|---|
-| `--agent claude\|codex` | — | Which transcript format and hook conventions to use. Required. |
-| `--mode MODE` | `status` | See [Modes](#modes). |
-| `--transcript PATH` | the payload's path | Read this transcript instead of the one the payload names, and don't read stdin. For offline use: it skips the Stop hook's wait for the transcript to finish writing, and never records "already reported" state, so it can't change what the live hook reports next. |
-| `--usage-source SPEC` | `auto` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
-| `--account NAME` | `default` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
-| `--account-period day\|week\|month` | `day` | The UTC calendar period for organization reports (`anthropic-admin`, `openai-admin`). Weeks start on Monday. |
-| `--all` | off | With `--mode cost`: list every prompt as plain text instead of emitting a hook response. Codex also lists completed child agents. Doesn't consume Stop-hook state. |
-| `--from-figures PATH` | none | Claude: draw a saved figures document instead of reading any input. The test suite saves one per case; useful for redrawing a captured layout. See [the tests' README](../tests/README.md#figures). |
-| `--diagnose` | off | Write one redacted line to stderr: which source was used, whether a reading was available, whether it is stale, and when a failed source will be retried. Claude's status line adds the session's cost and lines two ways, as a check on each other: `cost_usd` and `lines`, this program's own over the transcript and the agent files, as the cost line totals them, and `claude_cost_usd` and `claude_lines`, the totals Claude Code's payload gave; each is blank where its side has none. Codex adds child-rollout coverage. Never prints credentials, command paths or raw responses. |
-| `--cols N` | detected | Terminal width. `0` means "unknown", which forces the fallback layout. Claude only; Codex accepts and ignores it. |
-| `--right-edge N` | `5` with any of the mod's rows above the prompt (`rows.*.place`), else `2` | The columns every grid row leaves blank at the terminal's right edge. `2` matches the mod with its rows under the footer line, whose container stops two columns short of the edge; `5` is the room Claude Code keeps for the mod's band `[-]` above the prompt. Unset, it follows the mod's `rows.*.place` from the files: `5` when any row the mod draws live is placed `above`, else `2`, so every row ends in one column. Claude only; the Python's modes accept it and draw no grid row. |
-| `--hide PATH` | none | Repeatable. Leave a column or a part of a row's label out of the redesigned grid, or 🔋 and 🪫 off the turn tag lines (`tag.plan.five_hour`, `tag.plan.week`); see [Hiding](#hiding). The mod's rows draw on the grid; the Python's modes, and Codex, accept it and ignore it. |
-<!-- options:end shared -->
+| `usage-source` | `"auto"` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
+| `account` | `"default"` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
+| `account-period` | `"day"` | The UTC calendar period for organization reports (`anthropic-admin`). Weeks start on Monday. |
+| `right-edge` | `5` with any of the mod's rows above the prompt (`rows.*.place`), else `2` | The columns every grid row leaves blank at the terminal's right edge. `2` matches the mod with its rows under the footer line, whose container stops two columns short of the edge; `5` is the room Claude Code keeps for the mod's band `[-]` above the prompt. Unset, it follows the mod's `rows.*.place` from the files: `5` when any row the mod draws live is placed `above`, else `2`, so every row ends in one column. |
+| `hide` | none | Columns and parts of a row's label left out of the grid, or 🔋 and 🪫 off the turn tag lines (`tag.plan.five_hour`, `tag.plan.week`), each `scope[.group[.metric]]` with `*` for any one part; see [Hiding](#hiding). |
+| `mark-spacing` | `true` | A blank between a mark and its value; `false` closes it. |
+| `subscript-decimals` | `false` | Write fractions as subscript digits: `1.2٪` becomes `1₂٪`. |
+<!-- options:end settings -->
 
-### Terminal width
-
-A status-line command runs with pipes for stdio, so it can't ask its own
-terminal for a width. The program walks up its process ancestry to the first
-process with a terminal and asks that device, on every render, so a resize is
-picked up on the next frame. There is no terminal under `claude -p` or in
-cloud sessions; the readout then uses a fallback layout that doesn't depend on
-the width. `--cols` overrides the walk. The tests use it for reproducible
-output. `--cols` is the terminal's width in every mode.
-
-## Claude display options
-
-Each switch below that the table writes with `--no-` also takes its
-positive spelling (`--totals`), and `--column-rules`,
-`--mark-spacing` and `--subscript-decimals` take both too. Where a command
-gives both spellings, the `--no-` one wins.
-
-<!-- options:begin display -->
-| Option | Modes | Effect |
-|---|---|---|
-| `--column-rules` | status | Draw faint `\|` rules between the columns. Nothing moves. |
-| `--no-mark-spacing` | all | Close the blank between a mark and its value. |
-| `--subscript-decimals` | all | Write fractions as subscript digits: `1.2٪` becomes `1₂٪`. |
-| `--color` | cost | Colour the rows. The Stop hook's message is shown as plain text, so leave it off there. |
-| `--no-totals` | cost | Drop the 🎮 session-totals row. |
-| `--no-right-align` | cost | Print the rows flush left. |
-| `--no-account-totals` | cost | Drop the second half of each 🔋 and 🪫 cell: `💳 41٪` on the totals row, `📖`/`📝` on the prompt row. |
-| `--no-datetime` | cost | Drop the 📅 date and 🕐 time cells. |
-| `--no-usage-text` | cost | Drop the `Usage: …` words from the row labels, keeping each row's glyph. |
-| `--force-newline` | cost | Always start the message with a blank line. |
-| `--prefix TEXT` | cost | The mark at the start of each row. |
-| `--label TEXT` | cost | The label of the prompt row. Default `🎤 Usage: Prompt (last)`, or `🎤` with `--no-usage-text`. |
-<!-- options:end display -->
-
-`--no-column-rules` and `--mark-spacing` are the defaults and are accepted so a
-settings file can say explicitly what it wants. A flag given for a mode it
-doesn't apply to is accepted and ignored. With `--agent codex` these flags are
-rejected as unknown options (exit 2), except `--prefix` and `--label`, which
-are accepted and ignored.
-
-### `--no-mark-spacing`
+### `"mark-spacing": false`
 
 Closes the one-column gap between a mark and its value, for terminals too
-narrow for the full readout. On the status line this narrows column 4 by four
-columns and column 3 by two:
+narrow for the full readout:
 
 ```
 default   ⌛ ⛳    ? 🤖 2.8h 🔧  58m 🚦 5.5h
@@ -166,7 +43,7 @@ tight     ⌛ ⛳   ? 🤖2.8h 🔧 58m 🚦5.5h
           🔋 🎤1.2٪ 🎮3.8٪ 💳 15٪ 🔜6.7m
 ```
 
-On the cost line it reaches only the marks with nothing after them — 🧩, 🎯,
+On the receipt it reaches only the marks with nothing after them — 🧩, 🎯,
 💳, 📖 and 📝:
 
 ```
@@ -178,17 +55,7 @@ The column after 🧠, 💰, 🔋, 🪫, ⌛🤖 and 🔧 holds a `+` on the pro
 blank on the totals row beneath it. That column is what keeps the two rows
 stacked digit under digit, so it stays.
 
-It also keeps the column rules off, even under `--column-rules`. See
-[below](#--column-rules).
-
-### `--column-rules`
-
-The rules are painted into gaps the grid leaves anyway, so turning them on
-changes the ink and nothing else. They stay off below 170 columns, when the
-width is unknown, and under `--no-mark-spacing`, even when asked for.
-`--no-column-rules` wins if both are given.
-
-### `--subscript-decimals`
+### `"subscript-decimals": true`
 
 Writes the digits after a decimal point as subscripts (U+2080–U+2089), so the
 point takes no column:
@@ -198,7 +65,7 @@ off   🧩▴2.7M ▾841k    🔋 🎤 1.2٪ 🎮 3.8٪ 💳  15٪ 🔜 6.7m
 on    🧩▴ 2₇M ▾841k    🔋 🎤  1₂٪ 🎮  3₈٪ 💳  15٪ 🔜  6₇m
 ```
 
-(Two cells from the status line's second row.)
+(Two groups of cells, before and after.)
 
 A reading under 1٪ keeps its leading zero — `.08٪` becomes `0₀₈٪` — because
 `₀₈` alone reads as a small 8. That makes the sub-1 reading the same width in
@@ -207,17 +74,17 @@ shorter figure just gets another column of padding and nothing on the row
 moves. The option changes how figures look, not how much room they take.
 
 Ghostty draws the subscript digits one column wide, which is
-what the program assumes.
+what the mod assumes.
 
 ## Hiding
 
-`--hide scope[.group[.metric]]`, repeatable, with `*` for any one part,
-leaves out a column or a label part. A path names what it hides on rows of
-that scope; a column hidden on every row that could draw it is removed and
-the others close up, and one hidden on some rows only is left blank there.
-The band's and the receipt's rows count too, so `--hide agent.state.rate`
-blanks 🛫 on the agent rows and keeps its place, while `--hide '*.state.rate'`
-removes it.
+`"hide"` is a list of paths, `scope[.group[.metric]]` with `*` for any one
+part, each leaving out a column or a label part. A path names what it hides
+on rows of that scope; a column hidden on every row that could draw it is
+removed and the others close up, and one hidden on some rows only is left
+blank there. The band's and the receipt's rows count too, so
+`agent.state.rate` blanks 🛫 on the agent rows and keeps its place, while
+`*.state.rate` removes it.
 
 | Part | Values |
 |---|---|
@@ -248,25 +115,23 @@ On the turn tag lines, 🔻🔖 under the prompt and the receipt's 🔺🔖
 | `name.tag` | both tag lines, with the blank rows around the receipt's |
 
 ```
---hide agent                  every agent row, empty
---hide '*.work'               💾 on every row
---hide agent.time.eta         ⛳ on the agent rows, blank in its column
---hide '*.state.rate'         🛫 everywhere
---hide '*.context.share'      🧠's ٪ everywhere, its column narrower
+"agent"                  every agent row, empty
+"*.work"                 💾 on every row
+"agent.time.eta"         ⛳ on the agent rows, blank in its column
+"*.state.rate"           🛫 everywhere
+"*.context.share"        🧠's ٪ everywhere, its column narrower
 ```
 
 ## Configuration files
 
-Every option a file may set is in
+Every option is in
 [`mod/defaults/config.jsonc`](../mod/defaults/config.jsonc), with its
-default and a line on what it does, by its long flag's name without the
-`--`: `usage-source`, `hide`, `mark-spacing`, and `totals` for
-`--no-totals`. The Python program and the mod read the same files.
+default and a line on what it does.
 
 ### Starting from the defaults
 
-That file is the defaults: both the Python program and the mod read it at
-every run, and no default is written anywhere else. To change settings,
+That file is the defaults: the mod reads it at every load, and no default
+is written anywhere else. To change settings,
 copy it to your user file, or to a project's, and edit the copy:
 
 ```sh
@@ -284,17 +149,14 @@ diff mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
 
 A full copy sets every option, so a later change to a default in the
 repository does not reach it; delete the lines you have not changed to
-follow the defaults instead. `right-edge` and `label` are `null` in the
-defaults file, which means "follow `rows.*.place`" and "follow
-`usage-text`"; `null` in your copy means the same, and is not a setting.
+follow the defaults instead. `right-edge` is `null` in the defaults file,
+which means "follow `rows.*.place`"; `null` in your copy means the same, and
+is not a setting.
 
 The defaults file is read strictly. A key missing from it, a key that is no
 option, or a value of the wrong type is an error naming the file and the
-key, never a value made up in its place: the status line prints it as its
-line and the Stop hook as its message (each exiting 0, so Claude Code
-shows it), `--show-config` and `--help` print it
-on stderr and exit 2, and the mod draws it in red under the footer line in
-place of its rows, with one line in the transcript. The mod reads the
+key, never a value made up in its place: the mod draws it in red under the
+footer line in place of its rows, with one line in the transcript. The mod reads the
 defaults file once each time it is loaded, once it reads whole: a change
 to it on disk shows after the next `/reload-plugins`, which also loads the
 code written for it, and the mod's log says the change is waiting. Your
@@ -317,36 +179,29 @@ A setting comes from the first of these that has it:
 
 | Layer | Where |
 |---|---|
-| `flag` | the hook's command line |
 | `project-local` | `<root>/.config/coding-agent-usage-line/config.local.jsonc`: one person's, not committed |
 | `project` | `<root>/.config/coding-agent-usage-line/config.jsonc`: committed, for everyone |
 | `user` | `$CODING_AGENT_USAGE_LINE_CONFIG_DIR/config.jsonc`, else `$XDG_CONFIG_HOME/coding-agent-usage-line/config.jsonc`, else `~/.config/coding-agent-usage-line/config.jsonc` |
 | `default` | `mod/defaults/config.jsonc` in the repository, which the plugin carries |
 
-The project `<root>` is found by walking up from the session's directory
-(the payload's `cwd`; the status line's `workspace.project_dir`; a Codex
-rollout's own when the payload has none; the working directory for
-`--transcript` by hand; the mod's session root, where the session started or
-`/cd` took it) to the first directory holding either project file.
+The project `<root>` is found by walking up from the session's root,
+where the session started or `/cd` took it, to the first directory holding
+either project file.
 The walk stops at a `.git`, at `$HOME` and at `/`. A git worktree with no
 local file of its own reads its main checkout's.
 
 Lists replace and tables merge per field: a project that sets
 `rows.agent.transcript` keeps every other row from the layers under it.
 `credits` merges per field too, and its `show` per credit.
-`label` follows `usage-text` when no layer sets it.
 
 Nothing in your own files stops a run. A key a file leaves out comes from
 the layer under it, and in the end from the defaults file. A file that is
-not valid JSONC or not an object is skipped whole; an unknown key, a key that describes one run
-(`mode`, `cols`, …) and a value of the wrong type or out of range are
-skipped alone, the layer under them supplying the value. Each is one line
-on stderr naming the file, and an unknown key's names the nearest known one.
-`--diagnose` counts them on its line. A flag that overrides a file's value
-for an option the mod reads too (`hide`, `right-edge`, `usage-source`, …) is
-said as well, since the band then draws the file's.
+not valid JSONC or not an object is skipped whole; an unknown key and a
+value of the wrong type or out of range are skipped alone, the layer under
+them supplying the value. Each is a warning naming the file, and an unknown
+key's names the nearest known one.
 
-The mod draws from the same merged options. It reads the files at each
+The mod reads the files at each
 load (a session's start or a `/reload-plugins`), again on `session.start`,
 and every 30 seconds while idle, a stat of each file, reading again only
 when one has come, gone or changed, or `/cd` has moved the session's root;
@@ -360,12 +215,11 @@ change to the file.
 Under the files the mod has one layer of its own, `mod`: `SETTINGS` in
 `mod/hooks/config.ts`, for a setting it draws with that is not the
 default and that no file gives. It is empty: a person's own settings go in
-their user file. `--show-config` does not know this layer; the mod's log
-names it.
+their user file. The mod's log names it.
 
-`right-edge` follows the places in `rows` when no layer sets it, as `label`
-follows `usage-text`: 5 when any row whose `live` is not `"never"` has
-`place` `"above"`, as under the defaults, else 2.
+`right-edge` follows the places in `rows` when no layer sets it: 5 when any
+row whose `live` is not `"never"` has `place` `"above"`, as under the
+defaults, else 2.
 
 `plan-usage` is on in the defaults: the mod asks
 `https://api.anthropic.com/api/oauth/usage` for the plan's windows once a
@@ -412,24 +266,8 @@ a reload does not start it again. The defaults say 5; 0 moves a row at
 once. A lingering subagent counts toward `subagent-rows` as a live one
 does ([The subagent rows](layout.md#the-subagent-rows)).
 
-`--show-config` prints the merged options, each with the layer it came from
-and the layers' files, and the warnings, and exits. It reads no stdin, so
-its walk starts in the directory it runs in:
-
-```
-$ coding-agent-usage-line.py --show-config
-Configuration, read from /Users/me/src/project:
-  flag           the command line
-  project-local  /Users/me/src/project/.config/coding-agent-usage-line/config.local.jsonc
-  project        /Users/me/src/project/.config/coding-agent-usage-line/config.jsonc (none)
-  user           /Users/me/.config/coding-agent-usage-line/config.jsonc
-  default        /Users/me/src/claude-code-usage-statusline/mod/defaults/config.jsonc
-
-option                         layer          value
-usage-source                   user           "claude-usage-tracker"
-hide                           project-local  []
-...
-```
+The log's `config options:` line lists every option a layer above the
+defaults gave, each with its value and layer.
 
 ### The credits
 
@@ -469,42 +307,12 @@ it. On a narrow terminal the credits leave the row before 📅 and 🕐.
 | Variable | Effect |
 |---|---|
 | `CODING_AGENT_USAGE_LINE_CONFIG_DIR` | The user-global [configuration](#configuration-files) directory. Default `$XDG_CONFIG_HOME/coding-agent-usage-line`, or `~/.config/coding-agent-usage-line`. |
-| `CODING_AGENT_USAGE_LINE_STATE_DIR` | Where caches and per-session state live. Default `$XDG_STATE_HOME/coding-agent-usage-line`, or `~/.local/state/coding-agent-usage-line`. |
-| `CODING_AGENT_USAGE_LINE_CLAUDE_PROJECTS_DIR` | Where Claude transcripts live, for calibration. Default `~/.claude/projects`. |
+| `CODING_AGENT_USAGE_LINE_STATE_DIR` | Where caches, the mod's log and per-session state live. Default `$XDG_STATE_HOME/coding-agent-usage-line`, or `~/.local/state/coding-agent-usage-line`. |
 | `CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST` | Read an exported Claude Usage Tracker store from this path instead of the running app's preferences. |
-| `CODEX_HOME` | Codex's data directory, used to find child-agent rollouts. Default `~/.codex`. |
-| `ANTHROPIC_ADMIN_KEY`, `OPENAI_ADMIN_KEY`, `CLAUDE_OAUTH_ACCESS_TOKEN`, `CODEX_USAGE_ACCESS_TOKEN`, `CODEX_USAGE_ACCOUNT_ID` | Credentials for the sources that need them. See [Usage sources](usage-sources.md#sources). |
+| `ANTHROPIC_ADMIN_KEY`, `CLAUDE_OAUTH_ACCESS_TOKEN` | Credentials for the sources that need them. See [Usage sources](usage-sources.md#sources). |
 
-Three more exist for the test suites: `CODING_AGENT_USAGE_LINE_NOW` freezes
-the clock, `CODING_AGENT_USAGE_LINE_CLAUDE_CALIB_CACHE` supplies a prepared
-calibration, and `CODING_AGENT_USAGE_LINE_PROJECT_DIR` starts the project
-walk in a given directory instead of the payload's. None is for everyday use.
+`CODING_AGENT_USAGE_LINE_CLAUDE_CALIB_CACHE` supplies a prepared
+calibration, for the tests; it is not for everyday use.
 
-No environment variable is a setting: an option is a flag or a key of a
+No environment variable is a setting: an option is a key of a
 configuration file.
-
-## Migrating from `claude-code-usage-statusline.py`
-
-The program used to be a single file, `claude-code-usage-statusline.py`. It is
-now `coding-agent-usage-line.py` beside the `coding_agent_usage_line/`
-package, and every operational command needs `--agent`. There is no
-compatibility shim under the old name.
-
-1. In `~/.claude/settings.json`, change each command's program to
-   `coding-agent-usage-line.py` and add `--agent claude`.
-2. Rename environment variables:
-
-   | Old | New |
-   |---|---|
-   | `CLAUDE_USAGE_SOURCE` | `"usage-source"` in a [configuration file](#configuration-files) |
-   | `CLAUDE_PROJECTS_DIR` | `CODING_AGENT_USAGE_LINE_CLAUDE_PROJECTS_DIR` |
-   | `CLAUDE_USAGE_TRACKER_PLIST` | `CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST` |
-   | `CLAUDE_CALIB_CACHE` | `CODING_AGENT_USAGE_LINE_CLAUDE_CALIB_CACHE` |
-   | `CLAUDE_STATUSLINE_NOW` | `CODING_AGENT_USAGE_LINE_NOW` |
-
-   `CLAUDE_PLAN_CACHE` and `CLAUDE_LIMIT_CACHE` are gone: readings are now
-   cached under the state directory. The old names are ignored.
-3. Credential variables (`ANTHROPIC_ADMIN_KEY` and the rest) keep their vendor
-   names.
-
-The repository and its clone URL are still `claude-code-usage-statusline`.

@@ -6,7 +6,7 @@
 // turn's records are in the transcript, the mod stamps them there frozen, a
 // `$.ui.log` line each: a head, 🔺🔖 the turn's tag, the account's limits
 // and when it was stamped, and over it the same two rows, from the cost document
-// (`cost_figures`), dim so history reads apart from the live band.  As
+// (`costFigures`), dim so history reads apart from the live band.  As
 // a turn starts, the mod draws the same tag under the prompt, 🔻 pointing
 // down at the turn it opens, from the status document.  The rows are drawn
 // on the band's fixed grid (band.ts), so the receipt's columns are the
@@ -251,7 +251,7 @@ function addUp(values: readonly number[]): number {
 }
 
 /** 🎮: the session, `accounting.session`, its 🧩 🎯 every turn summed
- * as cost_totals_group sums them, ⌛ its age from `start_s` (decision 5),
+ * as costTotalsGroup sums them, ⌛ its age from `start_s` (decision 5),
  * and its mark alone on the label, as the band's 🎮 is. */
 function sessionRow(st: Settings, turns: readonly Turn[], acc: Accounting,
   now: number, sessPct: string, weekPct: string): Row {

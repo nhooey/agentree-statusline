@@ -1,16 +1,11 @@
 // Pure Claude status-line renderers.
 //
-// A port of coding_agent_usage_line/claude_render.py, function for
-// function and in the same order.  The Python's docstrings carry each
-// cell's history and the argument for its shape, and are not copied: the
-// comments here say what the port has to do to draw the same bytes.
-//
-// All data arrives as arguments.  Where the Python reads module state, the
-// settings come first as `st` (formatting.ts's Settings: the profile's
-// widths, the mark spacing and the subscript switch); where it falls back
-// to the clock, `now` is required; and where it reads HOME to shorten the
-// working directory, render_status takes `home`.  Each cell returns spans,
-// [] for nothing to draw, and only drawnLine joins them into escapes.
+// All data arrives as arguments.  The settings come first as `st`
+// (formatting.ts's Settings: the profile's widths, the mark spacing and
+// the subscript switch); where a cell reads the clock, `now` is required;
+// and to shorten the working directory under HOME, renderStatus takes
+// `home`.  Each cell returns spans, [] for nothing to draw, and only
+// drawnLine joins them into escapes.
 import {
   E_ACCT, E_COST, E_DIR, E_DIRTY, E_DOWN, E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX,
   E_EFF_MED, E_EFF_XHIGH, E_ETA, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_INBOX,
@@ -58,8 +53,8 @@ export function projectName(git: Git, projectDir: string): string {
 // Status-line segment renderers.
 //
 // One per metric, each padded to its own width and placed by the layout
-// below.  float(s), where the Python parses a payload string, is pyFloat:
-// null where Python raises.
+// below.  float(s), where a payload string is parsed, is pyFloat: null
+// where float() raises.
 // ════════════════════════════════════════════════════════════════════════════
 
 /** The ▴/▾ billable-equivalent token totals, each half dimmed on its own
@@ -135,7 +130,7 @@ export function renderCost(st: Settings, costUsd: string,
   mark: string = st.sCost): Span[] {
   if (!costUsd || costUsd === "null") return [];
   const c = pyFloat(costUsd);
-  // json reads NaN and 1e400 as floats; the Python drops both.
+  // json reads NaN and 1e400 as floats; both are dropped.
   if (c === null || !Number.isFinite(c)) return [];
   return [span(mark),
     span(padVal(st, 4, moneyFig(st, c)), "F_YEL", magDim(c, MAG_COST))];
@@ -176,7 +171,7 @@ export function renderLimit(st: Settings, emoji: string, pctS: string,
       return [span(mark + st.markSp),
         span(padVal(st, w, "?"), "F_CRM", true)];
     }
-    // limit_pct's own threshold, so the glyph and the string agree.
+    // limitPct's own threshold, so the glyph and the string agree.
     if (v >= 99.5) {
       return [span(mark + st.markSp),
         paint(col, padVal(st, w, E_HUNDRED + E_PCT))];
@@ -344,7 +339,7 @@ export function renderDate(st: Settings, now: number): Span[] {
   return [span(S_DATE), span(padVal(st, 11, ymd), "F_CRM")];
 }
 
-/** eta_reading's three answers: null where there is no transcript to
+/** etaReading's three answers: null where there is no transcript to
  * report in, [] for no live estimate (drawn "?"), and otherwise the share
  * done and the seconds left. */
 export type EtaReading = null | readonly [] | readonly [number, number];
@@ -375,7 +370,7 @@ export function etaReading(eta: readonly number[] | null | undefined,
 }
 
 // An agent whose file has been silent this long no longer holds the status
-// line's ⛳ open; see the Python.
+// line's ⛳ open.
 export const ETA_LIVE_S = 1800.0;
 
 /** max(xs) as Python's: the first of equals, and a NaN only where it
@@ -579,7 +574,7 @@ export function chatRow(st: Settings, prefix: string, text: string,
 
   const out = [span(prefix, fg), span(body, fg, dim, false, "B_DRK")];
   if (tl.length) {
-    // tailW stays 0 at an unknown width, as the Python's does; the pad
+    // tailW stays 0 at an unknown width; the pad
     // clamps to MIN_GAP either way.
     let pad = (cols || 0) - RIGHT_MARGIN - tailW -
       visWidth(prefix + body, st.widths);
@@ -617,7 +612,7 @@ export function drawnLine(row: SpanLike, grid = true,
 /** The whole readout, as one string ending in a newline: three rows, or
  * four when the terminal is too narrow for line 3 to hold both halves.
  *
- * `home` is what the Python's os.path.expanduser("~") reads, for showing
+ * `home` is what os.path.expanduser("~") reads, for showing
  * the working directory under it as "~". */
 export function renderStatus(st: Settings, pay: Payload, tr: Transcript,
   git: Git, lim: Limits, cols: number | null, now: number, rules = true,

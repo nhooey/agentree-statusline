@@ -1,8 +1,8 @@
 // The committed figures documents, tests/fixtures/figures/<suite>/<name>.json,
-// as the TypeScript reads them.  tests/_figures.py is the Python's, and
-// says why they are sparse: no `schema`, and no record field (of a
-// Payload, Transcript, Git, Limits, CacheShares or Turn) whose value is
-// null.  full() puts back this port's own schema number and a null for each
+// as the TypeScript reads them.  They are sparse, so a new field touches
+// only the documents with a value for it: no `schema`, and no record field
+// (of a Payload, Transcript, Git, Limits, CacheShares or Turn) whose value
+// is null.  full() puts back this port's own schema number and a null for each
 // record field the text lacks, so the decoders, which refuse a document
 // with a field missing, read it as written.
 import * as fs from "node:fs";

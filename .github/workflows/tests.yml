@@ -1,24 +1,11 @@
-# The two golden suites and the version floor, run by something other than a
-# person remembering to. Everything here is stdlib Python and a POSIX shell,
-# so there is nothing to install and no lockfile to drift.
+# The mod's tests, run by something other than a person remembering to.
 #
-# What is deliberately NOT here, and why:
-#
-#   * --selftest and probe-advance.sh need a controlling tty, and more than
-#     that they need the TERMINAL whose widths are in question. A runner's
-#     pty would report a runner's answers about a layout tuned for other terminals,
-#     which is worse than not asking: it would go green while the thing the
-#     check exists to catch stayed uncaught.
-#   * compaction-once.py and agents-once.py read real transcripts under
-#     ~/.claude/projects/.  A runner has none, so it has nothing to replay.
-#
-# What IS here and might look like it should not be: usage-source.py reads a
-# macOS app's preference store.  It builds its own fixture store with plistlib
-# and drives the source through a fixture plist override, so it needs
-# neither macOS nor the app, and it is the only check that would have caught
-# that app changing its schema.
-#
-# Both stay manual, and tests/README.md says so beside the commands.
+# What is deliberately NOT here, and why: probe-advance.sh needs a
+# controlling tty, and more than that it needs the TERMINAL whose widths are
+# in question.  A runner's pty would report a runner's answers about a
+# layout tuned for other terminals, which is worse than not asking: it would
+# go green while the thing the check exists to catch stayed uncaught.  It
+# stays manual, and tests/README.md says so beside the command.
 name: tests
 
 on:
@@ -31,69 +18,10 @@ permissions:
   contents: read
 
 jobs:
-  golden:
-    # The goldens pin a LAYOUT, not an interpreter, so one runner is the whole
-    # job. macOS is the platform this is used on and the one whose python3 is
-    # the version floor, so the matrix is by Python and the host is ubuntu —
-    # except the floor job below, which wants the real /usr/bin/python3.
-    # Pinned to 24.04: setup-python has no 3.9 build for later images.
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.9", "3.13"]
-    name: goldens (py${{ matrix.python }})
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-      # The suites shell out to `python3`. setup-python puts the selected one
-      # first on PATH, so this is what they get.  run-cases.py renders under
-      # /usr/bin/python3 unless told otherwise, so it is told.
-      - run: python3 -VV
-      - name: status mode
-        run: bash tests/golden.sh --python "$(command -v python3)"
-      - name: cost mode
-        run: bash tests/golden-cost.sh --python "$(command -v python3)"
-      - name: usage sources
-        run: python3 tests/usage-source.py
-      - name: normalized source contracts
-        run: python3 tests/sources-v1.py && python3 tests/source-cache.py && python3 tests/http-sources.py && python3 tests/app-server.py && python3 tests/claude-sources.py
-      - name: Codex rollout accounting
-        run: python3 tests/codex.py
-      - name: shared formatting, public port CLI and usage-dev
-        run: python3 tests/formatting.py && python3 tests/port-cli.py && python3 tests/config.py && python3 tests/usage-dev.py
-      - name: agent spend
-        run: python3 tests/agents.py
-      - name: subagent rows
-        run: python3 tests/subagent.py && python3 tests/claude-subagent-render.py
-      - name: token rate
-        run: python3 tests/rate.py
-      - name: the redesigned grid
-        run: python3 tests/grid.py
-
-  floor:
-    # The 3.9 claim in README.md, checked against a real 3.9. Separate from
-    # the matrix because it is asserting something ABOUT 3.9 rather than
-    # merely running under it, and because it points PY39 at the interpreter
-    # explicitly rather than trusting PATH order.  Pinned to 24.04, as the
-    # goldens are, for its 3.9 build.
-    runs-on: ubuntu-24.04
-    name: python 3.9 floor
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: py39
-        with:
-          python-version: "3.9"
-      - name: floor check
-        run: PY39="${{ steps.py39.outputs.python-path }}" bash tests/py39-floor.sh
-
   mod:
-    # The TypeScript port's tests, against the cases the Python writes.
-    # Node 23.6 and later run .ts directly, so the tests install nothing;
-    # the type check needs the two dev dependencies in the lockfile.
+    # The mod's tests, against the committed cases.  Node 23.6 and later
+    # run .ts directly, so the tests install nothing; the type check needs
+    # the two dev dependencies in the lockfile.
     runs-on: ubuntu-latest
     name: mod (node)
     steps:
@@ -105,8 +33,12 @@ jobs:
         run: cd mod && node --test 'test/*.test.ts'
       - name: typecheck
         run: cd mod && npm ci && npm run typecheck
+      # The scripts under tools/ are standard-library Python; the
+      # runner's own python3 runs them.
       - name: the spec/*.jsonc outputs are up to date
         run: python3 tools/gen-spec.py --check
+      - name: usage-dev
+        run: python3 tests/usage-dev.py
 
   shellcheck:
     # The suites ARE the shell scripts, so a syntax error in one is a suite
