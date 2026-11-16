@@ -4,8 +4,8 @@ The project is one Claude Code mod, `usage-band`, in TypeScript under
 `mod/`; [its README](../mod/README.md) says how it is loaded and how its
 hooks reach Claude Code. Node 23.6 or later runs its sources directly, with
 no build, for the tests and the tools. The only Python is under `tools/`:
-`usage-dev.py`, the dev shell's command tool, `gen-spec.py`, which writes
-the generated constants, and two review scripts.
+`usage-dev.py`, the dev shell's command tool, and two review scripts;
+nothing builds or tests the mod with them.
 
 ## How the code is laid out
 
@@ -19,11 +19,10 @@ mod/
   defaults/    config.jsonc, every option's default
   test/        node --test suites, against tests/fixtures and tests/golden
   mod-tests/   the hooks' own suites, run in the engine (npm run test:plugin)
-  tools/       the generators of committed cases, and drawing and timing tools
-spec/          layout.jsonc, state.jsonc, options.jsonc: the sources of
-               src/spec.ts, src/state_spec.ts, src/options_spec.ts
-tools/         usage-dev.py, gen-spec.py, diff-grid-fixtures.py,
-               palette-review.py, stress-suites.sh
+  tools/       the generators of committed cases and of docs/options.md's
+               option table, and drawing and timing tools
+tools/         usage-dev.py, diff-grid-fixtures.py, palette-review.py,
+               stress-suites.sh
 tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
                fixtures and goldens
 ```
@@ -40,7 +39,7 @@ tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
 | `sources.ts`, `claude_sources.ts`, `credits.ts` | The usage source: the version-1 reading, the payload's own windows, the scoped cache, the custom command, the tracker, and the credits' conditions. See [Usage sources](usage-sources.md). |
 | `config.ts` | The configuration files: the walk, the strict defaults file, the merge and its warnings. See [Options](options.md#configuration-files). |
 | `formatting.ts`, `spans.ts` | The `S_*` glyph forms and widths, the fixed-width number formats, the dim and tier rules, and `Span`, a run of text with a colour named by its `F_*` constant, joined into escape codes once, where a line is drawn. |
-| `state.ts` | Each file the mod keeps in the state directory, named from `spec/state.jsonc`. |
+| `state.ts` | Each file the mod keeps in the state directory, named from `mod/src/state_spec.ts`. |
 
 The comments in the code are dense on purpose. These documents cover what is
 worth knowing before you open a file; a detail that matters only at one line
@@ -78,10 +77,10 @@ These hold across the mod.
 |---|---|---|
 | A cell on the mod's rows or its receipt | `mod/src/cells.ts`, and the row builders in `mod/src/band.ts` and `mod/src/receipt.ts` | Regenerate the row cases (`usage-dev row-cases`) and read the diff; `usage-dev figures` draws a figures document to look at; update [Layout](layout.md). |
 | A subagent-row cell | `mod/src/claude_subagent_render.ts` | Regenerate the row cases and read the diff. |
-| A glyph, colour, width or cut | Its constant in `spec/layout.jsonc` | Run `usage-dev spec`. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
-| An option | Its record in `spec/options.jsonc` and its default in `mod/defaults/config.jsonc`, then `usage-dev spec`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
+| A glyph, colour, width or cut | Its constant in `mod/src/spec.ts`; a colour's true value in its `TRUE_COLOURS` | The node suite's `spec.test.ts` holds the colours to the palette. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
+| An option | Its record in `mod/src/options_spec.ts`, its field in `Options` there and its default in `mod/defaults/config.jsonc`, then `usage-dev option-docs`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
 | Claude accounting (prices, turns, agents) | `mod/src/claude_records.ts`; window shares and calibration in `mod/src/claude_calib.ts` | The node suite; update [Accounting](accounting.md). |
-| A saved fold's text | `mod/src/main_fold.ts`, `agent_fold.ts` or `inbox_fold.ts`, and its format in `spec/state.jsonc` | Run `usage-dev fixtures`; `node mod/tools/gen-fold-saves.ts --show PATH` prints a fixture's saves, to read the change by running it before and after. |
+| A saved fold's text | `mod/src/main_fold.ts`, `agent_fold.ts` or `inbox_fold.ts`, and its format in `mod/src/state_spec.ts` | Run `usage-dev fixtures`; `node mod/tools/gen-fold-saves.ts --show PATH` prints a fixture's saves, to read the change by running it before and after. |
 | A usage source | `mod/src/sources.ts`, and `validateSource` for its spec | `mod/test/sources.test.ts`; update [Usage sources](usage-sources.md). |
 
 ## Verifying a change
@@ -93,7 +92,7 @@ tests          # every suite, side by side
 tests node     # the mod's tests alone
 ```
 
-CI runs the node suite, the type check, the generated spec files' check,
+CI runs the node suite, the type check, the option table's check,
 usage-dev's own suite and the shell scripts' lint.
 
 A layout change is supposed to fail the row and grid cases. Regenerate them
@@ -108,7 +107,7 @@ them. `usage-dev probe-advance` needs a real terminal tab.
 ## Style
 
 - Prefer pure functions over immutable records and prepared snapshots.
-- Name glyphs as `E_*` constants in `spec/layout.jsonc` and use the constant.
+- Name glyphs as `E_*` constants in `mod/src/spec.ts` and use the constant.
   The probe finds glyphs by that prefix; a literal elsewhere is invisible to
   it.
 - A fixed-width field carries a unit (`1.2k`, `4.5M`, `1.5h`), never more
@@ -157,17 +156,19 @@ Intentions, not designs:
    carry per-terminal width knowledge itself.
 
 Until (3) exists, the width tables, terminal profiles and glyph rules stay in
-`spec/layout.jsonc`. They are the first thing to move out when it does.
+`mod/src/spec.ts`. They are the first thing to move out when it does.
 
-`spec/layout.jsonc` is where the glyphs, colours, widths and cuts are written,
-each beside the comment that explains it. `tools/gen-spec.py` writes it out as
-`mod/src/spec.ts`, comments and all. Edit the JSONC, never the generated
-file, and rerun the tool; the `spec` suite fails while it is out of date.
-What is computed from the constants, the `S_*` forms and the widths, is in
-`mod/src/formatting.ts`.
+`mod/src/spec.ts` is where the glyphs, colours, widths and cuts are written,
+each beside the comment that explains it, and `mod/test/spec.test.ts` holds
+the colours to what a terminal draws. What is computed from the constants,
+the `S_*` forms and the widths, is in `mod/src/formatting.ts`.
 
-`spec/state.jsonc` goes the same way, to `mod/src/state_spec.ts`. It names
-each file the mod keeps in the state directory, with the format number its
+`mod/src/options_spec.ts` holds every option's record, its type and its
+documentation; `usage-dev option-docs` (`mod/tools/gen-option-docs.ts`)
+writes the option table of [Options](options.md) from it, and the `generated` suite fails while the
+table is out of date.
+
+`mod/src/state_spec.ts` names each file the mod keeps in the state directory, with the format number its
 name is keyed by, which `statePath` (`mod/src/state.ts`) builds. Bump a
 kind's format when what is written in it changes.
 

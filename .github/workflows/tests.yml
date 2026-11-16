@@ -33,10 +33,10 @@ jobs:
         run: cd mod && node --test 'test/*.test.ts'
       - name: typecheck
         run: cd mod && npm ci && npm run typecheck
-      # The scripts under tools/ are standard-library Python; the
-      # runner's own python3 runs them.
-      - name: the spec/*.jsonc outputs are up to date
-        run: python3 tools/gen-spec.py --check
+      - name: docs/options.md's option table is up to date
+        run: node mod/tools/gen-option-docs.ts && git diff --exit-code docs/options.md
+      # usage-dev is standard-library Python; the runner's own python3
+      # runs it.
       - name: usage-dev
         run: python3 tests/usage-dev.py
 

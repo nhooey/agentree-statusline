@@ -16,8 +16,8 @@ export LC_ALL=en_US.UTF-8
 # path is a silent wrong answer. Overridable so a candidate can be probed
 # without touching the checked-in one.
 DIR="$(cd "$(dirname "$0")" && pwd)"
-# Glyph constants are written in spec/layout.jsonc and generated into
-# mod/src/spec.ts, which the mod imports; this imports spec.ts with Node.
+# Glyph constants are written in mod/src/spec.ts, which the mod imports;
+# this imports spec.ts with Node.
 LIVE="${PROBE_PROG:-$DIR/../mod/src/spec.ts}"
 
 exec 3<>/dev/tty || { echo "no controlling terminal"; exit 1; }
@@ -187,7 +187,7 @@ for m in $MEASURED; do
   [ "$got" = 2 ] && [ "$says" = 1 ] && icons="$icons $cp"
 done
 
-printf -- '\n--- paste into WIDTH_PROFILES in spec/layout.jsonc ---\n'
+printf -- '\n--- paste into WIDTH_PROFILES in mod/src/spec.ts ---\n'
 printf '# probed %s\n' "$(date '+%Y-%m-%d %H:%M')"
 printf '#   TERM_PROGRAM=%s TERM=%s TMUX=%s%s\n' \
   "${TERM_PROGRAM:-unset}" "${TERM:-unset}" \

@@ -3,7 +3,7 @@
 
     usage-dev test                      # every suite (tests/all.sh)
     usage-dev test status node          # the suites named
-    usage-dev spec --check              # spec/*.jsonc outputs up to date?
+    usage-dev option-docs               # rewrite docs/options.md's table
     usage-dev figures FILE --cols 160   # draw a figures document
     usage-dev --list                    # every command, one line each
 
@@ -67,9 +67,10 @@ COMMANDS = {
                       "this terminal; needs a real tty",
                       [step(["bash", "tests/probe-advance.sh"])]),
     # generate
-    "spec": ("generate", "regenerate mod/src/*_spec.ts and docs/options.md's "
-             "table from spec/*.jsonc; --check to compare only",
-             [step(["python3", "tools/gen-spec.py"])]),
+    "option-docs": ("generate", "rewrite docs/options.md's option table "
+                    "from mod/src/options_spec.ts",
+                    [step(["node", "mod/tools/gen-option-docs.ts"],
+                          rest=False)]),
     "fixtures": ("generate", "regenerate the configuration cases and the "
                  "fold saves under tests/fixtures/",
                  [step(["node", "mod/tools/gen-config-cases.ts"]),

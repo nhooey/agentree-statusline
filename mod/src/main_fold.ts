@@ -1,5 +1,5 @@
 // The main transcript's two folds saved as text, so a reload reads on
-// from where they stopped.  spec/state.jsonc's "main-fold" row names the
+// from where they stopped.  state_spec.ts's "main-fold" row names the
 // files and the format; agents/plans/closed/saved-running-totals.md
 // has the design.
 //

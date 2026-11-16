@@ -64,7 +64,7 @@ test("each fixture agent's fold saves as tests/fixtures/fold-saves.json " +
   for (const fx of fixtures()) {
     assert.equal(digest(fx.texts), want.saves[fx.agent],
       `${fx.agent}: the fold changed; bump "agent-fold" in ` +
-      "spec/state.jsonc");
+      "mod/src/state_spec.ts");
   }
 });
 

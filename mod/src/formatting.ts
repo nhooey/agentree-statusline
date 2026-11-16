@@ -1,7 +1,7 @@
 // Shared terminal display, measurement, geometry and formatting.
 //
-// The glyphs, colours, widths and cuts are spec.ts's, generated from
-// spec/layout.jsonc; what is here is computed from them.
+// The glyphs, colours, widths and cuts are spec.ts's; what is here is
+// computed from them.
 //
 // THE TERMINAL AND ITS SWITCHES ARE ONE VALUE.  The terminal profile, read
 // from the environment, fixes the S_* forms and the width table; the mark

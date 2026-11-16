@@ -150,7 +150,7 @@ test("each fixture's fold saves as tests/fixtures/fold-saves.json holds it",
     for (const p of FILES) {
       const got = fixtureOf(p);
       assert.equal(digest([...got.parts, got.head]), want.saves[p],
-        `${p}: the fold changed; bump "main-fold" in spec/state.jsonc`);
+        `${p}: the fold changed; bump "main-fold" in mod/src/state_spec.ts`);
     }
   });
 

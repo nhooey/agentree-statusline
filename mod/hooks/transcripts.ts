@@ -247,7 +247,7 @@ export async function dropCuts($: $, stateDir: string): Promise<void> {
 }
 
 /** Where the mod once saved each agent file's fold, keyed by its version,
- * before spec/state.jsonc's agent-fold kind: a directory per session, a
+ * before state_spec.ts's agent-fold kind: a directory per session, a
  * file per agent, each named by a digest cut to 32 digits. */
 const OLD_AGENT_FOLDS_DIR = 'claude-agent-folds-mod'
 const OLD_AGENT_FOLD_NAME = /^[0-9a-f]{32}\.json$/

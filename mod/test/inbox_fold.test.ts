@@ -62,7 +62,7 @@ test("each fixture file's inbox entry folds as " +
   for (const fx of all) {
     assert.equal(digest(fx.texts), want.saves[fx.file],
       `${fx.file}: the fold changed; bump "inbox-fold" in ` +
-      "spec/state.jsonc");
+      "mod/src/state_spec.ts");
   }
 });
 

@@ -430,7 +430,7 @@ a digest of what it saves of each fixture transcript, which
 text, to read a change by running it before and after.
 `mod/test/main_fold.test.ts`, `agent_fold.test.ts` and `inbox_fold.test.ts`
 save each fold again and fail where its digest differs or its format is not
-`spec/state.jsonc`'s, so a change to a fold's text cannot land without a new
+`mod/src/state_spec.ts`'s, so a change to a fold's text cannot land without a new
 format. They also break the folds anywhere: each fixture folded to every
 record boundary, finished, and folded on to the end reads as its whole
 fold, and so does one with a half-written last line folded on a copy and
@@ -478,7 +478,7 @@ usage-dev probe-advance
 Prints this terminal's cursor advance for every glyph the mod uses, by
 drawing each one and asking the terminal for the cursor position (DSR). The
 glyph list is the `E_*` constants and `EAW_WIDE` of `mod/src/spec.ts`,
-generated from `spec/layout.jsonc`, read with Node. It asserts nothing. Run it after a
+read with Node. It asserts nothing. Run it after a
 terminal update and before changing any glyph or width-table entry. See
 [glyphs and terminals](../docs/glyphs-and-terminals.md).
 

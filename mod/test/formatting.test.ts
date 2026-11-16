@@ -157,7 +157,7 @@ test("term_cols: the walk over scripted process tables", () => {
 
 // Under tmux's limited mode, and wherever the level is in doubt, every
 // colour drawn is the 256 set's: an xterm entry that Claude Code's
-// rounding to 256 colours gives back as it was (tools/gen-spec.py's
+// rounding to 256 colours gives back as it was (spec.test.ts's
 // palette), in the panel's escapes and in the mod's Text colours alike.
 const CUBE = [0, 95, 135, 175, 215, 255];
 const xterm = (i: number): number[] => i >= 232
