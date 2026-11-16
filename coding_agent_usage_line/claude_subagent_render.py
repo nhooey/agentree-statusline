@@ -150,8 +150,9 @@ def render_agent_ctx(ctx_tokens, window=0):
     payload gives no window; its column stays, so the cells after it hold."""
     if ctx_tokens <= 0: return []
     pct = "%d%s" % (int(ctx_tokens * 100 / window), E_PCT) if window > 0 else ""
-    style = ink("F_PNK", mag_dim(ctx_tokens, MAG_TOK))
-    return [Span(S_CTX), paint(style, pad_val(4, humanize(ctx_tokens))), Span(" "),
+    size = humanize(ctx_tokens)
+    style = grade("count", "F_PNK", size)
+    return [Span(S_CTX), paint(style, pad_val(4, size)), Span(" "),
             paint(style, pad_val(A_CTX_PCT_W, pct))]
 def render_compactions(n):
     """🤏 and how often the agent's window has been compacted; "" for never."""
@@ -211,7 +212,8 @@ def render_agent_elapsed(start_ms, now, end=None, first=None):
     """
     run = agent_elapsed(start_ms, now, end, first)
     if run is None: return []
-    return [Span(E_IDLE), Span(pad_val(4, dur_fmt(run)), "F_PRW", mag_dim(run, MAG_DUR_S))]
+    fig = dur_fmt(run)
+    return [Span(E_IDLE), paint(grade("duration", "F_PRW", fig), pad_val(4, fig))]
 def gauge_dots(parts, dots=4*GAUGE_W):
     """`parts` shared out as whole dots that always sum to `dots`.
 
@@ -233,10 +235,10 @@ def gauge_dots(parts, dots=4*GAUGE_W):
             n[i] = 1
     return n
 def render_gauge(mark, secs, n):
-    """`mark` and `n` dots of E_GAUGE, dim under MAG_DUR_S of its own seconds
-    the way every duration on the row is."""
+    """`mark` and `n` dots of E_GAUGE, shaded by the unit its own seconds are
+    written in, the way every duration on the row is."""
     cells = "".join(E_GAUGE[max(0, min(4, n - 4 * k))] for k in range(GAUGE_W))
-    return [Span(mark), Span(cells, "F_PRW", mag_dim(secs, MAG_DUR_S))]
+    return [Span(mark), paint(grade("duration", "F_PRW", dur_fmt(secs)), cells)]
 def render_agent_split(elapsed, model_s, tool_s=0.0):
     """🤖 🔧 🚦, each with a gauge of its share of the agent's ⌛.
 
@@ -313,14 +315,16 @@ def render_agent_eta(eta, start_ms, now, status="running", end=None, signed_off=
     if left < 0:
         return [Span(E_ETA), Span(pad_val(A_ETA_FIG_W, "+" + dur_fmt(-left)),
                                   "F_OVER" if signed_off else "F_AMB")]
-    return [Span(E_ETA), Span(pad_val(A_ETA_FIG_W, dur_fmt(left)), "F_ETA",
-                              mag_dim(left, MAG_DUR_S))]
+    fig = dur_fmt(left)
+    return [Span(E_ETA), paint(grade("duration", "F_ETA", fig), pad_val(A_ETA_FIG_W, fig))]
 def render_agent_rate(rate, mark=E_RATE):
     """🛫 and the tokens a second, without a "/s", to narrow the column, as
     humanize writes a count: three columns of figure, its decimal among
     them, then the unit, "1.2k" and "632 ", so the unit stacks with
     render_doing's."""
-    return [] if rate is None else [Span(mark + " "), Span(pad_val(4, humanize(rate)), "F_RATE", mag_dim(rate, MAG_RATE))]
+    if rate is None: return []
+    fig = humanize(rate)
+    return [Span(mark + " "), paint(grade("count", "F_RATE", fig), pad_val(4, fig))]
 def state_since(status, usage, phase, mode, task=None):
     """The epoch the agent entered the state `mode` names, or None.
 
@@ -375,7 +379,7 @@ def render_doing(status, usage, waiting_on=False, rate=None, now=None, task=None
     if secs is None:
         return [Span(mode)]
     style = (ink("F_AMB") if mode == E_WORK and secs >= A_SILENT_WARN_S
-             else ink("F_PRW", mag_dim(secs, MAG_DUR_S)))
+             else grade("duration", "F_PRW", dur_fmt(secs)))
     return [Span(mode + " "), paint(style, pad_val(fig_w, dur_fmt(secs)))]
 def spawn_depth(task, meta):
     """1 for a task the session started, 2 for one an agent started, and so on."""

@@ -24,7 +24,8 @@ import {
   E_SUB_DIGITS, E_TIME, E_TOK, E_WEEK, E_WORK, E_WRITE, EAW_WIDE, G,
   K, LINE3_TIGHT, M, MAG_SHARE_READ, MAG_SHARE_SESS, MAG_SHARE_TURN,
   MAX_LINE, MODEL_FAMILIES, MONTH_S, PAD_PROFILES, PAIR_GAP, PROFILE_RULES,
-  RIGHT_EDGE, RULE_MIN, SEG_GAP, SEG_RULE, VAL_W, VAL2_W, WIDTH_PROFILES,
+  RAMPS, RIGHT_EDGE, RULE_MIN, SCALES, SEG_GAP, SEG_RULE, VAL_W, VAL2_W,
+  WIDTH_PROFILES,
 } from "./spec.ts";
 import {
   pyAsciiDigits, pyFormatF, pyFloatRepr, pyIntDigits, pyIntStr, pyIntText,
@@ -156,6 +157,8 @@ export type Settings = {
   readonly truecolor: boolean;       // Claude Code draws true colour, so
                                      // the true set is drawn (spans.py
                                      // colour_level)
+  readonly colourMode: sp.ColourMode; // the same as the mode's name, which
+                                     // a ramp is resolved in (grade)
 };
 
 /** The settings for a terminal described by `env` (TMUX and
@@ -201,6 +204,7 @@ export function settings(env: Env, markSpacing = true,
     col2Val2W: VAL2_W + pad.length,
     rightEdge,
     truecolor: sp.colourLevel(env) >= 3,
+    colourMode: sp.colourMode(env),
   });
 }
 
@@ -662,9 +666,61 @@ export function pct(p: number): string {
 // Colour tiers.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** Whether a reset countdown dims: unless it is under an hour away. */
-export function resetDim(d: string): boolean {
-  return d.endsWith("d") || d.endsWith("h");
+/** A scale of SCALES, by name. */
+export type Scale = keyof typeof SCALES;
+
+const DIGITS = "0123456789" + E_SUB_DIGITS;
+
+/** A figure's unit as formatted: the letters after its last digit, ""
+ * for a bare count, the whole figure where it is a word ("now"), and null
+ * where it is neither ("?", or nothing). */
+function suffix(text: string): string | null {
+  const t = text.trimEnd();
+  const unit = /[A-Za-z]*$/.exec(t)![0];
+  const head = Array.from(t.slice(0, t.length - unit.length));
+  if (!head.length) return unit || null;
+  return DIGITS.includes(head.at(-1)!) ? unit : null;
+}
+
+const RAMP_CACHE = new Map<string, readonly Span[]>();
+
+/** `hue`'s ramp (RAMPS) as colour mode `mode` draws it, faintest first,
+ * with the adjacent levels that draw the same there collapsed into the
+ * lower. */
+export function ramp(hue: string, mode: sp.ColourMode): readonly Span[] {
+  const key = hue + "/" + mode;
+  const hit = RAMP_CACHE.get(key);
+  if (hit) return hit;
+  const levels = (RAMPS as Readonly<Record<string,
+    readonly { readonly ink: string; readonly faint?: boolean }[]>>)[hue];
+  if (!levels) throw new Error("no ramp for " + hue + " in spec");
+  const out: Span[] = [];
+  for (const level of levels) {
+    const style = sp.ink(level.ink, level.faint ?? false);
+    if (!out.length || sp.drawn(out.at(-1)!, mode) !== sp.drawn(style, mode)) {
+      out.push(style);
+    }
+  }
+  RAMP_CACHE.set(key, out);
+  return out;
+}
+
+/** The style the figure `text` is drawn in: its unit's position on
+ * `scale`, as a level of `hue`'s ramp in colour mode `mode`.  The scale's
+ * most intense unit (its largest, or its smallest where it is falling)
+ * takes the top level, each unit below it the next level down, and the
+ * units below the bottom level share it.  A figure with no unit the scale
+ * holds is drawn in the hue's own colour. */
+export function grade(scale: Scale, hue: string, text: string,
+  mode: sp.ColourMode): Span {
+  const sc = SCALES[scale];
+  const unit = suffix(text);
+  const pos = unit === null ? -1
+    : sc.units.findIndex((step) => (step as readonly string[]).includes(unit));
+  if (pos < 0) return sp.ink(hue);
+  const levels = ramp(hue, mode);
+  const belowTop = sc.falling ? pos : sc.units.length - 1 - pos;
+  return levels[Math.max(0, levels.length - 1 - belowTop)];
 }
 
 /** Whether a figure dims: under its magnitude cut.  null, no reading, is

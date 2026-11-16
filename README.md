@@ -313,9 +313,12 @@ the second, and the row is paused whatever the transcript holds.
 * **Figures never move.** Every value has a fixed width and gets a unit
   instead of more digits, as in `1.2k`, `4.5M` or `1.5h`. A number stays in
   the same place from the first prompt to the thousandth.
-* **Brightness shows magnitude.** A figure with no natural ceiling stays dim
-  until it matters: 100k tokens, 1k tokens/s, $1, ten minutes or 100 lines.
-  Percentages already have a ceiling, so they follow separate rules.
+* **Brightness shows the unit.** A figure with a unit is shaded by it, in
+  its own hue: dim for a bare count or seconds and minutes, normal for `k`
+  or hours, bright for `M` or days, so `841k` and `8.4M` read apart at a
+  glance. A reset countdown runs the other way, bright inside the hour.
+  Cost has no unit letter and stays dim under $1. Percentages already have
+  a ceiling, so they follow separate rules.
 * **Agents are counted.** On the 🎤 and 🎮 rows, the tokens, costs, plan
   shares and times include every subagent, fork and workflow agent, each
   priced at its own model's rates. The 🧵 row is the main thread alone,

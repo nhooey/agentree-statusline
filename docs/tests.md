@@ -65,7 +65,7 @@ the program and is not.
 | `python3 tests/fold.py` | the main transcript's folds broken anywhere: finished at every record, or with a half-written last line, each reads on as the whole fold; and each fold saved as text to the digest `tests/fixtures/fold-saves.json` holds, read back at every line end and past a torn head | `pass 335   fail 0` |
 | `python3 tests/subagent.py` | the subagent rows: finding an agent's file, billing, window shares, nesting, the reported ETA and its inheritance, the inbox, silence, compactions, open shells and Monitors, API errors and worktree branch, a window share that never starts the calibration scan, row shape | `pass 115   fail 0` |
 | `python3 tests/claude-subagent-render.py` | subagent row rendering with no file or source reads | `ok …` |
-| `python3 tests/rate.py` | the 🛫 token-rate sampler, the Doing cell and the main thread's states, column 2 in the padded profile, and the brightness-as-magnitude cuts, and the 🧠 estimate after a compaction | `pass 71   fail 0` |
+| `python3 tests/rate.py` | the 🛫 token-rate sampler, the Doing cell and the main thread's states, column 2 in the padded profile, grading by unit (each scale, the falling 🔜 countdown, and the ramps that collapse in the 256 set) and the fixed cuts, and the 🧠 estimate after a compaction | `pass 79   fail 0` |
 | `python3 tests/grid.py` | `grid.py`, the redesigned grid, against the [cases the TypeScript writes](../tests/README.md#grid-cases), under each profile they name | `pass 22159   fail 0` |
 
 The goldens pin the clock, so every render is the rate sampler's first tick

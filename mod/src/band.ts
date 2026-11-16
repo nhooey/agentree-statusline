@@ -16,11 +16,11 @@
 // as for claude_cost.ts.
 import {
   CHROME_DEPTH, E_ACCT, E_DATE, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN,
-  E_TOOL, E_WORK, GRID_CELLS, MAG_DUR_S, QUIET_WARN_S, STALE_MARK_S,
+  E_TOOL, E_WORK, GRID_CELLS, QUIET_WARN_S, STALE_MARK_S,
 } from "./spec.ts";
-import { durFmt, magDim, padVal, visWidth } from "./formatting.ts";
+import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { cut, span, width } from "./spans.ts";
+import { cut, ink, paint, span, width } from "./spans.ts";
 import type { Span } from "./spans.ts";
 import { pyLen, pyRstrip, pySlice } from "./py.ts";
 import { pyFloat } from "./sources.ts";
@@ -201,8 +201,8 @@ export function turnCache(t: Turn): number {
 /** 🤖 🔧 🚦 off an accounting's seconds, drawn as proportions of
  * themselves: agents running side by side put more agent-seconds in it
  * than the wall clock has (decision 5). */
-export function accountingSplit(a: Accounting): Span[] {
-  return CELLS.split(a.model_s + a.tool_s + a.blocked_s, a.model_s,
+export function accountingSplit(st: Settings, a: Accounting): Span[] {
+  return CELLS.split(st, a.model_s + a.tool_s + a.blocked_s, a.model_s,
     a.tool_s);
 }
 
@@ -378,7 +378,7 @@ function turnRow(st: Settings, fig: Dict, tr: Transcript, now: number,
   if (acc) {
     Object.assign(cells, {
       cost: CELLS.cost(st, acc.cost_usd),
-      split: accountingSplit(acc),
+      split: accountingSplit(st, acc),
       ...shareCells(st, acc, sessPct, weekPct),
       diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
     });
@@ -406,8 +406,9 @@ function toolCell(st: Settings, tr: Transcript, now: number): Span[] | null {
   const [mark, since] = mainDoing(tr);
   if (mark !== E_TOOL) return null;
   const secs = Math.max(0.0, now - since);
-  return [span(E_TOOL + " "), span(padVal(st, 4, durFmt(st, secs)), "F_PRW",
-    magDim(secs, MAG_DUR_S))];
+  const fig = durFmt(st, secs);
+  return [span(E_TOOL + " "),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** What the main thread is doing, as today's Doing cell says it: the mark
@@ -420,8 +421,9 @@ function doingCell(st: Settings, tr: Transcript, now: number):
   if (!mark || mark === E_TOOL) return null;
   const secs = Math.max(0.0, now - since);
   const amber = mark === E_WORK && secs >= QUIET_WARN_S;
-  return [span(mark + " "), span(padVal(st, 4, durFmt(st, secs)),
-    amber ? "F_AMB" : "F_PRW", !amber && magDim(secs, MAG_DUR_S))];
+  const fig = durFmt(st, secs);
+  return [span(mark + " "), paint(amber ? ink("F_AMB")
+    : grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** 🤖: the main thread alone, before its agents' figures are added.  The
@@ -455,7 +457,7 @@ function mainRow(st: Settings, fig: Dict, tr: Transcript, now: number,
       tok: CELLS.tok(st, tr.own_tok_up, tr.own_tok_down),
       cache: CELLS.cache(st, tr.own_cache_pct),
       clock: CELLS.clock(st, age),
-      split: CELLS.split(age, Math.max(0.0, tr.busy_s - wait - tr.tool_s),
+      split: CELLS.split(st, age, Math.max(0.0, tr.busy_s - wait - tr.tool_s),
         tr.tool_s),
       diff: CELLS.diff(st, tr.lines_added, tr.lines_removed),
     });
@@ -492,7 +494,7 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
   if (acc) {
     Object.assign(cells, {
       cost: CELLS.cost(st, acc.cost_usd),
-      split: accountingSplit(acc),
+      split: accountingSplit(st, acc),
       ...shareCells(st, acc, sessPct, weekPct),
       diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
     });

@@ -248,6 +248,25 @@ export function colourLevel(
   return level;
 }
 
+/** A colour mode, by the name the spec's values are kept under. */
+export type ColourMode = "true" | "256";
+
+/** The colour mode Claude Code draws in: "true" at its true-colour level,
+ * "256" at any other (colourLevel). */
+export function colourMode(
+  env: { readonly [name: string]: string | undefined }): ColourMode {
+  return colourLevel(env) >= 3 ? "true" : "256";
+}
+
+/** What `style` puts on the screen in colour mode `mode`, as a key two
+ * styles that draw alike share: its colour's value there and its
+ * attributes (formatting's ramp collapses on it). */
+export function drawn(style: Span, mode: ColourMode): string {
+  const tc = mode === "true";
+  return [style.colour ? hexOf(style.colour, tc) : "", style.dim,
+    style.bold, style.bg ? hexOf(style.bg, tc) : ""].join("/");
+}
+
 /** The hex the mod draws the colour constant `name` in: its true value
  * where Claude Code draws true colour, else its own. */
 export function hexOf(name: string, truecolor = false): string {

@@ -52,7 +52,8 @@ def render_tokens(up: Optional[int], down: int,
     a short figure would carry its arrow inward and the two would stop stacking
     with each other and with the context row below.
 
-    Each half is bright from MAG_TOK up and dim under it, arrow included —
+    Each half is graded on the count scale on its own figure: a bare count
+    dim, k normal, M bright, arrow included —
     the arrow is the figure's, not the cell's — and each is reset on its
     own, so a dim ▴ never dims the ▾ after it.
 
@@ -61,11 +62,12 @@ def render_tokens(up: Optional[int], down: int,
     """
     if up is None:
         return []
+    u, dn = humanize(up), humanize(down)
     return [Span(S_TOK),
-            Span(pad_val(VAL_W, E_UP + pad_val(4, humanize(up)), True),
-                 "F_TUP", mag_dim(up, MAG_TOK)),
-            Span(pad_val(down_w, E_DOWN + pad_val(4, humanize(down))),
-                 "F_TDN", mag_dim(down, MAG_TOK))]
+            paint(grade("count", "F_TUP", u),
+                  pad_val(VAL_W, E_UP + pad_val(4, u), True)),
+            paint(grade("count", "F_TDN", dn),
+                  pad_val(down_w, E_DOWN + pad_val(4, dn)))]
 
 
 def main_doing(tr: Transcript) -> Tuple[str, float]:
@@ -112,8 +114,9 @@ def render_rate_cache(rate: Optional[float], cache_pct: int,
     Nothing at all when there has been no usage: no requests is no rate and no hit rate, and a cell of two blank
     fields would be a row saying something where there is nothing to say.
 
-    The figure dims under its magnitude cut — MAG_RATE for a rate, MAG_DUR_S
-    for a time — and is reset before the 🎯, which keeps its tiers and must
+    The figure is graded by its unit (grade: the count scale for a rate,
+    the duration scale for a time) and is reset before the 🎯, which keeps
+    its tiers and must
     not inherit the DIM.  The tier's colour goes on after the 🎯 rather than
     around it: the green tier carries a DIM of its own (cache_color), and
     that is for the figure, not the mark — the same shape as every
@@ -124,14 +127,16 @@ def render_rate_cache(rate: Optional[float], cache_pct: int,
     show_rate = not mark or (mark == E_WORK and rate is not None
                              and (secs is None or secs < QUIET_S))
     if not show_rate and secs is not None:
+        fig = dur_fmt(secs)
         style = (ink("F_AMB") if mark == E_WORK and secs >= QUIET_WARN_S
-                 else ink("F_PRW", mag_dim(secs, MAG_DUR_S)))
+                 else grade("duration", "F_PRW", fig))
         head = [Span(mark + DOING_PAD),
-                paint(style, pad_val(VAL_W - 1, dur_fmt(secs)) + " ")]
+                paint(style, pad_val(VAL_W - 1, fig) + " ")]
     else:
-        fig = "" if rate is None else rate_fig(rate) + "/s"
+        num = "" if rate is None else rate_fig(rate)
+        fig = "" if rate is None else num + "/s"
         head = [Span((mark + DOING_PAD) if mark else S_RATE),
-                Span(pad_val(VAL_W, fig), "F_RATE", mag_dim(rate, MAG_RATE))]
+                paint(grade("count", "F_RATE", num), pad_val(VAL_W, fig))]
     # 🎯 takes its pad, where 💰 and ▾ touch their figures: the percentage
     # is three wide, and the pad makes it the four theirs are, so the three
     # end together on the column's edge — "🎯 96٪" under "▾6.2M".
@@ -165,9 +170,9 @@ def render_ctx(ctx_pct: Optional[int], ctx_tokens: int,
     which field is which — stands; it is outweighed here by the stacking,
     and the cost line's two rows stack with each other regardless.
 
-    One hue and one brightness across both fields: the size dims under
-    MAG_TOK like every other token count on the two readouts, and the
-    percentage dims with it.  A percentage left bright at any value, on the
+    One hue and one shade across both fields: the size is graded on the
+    count scale like every other token count on the two readouts, and the
+    percentage takes its shade.  A percentage left bright at any value, on the
     argument that a level with a ceiling needs no cut to say what high is,
     would read 115k of a 1M window bright-dim.  The pair reads as one
     quantity said twice, ranked once
@@ -193,10 +198,11 @@ def render_ctx(ctx_pct: Optional[int], ctx_tokens: int,
                 + SHARE_FIG_W)
     size_w = turn_end - vis_width(S_CTX)
     pct_w = fmt.RIGHT_GRID[2] - turn_end
-    style = ink("F_PNK", mag_dim(ctx_tokens, MAG_TOK))
+    size = humanize(ctx_tokens)
+    style = grade("count", "F_PNK", size)
     tilde = "~" if est else ""
     return [Span(S_CTX),
-            paint(style, pad_val(size_w, tilde + humanize(ctx_tokens))),
+            paint(style, pad_val(size_w, tilde + size)),
             paint(style, pad_val(pct_w, "%s%d%s" % (tilde, ctx_pct, E_PCT)))]
 
 
@@ -293,7 +299,9 @@ def render_limit(emoji: str, pct_s: str, delta: str, resets: str,
     week and dim when they are not (`dim_turn`, `dim_session` — the caller
     decides, off the WEEKLY shares, so the two rows agree; see
     MAG_SHARE_TURN), the account total dims where it is context rather than
-    news, and the countdown dims unless it is inside the hour.  Hue
+    news, and the countdown is graded on its falling scale, in the row's
+    own hue: dim in days, the row's colour in hours, its bright shade
+    inside the hour (grade).  Hue
     therefore answers "which window is this?" and nothing else, which is
     the one question it can answer from across a screen.
 
@@ -319,10 +327,11 @@ def render_limit(emoji: str, pct_s: str, delta: str, resets: str,
         # only the figure is painted.  Wrapping both would be harmless with a
         # plain foreground — 🔜 paints itself and ignores one — but not with
         # DIM, which reaches a pictograph where a foreground colour does not,
-        # and would dim the mark on every countdown an hour or more out.
+        # and would dim the mark on every countdown a day or more out.  The
+        # figure is graded on the countdown scale, which falls.
         rst = [Span(S_RESET + fmt.MARK_SP),
-               Span(pad_val(RST_W - vis_width(S_RESET), d), colour,
-                    reset_dim(d))]
+               paint(grade("countdown", colour, d),
+                     pad_val(RST_W - vis_width(S_RESET), d))]
     else:
         rst = [Span(" " * (RST_W + len(fmt.MARK_SP)))]
 
@@ -400,7 +409,7 @@ def render_cache_share(emoji: str, turn: Optional[int], sess: Optional[int],
     that scope's 📖 alone against MAG_SHARE_READ (see cache_dims), so the
     pair flips together and a bright 🎤 says one thing -- this prompt's
     money went mostly on re-reading, and shrinking the context would pay.
-    A percentage with a ceiling would ordinarily be left alone (MAG_TOK's
+    A percentage with a ceiling would ordinarily be left alone (MAG_COST's
     note), and this one is not, because 100 is not the edge a reader holds
     it against: what re-reading a large window costs is normally the
     majority of the bill, so "high" here is well above the half and needs
@@ -453,10 +462,12 @@ def render_diff(added: str, removed: str) -> List[Span]:
     its cell, and "+0 -0" is a fact worth stating — this session has changed
     nothing yet.
 
-    Each half dims under MAG_DIFF on its own count, sign included: a hundred
-    lines added is work sitting uncommitted, and the brightness says so
-    before the figure is read.  An unparseable count draws "?" at full
-    strength, as the limit rows' "?" does — the question is not small.
+    Each half is graded on the count scale on its own count, sign
+    included: a bare
+    count dim, a thousand lines normal, a million bright, so the shade says
+    how big the uncommitted work is before the figure is read.  An
+    unparseable count draws "?" at full strength, as the limit rows' "?"
+    does — the question is not small.
     """
     if not added:
         return []
@@ -471,7 +482,7 @@ def render_diff(added: str, removed: str) -> List[Span]:
         # humanize's unit column kept: see the note above.  "?" takes a
         # blank unit column too, so it stands where a digit would.
         fig = "? " if v is None else humanize(v)
-        return Span(sign + pad_val(4, fig), col, mag_dim(v, MAG_DIFF))
+        return paint(grade("count", col, fig), sign + pad_val(4, fig))
 
     return [Span(S_DIFF), half("+", n(added), "F_GRN"), Span(" "),
             half("-", n(removed), "F_RED")]
@@ -709,9 +720,9 @@ def eta_fig(reading, w: int, digits: int = 3,
         return [Span(E_ETA + fmt.MARK_SP),
                 Span(pad_val(w, "+" + dur_fmt(-left, min(digits, w - 2))),
                      "F_OVER" if signed_off else "F_AMB")]
+    fig = dur_fmt(left, digits)
     return [Span(E_ETA + fmt.MARK_SP),
-            Span(pad_val(w, dur_fmt(left, digits)), "F_ETA",
-                 mag_dim(left, MAG_DUR_S))]
+            paint(grade("duration", "F_ETA", fig), pad_val(w, fig))]
 
 
 def render_elapsed(busy_s: float, start_s: float, tool_s: float = 0.0,
@@ -798,13 +809,13 @@ def render_elapsed(busy_s: float, start_s: float, tool_s: float = 0.0,
     turn that was never found is not a turn that took no time — it has two
     empty states and a partition field has one.
 
-    Every figure on the row dims under MAG_DUR_S, ten minutes, and each on
-    its own: 🔧 and 🤖 are the fields that flip in practice — ten minutes
-    in tools, or ten minutes of thinking, is a session that has done
-    something — while 🚦 passes the cut in the session's first minutes and
-    stays bright.  The 🔜 directly below
-    dims the other way, and deliberately: for a time-until it is the SMALL
-    figure that matters (reset_dim).  The two rows agree on what bright
+    Every figure on the row is graded on the duration scale, each on its
+    own: in
+    seconds and minutes dim, in hours normal, in days bright, so a session
+    an hour old and one a day old do not read alike.  The 🔜 directly below
+    is graded the other way, and deliberately: for a time-until it is the
+    SMALL figure that matters (the countdown scale falls).  The two rows
+    agree on what bright
     means — the figure worth looking up for — and differ on which end of
     the scale that is, because the scales run opposite ways.
     """
@@ -830,9 +841,9 @@ def render_elapsed(busy_s: float, start_s: float, tool_s: float = 0.0,
 
     def fig(mark: str, v: float, w: int = LIM_FIG_W,
             digits: int = 2) -> List[Span]:
+        f = dur_fmt(v, digits)
         return [Span(mark + fmt.MARK_SP),
-                Span(pad_val(w, dur_fmt(v, digits)), "F_PRW",
-                     mag_dim(v, MAG_DUR_S))]
+                paint(grade("duration", "F_PRW", f), pad_val(w, f))]
 
     shown = inherit_eta(eta, [
         f for f, last in agent_etas

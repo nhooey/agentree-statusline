@@ -77,7 +77,8 @@ test("settings: the constants and the colour escapes", () => {
 // Each Python function by name, called with the case's arguments as the
 // Python was: settings first where the port takes them.
 const FNS: { [fn: string]: (st: Settings, a: any[]) => unknown } = {
-  reset_dim: (_st, a) => fm.resetDim(a[0]),
+  grade: (st, a) => fm.grade(a[0], a[1], a[2], st.colourMode),
+  ramp: (_st, a) => [...fm.ramp(a[0], a[1])],
   mag_dim: (_st, a) => fm.magDim(a[0], a[1]),
   share_dims: (_st, a) => fm.shareDims(a[0], a[1]),
   cache_dims: (_st, a) => fm.cacheDims(a[0], a[1]),

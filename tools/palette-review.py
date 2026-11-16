@@ -10,7 +10,7 @@ One row a colour: its name, its true value, its 256 value with its palette
 index, what Claude Code would draw the true value as at 256 colours if it
 were handed that and left to round it (chalk's rgbToAnsi256 on the xterm
 palette), and the role its comment gives.  Each cell is a block, the text
-"841k" and the text "98٪" faint, as a figure under its magnitude cut is
+"841k" and the text "98٪" faint, as a dimmed figure is
 drawn, with the faint text's contrast on black; a colour a dim figure takes
 is marked * and must clear the floor in tools/gen-spec.py.  --nearest adds
 that many palette entries closest to each true value.  --old adds a column

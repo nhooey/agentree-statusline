@@ -235,7 +235,7 @@ function turnRow(st: Settings, t: Turn, acc: Accounting, win: number,
     // seconds between the sign-off and the turn's last record, so no ⛳.
     eta: t.eta.length > 0 && t.eta[1] === 0 ? []
       : CELLS.eta(st, t.eta, null, now),
-    split: accountingSplit(acc),
+    split: accountingSplit(st, acc),
     ...shareCells(st, acc, sessPct, weekPct),
     diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
   };
@@ -261,7 +261,7 @@ function sessionRow(st: Settings, turns: readonly Turn[], acc: Accounting,
       addUp(tokens.map(([, d]) => d))),
     cache: CELLS.cache(st, cacheRate(addUp(turns.map((t) => t.cache_read)),
       addUp(turns.map((t) => t.fresh + t.cache_write + t.cache_read)))),
-    split: accountingSplit(acc),
+    split: accountingSplit(st, acc),
     ...shareCells(st, acc, sessPct, weekPct),
     diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
   };

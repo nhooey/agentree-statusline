@@ -21,14 +21,15 @@ import {
   E_GIT_OK, E_IDLE, E_NAME, E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR,
   E_PROJ, E_RESET, E_SESS, E_SESSION, E_SONNET,
   E_STALE, E_STY, E_THREAD,
-  E_TIME, E_TURN, E_TURN_ID, E_WEEK, K, MAG_COST, MAG_DUR_S, TAG_SCOPE,
+  E_TIME, E_TURN, E_TURN_ID, E_WEEK, K, MAG_COST, TAG_SCOPE,
   TURN_ID_HEX,
 } from "./spec.ts";
 import {
-  durFmt, humanize, limitPct, magDim, moneyFig, padVal, visWidth,
+  durFmt, grade, humanize, limitPct, magDim, moneyFig, padVal,
+  visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { span } from "./spans.ts";
+import { paint, span } from "./spans.ts";
 import type { Span } from "./spans.ts";
 import { pyFormatF, pyIntStr, pyRstrip, pySlice } from "./py.ts";
 import { renderCost, renderTokens } from "./claude_render.ts";
@@ -130,8 +131,9 @@ function cache(st: Settings, pct: number | null): Span[] {
 function clock(st: Settings, secs: number | null): Span[] {
   if (secs === null) return [];
   const run = Math.max(0.0, secs);
-  return [span(E_IDLE), span(padVal(st, 4, durFmt(st, run)), "F_PRW",
-    magDim(run, MAG_DUR_S))];
+  const fig = durFmt(st, run);
+  return [span(E_IDLE),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** eta, ⛳: the time left on `reported`, an (epoch, seconds) report or []
@@ -144,9 +146,9 @@ function eta(st: Settings, reported: readonly number[] | null,
 }
 
 /** split, 🤖 🔧 🚦: gauges of model, tool and the rest of `elapsed`. */
-function split(elapsed: number | null, modelS: number | null,
+function split(st: Settings, elapsed: number | null, modelS: number | null,
   toolS: number | null): Span[] {
-  return renderAgentSplit(elapsed, modelS, toolS);
+  return renderAgentSplit(st, elapsed, modelS, toolS);
 }
 
 /** five, 🔋: a share of the five-hour window, drawn only while the plan

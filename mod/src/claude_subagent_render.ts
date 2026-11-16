@@ -25,12 +25,12 @@ import {
   E_MODE_HELD, E_MODE_KILLED, E_MODE_MONITOR, E_MODE_QUEUED, E_MODE_SHELL,
   E_PCT, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN, E_RATE, E_ROW_AGENTS,
   E_ROW_COMPACT, E_SESS, E_TOOL, E_WAIT, E_WEEK, E_WORK, GAUGE_W,
-  MAG_DUR_S, MAG_RATE, MAG_SHARE_AGENT, MAG_TOK, QUIET_S, QUIET_WARN_S,
+  MAG_SHARE_AGENT, QUIET_S, QUIET_WARN_S,
   E_CACHE, E_DIFF, CHROME_DEPTH, GRID_CELLS, LABEL_MIN,
 } from "./spec.ts";
 import {
-  cacheColor, decAlign, durFmt, humanize, limitPct, magDim, padVal,
-  seg, visWidth,
+  cacheColor, decAlign, durFmt, grade, humanize, limitPct,
+  padVal, seg, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import {
@@ -295,8 +295,9 @@ export function renderAgentCtx(st: Settings, ctxTokens: number,
   if (ctxTokens <= 0) return [];
   const pct = window > 0
     ? pyIntStr(ctxTokens * 100 / window) + E_PCT : "";
-  const style = ink("F_PNK", magDim(ctxTokens, MAG_TOK));
-  return [span(st.sCtx), paint(style, padVal(st, 4, humanize(st, ctxTokens))),
+  const size = humanize(st, ctxTokens);
+  const style = grade("count", "F_PNK", size, st.colourMode);
+  return [span(st.sCtx), paint(style, padVal(st, 4, size)),
     span(" "), paint(style, padVal(st, A_CTX_PCT_W, pct))];
 }
 
@@ -352,8 +353,9 @@ export function renderAgentElapsed(st: Settings, startMs: unknown,
   first: number | null = null): Span[] {
   const run = agentElapsed(startMs, now, end, first);
   if (run === null) return [];
-  return [span(E_IDLE), span(padVal(st, 4, durFmt(st, run)), "F_PRW",
-    magDim(run, MAG_DUR_S))];
+  const fig = durFmt(st, run);
+  return [span(E_IDLE),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** `parts` shared out as whole dots that always sum to `dots`: largest
@@ -378,19 +380,22 @@ export function gaugeDots(parts: readonly number[],
   return n;
 }
 
-/** `mark` and `n` dots of E_GAUGE, dim under MAG_DUR_S of its seconds. */
-export function renderGauge(mark: string, secs: number, n: number): Span[] {
+/** `mark` and `n` dots of E_GAUGE, shaded by the unit its seconds are
+ * written in, as every duration on the row is. */
+export function renderGauge(st: Settings, mark: string, secs: number,
+  n: number): Span[] {
   const steps = Array.from(E_GAUGE);
   let cells = "";
   for (let k = 0; k < GAUGE_W; k++) {
     cells += steps[Math.max(0, Math.min(4, n - 4 * k))];
   }
-  return [span(mark), span(cells, "F_PRW", magDim(secs, MAG_DUR_S))];
+  return [span(mark),
+    paint(grade("duration", "F_PRW", durFmt(st, secs), st.colourMode), cells)];
 }
 
 /** 🤖 🔧 🚦, each with a gauge of its share of the agent's ⌛; blank with
  * no transcript to read the split from. */
-export function renderAgentSplit(elapsed: number | null,
+export function renderAgentSplit(st: Settings, elapsed: number | null,
   modelS: number | null, toolS: number | null = 0.0): Span[] {
   if (modelS === null || modelS === undefined || elapsed === null) return [];
   const m = Math.max(0.0, modelS), t = Math.max(0.0, toolS || 0.0);
@@ -399,7 +404,7 @@ export function renderAgentSplit(elapsed: number | null,
   const out: Span[] = [];
   [E_WORK, E_TOOL, E_WAIT].forEach((mark, i) => {
     if (out.length) out.push(span(" "));
-    out.push(...renderGauge(mark, parts[i], dots[i]));
+    out.push(...renderGauge(st, mark, parts[i], dots[i]));
   });
   return out;
 }
@@ -460,8 +465,10 @@ export function renderAgentEta(st: Settings, eta: Eta, startMs: unknown,
     return [span(E_ETA), span(padVal(st, A_ETA_FIG_W,
       "+" + durFmt(st, -left)), signedOff ? "F_OVER" : "F_AMB")];
   }
-  return [span(E_ETA), span(padVal(st, A_ETA_FIG_W, durFmt(st, left)),
-    "F_ETA", magDim(left, MAG_DUR_S))];
+  const fig = durFmt(st, left);
+  return [span(E_ETA),
+    paint(grade("duration", "F_ETA", fig, st.colourMode),
+      padVal(st, A_ETA_FIG_W, fig))];
 }
 
 /** 🛫 and the tokens a second, without a "/s", as
@@ -469,9 +476,10 @@ export function renderAgentEta(st: Settings, eta: Eta, startMs: unknown,
  * then the unit, "1.2k" and "632 ". */
 export function renderAgentRate(st: Settings, rate: number | null,
   mark: string = E_RATE): Span[] {
-  return rate === null ? [] : [span(mark + " "),
-    span(padVal(st, 4, humanize(st, rate)), "F_RATE",
-      magDim(rate, MAG_RATE))];
+  if (rate === null) return [];
+  const fig = humanize(st, rate);
+  return [span(mark + " "),
+    paint(grade("count", "F_RATE", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** The epoch the agent entered the state `mode` names, or null; see the
@@ -519,10 +527,10 @@ export function renderDoing(st: Settings, status: string, usage: unknown,
     return renderAgentRate(st, rate, mode);
   }
   if (secs === null) return [span(mode)];
+  const fig = durFmt(st, secs);
   const style = mode === E_WORK && secs >= A_SILENT_WARN_S ? ink("F_AMB")
-    : ink("F_PRW", magDim(secs, MAG_DUR_S));
-  return [span(mode + " "),
-    paint(style, padVal(st, figW, durFmt(st, secs)))];
+    : grade("duration", "F_PRW", fig, st.colourMode);
+  return [span(mode + " "), paint(style, padVal(st, figW, fig))];
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -734,7 +742,7 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
     ["clock", clocked
       ? renderAgentElapsed(st, task.startTime, now, end, first) : []],
     ["eta", etaCell],
-    ["split", renderAgentSplit(clocked
+    ["split", renderAgentSplit(st, clocked
       ? agentElapsed(task.startTime, now, end, first) : null,
       ua(usage, "model_s") as number | null,
       ua(usage, "tool_s", 0.0) as number | null)],

@@ -447,7 +447,7 @@ export const F_RATE = "#00d7af";                         // mint        — 🛫
 export const F_TDN = "#ffafd7";                          // pink        — ▾ output tokens
 export const F_YEL = "#ffd700";                          // yellow      — cost (never tiered)
 export const F_PNK = "#ffafff";                          // pink        — context %, and
-                                                         //  🧠's size, dim under its cut:
+                                                         //  🧠's size, dim as a bare count:
                                                          //  the hot pinks of the 256 set
                                                          //  are all under the faint floor
 export const F_PNK2 = "#af00af";                         // dark pink   — context size
@@ -482,7 +482,7 @@ export const F_ETA = "#ffd7ff";                          // light magenta — �
                                                          //  reason F_PRW gives; the late "+"
                                                          //  stays F_AMB.  The full magenta
                                                          //  is too dark to read faint, as ⛳
-                                                         //  is under its cut (seen live under
+                                                         //  is in seconds and minutes (seen live under
                                                          //  tmux).
 export const F_OVER = "#ff0000";                         // bright red  — an agent row's ⛳
                                                          //  past a report of ZERO.  An
@@ -519,22 +519,43 @@ export const B_MSG = "#af00af";                          // purple background, t
 export const F_MSG = "#ffffff";                          // white, that row's text on
                                                          //  B_MSG
 
+// Brighter shades, the top level of the ramps (see RAMPS).  Each is lighter
+// than its colour and of its hue, 14 L* up in the true set.  The 256 set
+// has only the 80 entries that round-trip (see the palette note in
+// tools/gen-spec.py).  The pinks have one lighter entry of their hue,
+// rgb(255, 215, 255), F_ETA's own: F_TDN_HI and F_PNK_HI take it, so ▾
+// and ▴ shade alike at one unit, and F_ETA, with nothing lighter, holds
+// its own value and has two levels in the 256 set, not three.
+export const F_GRN_HI = "#00ff00";
+export const F_RED_HI = "#ffd7d7";
+export const F_TUP_HI = "#d7ffff";
+export const F_RATE_HI = "#00ffd7";
+export const F_TDN_HI = "#ffd7ff";
+export const F_PNK_HI = "#ffd7ff";
+export const F_PRW_HI = "#d7d7ff";
+export const F_ETA_HI = "#ffd7ff";
+
 // The two limit rows, one colour each.  ROW IDENTITY, not a reading: 🔋 is
 // green because it is the battery, 🪫 red because it is the low one, and
 // neither hue moves with what the figures say.  Everything a row has to
 // distinguish inside itself — this session against the account, a countdown
 // against a consumption — is carried by brightness instead, so hue answers
 // exactly one question here and answers it the same way every frame.  (On
-// the rows that carry no percentage, brightness has a second job —
-// magnitude against a fixed cut, see MAG_TOK — and the same rule holds: the
-// brightness means one thing per figure, every frame.)
+// the figures that carry a unit, brightness has a second job — the unit,
+// as levels of the figure's own hue's ramp, see SCALES and RAMPS — and
+// the same rule holds: the brightness means one thing per figure, every
+// frame.)
 //
 // Not hue ladders: tiering the 🔋 row green/amber/red on the account's
-// consumption, and running the countdown down shades of slate by its unit,
+// consumption, or giving each unit of the countdown a hue of its own,
 // would let a single row carry three unrelated hues, none of them the row's
 // own, and the colour would have to be decoded before it could be read.
+// The countdown is graded on its scale instead, in the row's own hue: its
+// d dim, its h the row's colour, its m and s the row's bright shade.
 export const F_LIM_SESS = F_GRN;                         // the 🔋 5-hour row
 export const F_LIM_WEEK = F_RED;                         // the 🪫 weekly row
+export const F_LIM_SESS_HI = F_GRN_HI;                   // its bright shade
+export const F_LIM_WEEK_HI = F_RED_HI;                   // its bright shade
 export const F_LIM_FABLE = F_PUR;                        // the 🦊 Fable window, on 💳
 // The other weekly windows, on 💳 after 🦊: a hue each, none of the 💳
 // row's own (🔋 green, 🪫 red, 🦊 purple, 📁 blue, 📦 coral, 🔀 🎨 cyan).
@@ -579,6 +600,102 @@ export const F_SUM = "#4e4e4e";                         // the SOON arrow's ink,
 // that it repeats: one faint stroke is nothing, three stacked on one column
 // for the height of the readout is a line.
 export const F_RULE = F_SUM;
+
+// ════════════════════════════════════════════════════════════════════════════
+// Grading: a figure's shade from its unit.
+// ════════════════════════════════════════════════════════════════════════════
+//
+// A figure written with a unit takes its shade from the unit, in levels of
+// its OWN hue, so hue stays identity and in one ink 841k and 8.4M, or 3h
+// and 3d, do not look alike: the shade says the unit before the letter is
+// read.  Two tables and one rule, formatting's grade.
+//
+// SCALES: each kind of figure's units in order of size, smallest first, a
+// step holding the units that share a position.  A figure's step is the one
+// holding its formatted suffix: the letters after its last digit, "" for a
+// bare count, or the whole figure where it is a word ("now").  `falling`
+// runs the scale the other way, its SMALLEST unit the most intense: for a
+// time-until it is the small figure that matters.  A figure whose suffix no
+// step holds ("?", or nothing) is drawn in its hue's own colour.  The
+// countdown's minutes share the seconds' step: inside the hour is one
+// reading, the one a person acts on, and the brightest.
+export const SCALES = {
+  "duration": {
+    "units": [["now", "s"], ["m"], ["h"], ["d", "M"]],
+    "falling": false,
+  },                                    // ⌛, ⛳, 🛫's times, the gauges
+  "count": {"units": [[""], ["k"], ["M", "G"]], "falling": false},  // 🧩 ▴ ▾, 🧠's size, 🛫's rate, 💾
+  "countdown": {
+    "units": [["now", "s", "m"], ["h"], ["d", "M"]],
+    "falling": true,
+  },                                    // 🔜, the limit rows' reset
+} as const;
+
+// RAMPS: each hue's levels of intensity, faintest first.  A level names a
+// colour of the palette above and whether it is drawn faint (SGR 2), so the
+// levels are abstract: a colour mode resolves each name through its own
+// value, the 256 set's or the true set's, and where adjacent levels draw
+// the same in a mode they collapse into the lower, so how many levels a hue
+// has in a mode is worked out, never written down.  tools/gen-spec.py
+// refuses a ramp whose names are not colours, or whose levels, collapsed,
+// do not each draw lighter than the one below in every mode.
+//
+// THE RULE.  The scale's most intense unit takes the ramp's top level, each
+// unit below it the next level down, and the units below the bottom level
+// share it.  So with three levels s and m share the faint one, h is the
+// colour and d the bright shade; with two, everything under d is faint.
+export const RAMPS = {
+  "F_GRN": [
+    {"ink": "F_GRN", "faint": true},
+    {"ink": "F_GRN"},
+    {"ink": "F_GRN_HI"},
+  ],
+  "F_RED": [
+    {"ink": "F_RED", "faint": true},
+    {"ink": "F_RED"},
+    {"ink": "F_RED_HI"},
+  ],
+  "F_TUP": [
+    {"ink": "F_TUP", "faint": true},
+    {"ink": "F_TUP"},
+    {"ink": "F_TUP_HI"},
+  ],
+  "F_RATE": [
+    {"ink": "F_RATE", "faint": true},
+    {"ink": "F_RATE"},
+    {"ink": "F_RATE_HI"},
+  ],
+  "F_TDN": [
+    {"ink": "F_TDN", "faint": true},
+    {"ink": "F_TDN"},
+    {"ink": "F_TDN_HI"},
+  ],
+  "F_PNK": [
+    {"ink": "F_PNK", "faint": true},
+    {"ink": "F_PNK"},
+    {"ink": "F_PNK_HI"},
+  ],
+  "F_PRW": [
+    {"ink": "F_PRW", "faint": true},
+    {"ink": "F_PRW"},
+    {"ink": "F_PRW_HI"},
+  ],
+  "F_ETA": [
+    {"ink": "F_ETA", "faint": true},
+    {"ink": "F_ETA"},
+    {"ink": "F_ETA_HI"},
+  ],
+  "F_LIM_SESS": [
+    {"ink": "F_LIM_SESS", "faint": true},
+    {"ink": "F_LIM_SESS"},
+    {"ink": "F_LIM_SESS_HI"},
+  ],
+  "F_LIM_WEEK": [
+    {"ink": "F_LIM_WEEK", "faint": true},
+    {"ink": "F_LIM_WEEK"},
+    {"ink": "F_LIM_WEEK_HI"},
+  ],
+} as const;
 
 // ════════════════════════════════════════════════════════════════════════════
 // Tunables.
@@ -801,41 +918,30 @@ export const CTX_1M = 1000000;       // context window for the *-1M-context vari
 export const CACHE_WARN = 80;                    // cache hit %: ≤ WARN amber, ≤ CRIT red
 export const CACHE_CRIT = 50;
 
-// Magnitude, as brightness.  A figure with no ceiling of its own is DIM under
-// its cut and full strength at or over it, on the status line and the agent
-// rows alike.  A percentage says what high is by being a percentage — 100 is
-// the window, and the reader knows it without being told — and the hit rate
-// has its tiers; a token count, a rate, a cost, a duration and a diff have no
-// such edge, so in one ink 841k and 8.4k would sit in the same four columns
-// and a reader would have to parse the unit to tell one from the other.  The
-// ink says it first.
+// Brightness, for a figure with no ceiling of its own.  A percentage says
+// what high is by being a percentage — 100 is the window, and the reader
+// knows it without being told — and the hit rate has its tiers; a token
+// count, a rate, a duration, a diff and a cost have no such edge.
 //
-// One cut per KIND of quantity, fixed, and the same wherever that quantity is
-// drawn — not "high for this session" or "high against the other rows".  A
-// relative cut would make the same brightness mean a different thing in every
-// frame and on every panel, which is the fault the limit rows keep out of
-// hue (F_LIM_SESS): a signal that has to be decoded is not a signal.  A
-// static cut lets an agent row be read against the status line above it and
-// against yesterday's, and lets the flip itself be read as an event — ▾ has
-// come to a hundred thousand; that agent has run ten minutes.
+// A figure written with a unit is graded (see SCALES and RAMPS): its
+// shade comes from the unit it is written in, so in one ink 841k and 8.4M,
+// or 3h and 3d, do not sit in the same four columns looking alike.  That is
+// 🧩's ▴ and ▾, 🧠's size, 🛫's rate and each half of 💾 (counts), and ⌛,
+// 🛫's times, ⛳ and each gauge's own seconds (durations), on the status line
+// and the agent rows alike.  The grading is fixed, and the same wherever the
+// quantity is drawn — not "high for this session" or "high against the
+// other rows".  A relative shade would make the same brightness mean a
+// different thing in every frame and on every panel, which is the fault
+// the limit rows keep out of hue (F_LIM_SESS): a signal that has to be
+// decoded is not a signal.
 //
-// The cuts are where a reading becomes worth noticing, not unit boundaries:
-//   MAG_TOK    a hundred thousand tokens.  Half a standard window, the size at
-//              which a context starts to be a compaction question, and the
-//              band that divides the light agents from the heavy ones; 🧩's
-//              ▴ passes it inside a few turns, ▾ in a long session.
-//   MAG_RATE   a thousand a second — the k of "1k/s".  About what the main
-//              thread runs at with a full window and a request every ten
-//              seconds; between turns it is 0/s.  Full flight against a
-//              trickle.
-//   MAG_COST   one dollar.  The line a person draws without help; a session
-//              crosses it early and an agent that crosses it is a heavy one.
-//   MAG_DUR_S  ten minutes, for every duration on the row.  A turn or an
-//              agent past ten minutes is the thing a reader looks up for;
-//              the session's own age and the split of it pass the cut early
-//              and stay bright, which is the right reading of them.
-//   MAG_DIFF   a hundred lines, each half of 💾 on its own — the size at
-//              which an uncommitted diff is work rather than a tweak.
+// A figure with no unit letter takes a fixed cut instead: DIM under it and
+// full strength at or over it, where a reading becomes worth noticing.
+//   MAG_COST   one dollar, for 💰.  Its unit is the $ the mark already
+//              says, and its figures run bare to a thousand, so a ladder
+//              would dim every session there is.  One dollar is the line a
+//              person draws without help; a session crosses it early and an
+//              agent that crosses it is a heavy one.
 //
 // THE SHARES take a cut of their own kind: a share is a percentage, but of a
 // window it will never fill, so 100
@@ -863,25 +969,21 @@ export const CACHE_CRIT = 50;
 //                    measurement the number came from.
 // A share that could not be derived draws "?", dim whatever the cut.
 //
-// What it does NOT touch.  The limit percentages themselves (a ceiling of
+// What neither touches.  The limit percentages themselves (a ceiling of
 // their own); 🎯, which is tiered and inverted, and dims its green tier by a
-// rule of its own (cache_color); 🧠's percentage
-// (its window is its ceiling, and it is the level the row is read for); the
-// 🔜 countdown, which reset_dim already dims — the OTHER way, since for a
-// time-until it is the small figure that matters; the 5-hour row's 💳, dimmed
-// as context and not as a magnitude; and the cost line, which is a different
-// readout with a stacking of its own.  See mag_dim.
-export const MAG_TOK = 100000;       // 🧩's ▴ and ▾, 🧠's size, both readouts
-export const MAG_RATE = 1000.0;      // 🛫 tokens per second
+// rule of its own (cache_color); 🧠's percentage, which has no shade of its
+// own and takes its size's (render_ctx); the 🔜 countdown, whose scale runs
+// the OTHER way (falling), since for a time-until it is the small figure that
+// matters; the 5-hour row's 💳, dimmed as context and not as a magnitude;
+// and the cost line, which is a different readout with a stacking of its
+// own.  See grade and mag_dim.
 export const MAG_COST = 1.0;         // 💰 dollars
-export const MAG_DUR_S = 600.0;      // ⌛ seconds: 🎤 🚦 🤖 Σ, and an agent's ⌛ and gauges
 // A thread that has written nothing for QUIET_S has its 🤖 state show how
 // long, in place of the token rate, amber from QUIET_WARN_S: long enough
 // that no tool round or request it is still waiting on explains it by
 // itself.  The status line's Doing figure and an agent row's alike.
 export const QUIET_S = 60.0;
 export const QUIET_WARN_S = 600.0;
-export const MAG_DIFF = 100;         // 💾 lines, each half on its own
 export const MAG_SHARE_TURN = 1.0;   // ٪ of the WEEK: 🎤 on both limit rows
 export const MAG_SHARE_SESS = 5.0;   // ٪ of the WEEK: 🎮 on both limit rows
 export const MAG_SHARE_AGENT = 0.2;  // ٪ of the WEEK: an agent's 🔋 🪫, as a pair
@@ -1461,8 +1563,18 @@ export const TRUE_COLOURS: { readonly [name: string]: string } = {
   "B_DRK": "#0c0e12",
   "B_MSG": "#5f005f",
   "F_MSG": "#ffffff",
+  "F_GRN_HI": "#aaf082",
+  "F_RED_HI": "#ff8c87",
+  "F_TUP_HI": "#aaf0ff",
+  "F_RATE_HI": "#a0ffdc",
+  "F_TDN_HI": "#fab9eb",
+  "F_PNK_HI": "#ffaae1",
+  "F_PRW_HI": "#b9beff",
+  "F_ETA_HI": "#ff8cff",
   "F_LIM_SESS": "#78c850",
   "F_LIM_WEEK": "#ff5a5a",
+  "F_LIM_SESS_HI": "#aaf082",
+  "F_LIM_WEEK_HI": "#ff8c87",
   "F_LIM_FABLE": "#c882ff",
   "F_LIM_OPUS": "#78c8dc",
   "F_LIM_SONNET": "#dc8cc8",
