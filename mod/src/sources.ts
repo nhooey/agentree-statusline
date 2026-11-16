@@ -941,23 +941,99 @@ export interface Store {
 export function oauthWindowNames(raw: Dict): string[] {
   const first = ["five_hour", "seven_day", FABLE_WINDOW];
   return [...first, ...Object.keys(raw)
-    .filter((k) => k.startsWith("seven_day_") && !first.includes(k))
+    .filter((k) => k.startsWith("seven_day_") && !first.includes(k) &&
+      k !== FABLE_KEY)
     .sort()];
+}
+
+/** The answer's key that also holds the Fable week, read where
+ * FABLE_WINDOW's own key has no utilization. */
+export const FABLE_KEY = "seven_day_fable";
+
+/** The window `name` of the answer `raw` as its keys give it, where it has
+ * a utilization, else null: the Fable window from FABLE_WINDOW's key, else
+ * from FABLE_KEY. */
+function legacyWindow(raw: Dict, name: string): Dict | null {
+  const keys = name === FABLE_WINDOW ? [FABLE_WINDOW, FABLE_KEY] : [name];
+  for (const key of keys) {
+    const item = pyGet(raw, key, {});
+    if (isDict(item) && pyGet(item, "utilization") !== null) return item;
+  }
+  return null;
+}
+
+// The per-model weeks of the answer's `limits` list, by the words a
+// model's scope is told by, as Claude Usage.app tells them: a display name
+// equal to one, or a model id holding one.  The first that matches wins.
+const OAUTH_LIMIT_MODELS: [string, string, string[]][] = [
+  ["fable", FABLE_WINDOW, ["fable", "mythos"]],
+  ["opus", "seven_day_opus", ["opus"]],
+  ["sonnet", "seven_day_sonnet", ["sonnet"]],
+  ["omelette", "seven_day_omelette", ["design", "omelette"]],
+];
+
+/** oauth_limit_windows: the per-model weeks in the `limits` list of
+ * /api/oauth/usage's answer `raw`, as [key, window id, entry], in the
+ * list's order.  Each is a `weekly_scoped` entry with a model scope and a
+ * percent: the Fable one is FABLE_WINDOW, the Opus, Sonnet and Design
+ * ones their seven_day_* windows, and another model
+ * `seven_day_<its id, else its name>`, lowercased with every run of other
+ * characters an underscore.  An entry of any other kind, the session's
+ * and the plan's week among them, is not read here. */
+export function oauthLimitWindows(raw: unknown): [string, string, Dict][] {
+  const limits = isDict(raw) ? pyGet(raw, "limits") : null;
+  const out: [string, string, Dict][] = [];
+  for (const entry of Array.isArray(limits) ? limits : []) {
+    if (!isDict(entry) || pyGet(entry, "kind") !== "weekly_scoped" ||
+        pyGet(entry, "percent") === null) continue;
+    const scope = pyGet(entry, "scope");
+    const model = isDict(scope) ? pyGet(scope, "model") : null;
+    if (!isDict(model)) continue;
+    const text = (v: unknown) => typeof v === "string" ? v.toLowerCase() : "";
+    const id = text(pyGet(model, "id"));
+    const name = text(pyGet(model, "display_name"));
+    const known = OAUTH_LIMIT_MODELS.find(([, , words]) =>
+      words.some((w) => name === w || id.includes(w)));
+    if (known) {
+      out.push([known[0], known[1], entry]);
+      continue;
+    }
+    const key = (id || name).replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (key) out.push([key, "seven_day_" + key, entry]);
+  }
+  return out;
 }
 
 /** experimental_claude_oauth's reading of /api/oauth/usage's answer `raw`,
  * taken at `now`: each window oauthWindowNames names that has a
- * utilization. */
+ * utilization, and each per-model week of its `limits` list, which stands
+ * over the window of the same id, keeping that window's reset where it
+ * gives none.  The answer nulls the per-model seven_day_* windows where
+ * the list holds them. */
 export function claudeOauthReading(raw: unknown, now: number): Reading {
   if (!isDict(raw)) return {};
+  const scoped = new Map<string, Dict>();
+  for (const [, id, entry] of oauthLimitWindows(raw)) scoped.set(id, entry);
+  const names = oauthWindowNames(raw);
+  const first = names.slice(0, 3);
+  const rest = [...new Set([...names.slice(3), ...scoped.keys()])]
+    .filter((k) => !first.includes(k)).sort();
   const windows: Dict[] = [];
-  for (const name of oauthWindowNames(raw)) {
-    const item = pyGet(raw, name, {});
-    if (isDict(item) && pyGet(item, "utilization") !== null) {
-      windows.push({ id: name,
-                     duration_seconds: name === "five_hour" ? 18000 : 604800,
-                     used_percent: pyGet(item, "utilization"),
-                     resets_at: pyGet(item, "resets_at") });
+  for (const name of [...first, ...rest]) {
+    const legacy = legacyWindow(raw, name);
+    const entry = scoped.get(name);
+    const duration = name === "five_hour" ? 18000 : 604800;
+    if (entry !== undefined) {
+      const reset = pyGet(entry, "resets_at");
+      windows.push({ id: name, duration_seconds: duration,
+                     used_percent: pyGet(entry, "percent"),
+                     resets_at: reset !== null ? reset
+                       : legacy !== null ? pyGet(legacy, "resets_at") : null });
+    } else if (legacy !== null) {
+      windows.push({ id: name, duration_seconds: duration,
+                     used_percent: pyGet(legacy, "utilization"),
+                     resets_at: pyGet(legacy, "resets_at") });
     }
   }
   return normalise({ schema_version: 1, as_of: now, windows },

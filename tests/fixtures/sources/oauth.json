@@ -1,0 +1,941 @@
+[
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 18000.0,
+       "id": "five_hour",
+       "resets_at": 1793725200.036349,
+       "used_percent": 1.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1793725200.036349,
+       "used_percent": 2.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": null,
+       "used_percent": 3.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_sonnet",
+       "resets_at": null,
+       "used_percent": 4.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [],
+  "name": "legacy keys only",
+  "now": 1786847000,
+  "raw": {
+   "five_hour": {
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "utilization": 1
+   },
+   "seven_day": {
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "utilization": 2
+   },
+   "seven_day_opus": null,
+   "seven_day_overage_included": {
+    "utilization": 3
+   },
+   "seven_day_sonnet": {
+    "utilization": 4
+   },
+   "seven_day_zz": {
+    "utilization": null
+   }
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": 1793725200.036349,
+       "used_percent": 47.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": 1793725200.036349,
+       "used_percent": 2.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_omelette",
+       "resets_at": 1793725200.036349,
+       "used_percent": 9.5
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_sonnet",
+       "resets_at": 1793725200.036349,
+       "used_percent": 11.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "fable",
+    "seven_day_overage_included"
+   ],
+   [
+    "sonnet",
+    "seven_day_sonnet"
+   ],
+   [
+    "omelette",
+    "seven_day_omelette"
+   ]
+  ],
+  "name": "limits only, the per-model keys null",
+  "now": 1786847000,
+  "raw": {
+   "five_hour": null,
+   "limits": [
+    {
+     "group": "session",
+     "kind": "session",
+     "percent": 40,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": null
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_all",
+     "percent": 47,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": null
+    },
+    {
+     "group": "weekly",
+     "is_active": false,
+     "kind": "weekly_scoped",
+     "percent": 2,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Fable",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 11,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Sonnet",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 9.5,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Design",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ],
+   "seven_day": {
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "utilization": 47
+   },
+   "seven_day_omelette": null,
+   "seven_day_opus": null,
+   "seven_day_sonnet": null
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 20.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": 1793725200.036349,
+       "used_percent": 6.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1793750400.0,
+       "used_percent": 30.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "opus",
+    "seven_day_opus"
+   ],
+   [
+    "fable",
+    "seven_day_overage_included"
+   ]
+  ],
+  "name": "limits over the legacy keys, a legacy reset kept",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 30,
+     "resets_at": null,
+     "scope": {
+      "model": {
+       "display_name": "Opus",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 6,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Fable",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ],
+   "seven_day": {
+    "utilization": 20
+   },
+   "seven_day_opus": {
+    "resets_at": "2026-11-04T00:00:00Z",
+    "utilization": 10
+   },
+   "seven_day_overage_included": {
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "utilization": 3
+   }
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_claude_haiku_5",
+       "resets_at": 1793725200.036349,
+       "used_percent": 3.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_fable_2",
+       "resets_at": 1793725200.036349,
+       "used_percent": 4.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1793725200.036349,
+       "used_percent": 1.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_sonnet",
+       "resets_at": 1793725200.036349,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "opus",
+    "seven_day_opus"
+   ],
+   [
+    "sonnet",
+    "seven_day_sonnet"
+   ],
+   [
+    "claude_haiku_5",
+    "seven_day_claude_haiku_5"
+   ],
+   [
+    "fable_2",
+    "seven_day_fable_2"
+   ]
+  ],
+  "name": "matched by id, else by display name",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Big one",
+       "id": "claude-opus-5-20261101"
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 2,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "sonnet",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 3,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Claude Haiku",
+       "id": "claude-haiku-5"
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 4,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Fable 2",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ]
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": 1793725200.036349,
+       "used_percent": 5.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "fable",
+    "seven_day_overage_included"
+   ]
+  ],
+  "name": "mythos is the Fable week",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 5,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Mythos",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ]
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": 1793725200.036349,
+       "used_percent": 7.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "fable",
+    "seven_day_overage_included"
+   ]
+  ],
+  "name": "mythos by id",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 7,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": null,
+       "id": "claude-mythos-1"
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ]
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_claude_haiku_4_5",
+       "resets_at": 1793725200.036349,
+       "used_percent": 8.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_new_model",
+       "resets_at": 1793725200.036349,
+       "used_percent": 9.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "claude_haiku_4_5",
+    "seven_day_claude_haiku_4_5"
+   ],
+   [
+    "new_model",
+    "seven_day_new_model"
+   ]
+  ],
+  "name": "an unknown model, by id or name",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 8,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Haiku",
+       "id": "claude-haiku-4-5"
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 9,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": " New Model! ",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ]
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_opus",
+       "resets_at": 1793725200.036349,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "opus",
+    "seven_day_opus"
+   ],
+   [
+    "opus",
+    "seven_day_opus"
+   ]
+  ],
+  "name": "the last entry for a window wins",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Opus",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 2,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": null,
+       "id": "opus-x"
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ]
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [],
+  "name": "entries without a model scope or percent ignored",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": null,
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "surface": "web"
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": "opus"
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_all",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Opus",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": null,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": "Sonnet",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 1,
+     "resets_at": "2026-11-03T17:00:00.036349+00:00",
+     "scope": {
+      "model": {
+       "display_name": null,
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    },
+    "Fable",
+    null
+   ],
+   "seven_day": {
+    "utilization": 2
+   }
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 2.0
+      },
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": 1793725200.036349,
+       "used_percent": 12.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [],
+  "name": "seven_day_fable is the Fable week",
+  "now": 1786847000,
+  "raw": {
+   "seven_day": {
+    "utilization": 2
+   },
+   "seven_day_fable": {
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "utilization": 12
+   }
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": null,
+       "used_percent": 3.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [],
+  "name": "the Fable window's own key over seven_day_fable",
+  "now": 1786847000,
+  "raw": {
+   "seven_day_fable": {
+    "utilization": 12
+   },
+   "seven_day_overage_included": {
+    "utilization": 3
+   }
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day_overage_included",
+       "resets_at": 1793725200.036349,
+       "used_percent": 14.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [
+   [
+    "fable",
+    "seven_day_overage_included"
+   ]
+  ],
+  "name": "limits over seven_day_fable, its reset kept",
+  "now": 1786847000,
+  "raw": {
+   "limits": [
+    {
+     "group": "weekly",
+     "is_active": true,
+     "kind": "weekly_scoped",
+     "percent": 14,
+     "resets_at": null,
+     "scope": {
+      "model": {
+       "display_name": "Fable",
+       "id": null
+      },
+      "surface": null
+     },
+     "severity": "normal"
+    }
+   ],
+   "seven_day_fable": {
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "utilization": 12
+   }
+  }
+ },
+ {
+  "expected": {
+   "account": {},
+   "as_of": 1786847000.0,
+   "buckets": [
+    {
+     "id": "default",
+     "label": "default",
+     "windows": [
+      {
+       "duration_seconds": 604800.0,
+       "id": "seven_day",
+       "resets_at": null,
+       "used_percent": 2.0
+      }
+     ]
+    }
+   ],
+   "schema_version": 1,
+   "source": "experimental-claude-oauth"
+  },
+  "limits": [],
+  "name": "limits not a list",
+  "now": 1786847000,
+  "raw": {
+   "limits": {
+    "kind": "weekly_scoped",
+    "percent": 1
+   },
+   "seven_day": {
+    "utilization": 2
+   }
+  }
+ },
+ {
+  "expected": {},
+  "limits": [],
+  "name": "not a dict",
+  "now": 1786847000,
+  "raw": [
+   {
+    "group": "weekly",
+    "is_active": true,
+    "kind": "weekly_scoped",
+    "percent": 1,
+    "resets_at": "2026-11-03T17:00:00.036349+00:00",
+    "scope": {
+     "model": {
+      "display_name": "Fable",
+      "id": null
+     },
+     "surface": null
+    },
+    "severity": "normal"
+   }
+  ]
+ }
+]
