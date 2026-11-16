@@ -99,8 +99,8 @@ function caseEnv(c: Case): ConfigEnv {
 
 const filled = (v: unknown): unknown => JSON.parse(fill(JSON.stringify(v)));
 
-test("the shared cases are the Python's, 48 of them", () => {
-  assert.equal(cases.length, 48);
+test("the shared cases are the Python's, 51 of them", () => {
+  assert.equal(cases.length, 51);
   assert.deepEqual(cases.filter((c) => c.flags.length).map((c) => c.id),
     ["flag-over-local", "list-flag-repeated"]);
 });

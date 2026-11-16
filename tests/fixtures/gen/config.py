@@ -67,6 +67,8 @@ CASES = [
     # ── Precedence ──────────────────────────────────────────────────────
     case("defaults", "no file anywhere: the defaults, and label derived",
          {"home/p/.git/": None}),
+    case("empty-user", "an empty user file: exactly the defaults",
+         {USER: '{}', "home/p/.git/": None}),
     case("user", "the user file alone",
          {USER: '{"account": "u", "totals": false}', "home/p/.git/": None}),
     case("project-over-user", "the committed project file over the user's",
@@ -180,13 +182,25 @@ CASES = [
     case("not-object", "a file that is not an object is skipped whole",
          {USER: '{"account": "u"}', PROJECT: '["account"]',
           "home/p/.git/": None}),
-    case("unknown-keys", "an unknown key, with the nearest known one when"
-         " one is near",
-         {PROJECT: '{"rwos": {}, "usage-sorce": "none", "zzzzzz": 1,'
-                   ' "account": "kept"}', "home/p/.git/": None}),
-    case("per-run-keys", "a key that describes one run is skipped",
+    case("unknown-keys", "an unknown key skips the whole file, each named"
+         " with the nearest known one when one is near, and the layer under"
+         " supplies every value",
+         {USER: '{"account": "u"}',
+          PROJECT: '{"rwos": {}, "usage-sorce": "none", "zzzzzz": 1,'
+                   ' "account": "refused"}', "home/p/.git/": None}),
+    case("per-run-keys", "a key that describes one run skips the whole"
+         " file",
          {PROJECT: '{"cols": 80, "mode": "cost", "show-config": true,'
-                   ' "account": "kept"}', "home/p/.git/": None}),
+                   ' "account": "refused"}', "home/p/.git/": None}),
+    case("table-unknown-parts", "an unknown row or field of a table skips"
+         " the whole file",
+         {USER: '{"rows": {"turn": {"live": "never"}}}',
+          PROJECT: '{"rows": {"tunr": {}, "session": {"lvie": "never",'
+                   ' "live": "running"}}}', "home/p/.git/": None}),
+    case("credits-unknown-parts", "an unknown field of a record, or key of"
+         " its show, skips the whole file",
+         {PROJECT: '{"credits": {"place": "row", "show": {"gift": []},'
+                   ' "x": 1}}', "home/p/.git/": None}),
     case("bad-values", "each value of the wrong type, out of range or not"
          " the enum's is skipped, and the layer under supplies it",
          {USER: '{"totals": false, "hint-inset": 4, "account-place": "tail",'
@@ -208,8 +222,8 @@ CASES = [
     case("table-bad-parts", "a table's bad rows and fields are skipped"
          " alone, and the account row refuses to be stamped",
          {PROJECT: '{"rows": {"turn": {"live": "allways",'
-                   ' "transcript": false}, "tunr": {}, "agent": 3,'
-                   ' "session": {"lvie": "never", "live": "running"},'
+                   ' "transcript": false}, "agent": 3,'
+                   ' "session": {"live": "running"},'
                    ' "account": {"transcript": true, "live": "never"}}}',
           "home/p/.git/": None}),
     case("table-not-object", "a table that is not an object is skipped",
@@ -221,7 +235,8 @@ CASES = [
          {PROJECT: '{"rows": {"tag": {"place": "above"},'
                    ' "agent": {"place": "above"}}}', "home/p/.git/": None}),
     case("live-place-unknown", "live-place is no option: a file that still"
-         " sets it is warned about, and the rows keep their places",
+         " sets it is skipped with a warning, and the rows keep their"
+         " places",
          {USER: '{"live-place": "above"}', "home/p/.git/": None}),
 
     # ── Derived values ──────────────────────────────────────────────────
@@ -285,12 +300,12 @@ CASES = [
          {PROJECT: '{"credits": {"place": "row", "original": true,'
                    ' "show": {"cloud": [{"field": "balance", "op": ">",'
                    ' "value": 0, "unit": "usd"}, {"field": "balnce",'
-                   ' "op": ">", "value": 0, "unit": "usd"}], "gift": [],'
+                   ' "op": ">", "value": 0, "unit": "usd"}],'
                    ' "extra": [{"field": "spent", "op": "=>", "value": 1,'
                    ' "unit": "usd"}]}, "amber": [{"field": "spent",'
                    ' "op": ">", "value": 1, "unit": "days"}],'
                    ' "red": [{"field": "expiry", "op": "<", "value": "1",'
-                   ' "unit": "days"}, 4], "command": 7, "x": 1}}',
+                   ' "unit": "days"}, 4], "command": 7}}',
           "home/p/.git/": None}),
     case("credits-not-object", "a record that is not an object",
          {PROJECT: '{"credits": ["account"]}', "home/p/.git/": None}),
