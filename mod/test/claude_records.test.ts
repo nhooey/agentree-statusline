@@ -1,9 +1,9 @@
 // claude_records.ts, case by case.
 //
 // tests/fixtures/records/ holds each call's arguments and result as
-// committed data; this runs the same call through the TypeScript and
-// compares the two with deepEqual.  Records keep the fixtures' snake_case
-// field names, so they compare as they are.
+// committed data, written once (cases_once.ts); this runs the same call
+// through the TypeScript and compares the two with deepEqual.  Records
+// keep the fixtures' snake_case field names, so they compare as they are.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -15,6 +15,7 @@ import {
   agentReadingOf, foldAgentBytes, newAgentFold,
 } from "../src/claude_records.ts";
 import { agentFoldOf, agentFoldText } from "../src/agent_fold.ts";
+import { readCases } from "./cases_once.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -203,7 +204,7 @@ function tmp(): string {
 
 for (const file of fs.readdirSync(DIR).filter((f) => f.endsWith(".json"))
   .sort()) {
-  const cases: Case[] = revive(JSON.parse(
+  const cases: Case[] = revive(readCases(
     fs.readFileSync(path.join(DIR, file), "utf-8"))).cases;
   const byFn = new Map<string, Case[]>();
   for (const c of cases) {
@@ -355,7 +356,7 @@ test("a background task keeps its command and output file, open and " +
 test("an agent file folded as it grows reads as it does whole", () => {
   let files = 0;
   for (const file of fs.readdirSync(DIR).filter((f) => f.endsWith(".json"))) {
-    const cases: Case[] = revive(JSON.parse(
+    const cases: Case[] = revive(readCases(
       fs.readFileSync(path.join(DIR, file), "utf-8"))).cases;
     for (const c of cases.filter((c) => c.fn === "_read_agent_file")) {
       if (c.out === null) continue;
@@ -379,7 +380,7 @@ test("an agent file folded as it grows reads as it does whole", () => {
  * the case pins for it read whole. */
 function agentCases(): Case[] {
   return fs.readdirSync(DIR).filter((f) => f.endsWith(".json")).flatMap((f) =>
-    (revive(JSON.parse(fs.readFileSync(path.join(DIR, f), "utf-8")))
+    (revive(readCases(fs.readFileSync(path.join(DIR, f), "utf-8")))
       .cases as Case[]).filter((c) =>
       c.fn === "_read_agent_file" && c.out !== null));
 }

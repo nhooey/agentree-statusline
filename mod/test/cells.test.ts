@@ -2,8 +2,9 @@
 //
 // tests/fixtures/render/cells.json holds, as committed data, each helper
 // over awkward inputs, under every profile, both mark spacings and the
-// subscripts: each call's inputs and result.  This builds the same
-// Settings, runs the same call and compares.
+// subscripts: each call's inputs and result, written once
+// (cases_once.ts).  This builds the same Settings, runs the same call and
+// compares.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -12,6 +13,7 @@ import * as cells from "../src/cells.ts";
 import * as fm from "../src/formatting.ts";
 import type { Env, Settings } from "../src/formatting.ts";
 import { enc, revive as reviveSpans } from "./formatting_codec.ts";
+import { readCases } from "./cases_once.ts";
 
 const FIXTURES = path.join(import.meta.dirname, "..", "..", "tests",
   "fixtures");
@@ -19,7 +21,7 @@ const FIXTURES = path.join(import.meta.dirname, "..", "..", "tests",
 type Case = { [k: string]: any };
 
 function load(dir: string, name: string): Case {
-  return JSON.parse(fs.readFileSync(path.join(FIXTURES, dir, name + ".json"),
+  return readCases(fs.readFileSync(path.join(FIXTURES, dir, name + ".json"),
     "utf-8"));
 }
 

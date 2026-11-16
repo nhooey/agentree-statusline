@@ -247,19 +247,21 @@ tests/fixtures/
 | `tests/golden/` | 230 | 0 | 235 | 0 |
 | `panel/` | 22 | 1 | 2,684 | 176 |
 | `receipt/` | 1 | 0 | 146 | 0 |
-| `render/` | 2 | 1 | 1,810 | 300 |
+| `render/` | 2 | 1 | 1,810 | 28 |
 | `rows/` | 2 | 2 | 3,022 | 1,332 |
 | `grid/` | 2 | 2 | 5,315 | 2,000 |
-| `calib/` | 4 | 4 | 4,225 | 1,300 |
-| `formatting/` | 3 | 3 | 2,601 | 1,000 |
-| `records/*.json` | 4 | 4 | 2,034 | 1,850 |
-| `sources/`, `config/`, `claude/` | 12 | 12 | 579 | 579 |
+| `calib/` | 4 | 4 | 4,225 | 844 |
+| `formatting/` | 3 | 3 | 2,601 | 1,300 |
+| `records/*.json` | 4 | 4 | 2,034 | 712 |
+| `sources/`, `config/`, `claude/` | 12 | 12 | 579 | 604 |
 | Inputs | 148 | 148 | 357 | 357 |
 | **Total** | **750** | **221** | **25,700** | **8,900** |
 
 `figures/` and the saved folds are measured (the 43 documents without
 their `null` keys are 435 KB). `panel/` and `rows/` are measured with
-`du -k` after `TF5`, `rows/` with the tree cases `TF5` adds. The other
+`du -k` after `TF5`, `rows/` with the tree cases `TF5` adds, and
+`render/`, `calib/`, `formatting/`, `records/*.json`, `sources/`, `config/`
+and `claude/` after `TF6`. The other
 "after" sizes are estimates from the repeats counted above; each step
 measures its own.
 
@@ -394,25 +396,30 @@ generator to Node only where a step below keeps its family.
    widths and hiding, and the profiles are `rows/`'s sample. `panel/`
    is 176 KB (`du -k`), and `rows/` 1,332 KB with the 111 tree cases.
 
-6. **`TF6` The differential families, written once.** For the families
-   the TypeScript now writes alone (`records`, `calib`, `render/cells`,
-   `claude`), and `formatting/` for both ports:
+6. **`TF6` The differential families, written once.** Done. `records`,
+   `calib`, `render/cells`, `claude` and `formatting/values.json` stay
+   committed data, one case a line, read back through one loader,
+   `mod/test/cases_once.ts`, into the calls and results they held:
 
    - a call that gives one result under several configurations is one
-     case naming them (`formatting/values.json` 22,757 to 7,898,
-     `render/cells.json` 2,915 to 1,023);
-   - an argument written more than once is written once under a name,
-     as `render/status.json` writes its records (`records/turns.json`);
-   - a record in a case is written with the fields that differ from the
-     record's defaults, so a new field with a default touches no case;
-   - `calib/shares.json` keeps each turn list against one plan
-     snapshot, unit and zone in full, and the other snapshots, units
-     and zones for the session's totals alone.
+     case naming them, `cfg` a list of the file's `configurations`
+     (`formatting/values.json` 8,015 cases for 22,269 calls,
+     `render/cells.json` 111 for 470);
+   - a value a file holds more than once, an argument or a result, is
+     written once in its `names` and stood for by `{"$": NAME}`
+     (`calib/shares.json`'s accountings, `records/turns.json`'s turn
+     lists);
+   - a record (`Transcript`, `Turn`, `Payload`, `Git`, `Limits`,
+     `CacheShares`, an agent's usage) is `{"$record": TYPE, …}` with
+     the fields that differ from the defaults the TypeScript builds it
+     with, so a new field with a default touches no case.
 
-   The TypeScript writes each family's `out` from its committed `args`
-   (one tool, `mod/tools/gen-cases.ts`, with a `--check` the `node`
-   suite runs, as `rows/` and `grid/` have). `config/` and `sources/`
-   keep their Python generators.
+   Every call and result is the same as before, `calib/shares.json`'s
+   turns under every snapshot, unit and zone included; the 770
+   `formatting/values.json` cases that repeated another exactly are
+   written once. Measured with `du -k`: `records/` 2,220 to 892 KB,
+   `calib/` 4,164 to 844, `render/` 88 to 28, `claude/` 24 to 16,
+   `formatting/` 2,588 to 1,300.
 
 7. **`TF7` `grid/` in one form, on fewer widths.** Done.
 

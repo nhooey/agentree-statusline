@@ -37,6 +37,7 @@ import { bandRows, fixedKeys, treeOf } from "../src/band.ts";
 import type { BandOpts, Live, Phase } from "../src/band.ts";
 import { corpusAgents, withBackground } from "../tools/gen-row-cases.ts";
 import { readFigures } from "./figures_doc.ts";
+import { expand } from "./cases_once.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -60,13 +61,14 @@ function agentFiles(): string[] {
 }
 
 // tests/fixtures/claude/agent-usage.json holds each fixture agent's usage
-// as committed data, field for field.
+// as committed data, each an AgentUsage record written with the fields
+// that differ from an empty fold's (cases_once.ts).
 test("agentUsageOf is each fixture agent's committed usage, field for " +
   "field", () => {
   const files = agentFiles();
   assert.ok(files.length > 3);
-  const want = JSON.parse(fs.readFileSync(path.join(REPO,
-    "tests/fixtures/claude/agent-usage.json"), "utf8")) as
+  const want = expand(JSON.parse(fs.readFileSync(path.join(REPO,
+    "tests/fixtures/claude/agent-usage.json"), "utf8"))) as
     Record<string, Dict>;
   assert.deepEqual(Object.keys(want).sort(),
     files.map((f) => path.relative(REPO, f)).sort());

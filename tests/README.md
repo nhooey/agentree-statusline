@@ -65,6 +65,19 @@ A family with a generator changes only through it: a hand edit is lost on
 the next run. `tests/all.sh`'s `generated` step reruns them all and fails
 on a difference, and the node suite runs each again in memory.
 
+`records/`, `calib/`, `render/cells.json`, `claude/` and
+`formatting/values.json` are written once, one case a line, and
+`mod/test/cases_once.ts` reads them back into the calls they hold:
+
+- a case whose `cfg` is a list of names stands for one case under each
+  of the file's `configurations` it names, which all give its result;
+- `{"$": NAME}` is the value the file's `names` holds under NAME, a
+  value its cases hold more than once;
+- `{"$record": TYPE, ...}` is a record (`Transcript`, `Turn`, `Payload`,
+  `Git`, `Limits`, `CacheShares`, `AgentUsage`) with only the fields
+  that differ from the defaults the TypeScript builds it with, so a new
+  field with a default touches no case.
+
 ## The pinned environment
 
 Each case names an environment in `fixtures/env/`, which holds still
