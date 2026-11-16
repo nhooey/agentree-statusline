@@ -17,7 +17,9 @@
 //
 // The band's 🎤 and 🎮 rows are live while a turn runs; once the turn has
 // ended and Claude Code has written its records, the mod stamps them,
-// frozen, as the receipt its closing line draws (stamp).
+// frozen, as the receipt its closing line draws (stamp).  A load stamps
+// the last finished turn if the load before stopped short of it
+// (stampMissed).
 //
 // The handlers do the reading (edges.ts and the modules it reads with) and
 // file what they read: the status document in `$.state`, so a new one
@@ -37,7 +39,8 @@ import { foldShut, pruneFolds, stampedSplit } from '../src/band_tree.ts'
 import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
-  ROW_NAMES, accountLine, bandRows, bandScoped, footerRuler, footerTail,
+  ROW_NAMES, accountHide, accountLine, bandRows, bandScoped, footerRuler,
+  footerTail,
   modeOfHint, rootDrawn,
 } from '../src/band.ts'
 import type { Place, RowsLive, RowsPlace } from '../src/band.ts'
@@ -63,7 +66,8 @@ import {
   defaultsError, options, optionsFor, readConfig,
 } from './configuration.ts'
 import {
-  costDoc, permissionModeOf, seen, statusDoc, transcriptPath, turnsNow,
+  costDoc, lastFinishedMs, permissionModeOf, pruneSpending, seen, statusDoc,
+  transcriptPath, turnsNow,
 } from './edges.ts'
 import { log } from './log.ts'
 import { instructEta } from './eta_instruction.ts'
@@ -411,6 +415,8 @@ async function start($: $, by: string): Promise<void> {
     void clock($, mine).catch((err) => log($, 'clock stopped', err))
     // The figures now, not a tick from now: a switched session has none.
     void refresh($).catch((err) => log($, 'refresh', err))
+    // The last turn's receipt, where the load before stopped short of it.
+    void stampMissed($).catch((err) => log($, 'no receipt', err))
   } catch (err) {
     await log($, 'no tick', err)
   }
@@ -554,9 +560,9 @@ async function underAnswer($: $, path: string, durationMs: number,
  * whose records never land is logged, and nothing stamped.  One that billed
  * nothing, as `end` (how turn.complete says it ended) or the transcript
  * tells (billedNothing), is logged in a line as soon as that is known, and
- * nothing stamped. */
+ * nothing stamped.  True where this call filed the receipt. */
 async function stamp($: $, durationMs: number, prompt: string,
-  end: TurnEnd | null = null): Promise<void> {
+  end: TurnEnd | null = null): Promise<boolean> {
   const where = await placesFor($)
   const deadline = (await $.clock.now()) + CONFIG.receiptWaitMs
   let got: { path: string; turns: Turn[] } | null = null
@@ -569,7 +575,7 @@ async function stamp($: $, durationMs: number, prompt: string,
     if (none) {
       await log($, 'no receipt: the turn billed nothing (' + none + '): ' +
         (prompt.slice(0, 8) || 'no prompt'))
-      return
+      return false
     }
     const key = billed ? turnKey(turns) : ''
     if (key && key === last) break
@@ -582,22 +588,25 @@ async function stamp($: $, durationMs: number, prompt: string,
           prompt.slice(0, 8), t ? [t.prompt_id.slice(0, 8), t.turn_index,
             t.calls, t.agent ?? null, t.compact ?? null] : null]
           : 'no transcript'))
-      return
+      return false
     }
     last = key
     await $.clock.sleep(CONFIG.receiptPollMs)
   }
   const key = receiptKey(await $.session.id(), turnKey(got!.turns))
-  if (stamping.has(key) || await $.store.get(key) !== undefined) return
-  // With no options, nothing to lay the receipt out under: the defaults
-  // file is wrong, and the footer says so.
-  const o = options()
-  if (o === null) {
-    await log($, 'no receipt: no options')
-    return
-  }
+  // Taken before the store is read, so a second stamp of the turn that
+  // reads it in the meantime stops here.
+  if (stamping.has(key)) return false
   stamping.add(key)
   try {
+    if (await $.store.get(key) !== undefined) return false
+    // With no options, nothing to lay the receipt out under: the defaults
+    // file is wrong, and the footer says so.
+    const o = options()
+    if (o === null) {
+      await log($, 'no receipt: no options')
+      return false
+    }
     const doc = await read($, status)
     const published = doc ? Number(doc.context_window) || 0 : 0
     const fig = withEngineDuration(await costDoc($, where, got!.path,
@@ -634,8 +643,32 @@ async function stamp($: $, durationMs: number, prompt: string,
     void underAnswer($, got!.path, durationMs, { rows },
       (await $.clock.now()) + CONFIG.receiptWaitMs)
       .catch((err) => log($, 'no receipt under the answer', err))
+    return true
   } finally {
     stamping.delete(key)
+  }
+}
+
+/** Stamps the session's last finished turn where no receipt is filed for
+ * it, as its turn.complete would have: a load unloaded while its stamp
+ * waits on the transcript, as by a /reload-plugins queued during the turn,
+ * which runs as it ends, leaves the turn with none.  Finished is a
+ * turn_duration record after the turn's prompt (lastFinishedMs), whose
+ * durationMs the closing line is drawn with; a turn still running is left
+ * to its own turn.complete.  The prompt is the newest the refresh reads,
+ * as turn.complete takes it for a turn no document saw open, and how the
+ * turn ended is not in the transcript. */
+async function stampMissed($: $): Promise<void> {
+  const path = await transcriptPath($, await placesFor($))
+  const durationMs = path ? await lastFinishedMs($, path) : null
+  if (durationMs === null) return
+  if (await $.store.get(receiptAt(durationMs)) !== undefined) return
+  await refresh($)
+  const tr = (await read($, status))?.transcript as Dict | undefined
+  const prompt = typeof tr?.prompt_id === 'string' ? tr.prompt_id : ''
+  if (await stamp($, durationMs, prompt)) {
+    await log($, 'receipt stamped on load: ' +
+      (prompt.slice(0, 8) || 'no prompt'))
   }
 }
 
@@ -659,7 +692,7 @@ function line(Text: any, spans: readonly Span[], key: string,
  * Code draws true colour: given the 256 set there, chalk would draw it as
  * given, and the softer true colours are the ones chosen to be seen.
  * Given the true set at 256, chalk would round it onto entries nobody
- * chose (see spec/layout.jsonc). */
+ * chose (see spec.ts). */
 function spanStyle(s: Span): Record<string, string | boolean> {
   const truecolor = st?.truecolor ?? false
   const p: Record<string, string | boolean> = {}
@@ -800,13 +833,14 @@ async function bandNow($: $, isWorking: boolean, place: Place):
   const running = isWorking || await read($, held)
   const account = o.accountPlace === 'row' &&
     o.rows.account.place === place && accountedIn(o, running)
-    ? accountLine(st, fig, o.hide, cols - inset, await home($), indent,
-      rootedIn(o, running)) : []
+    ? accountLine(st, fig, accountHide(o.hide, o.weeklyWindows),
+      cols - inset, await home($), indent, rootedIn(o, running)) : []
   return [...account.length ? [{ scope: 'account', spans: account }] : [],
     ...bandScoped(st, fig, cols, o.hide,
       { rate: await read($, rate), phase: running ? 'running' : 'done',
         live: liveOf(o), place, places: rowPlacesOf(o), inset, indent,
         agents: o.rows.subagents.live, cap: o.subagentRows,
+        linger: o.finishedLinger,
         folds: place === 'above' ? await read($, folds) : {} })]
 }
 
@@ -854,6 +888,9 @@ export const register: Register = on => {
     await start($, 'session.start')
     void reconfigure($).catch((err) => log($, 'config', err))
     void refresh($).catch((err) => log($, 'refresh', err))
+    // The spending kept for sessions that have ended goes.
+    void (async () => pruneSpending($, (await $.clock.now()) / 1000))()
+      .catch((err) => log($, 'spending not pruned', err))
     return result
   })
 
@@ -1131,8 +1168,8 @@ export const register: Register = on => {
       const running = e.props.isWorking || await read($, held)
       const accounted = accountedIn(o, running)
       const text = accounted && o.accountPlace === 'tail' ? footerTail(st, fig,
-        o.hide, e.props.hint, cols, mode, await home($),
-        rootedIn(o, running)) : ''
+        accountHide(o.hide, o.weeklyWindows), e.props.hint, cols, mode,
+        await home($), rootedIn(o, running)) : ''
       const tail = o.footerRuler && text ? footerRuler(st, text, cols)
         : text
       // What the padding was worked out from, each time it changes, so a

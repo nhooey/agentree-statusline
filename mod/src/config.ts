@@ -2,13 +2,10 @@
 // with them, and the options merged from them (agents/plans/open/config-merge.md,
 // "Files" and "Merge semantics").
 //
-// A port of coding_agent_usage_line/config.py, of options.merge and of
-// cli._merged's usage-source check, held to the Python's answers by the
-// shared cases, tests/fixtures/config/cases.json (test/config.test.ts):
-// the same files found, the same values kept, the same warnings word for
-// word.  Each function keeps its Python name in camelCase.  The mod has no
-// command line, so there is no flags layer here, and the cases with flags
-// are the Python's alone.
+// Pinned by the cases of tests/fixtures/config/cases.json
+// (test/config.test.ts, written by tools/gen-config-cases.ts): the files
+// found, the values kept and the warnings, word for word.  There is no
+// command line, so no flags layer.
 //
 // Under the files is the defaults file, defaults/config.jsonc in the mod's
 // folder, every option a file may set with its default, read strictly by
@@ -20,10 +17,10 @@
 // in the tests; the environment is a plain object.  Paths are POSIX, and the
 // path functions are posixpath's.
 //
-// What Python gives for free and this file spells out, because a warning's
-// text would otherwise drift: json.loads keeping a dict's keys in the order
-// written (a JavaScript object puts "1" first) and telling 1 from 1.0, and
-// json.dumps with and without ensure_ascii.
+// A warning quotes a file's key or value the way Python's json module
+// would, which this file spells out: json.loads keeping a dict's keys in
+// the order written (a JavaScript object puts "1" first) and telling 1 from
+// 1.0, and json.dumps with and without ensure_ascii.
 
 import { OPTIONS } from "./options_spec.ts";
 import type { Options } from "./options_spec.ts";
@@ -52,7 +49,7 @@ export type FileStat = {
 };
 
 /** The file system as the walk reaches it.  Each answers null where the
- * Python's call would fail or answer False. */
+ * call fails or the answer is no. */
 export type ConfigFs = {
   /** The path's stat, or null when it leads nowhere. */
   stat(path: string): Promise<FileStat | null>;
@@ -74,16 +71,13 @@ export const CONFIG_ENV = ["HOME", "XDG_CONFIG_HOME", CONFIG_DIR_ENV] as const;
 type Scalar = { type: string; items?: readonly string[];
   minimum?: number; fixed?: readonly string[]; keys?: readonly string[];
   nullable?: boolean };
+// Every option's default is in the defaults file alone (Defaults).
 type OptionRec = Scalar & {
-  // An option no file sets has its default here; one a file may set has
-  // it in the defaults file alone (Defaults).
-  default?: unknown;
-  file: boolean;
   fields?: { readonly [field: string]: Scalar };
   rows?: readonly string[];
   derived?: Derived;
 };
-// How a derived option follows another (tools/gen-spec.py, check_derived):
+// How a derived option follows another (test/options_spec.test.ts):
 // by its value, or, with `field` and `any`, by whether any drawn row of a
 // table has `any` in that field.
 type Derived = { from: string; field?: string; any?: string;
@@ -450,7 +444,7 @@ export async function find(start: string, env: ConfigEnv, fs: ConfigFs):
 
 /** The known word nearest `word`, by edits (a swap of two neighbours
  * counts one), when it is near enough to be the one meant; else null.
- * Ties go to the first in `known`, the spec's order, as the Python's do. */
+ * Ties go to the first in `known`, the spec's order. */
 export function nearest(word: string, known: readonly string[]):
     string | null {
   let best: string | null = null;
@@ -518,7 +512,7 @@ function scalar(kind: string, value: Json, spec: Scalar, where: string):
     return { got: null, bad: `${where} must be true or false` };
   }
   if (kind === "int") {
-    // A whole float is an int: the Python takes 3.0 as 3.
+    // A whole float is an int: 3.0 is 3.
     if (typeof value === "number" && Number.isInteger(value)) {
       value = BigInt(value);
     }
@@ -601,7 +595,7 @@ const CONDITION_OPS = ["<", "<=", "=", "!=", ">=", ">"];
 const CONDITION_KEYS = ["field", "op", "value", "unit"];
 
 /** The condition `value` is, or why not, `path` naming it:
- * config._condition's words. */
+ * condition's words. */
 function condition(value: Json, path: string):
     { got: Condition; bad: null } | { got: null; bad: string } {
   const at = (part: string) => dumps(path + part);
@@ -701,24 +695,19 @@ function record(name: string, option: OptionRec, value: Json):
   return { kept, why };
 }
 
-/** The option a file may set by `name`, or why not. */
+/** The option `name`, or why there is none. */
 function known(name: string): { option: OptionRec; why: null } |
     { option: null; why: string } {
   if (!Object.hasOwn(SPEC, name)) {
     return { option: null, why: `${dumps(name)} is no option${hint(name, NAMES)}` };
   }
-  const option = SPEC[name];
-  if (!option.file) {
-    return { option: null,
-      why: `${dumps(name)} is a per-run flag, which no file sets` };
-  }
-  return { option, why: null };
+  return { option: SPEC[name], why: null };
 }
 
 /** Why each key of a file's object names nothing a file may set, at any
  * depth: an option, a table's row or a row's field, a record's field, or
  * a key of a record's conditions-by field, each with the nearest known
- * name.  The Python's unknown_keys gives the same words. */
+ * name. */
 export function unknownKeys(data: Map<string, Json>): string[] {
   const why: string[] = [];
   for (const [name, value] of data) {
@@ -795,8 +784,8 @@ export type Layer = { name: FileLayer | ModLayer; path: string;
   mtimeMs: number; values: { [option: string]: Value } };
 
 /** The mod's own settings (hooks/config.ts, SETTINGS), a layer under the
- * files that the Python has no counterpart of: the settings the mod drew
- * with before it read files, until the user's file holds them. */
+ * files: the settings the mod drew with before it read files, until the
+ * user's file holds them. */
 export const MOD_LAYER = "mod";
 export type ModLayer = typeof MOD_LAYER;
 
@@ -873,13 +862,11 @@ export async function readFile(path: string, fs: ConfigFs,
 // ── The defaults file ─────────────────────────────────────────────────────
 
 /** The defaults file's path under the mod's folder (`$.plugin.root`): the
- * plugin carries it wherever it is installed, and the Python reads the
- * same file beside it in the checkout. */
+ * plugin carries it wherever it is installed. */
 export const DEFAULTS_REL = "defaults/config.jsonc";
 
-/** Every option's default, by name: those a file may set from the
- * defaults file, null where derived, and those no file sets from the
- * spec. */
+/** Every option's default, by name, from the defaults file: null where
+ * derived. */
 export type Defaults = { readonly [option: string]: Value };
 
 /** The defaults file cannot be used: its path and every fault found,
@@ -893,10 +880,9 @@ export class DefaultsError extends Error {
 
 /** The defaults file's text strictly read: every option, by name, with its
  * default.  Throws a DefaultsError naming the file and each key at fault:
- * a key missing, one that is no option or describes one run, or a value
- * not of its option's type (null only for a derived option, whose default
- * it follows).  config.parse_defaults' words, held to them by
- * tests/fixtures/config/defaults-cases.json. */
+ * a key missing, one that is no option, or a value not of its option's
+ * type (null only for a derived option, whose default it follows), in the
+ * words tests/fixtures/config/defaults-cases.json holds. */
 export function parseDefaults(path: string, text: string): Defaults {
   const { data, why } = objectOf(text);
   if (data === null) throw new DefaultsError(`${path}: ${why}`);
@@ -949,14 +935,12 @@ export function parseDefaults(path: string, text: string): Defaults {
     if (bad !== null) faults.push(bad);
     values[name] = got;
   }
-  for (const [name, option] of Object.entries(SPEC)) {
-    if (option.file && !data.has(name)) faults.push(`${dumps(name)} is missing`);
+  for (const name of NAMES) {
+    if (!data.has(name)) faults.push(`${dumps(name)} is missing`);
   }
   if (faults.length) throw new DefaultsError(`${path}: ${faults.join("; ")}`);
   const out: { [name: string]: Value } = {};
-  for (const [name, option] of Object.entries(SPEC)) {
-    out[name] = option.file ? values[name] : option.default as Value;
-  }
+  for (const name of NAMES) out[name] = values[name];
   return out;
 }
 
@@ -1016,8 +1000,8 @@ function deriveKey(value: Value): string {
 
 /** The key a table's `derived` looks its map up by: its `any` item when
  * any row the mod draws (its `live` not "never") has that item in the
- * field, else the field's other item (tools/gen-spec.py holds the field
- * to two). */
+ * field, else the field's other item (test/options_spec.test.ts holds the
+ * field to two). */
 function anyKey(table: OptionRec, derived: Derived, rows: Rows): string {
   const field = derived.field!, want = derived.any!;
   if (Object.values(rows).some((rec) => rec[field] === want &&
@@ -1090,7 +1074,7 @@ export function merge(files: readonly Layer[], warnings: readonly string[],
     const derived = option.derived;
     if (derived && layers[name] === "default") {
       // The map names every value the option followed can take
-      // (tools/gen-spec.py holds it to that).
+      // (test/options_spec.test.ts holds it to that).
       const key = derived.field === undefined
         ? deriveKey(values[derived.from])
         : anyKey(SPEC[derived.from], derived, values[derived.from] as Rows);
@@ -1106,14 +1090,11 @@ export function merge(files: readonly Layer[], warnings: readonly string[],
 export const camel = (name: string): string =>
   name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
 
-/** The merged options the mod reads, by the camel case of their names:
- * every option with "mod" in its ports. */
+/** The merged options, by the camel case of their names. */
 export function optionsOf(merged: Merged): Options {
   const out: { [name: string]: Value } = {};
-  for (const [name, option] of Object.entries(OPTIONS)) {
-    if ((option.ports as readonly string[]).includes("mod")) {
-      out[camel(name)] = merged.values[name];
-    }
+  for (const name of Object.keys(OPTIONS)) {
+    out[camel(name)] = merged.values[name];
   }
   return out as unknown as Options;
 }
@@ -1132,11 +1113,10 @@ export type Found = {
 
 /** Every file layer from `start`'s project and the user, highest first,
  * read, checked and merged over `defaults` (readDefaults).  A usage-source
- * a file gives that `agent` (any agent, for null) cannot read is skipped,
- * as any bad value is, and the layer under it supplies one
- * (cli._merged). */
+ * a file gives that is no source is skipped, as any bad value is, and the
+ * layer under it supplies one. */
 export async function load(start: string, env: ConfigEnv, fs: ConfigFs,
-    defaults: Defaults, agent: string | null = null): Promise<Found> {
+    defaults: Defaults): Promise<Found> {
   const { root, paths } = await find(start, env, fs);
   let files: Layer[] = [];
   const warnings: string[] = [];
@@ -1156,11 +1136,11 @@ export async function load(start: string, env: ConfigEnv, fs: ConfigFs,
     if (bad === undefined) break;
     const spec = options.values["usage-source"] as string;
     try {
-      validateSource(agent ?? "", spec);
+      validateSource("claude", spec);
       break;
     } catch {
       warnings.push(`${bad.path}: "usage-source" ${dumpsUnicode(spec)} is ` +
-        `no source ${agent ?? "any agent"} reads; skipped`);
+        "no usage source; skipped");
       const { ["usage-source"]: _, ...rest } = bad.values;
       files = files.map((f) => f === bad ? { ...f, values: rest } : f);
     }

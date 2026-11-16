@@ -4,8 +4,8 @@
 // claude_calib.ts is pure, so the mod, which runs with no Node, can import
 // it; the mod reads the same files through `$` in its own handlers.  This
 // is the Node reading, for the tests, the tools and anything else run by
-// Node, with the Python's names.  Everything claude_calib.ts exports is
-// exported from here too, so a Node caller imports one module.
+// Node.  Everything claude_calib.ts exports is exported from here too, so
+// a Node caller imports one module.
 import * as fs from "node:fs";
 import * as crypto from "node:crypto";
 import { isDict, pyGet, pyHas } from "./py.ts";
@@ -27,8 +27,7 @@ import type { Dict } from "./py.ts";
 export * from "./claude_calib.ts";
 
 /** Where the scan and the calibration cache read and write, and the clock
- * the cache's age is read against: the Python's module globals and
- * environment, as arguments. */
+ * the cache's age is read against, as arguments. */
 export interface CalibEnv {
   readonly projectsDir: string;   // ~/.claude/projects
   readonly stateDir: string;      // the private state directory
@@ -200,8 +199,8 @@ type Kept = CostKept;
  * one file a request id after its first record is dropped as it is read.
  * A last line with no newline yet is billed if it parses, but not kept.
  *
- * The one file spec/state.jsonc's window-costs kind names, which the
- * Python and the mod read and write too, in `_windowCostsText`'s bytes. */
+ * The one file state_spec.ts's window-costs kind names, which the mod
+ * reads and writes too, in `_windowCostsText`'s bytes. */
 export class _CostCache {
   readonly path: string;
   kept: Record<string, Kept> = {};
@@ -311,7 +310,7 @@ export function _windowCosts(sessStart: Naive | null,
 }
 
 /** The calibration cache: the override when one is set, else the file
- * for the snapshot's scope that the Python and the mod share. */
+ * for the snapshot's scope, which the mod shares. */
 export function calibrationCachePath(snap: Snapshot, env: CalibEnv): string {
   if (env.calibCacheOverride) return expandUser(env.calibCacheOverride);
   return pyJoin(env.stateDir, _calibrationCacheName(snap));
@@ -342,7 +341,7 @@ export function _readCalibCache(windows: string, snap: Snapshot,
   return pyHas(d, "sess_pct") ? d : null;
 }
 
-/** _read_prev_calib: the calibration cache whatever its windows and age,
+/** _readPrevCalib: the calibration cache whatever its windows and age,
  * and its age in seconds. */
 export function _readPrevCalib(snap: Snapshot, env: CalibEnv):
   [Dict | null, number | null] {
@@ -380,7 +379,7 @@ export function _writeCalibCache(windows: string, snap: Snapshot,
  * the windows it was measured over; the division happens fresh on every
  * call.  `scan` false never runs the scan: it takes the cached one for
  * these windows however old, and with none returns no units.  Throws where
- * the Python raises, which its callers draw as "?". */
+ * a step fails, which its callers draw as "?". */
 export function calibration(snap: Snapshot, env: CalibEnv,
   scan = true): Calib {
   const [ss, ws] = _windowStarts(snap);

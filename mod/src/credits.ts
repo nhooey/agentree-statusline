@@ -10,8 +10,7 @@
 // granted; `spent` is what the credit has paid for, in `usd`; `expiry` is
 // the time to its expiry, in `days`, `hours` or `minutes`.  A condition
 // whose figure the credit doesn't have, or that is malformed, doesn't hold.
-// coding_agent_usage_line/credits.py is the conditions' twin, held to them
-// by tests/fixtures/sources/conditions.json.
+// tests/fixtures/sources/conditions.json holds the conditions' cases.
 
 import { untilReset } from "./cells.ts";
 import { moneyFmt } from "./formatting.ts";

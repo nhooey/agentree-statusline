@@ -27,13 +27,12 @@ subagent's figures need a new place: the band above the prompt, one row
 per running subagent, drawn by the mod with the renderer it already has
 (`claude_subagent_render.ts`, `cells.ts`, `grid.ts`).
 
-## What the Python serves today
+## What the Python served
 
-| Use                                   | Entry                                                     | Has a TypeScript twin                                 |
-| ------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------- |
-| The status line and the cost receipt  | `--mode status`, `--mode cost`                            | yes: the band and the mod's receipt replace both      |
-| Codex receipts and its status         | `--agent codex`, from a Codex `Stop` hook                 | no                                                    |
-| The reference the ports are tested on | the fixture generators and goldens under `tests/`         | the TypeScript is what is tested against it           |
+Nothing: the Python program, Codex support with it, is gone (`OP5`,
+[Decided](#decided) 3). Codex has no plugin UI to draw in, and two
+languages doubled every option and spec change. The mod is the project,
+and the TypeScript is its own reference.
 
 ## Which entries reach each module
 
@@ -110,10 +109,9 @@ What it decides for `OP5`:
   [The band's tree](#the-bands-tree).
 - **The mod's large folds in Node,** through `process.run`, so the mod
   needs no Python.
-- **The Python keeps Codex alone.** Its Claude modules, their tests and
-  their fixture generators go, with `--mode status` and `--mode cost`
-  for Claude: the mod is the one way to see them in Claude Code. The
-  TypeScript becomes the reference for what stays.
+- **No Python.** The package, its CLI, Codex, its tests and its fixture
+  generators go: the mod is the one way to see the figures in Claude
+  Code, and the TypeScript is the reference for what stays.
 
 ## The band's tree
 
@@ -278,14 +276,22 @@ Marigold folded
    long transcript and a long agent file, each folded in pieces and
    saved) and `mod/test/claude_records.test.ts` (an agent file in
    pieces reads as it does whole).
-5. **`OP5` Remove the Python's Claude twins.** Delete the modules `OP1`
-   found only Claude uses, and those no entry loads, `--mode status` and
-   `--mode cost` for Claude, their tests and their fixture generators,
-   and move what the TypeScript's tests still need to Node or keep it as
-   committed data.
-6. **`OP6` 🧬 for the model cell.** `🤖O⁵🏃` becomes `🧬O⁵🏃` on every
-   row and the receipt (`E_MOD` in `spec/layout.jsonc`), so 🤖 keeps one
-   job. After `OP5` it touches the TypeScript and its cases alone.
+5. **`OP5` Remove the Python.** Done: `coding_agent_usage_line/`,
+   its launcher and CLI (Codex, Claude's `--mode usage`, `--selftest`),
+   every Python suite, `tests/fixtures/gen/` and the Python CI jobs are
+   gone, and so are the options only the Python read. `tools/gen-spec.py`
+   writes the TypeScript alone, and `tools/usage-dev.py` runs only
+   commands that are left. The goldens, figures documents and the
+   call families (`records/`, `calib/`, `render/`, `receipt/`, `panel/`,
+   `claude/`, `formatting/`, `sources/`) are committed data the mod's
+   tests read; `fold-saves.json` is written by
+   `mod/tools/gen-fold-saves.ts` and the configuration cases by
+   `mod/tools/gen-config-cases.ts`; what the tests asked the Python for
+   live is frozen as data (`claude/agent-usage.json`,
+   `sources/projections.json`).
+6. **`OP6` 🧬 for the model cell.** Done: the model cell is `🧬O⁵🏃` on
+   every row and the receipt (`E_MOD` in `spec/layout.jsonc`), so 🤖 keeps
+   one job, the model's share of the time.
 7. **`OP7` The band's clicks.** Done: a label's click switches the
    transcript to its thread (`$.ui.view`); a row with children folds and
    opens on its mark, its fold kept in `$.state` by agent id, 🎮 and 🧵
@@ -349,5 +355,6 @@ Marigold folded
    [The band's tree](#the-bands-tree) draws them.
 2. **The Python drops its Claude status line and cost receipt** with its
    other Claude modules at `OP5`; the mod is the way to see them.
-3. **Codex stays in Python.** Porting `--agent codex` waits until someone
-   asks for it.
+3. **Codex support goes, with the Python.** Codex has no plugin UI to
+   draw in, and keeping a second language doubled every option and spec
+   change.

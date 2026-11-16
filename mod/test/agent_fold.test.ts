@@ -1,7 +1,7 @@
-// agent_fold.ts against agent_fold.py: each fixture agent's fold, saved at
-// each line end, digests as tests/fixtures/fold-saves.json holds it, which
-// the Python writes (tests/fixtures/gen/state.py) and tests/fold.py holds
-// the Python to; and each text, read back, reads on to the last.
+// agent_fold.ts: each fixture agent's fold, saved at each line end,
+// digests as tests/fixtures/fold-saves.json holds it, which
+// mod/tools/gen-fold-saves.ts writes; and each text, read back, reads on
+// to the last.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -51,25 +51,24 @@ function fixtures(): Fixture[] {
   return folded;
 }
 
-// The format honest, and the two ports' texts byte for byte the same: the
-// Python's digest is of the texts it wrote.
+// The format honest: a change to the fold, or to what is saved of it,
+// fails here until the format is bumped and the digests written again.
 test("each fixture agent's fold saves as tests/fixtures/fold-saves.json " +
   "holds it", () => {
   const want = foldSaves("agent-fold");
   assert.ok(AGENTS.length > 0);
   assert.equal(want.format, AGENT_FOLD_FORMAT,
-    "run tests/fixtures/gen/state.py");
+    "run node mod/tools/gen-fold-saves.ts");
   assert.deepEqual(Object.keys(want.saves).sort(), AGENTS,
-    "run tests/fixtures/gen/state.py");
+    "run node mod/tools/gen-fold-saves.ts");
   for (const fx of fixtures()) {
     assert.equal(digest(fx.texts), want.saves[fx.agent],
       `${fx.agent}: the fold changed; bump "agent-fold" in ` +
-      "spec/state.jsonc");
+      "mod/src/state_spec.ts");
   }
 });
 
-// The text at each line end, the Python's too, read here, reads on to the
-// last.
+// The text at each line end, read back, reads on to the last.
 test("the saved agent fold reads on here", () => {
   for (const fx of fixtures()) {
     if (!fx.texts.length) continue;
@@ -101,9 +100,9 @@ test("the slots are read newest first, past a torn one", () => {
   assert.deepEqual(foldCandidates([null, null]), { folds: [], newest: 0 });
 });
 
-// The Node port and the Python's panel save to the same files: one reads
-// on from the other's.
-test("a fold the Python saved is read on here, and the reverse", () => {
+
+// A first save in one slot is read on, and the fold saved to the other.
+test("a saved fold is read on from its slot and saved to the other", () => {
   const state = fs.mkdtempSync(path.join(os.tmpdir(), "agent-fold-"));
   const tr = path.join(state, "s.jsonl");
   const agent = path.join(state, "s", "subagents", "agent-x.jsonl");
@@ -111,27 +110,17 @@ test("a fold the Python saved is read on here, and the reverse", () => {
   fs.writeFileSync(tr, "");
   const fx = fixtures().find((f) => f.texts.length > 3)!;
   const data = fs.readFileSync(fx.agent);
-  const [half] = fx.texts[fx.texts.length >> 1];
+  const [half, first] = fx.texts[fx.texts.length >> 1];
   const [end, last] = fx.texts[fx.texts.length - 1];
-  const python = () => execFileSync("python3", ["-c",
-    "import sys\nfrom coding_agent_usage_line import agent_fold\n" +
-    "agent_fold.fold_file(sys.argv[1], sys.argv[2])", tr, agent],
-  { env: { ...process.env, CODING_AGENT_USAGE_LINE_STATE_DIR: state } });
   const dir = foldDir(state, tr);
   const [a, b] = slotNames(agent).map((n) => path.join(dir, n));
+  fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(agent, data.subarray(0, half));
-  python();
-  assert.deepEqual([fs.existsSync(a), fs.existsSync(b)], [false, true]);
+  fs.writeFileSync(b, first);
   fs.writeFileSync(agent, data.subarray(0, end));
   const f = cr.agentFoldFile(dir, agent)!;
   assert.equal(agentFoldText(f, 1, tailAt(data, end)), last);
   assert.equal(fs.readFileSync(a, "utf-8"),
     last.replace('"seq":1,', '"seq":2,'));
-  const more = '{"type":"user","promptId":"p9"}\n';
-  fs.writeFileSync(agent, Buffer.concat([data.subarray(0, end),
-    Buffer.from(more)]));
-  python();
-  const [seq, , g] = agentFoldOf(fs.readFileSync(b, "utf-8"))!;
-  assert.deepEqual([seq, g.pos, g.pid], [3, end + more.length, "p9"]);
   fs.rmSync(state, { recursive: true });
 });

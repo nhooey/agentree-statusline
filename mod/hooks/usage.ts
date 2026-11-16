@@ -1,6 +1,6 @@
 // The usage source: the Claude Usage Tracker's store, the OAuth usage
-// answer and the dollar credits asked of it, prepared as the Python
-// prepares its reading.
+// answer and the dollar credits asked of it, each prepared into its
+// reading.
 import type { EngineInterface } from 'claude-code'
 
 import { pyJoin } from '../src/claude_records.ts'
@@ -23,10 +23,32 @@ import {
 } from './engine.ts'
 import type { Places } from './engine.ts'
 import { defaultsFault, options } from './configuration.ts'
+import { log } from './log.ts'
+import { planUsageVia, PLAN_USAGE_EVERY, recentAnswer } from './plan_usage.ts'
 
 type $ = EngineInterface
 
 const TRACKER_DOMAIN = 'HamedElfayome.Claude-Usage'
+
+/** The line logged, once a load, for a tracker store with no
+ * `profiles_v3`: the app keeps its profiles in the Keychain from 3.3 on,
+ * which the mod does not read, so the source has no reading. */
+export const TRACKER_NO_PROFILES = 'tracker: Claude Usage.app\'s settings ' +
+  'have no profiles_v3, so it gives no reading (it keeps its profiles in ' +
+  'the Keychain, which the mod does not read)'
+
+let trackerNoProfilesLogged = false
+
+/** trackerReading of `store`, logging TRACKER_NO_PROFILES the first time
+ * a store lacks `profiles_v3` this load. */
+async function trackerOf($: $, store: unknown): Promise<Dict> {
+  if (!trackerNoProfilesLogged && isDict(store) &&
+    pyGet(store, 'profiles_v3') === null) {
+    trackerNoProfilesLogged = true
+    await log($, TRACKER_NO_PROFILES)
+  }
+  return trackerReading(store)
+}
 
 /** The Claude Usage Tracker's store, as readTracker reads it: the override
  * file through `$.fs`, else `defaults export`, since the app's own .plist
@@ -38,14 +60,15 @@ async function readTracker($: $, home: string): Promise<Dict | null> {
     const path = override.startsWith('~/') ? home + override.slice(1)
       : override
     const got = await readBytesVia($, path)
-    return trackerReading(plistLoads(fromBase64(got.base64)))
+    return trackerOf($, plistLoads(fromBase64(got.base64)))
   }
   const plist = home + '/Library/Preferences/' + TRACKER_DOMAIN + '.plist'
   if (await fileSize($, plist) === null) return null
   try {
     const r = await runVia($, ['defaults', 'export', TRACKER_DOMAIN, '-'],
       { timeoutMs: 15_000 })
-    return trackerReading(r.stdout ? plistLoads(encoder.encode(r.stdout)) : {})
+    return trackerOf($, r.stdout ? plistLoads(encoder.encode(r.stdout))
+      : {})
   } catch {
     return {}
   }
@@ -97,7 +120,7 @@ const OAUTH_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 
 let configAccount: { path: string; stamp: string; id: string } | null = null
 
-/** config_account_id through `$`: Claude Code's signed-in account, hashed,
+/** configAccountId through `$`: Claude Code's signed-in account, hashed,
  * from its global config, kept against the file's mtime and size, since
  * the file is a quarter of a megabyte and rewritten often. */
 async function configAccountVia($: $, home: string): Promise<string> {
@@ -171,7 +194,7 @@ async function storeFind($: $, dir: string, agent: string, account: string,
   return newest
 }
 
-/** prepare_claude_reading through `$`, with the mod's configuration and
+/** prepareClaudeReading through `$`, with the mod's configuration and
  * the status line's shared cache, so the two read one reading. */
 export async function preparedVia($: $, places: Places, raw: Dict,
   sessionId: string, model: string, now: number):
@@ -186,14 +209,21 @@ export async function preparedVia($: $, places: Places, raw: Dict,
     save: (a, s, c, p, v) => storeSave($, dir, a, s, c, p, v),
     findCompatible: (a, c, p) => storeFind($, dir, a, c, p),
   }
+  // Under plan-usage, the plan's windows the mod asks for itself once a
+  // minute (plan_usage.ts), which auto takes over Claude Code's own; and
+  // the fallback below then asks nothing, the endpoint being plan_usage's.
+  const planOn = o.planUsage && (spec || 'auto') === 'auto'
+  const preferred = planOn
+    ? planUsageVia($, await configAccountVia($, places.home), now) : null
   const fetch: Fetch = (selected, ctx) =>
-    fetchOne($, places.home, selected, ctx)
+    planOn && selected === 'experimental-claude-oauth' ? Promise.resolve({})
+      : fetchOne($, places.home, selected, ctx)
   const env: Env = {}
   // Under auto, the account's own usage endpoint in place of the tracker
   // app, which need not be running: the mod can ask it as the session.
   return prepareClaudeReading(spec, account, accountPeriod, context,
     now, env, store, fetch, () => configAccountVia($, places.home),
-    'experimental-claude-oauth')
+    'experimental-claude-oauth', preferred)
 }
 
 /** Whether an ask for the credits is under way, so a document doesn't
@@ -241,8 +271,16 @@ async function askCredits($: $, places: Places, who: string,
   const found: unknown[] = []
   let answered = false
   try {
-    const auth = signedIn ? await $.session.authorize() : null
-    if (auth) {
+    // The answer plan_usage.ts had within the minute, rather than asking
+    // the endpoint a second time.
+    const recent = signedIn ? recentAnswer(now, PLAN_USAGE_EVERY) : null
+    const auth = signedIn && recent === null
+      ? await $.session.authorize() : null
+    if (recent !== null) {
+      const got = creditsReading(recent, now)
+      found.push(...(Array.isArray(got.credits) ? got.credits : []))
+      answered = true
+    } else if (auth) {
       const r = await $.http.fetch(OAUTH_USAGE_URL, { auth: auth.handle,
         headers: { 'anthropic-beta': 'oauth-2025-04-20' } })
       if (r.ok) {

@@ -22,18 +22,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -80,7 +68,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -128,18 +115,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847030,
     "payload": null,
     "period": "day",
@@ -174,7 +149,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -222,18 +196,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847059,
     "payload": null,
     "period": "day",
@@ -268,7 +230,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -316,18 +277,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847120,
     "payload": null,
     "period": "day",
@@ -365,7 +314,6 @@
      "source": "claude-usage-tracker",
      "stale": false
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -463,18 +411,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847150,
     "payload": null,
     "period": "day",
@@ -512,7 +448,6 @@
      "source": "claude-usage-tracker",
      "stale": false
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -610,18 +545,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847200,
     "payload": null,
     "period": "day",
@@ -659,7 +582,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -758,18 +680,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847201,
     "payload": null,
     "period": "day",
@@ -808,7 +718,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -907,18 +816,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847300,
     "payload": null,
     "period": "day",
@@ -957,7 +854,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1056,18 +952,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847600,
     "payload": null,
     "period": "day",
@@ -1105,7 +989,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1208,18 +1091,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "session_id": "s1"
@@ -1259,7 +1130,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1326,18 +1196,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847010,
     "payload": null,
     "period": "day",
@@ -1375,7 +1233,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1442,18 +1299,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847070,
     "payload": null,
     "period": "day",
@@ -1491,7 +1336,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1573,18 +1417,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -1631,7 +1463,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1679,18 +1510,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847120,
     "payload": null,
     "period": "day",
@@ -1725,7 +1544,6 @@
      "source": "native",
      "stale": true
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1807,18 +1625,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786854200,
     "payload": null,
     "period": "day",
@@ -1854,7 +1660,6 @@
      "source": "native",
      "stale": true
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -1947,18 +1752,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -2003,7 +1796,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -2095,18 +1887,6 @@
      },
      "session": "s1"
     },
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -2140,7 +1920,6 @@
      "source": "native",
      "stale": true
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -2187,23 +1966,10 @@
      },
      "session": "s1"
     },
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "",
-     "weekly_reset": "",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847001,
     "payload": null,
     "period": "day",
     "reading": {},
-    "scope": "",
     "session": "s1",
     "spec": "auto",
     "state": [
@@ -2235,18 +2001,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -2296,7 +2050,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -2363,18 +2116,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847061,
     "payload": {
      "rate_limits": {
@@ -2424,7 +2165,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -2492,18 +2232,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847062,
     "payload": null,
     "period": "day",
@@ -2542,7 +2270,6 @@
      "source": "claude-usage-tracker",
      "stale": false
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "none",
     "state": [
@@ -2620,18 +2347,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847063,
     "payload": {
      "rate_limits": {
@@ -2678,7 +2393,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "off",
     "state": [
@@ -2782,18 +2496,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -2831,7 +2533,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -2898,18 +2599,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847030,
     "payload": null,
     "period": "day",
@@ -2947,7 +2636,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3014,18 +2702,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847061,
     "payload": null,
     "period": "day",
@@ -3063,7 +2739,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3135,18 +2810,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -3184,7 +2847,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3251,18 +2913,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847001,
     "payload": null,
     "period": "day",
@@ -3300,7 +2950,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s2",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3401,18 +3050,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847002,
     "payload": null,
     "period": "day",
@@ -3450,7 +3087,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s2",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3556,18 +3192,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -3605,7 +3229,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3672,18 +3295,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847061,
     "payload": null,
     "period": "day",
@@ -3721,7 +3332,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:d9298a10d1b0735837dc4bd8\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3809,18 +3419,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -3857,7 +3455,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -3907,18 +3504,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847001,
     "payload": null,
     "period": "day",
@@ -3955,7 +3540,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000session:s2\u00001786838400",
     "session": "s2",
     "spec": "claude-usage-tracker",
     "state": [
@@ -4043,18 +3627,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -4093,7 +3665,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "s1",
     "spec": "claude-usage-tracker",
     "state": [
@@ -4164,18 +3735,6 @@
      "cmd-ok": "#!/bin/sh\ncat > \"$0.stdin\"\nprintf '%s\\n' '{\"schema_version\": 1, \"as_of\": 1786847000, \"windows\": [{\"id\": \"session\", \"duration_seconds\": 18000, \"used_percent\": 15, \"resets_at\": \"2026-08-16T02:30:00Z\"}, {\"id\": \"week\", \"duration_seconds\": 604800, \"used_percent\": 87, \"resets_at\": \"2026-08-18T01:00:00Z\"}]}'\n"
     },
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87",
-     "weekly_reset": "2026-08-18 01:00",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "day",
@@ -4212,7 +3771,6 @@
      "source": "cmd:${DIR}/cmd-ok",
      "stale": false
     },
-    "scope": "cmd:${DIR}/cmd-ok\u0000acct\u00001786838400",
     "session": "s1",
     "spec": "cmd:${DIR}/cmd-ok",
     "state": [
@@ -4264,18 +3822,6 @@
      "cmd-ok": "#!/bin/sh\nexit 1\n"
     },
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87",
-     "weekly_reset": "2026-08-18 01:00",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847061,
     "payload": null,
     "period": "day",
@@ -4312,7 +3858,6 @@
      "source": "cmd:${DIR}/cmd-ok",
      "stale": true
     },
-    "scope": "cmd:${DIR}/cmd-ok\u0000acct\u00001786838400",
     "session": "s1",
     "spec": "cmd:${DIR}/cmd-ok",
     "state": [
@@ -4363,18 +3908,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87",
-     "weekly_reset": "2026-08-18 01:00",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847062,
     "payload": null,
     "period": "day",
@@ -4412,7 +3945,6 @@
      "source": "cmd:${DIR}/cmd-ok",
      "stale": true
     },
-    "scope": "cmd:${DIR}/cmd-ok\u0000acct\u00001786838400",
     "session": "s1",
     "spec": "cmd:${DIR}/cmd-ok",
     "state": [
@@ -4465,18 +3997,6 @@
      "cmd-ok": "#!/bin/sh\ncat > \"$0.stdin\"\nprintf '%s\\n' '{\"schema_version\": 1, \"as_of\": 1786847000, \"windows\": [{\"id\": \"session\", \"duration_seconds\": 18000, \"used_percent\": 15, \"resets_at\": \"2026-08-16T02:30:00Z\"}, {\"id\": \"week\", \"duration_seconds\": 604800, \"used_percent\": 87, \"resets_at\": \"2026-08-18T01:00:00Z\"}]}'\n"
     },
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87",
-     "weekly_reset": "2026-08-18 01:00",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847064,
     "payload": null,
     "period": "day",
@@ -4513,7 +4033,6 @@
      "source": "cmd:${DIR}/cmd-ok",
      "stale": true
     },
-    "scope": "cmd:${DIR}/cmd-ok\u0000acct\u00001786838400",
     "session": "s1",
     "spec": "cmd:${DIR}/cmd-ok",
     "state": [
@@ -4563,18 +4082,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87",
-     "weekly_reset": "2026-08-18 01:00",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847065,
     "payload": null,
     "period": "day",
@@ -4611,7 +4118,6 @@
      "source": "cmd:${DIR}/cmd-ok",
      "stale": false
     },
-    "scope": "cmd:${DIR}/cmd-ok\u0000acct\u00001786838400",
     "session": "s1",
     "spec": "none",
     "state": [
@@ -4661,23 +4167,10 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "",
-     "weekly_reset": "",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847066,
     "payload": null,
     "period": "day",
     "reading": {},
-    "scope": "",
     "session": "s1",
     "spec": "none",
     "state": [
@@ -4734,18 +4227,6 @@
      "flat": "#!/bin/sh\ncat > \"$0.stdin\"\nprintf '%s\\n' '{\"session_pct\": 7, \"weekly_pct\": 8, \"session_resets_at\": 1786854200, \"weekly_resets_at\": \"2026-08-18T01:00:00Z\"}'\n"
     },
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "",
-     "weekly_reset": "",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": null,
     "period": "week",
@@ -4782,7 +4263,6 @@
      "source": "cmd:${DIR}/flat",
      "stale": false
     },
-    "scope": "",
     "session": "s1",
     "spec": "cmd:${DIR}/flat",
     "state": [
@@ -4832,18 +4312,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "",
-     "weekly_reset": "",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847001,
     "payload": null,
     "period": "month",
@@ -4880,7 +4348,6 @@
      "source": "cmd:${DIR}/flat",
      "stale": false
     },
-    "scope": "",
     "session": "s1",
     "spec": "cmd:${DIR}/flat",
     "state": [
@@ -4963,23 +4430,10 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "",
-     "weekly_reset": "",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847002,
     "payload": null,
     "period": "month",
     "reading": {},
-    "scope": "",
     "session": "s1",
     "spec": "cmd:${DIR}/missing",
     "state": [
@@ -5087,18 +4541,6 @@
     "claude_json": "{\"numStartups\": 3, \"oauthAccount\": {\"accountUuid\": \"11111111-2222-3333-4444-555555555555\", \"emailAddress\": \"canary@example.invalid\", \"organizationUuid\": \"org-canary\"}}",
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -5146,7 +4588,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000account:666ff6ccaa5b3c07feaa3a95\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -5211,18 +4652,6 @@
     "claude_json": "{\"numStartups\": 3, \"oauthAccount\": {\"accountUuid\": \"11111111-2222-3333-4444-555555555555\", \"emailAddress\": \"canary@example.invalid\", \"organizationUuid\": \"org-canary\"}}",
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847005,
     "payload": null,
     "period": "day",
@@ -5258,7 +4687,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000account:666ff6ccaa5b3c07feaa3a95\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -5333,18 +4761,6 @@
     "claude_json": "{\"numStartups\": 3, \"oauthAccount\": {\"accountUuid\": \"11111111-2222-3333-4444-555555555555\", \"emailAddress\": \"canary@example.invalid\", \"organizationUuid\": \"org-canary\"}}",
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847006,
     "payload": {
      "rate_limits": {
@@ -5392,7 +4808,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000account:666ff6ccaa5b3c07feaa3a95\u00001786838400",
     "session": "s2",
     "spec": "auto",
     "state": [
@@ -5504,18 +4919,6 @@
     "claude_json": "{\"numStartups\": 3, \"oauthAccount\": {\"accountUuid\": \"66666666-7777-8888-9999-000000000000\", \"emailAddress\": \"canary@example.invalid\", \"organizationUuid\": \"org-canary\"}}",
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -5563,7 +4966,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000account:278ec6a36068c0901295e62c\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -5638,18 +5040,6 @@
     "claude_json": "{\"oauthAccount\": {\"accountUuid\": 5}}",
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847001,
     "payload": {
      "rate_limits": {
@@ -5696,7 +5086,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -5775,18 +5164,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847000,
     "payload": {
      "rate_limits": {
@@ -5833,7 +5210,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -5881,18 +5257,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "15",
-     "session_reset": "2026-08-16 02:30",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847005,
     "payload": null,
     "period": "day",
@@ -5927,7 +5291,6 @@
      "source": "native",
      "stale": false
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -5975,18 +5338,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "",
-     "session_reset": "",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "87.5",
-     "weekly_reset": "2026-08-17 22:50",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847400,
     "payload": null,
     "period": "day",
@@ -6022,7 +5373,6 @@
      "source": "native",
      "stale": true
     },
-    "scope": "native\u0000session:s1\u00001786838400",
     "session": "s1",
     "spec": "native",
     "state": [
@@ -6070,18 +5420,6 @@
     "claude_json": null,
     "commands": {},
     "context": null,
-    "limits": {
-     "fable_pct": "",
-     "fable_reset": "",
-     "session_pct": "41",
-     "session_reset": "2026-08-16 04:00",
-     "session_share": "",
-     "session_turn": "",
-     "weekly_pct": "63",
-     "weekly_reset": "2026-08-18 01:03",
-     "weekly_share": "",
-     "weekly_turn": ""
-    },
     "now": 1786847401,
     "payload": {},
     "period": "day",
@@ -6119,7 +5457,6 @@
      "source": "claude-usage-tracker",
      "stale": true
     },
-    "scope": "claude-usage-tracker\u0000profile:dd56de4137951d9c92681b03\u00001786838400",
     "session": "",
     "spec": "",
     "state": [

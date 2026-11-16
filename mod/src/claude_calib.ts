@@ -1,48 +1,43 @@
-// The plan-window shares and their calibration, from claude.py.
+// The plan-window shares and their calibration.
 //
-// claude.py is the Claude CLI's orchestration and rendering as well as its
-// accounting; this is the accounting part of it: what a turn, a session
-// and the machine spent inside each plan window, and the dollars per point
-// of plan reading that turn a spend into a share.  Each function keeps its
-// Python name in camelCase (`_window_costs` is `_windowCosts`), so a change
-// to one names the place to change in the other.
+// The accounting: what a turn, a session and the machine spent inside each
+// plan window, and the dollars per point of plan reading that turn a spend
+// into a share.
 //
-// The Python reads three things from module state that are arguments here:
-// the plan snapshot (`limits_snapshot()`, `snap`), the clock, and where the
-// files are (`CalibEnv`).  Everything here is pure; the I/O, the projects
-// glob, the scan's per-file cache and the calibration cache, is in
-// claude_calib_node.ts for Node, and in the mod's handlers for the mod,
-// which runs with no Node and reads through `$`.
+// Three things are arguments here: the plan snapshot (`snap`), the clock,
+// and where the files are (`CalibEnv`).  Everything here is pure; the
+// I/O, the projects glob, the scan's per-file cache and the calibration
+// cache, is in claude_calib_node.ts for Node, and in the mod's handlers
+// for the mod, which runs with no Node and reads through `$`.
 //
-// What does not carry over from Python by itself, decided once:
+// Python's rules this follows, decided once:
 //
-//   - Time.  The window boundaries are NAIVE LOCAL datetimes in the Python,
-//     compared as wall-clock times and turned into instants by
-//     datetime.timestamp(), which has its own answer for a time in a DST gap
-//     or fold.  A `Naive` here is that wall-clock time as seconds counted as
-//     if it were UTC, and `_naiveTimestamp` is the Python's search for the
-//     instant, step for step.  Both read the process's TZ, as the Python's
-//     localtime does.
-//   - Keys.  The scan dedupes request ids in Python sets, where 1, 1.0 and
-//     True are one key and a list is no key at all (TypeError).  `_idKey`
+//   - Time.  The window boundaries are NAIVE LOCAL datetimes, compared as
+//     wall-clock times and turned into instants by datetime.timestamp(),
+//     which has its own answer for a time in a DST gap or fold.  A `Naive`
+//     here is that wall-clock time as seconds counted as if it were UTC,
+//     and `_naiveTimestamp` is CPython's search for the instant, step for
+//     step.  Both read the process's TZ, as localtime does.
+//   - Keys.  The scan dedupes request ids as Python sets do, where 1, 1.0
+//     and True are one key and a list is no key at all (TypeError).  `_idKey`
 //     spells that out.  json.loads hands back ONE NaN object for every NaN
 //     it reads, so every NaN id is the same key, by identity.  An integer
-//     id past 2**53 loses its precision, as everywhere in the ports.
+//     id past 2**53 loses its precision, as everywhere else.
 //   - Crashes.  A malformed record the scan cannot price (a message that is
-//     not an object, a token count that is a string) raises in the Python
-//     and takes the whole calibration with it; its callers draw "?".  The
-//     port throws there too, since carrying on would print a figure where
-//     the Python prints none.  A count too large for a float, which raises
-//     OverflowError in Python, is Infinity here.
+//     not an object, a token count that is a string) throws and takes the
+//     whole calibration with it; its callers draw "?", since carrying on
+//     would print a figure where there is none.  A count too large for a
+//     float, which raises OverflowError in Python, is Infinity here.
 //   - Rounding.  `round` rounds half to even; see `_pyRound`.
 //   - Sums.  Left to right, as 3.9's sum() adds; 3.12's compensates.
 //   - Caches.  The calibration cache and the scan's cost cache are each one
-//     file both write and read, named by spec/state.jsonc (state.ts), and
-//     written in the same bytes (`_calibCacheText`, `_windowCostsText`).
+//     file every reader writes and reads, named by state_spec.ts
+//     (state.ts), and written in the same bytes (`_calibCacheText`,
+//     `_windowCostsText`).
 //   - File order.  The scan visits files in the order the directory lists
 //     them, which is the filesystem's, as glob.glob does.  A request id in
 //     two files is billed at the first, so the order can matter; the shared
-//     cases hand the Python's order in through `CalibEnv.glob`.
+//     cases hand their order in through `CalibEnv.glob`.
 
 import { STAMP_FMT } from "./spec.ts";
 import type { Dict } from "./py.ts";
@@ -62,11 +57,11 @@ export const CALIB_TTL = 300;  // the scan walks transcripts; five minutes is
 
 // The smallest plan reading that can serve as the DIVISOR of a calibration.
 // A reading quantised to whole percent is uncertain by half a point, ±50٪
-// at 1 and ±25٪ at 2; see the Python's note for what that cost and bought.
+// at 1 and ±25٪ at 2.
 export const CALIB_MIN_PCT = 2.0;
 
 // The steps: each window's spending noted where its reading rose a point,
-// whose differences carry no rounding; see the Python's note.
+// whose differences carry no rounding.
 export const CALIB_TICK_GAP_S = 600.0;
 export const CALIB_TICK_SPAN = 2.0;
 export const CALIB_TICKS_KEPT = 16;
@@ -81,16 +76,16 @@ export const COST_TAIL_BYTES = 4096;
 // How often a scan that is still reading saves what it has.
 export const COST_SAVE_EVERY_S = 1.0;
 
-/** limits_snapshot(): the plan reading one render is taken against. */
+/** The plan reading one render is taken against. */
 export type Snapshot = Dict;
 
 /** Dollars per point of each window, or null.  A planted calibration cache
  * states them directly and may hold anything, which the readers divide by
- * as Python would, raising where it raises. */
+ * as Python's `/` does, throwing where it raises. */
 export type Calib = { readonly sess?: unknown; readonly week?: unknown };
 
 /** A naive local datetime: its wall-clock reading in seconds, counted from
- * 1970-01-01 00:00 as if it were UTC.  Two compare as the Python's do. */
+ * 1970-01-01 00:00 as if it were UTC.  Two compare as naive datetimes do. */
 export type Naive = number;
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -167,8 +162,8 @@ function fields(n: Naive): number[] {
     Math.floor(secs % 3600 / 60), secs % 60];
 }
 
-/** A Naive inside datetime's range, years 1 to 9999; outside it the
- * Python's arithmetic raises OverflowError. */
+/** A Naive inside datetime's range, years 1 to 9999; outside it datetime
+ * arithmetic raises OverflowError. */
 function inRange(n: Naive): Naive {
   const y = fields(n)[0];
   if (y < 1 || y > 9999) throw new RangeError("date value out of range");
@@ -263,11 +258,10 @@ export function _pctNum(v: unknown): number | null {
   return pyFloat(v);
 }
 
-/** seed_limits_snapshot: the plan reading as the accounting reads it.
+/** The plan reading as the accounting reads it.
  *
- * The Python installs it in a module global for the render; here it is
- * returned, and every reader below takes it as `snap`.  `reading` gives a
- * non-secret identity that scopes the calibration cache. */
+ * Every reader below takes it as `snap`.  `reading` gives a non-secret
+ * identity that scopes the calibration cache. */
 export function seedLimitsSnapshot(lim: Limits,
   reading: unknown = null): Snapshot {
   if (noPlan(lim)) return {};
@@ -322,7 +316,7 @@ export function planTotals(snap: Snapshot): { sess?: number; week?: number } {
 // A turn's and a session's shares.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** List-price cost of one turn: the four sums read_turns priced per
+/** List-price cost of one turn: the four sums readTurns priced per
  * record, at each record's own model. */
 export function turnCost(t: Turn): number {
   return t.usd_in + t.usd_out + t.usd_cr + t.usd_cw;
@@ -417,7 +411,7 @@ export interface Accounting {
 }
 
 /** What one turn comes to: its cost, its share of each live window and
- * the shares of it spent re-reading and caching.  cost_group draws these.
+ * the shares of it spent re-reading and caching.  costGroup draws these.
  * The window shares read the plan snapshot, so this belongs to the first
  * stage, never to a render.  `model_s` and `tool_s` are turnTimes', the
  * main thread's and its agents' agent-seconds; `blocked_s` is the main
@@ -510,7 +504,7 @@ export type Priced = [number | null, unknown, number];
 /** One transcript line as (epoch, request id, list-price cost), or null
  * for anything the scan does not bill: a line that will not parse, a
  * record that is not an assistant's, or one with no usage or no stamp.
- * Throws where the Python raises; see the head of the file. */
+ * Throws on a record it cannot price; see the head of the file. */
 export function _pricedRecord(line: Uint8Array): Priced | null {
   let r: unknown;
   try {
@@ -535,7 +529,7 @@ export function _pricedRecord(line: Uint8Array): Priced | null {
     pyMulCount(n("output_tokens"), po) +
     pyMulCount(n("cache_read_input_tokens"), pr) +
     pyMulCount(n("cache_creation_input_tokens"), pw);
-  // ts_epoch is lru_cached, so a list raises on hashing, and anything else
+  // tsEpoch is lru_cached, so a list raises on hashing, and anything else
   // that is not a string raises on .split.
   if (typeof ts !== "string") throw new TypeError("timestamp is no str");
   return [tsEpoch(ts), pyOr(pyGet(r, "requestId"), pyGet(m, "id")), c];
@@ -582,7 +576,7 @@ export function _windowCostsOf(sessStart: Naive | null,
   return [sess, week];
 }
 
-/** _tick_list: a cache's steps as [points, cost] pairs, dropping any that
+/** _tickList: a cache's steps as [points, cost] pairs, dropping any that
  * is not. */
 export function _tickList(v: unknown): [number, number][] {
   const out: [number, number][] = [];
@@ -597,7 +591,7 @@ export function _tickList(v: unknown): [number, number][] {
 
 const KEY_HALF = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
 
-/** _same_start: two halves of a windows key name the same window, both
+/** _sameStart: two halves of a windows key name the same window, both
  * starts within CALIB_TICK_START_S; a window with no start has no steps. */
 export function _sameStart(a: string, b: string): boolean {
   if (a === "None" || b === "None") return false;
@@ -625,7 +619,7 @@ function _climbing(ticks: [number, number][]): [number, number][] {
   return out;
 }
 
-/** next_ticks: each window's steps after a scan of `windows` that read
+/** nextTicks: each window's steps after a scan of `windows` that read
  * sc and wc against sp and wp, carried from `prev` for the same window,
  * with one more where the reading rose since a cache at most
  * CALIB_TICK_GAP_S old (`prevAge`) and stands above the last step kept
@@ -651,7 +645,7 @@ export function nextTicks(prev: unknown, windows: string, sc: unknown,
   return { sess: one(0, "sess", sc, sp), week: one(1, "week", wc, wp) };
 }
 
-/** tick_rate: dollars per point between the first and the last step, or
+/** tickRate: dollars per point between the first and the last step, or
  * null while they span under CALIB_TICK_SPAN points or no spending. */
 export function tickRate(ticks: unknown): number | null {
   const t = _tickList(ticks);
@@ -707,14 +701,13 @@ export function _calibrationOf(snap: Snapshot, cached: Dict | null,
   return out;
 }
 
-/** The calibration cache's file name: spec/state.jsonc's calibration
- * kind, keyed by the snapshot's scope, the name the Python's
- * calibration_cache_path gives.  The windows are inside the file. */
+/** The calibration cache's file name: state_spec.ts's calibration
+ * kind, keyed by the snapshot's scope.  The windows are inside the file. */
 export function _calibrationCacheName(snap: Snapshot): string {
   return stateName("calibration", pyStr(pyGet(snap, "_scope", "")));
 }
 
-// The calibration caches as spec/state.jsonc names them, one per scope; a
+// The calibration caches as state_spec.ts names them, one per scope; a
 // past period's, account's or session's is never read again.
 const CALIB_NAME = /^claude-calibration-[0-9a-f]{64}\.cache$/;
 // The window-cost cache, swept with them: a format moved on leaves the old
@@ -723,12 +716,11 @@ const COSTS_NAME = /^claude-window-costs-[0-9a-f]{64}\.cache(\.\d+)?$/;
 /** A scope's file is rewritten at least every CALIB_TTL while in use; one
  * untouched this long is a past period's, the weekly window's included. */
 export const CALIB_MAX_AGE_S = 8 * 86400;
-/** Written by each sweep, the Python's and the mod's alike; a sweep runs
- * once its mtime is a day old. */
+/** Written by each sweep; a sweep runs once its mtime is a day old. */
 export const CALIB_SWEPT = "claude-calibration-swept";
 export const CALIB_SWEEP_EVERY_S = 86400;
 
-/** _sweep_calibrations' choice: the names in a listing of the state
+/** The sweep's choice: the names in a listing of the state
  * directory that are calibration or window-cost caches untouched for
  * CALIB_MAX_AGE_S. */
 export function staleCalibrations(
@@ -741,13 +733,12 @@ export function staleCalibrations(
 
 /** The folds' directories, one per transcript, the agents', the main
  * transcript's and the inbox's, swept with the calibrations once none of
- * their files has been written for CALIB_MAX_AGE_S: _FOLD_DIR and
- * _FOLD_FILE. */
+ * their files has been written for CALIB_MAX_AGE_S. */
 export const FOLD_DIR = /^claude-(agent|main|inbox)-fold-[0-9a-f]{64}$/;
 const FOLD_FILE =
   /^([0-9a-f]{64}-[ab]|head-[ab]|inbox-[ab]|part-\d+)\.cache(\.\d+\.tmp)?$/;
 
-/** _sweep_fold_dir's choice: in a listing of a fold directory, the names
+/** The sweep's choice in a listing of a fold directory: the names
  * a fold writes, where none of its entries was written for
  * CALIB_MAX_AGE_S; else null, and the directory stays. */
 export function staleFoldFiles(
@@ -760,14 +751,13 @@ export function staleFoldFiles(
     .map((e) => e.name);
 }
 
-/** The window-cost caches as they were named before spec/state.jsonc's
- * window-costs kind (the Python's, the Node port's and the mod's), and the
- * temporary files of the Python's a killed save left: _OLD_COSTS. */
+/** The window-cost caches as they were named before state_spec.ts's
+ * window-costs kind, and the temporary files a killed save left. */
 const OLD_COSTS = /^claude-window-costs(-ts|-mod)?\.cache(\.\d+)?$/;
-/** Written once they are gone, by either port: OLD_COSTS_DONE. */
+/** Written once they are gone. */
 export const OLD_COSTS_DONE = "claude-window-costs-old-removed";
 
-/** _remove_old_window_costs' choice: the names in a listing of the state
+/** The removal's choice: the names in a listing of the state
  * directory that are old window-cost caches. */
 export function oldWindowCosts(
   entries: readonly { name: string; kind: string }[]): string[] {
@@ -780,7 +770,7 @@ export function oldWindowCosts(
  * records up to it. */
 export type CostKept = { off: number; tail: string | null; recs: Priced[] };
 
-/** The window-cost cache's text, byte for byte as window_costs_text writes
+/** The window-cost cache's text, byte for byte as _windowCostsText writes
  * it: compact, every object's keys sorted, every number in a record a
  * float. */
 export function _windowCostsText(files: Readonly<Record<string, CostKept>>):
@@ -802,7 +792,7 @@ export function _windowCostsFiles(text: string):
   return isDict(files) ? files as Record<string, CostKept> : null;
 }
 
-/** The calibration cache's text, byte for byte as calib_cache_text writes
+/** The calibration cache's text, byte for byte as _calibCacheText writes
  * it: compact, in this key order, every number a float. */
 export function _calibCacheText(windows: string, sc: unknown, wc: unknown,
   sp: unknown, wp: unknown, ticks: Ticks | null = null): string {

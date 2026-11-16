@@ -1,15 +1,12 @@
 // Pure Claude subagent-panel row layout.
 //
-// A port of coding_agent_usage_line/claude_subagent_render.py, function for
-// function and under the same names in camelCase.  Preparation (sidecar
-// lookup, usage parsing, limits and source selection) stays the caller's;
-// this lays out the facts it is handed.  Its cells return spans;
-// renderTaskRows hands each row to grid.ts as its label's pieces and its
-// cells, and joins what the grid draws into escape codes, where the panel
-// prints it.  The Python's docstrings carry each cell's history and argument and
-// are not copied: the comments here say what the port has to do to match.
+// Preparation (sidecar lookup, usage parsing, limits and source selection)
+// stays the caller's; this lays out the facts it is handed.  Its cells
+// return spans; renderTaskRows hands each row to grid.ts as its label's
+// pieces and its cells, and joins what the grid draws into escape codes,
+// where the panel prints it.
 //
-// THE USAGE IS READ AS THE PYTHON READS IT, BY ATTRIBUTE WITH A DEFAULT.
+// THE USAGE IS READ BY ATTRIBUTE WITH A DEFAULT.
 // The renderer is written against getattr(usage, name, default), not
 // against AgentUsage, and the shared cases pin what it does with a usage
 // that is None or holds only some fields.  So a usage here is any value,
@@ -17,20 +14,23 @@
 // value, null included, else the default.
 //
 // The constants that measure a glyph (A_ETA_W, A_DIFF_W, A_CTX_W and the
-// cost and token cells) depend on the terminal profile, which the Python
-// reads at import; here they are computed from the Settings each time.
+// cost and token cells) depend on the terminal profile, so they are
+// computed from the Settings each time.
 import {
   E_ETA, E_GAUGE, E_GIT_OK, E_HUNDRED, E_IDLE, E_INBOX, E_KIDS, E_MOD,
   E_MODE_AGENTS, E_MODE_API_ERROR, E_MODE_DONE, E_MODE_ETA, E_MODE_FAILED,
   E_MODE_HELD, E_MODE_KILLED, E_MODE_MONITOR, E_MODE_QUEUED, E_MODE_SHELL,
-  E_PCT, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN, E_RATE, E_ROW_AGENTS,
+  E_PCT, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN, E_RATE,
+  E_KIND_CLAUDE, E_KIND_EXPLORE, E_KIND_FORK, E_KIND_GENERAL, E_KIND_GUIDE,
+  E_KIND_OTHER, E_KIND_PLAN, E_KIND_REMOTE, E_KIND_SETUP, E_KIND_SHELL,
+  E_KIND_TEAMMATE, E_KIND_WORKFLOW,
   E_ROW_COMPACT, E_SESS, E_TOOL, E_WAIT, E_WEEK, E_WORK, GAUGE_W,
-  MAG_DUR_S, MAG_RATE, MAG_SHARE_AGENT, MAG_TOK, QUIET_S, QUIET_WARN_S,
+  MAG_SHARE_AGENT, QUIET_S, QUIET_WARN_S,
   E_CACHE, E_DIFF, CHROME_DEPTH, GRID_CELLS, LABEL_MIN,
 } from "./spec.ts";
 import {
-  cacheColor, decAlign, durFmt, humanize, limitPct, magDim, padVal,
-  seg, visWidth,
+  cacheColor, decAlign, durFmt, grade, humanize, limitPct,
+  padVal, seg, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import {
@@ -45,8 +45,7 @@ import type { Dict } from "./py.ts";
 import { pyFloat, pyStr } from "./sources.ts";
 import { WAITING_TOOLS, etaFinish, squash } from "./claude_records.ts";
 import type { Limits } from "./claude_sources.ts";
-// The status line's cells the panel borrows, as claude_subagent_render.py
-// imports them from claude_render.py.
+// The status line's cells the panel borrows.
 import {
   effortGlyph, etaReading, inheritEta, modelSpec, renderCost, renderDiff,
   renderTokens,
@@ -95,11 +94,12 @@ export function aCtxW(st: Settings): number {
 }
 
 export const KIND_MARK: ReadonlyMap<string, string> = new Map([
-  ["general-purpose", "🔩"], ["claude", "🎩"], ["Explore", "🔍"],
-  ["Plan", "📐"], ["claude-code-guide", "📚"], ["statusline-setup", "📟"],
-  ["fork", "🍴"], ["local_agent", "👥"], ["local_bash", "🐚"],
-  ["local_workflow", "🔗"], ["remote_agent", "🌐"],
-  ["in_process_teammate", "🎎"]]);
+  ["general-purpose", E_KIND_GENERAL], ["claude", E_KIND_CLAUDE],
+  ["Explore", E_KIND_EXPLORE], ["Plan", E_KIND_PLAN],
+  ["claude-code-guide", E_KIND_GUIDE], ["statusline-setup", E_KIND_SETUP],
+  ["fork", E_KIND_FORK], ["local_agent", E_KIND_OTHER],
+  ["local_bash", E_KIND_SHELL], ["local_workflow", E_KIND_WORKFLOW],
+  ["remote_agent", E_KIND_REMOTE], ["in_process_teammate", E_KIND_TEAMMATE]]);
 export const END_MARK: ReadonlyMap<string, string> = new Map([
   ["completed", E_MODE_DONE], ["failed", E_MODE_FAILED],
   ["killed", E_MODE_KILLED]]);
@@ -107,7 +107,7 @@ export const PAUSE_MARK: ReadonlyMap<string, string> = new Map([
   ["bash", E_MODE_SHELL], ["monitor", E_MODE_MONITOR]]);
 
 // ════════════════════════════════════════════════════════════════════════════
-// Reading the prepared records as the Python does.
+// Reading the prepared records.
 // ════════════════════════════════════════════════════════════════════════════
 
 /** An ETA as the records carry it: [] for none yet, [epoch, seconds left]
@@ -115,7 +115,7 @@ export const PAUSE_MARK: ReadonlyMap<string, string> = new Map([
 export type Eta = readonly number[] | null;
 
 /** One prepared task: (task, usage, meta, shares), each as the caller
- * handed it, so a field of the wrong shape reads as the Python's does. */
+ * handed it, so a field of the wrong shape reads as the cases pin. */
 export type Prepared = readonly [unknown, unknown, unknown, unknown];
 
 /** getattr(u, k, dflt) of a usage: see the header. */
@@ -209,11 +209,10 @@ export function renderAgentLimit(st: Settings, emoji: string, pctS: string,
 }
 
 export function renderKind(agentType: string, taskKind: string): string {
-  return KIND_MARK.get(agentType || taskKind) ?? E_ROW_AGENTS;
+  return KIND_MARK.get(agentType || taskKind) ?? E_KIND_OTHER;
 }
 
-/** The row's two state marks, (phase, mode); see the Python's agent_state
- * for what each says. */
+/** The row's two state marks, (phase, mode). */
 export function agentState(status: string, usage: unknown = null,
   waitingOn = false): [string, string] {
   if (status === "running") {
@@ -295,8 +294,9 @@ export function renderAgentCtx(st: Settings, ctxTokens: number,
   if (ctxTokens <= 0) return [];
   const pct = window > 0
     ? pyIntStr(ctxTokens * 100 / window) + E_PCT : "";
-  const style = ink("F_PNK", magDim(ctxTokens, MAG_TOK));
-  return [span(st.sCtx), paint(style, padVal(st, 4, humanize(st, ctxTokens))),
+  const size = humanize(st, ctxTokens);
+  const style = grade("count", "F_PNK", size, st.colourMode);
+  return [span(st.sCtx), paint(style, padVal(st, 4, size)),
     span(" "), paint(style, padVal(st, A_CTX_PCT_W, pct))];
 }
 
@@ -333,7 +333,7 @@ export function renderAgentDiff(st: Settings, usage: unknown): Span[] {
 }
 
 /** Seconds from the earlier of `first` and startTime to now, or to `end`;
- * null with neither start.  See the Python for why the earlier. */
+ * null with neither start. */
 export function agentElapsed(startMs: unknown, now: number | null,
   end: number | null = null, first: number | null = null): number | null {
   const starts = first === null ? [] : [first];
@@ -352,8 +352,9 @@ export function renderAgentElapsed(st: Settings, startMs: unknown,
   first: number | null = null): Span[] {
   const run = agentElapsed(startMs, now, end, first);
   if (run === null) return [];
-  return [span(E_IDLE), span(padVal(st, 4, durFmt(st, run)), "F_PRW",
-    magDim(run, MAG_DUR_S))];
+  const fig = durFmt(st, run);
+  return [span(E_IDLE),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** `parts` shared out as whole dots that always sum to `dots`: largest
@@ -378,19 +379,22 @@ export function gaugeDots(parts: readonly number[],
   return n;
 }
 
-/** `mark` and `n` dots of E_GAUGE, dim under MAG_DUR_S of its seconds. */
-export function renderGauge(mark: string, secs: number, n: number): Span[] {
+/** `mark` and `n` dots of E_GAUGE, shaded by the unit its seconds are
+ * written in, as every duration on the row is. */
+export function renderGauge(st: Settings, mark: string, secs: number,
+  n: number): Span[] {
   const steps = Array.from(E_GAUGE);
   let cells = "";
   for (let k = 0; k < GAUGE_W; k++) {
     cells += steps[Math.max(0, Math.min(4, n - 4 * k))];
   }
-  return [span(mark), span(cells, "F_PRW", magDim(secs, MAG_DUR_S))];
+  return [span(mark),
+    paint(grade("duration", "F_PRW", durFmt(st, secs), st.colourMode), cells)];
 }
 
 /** 🤖 🔧 🚦, each with a gauge of its share of the agent's ⌛; blank with
  * no transcript to read the split from. */
-export function renderAgentSplit(elapsed: number | null,
+export function renderAgentSplit(st: Settings, elapsed: number | null,
   modelS: number | null, toolS: number | null = 0.0): Span[] {
   if (modelS === null || modelS === undefined || elapsed === null) return [];
   const m = Math.max(0.0, modelS), t = Math.max(0.0, toolS || 0.0);
@@ -399,7 +403,7 @@ export function renderAgentSplit(elapsed: number | null,
   const out: Span[] = [];
   [E_WORK, E_TOOL, E_WAIT].forEach((mark, i) => {
     if (out.length) out.push(span(" "));
-    out.push(...renderGauge(mark, parts[i], dots[i]));
+    out.push(...renderGauge(st, mark, parts[i], dots[i]));
   });
   return out;
 }
@@ -407,8 +411,9 @@ export function renderAgentSplit(elapsed: number | null,
 /** Whether a task is only waiting: one `$.agent.list()` calls waiting, or
  * one Claude Code calls completed with an ETA still live and time left on
  * it, an agent under it, or a background task it started.  A report of 0s
- * is the skill's sign-off: an agent that hands back after it, with no
- * answer ending its turn, has finished. */
+ * is the skill's sign-off, and liveEta reads a SubagentHandback call as
+ * one: an agent that has handed back, and has not been resumed since, has
+ * finished. */
 export function parked(status: string, eta: unknown, waitingOn = false,
   background: unknown = []): boolean {
   return status === "waiting" || (status === "completed" &&
@@ -449,7 +454,7 @@ export function runningParents(prepared: readonly Prepared[]): Set<string> {
 export function renderAgentEta(st: Settings, eta: Eta, startMs: unknown,
   now: number | null, status = "running", end: number | null = null,
   signedOff = false): Span[] {
-  // eta_reading falls back to the clock where the panel passes no `now`;
+  // etaReading falls back to the clock where the panel passes no `now`;
   // claude_render.ts's takes its clock as an argument, so the fallback is
   // here.
   const got = etaReading(eta, startMs, now === null ? Date.now() / 1000 : now,
@@ -460,8 +465,10 @@ export function renderAgentEta(st: Settings, eta: Eta, startMs: unknown,
     return [span(E_ETA), span(padVal(st, A_ETA_FIG_W,
       "+" + durFmt(st, -left)), signedOff ? "F_OVER" : "F_AMB")];
   }
-  return [span(E_ETA), span(padVal(st, A_ETA_FIG_W, durFmt(st, left)),
-    "F_ETA", magDim(left, MAG_DUR_S))];
+  const fig = durFmt(st, left);
+  return [span(E_ETA),
+    paint(grade("duration", "F_ETA", fig, st.colourMode),
+      padVal(st, A_ETA_FIG_W, fig))];
 }
 
 /** 🛫 and the tokens a second, without a "/s", as
@@ -469,13 +476,13 @@ export function renderAgentEta(st: Settings, eta: Eta, startMs: unknown,
  * then the unit, "1.2k" and "632 ". */
 export function renderAgentRate(st: Settings, rate: number | null,
   mark: string = E_RATE): Span[] {
-  return rate === null ? [] : [span(mark + " "),
-    span(padVal(st, 4, humanize(st, rate)), "F_RATE",
-      magDim(rate, MAG_RATE))];
+  if (rate === null) return [];
+  const fig = humanize(st, rate);
+  return [span(mark + " "),
+    paint(grade("count", "F_RATE", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
-/** The epoch the agent entered the state `mode` names, or null; see the
- * Python's state_since for each. */
+/** The epoch the agent entered the state `mode` names, or null. */
 export function stateSince(status: string, usage: unknown, phase: string,
   mode: string, task: unknown = null): number | null {
   const pending = uaList(usage, "pending");
@@ -519,10 +526,10 @@ export function renderDoing(st: Settings, status: string, usage: unknown,
     return renderAgentRate(st, rate, mode);
   }
   if (secs === null) return [span(mode)];
+  const fig = durFmt(st, secs);
   const style = mode === E_WORK && secs >= A_SILENT_WARN_S ? ink("F_AMB")
-    : ink("F_PRW", magDim(secs, MAG_DUR_S));
-  return [span(mode + " "),
-    paint(style, padVal(st, figW, durFmt(st, secs)))];
+    : grade("duration", "F_PRW", fig, st.colourMode);
+  return [span(mode + " "), paint(style, padVal(st, figW, fig))];
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -542,8 +549,7 @@ export function spawnDepth(task: unknown, meta: unknown): number {
   return n === null ? 1 : Math.max(1, n);
 }
 
-/** Each task id's parent and depth as the panel draws them; see the
- * Python's tree_shape for the walk. */
+/** Each task id's parent and depth as the panel draws them. */
 export function treeShape(prepared: readonly Prepared[]):
   Map<string, [string, number]> {
   const rows = new Map<string, [Dict, unknown, unknown]>();
@@ -587,8 +593,8 @@ export function treeShape(prepared: readonly Prepared[]):
   return out;
 }
 
-/** Each task's ETA, pushed out to the latest finish below it on the panel;
- * see the Python's inherited_etas for which descendants count. */
+/** Each task's ETA, pushed out to the latest finish below it on the
+ * panel. */
 export function inheritedEtas(prepared: readonly Prepared[]):
   Map<string, Eta> {
   const rows = new Map<string, [Dict, unknown, unknown]>();
@@ -643,14 +649,14 @@ export type PanelWidths = {
 
 /** The cells each scope's rows can carry: templates of the band's, the
  * receipt's and an agent's rows, the panel's rows laid out over them so
- * they reach the mod's columns; see the Python's SCOPE_CELLS. */
+ * they reach the mod's columns. */
 export const SCOPE_CELLS: readonly (readonly [string, readonly string[]])[] = [
   ["account", ["five", "week"]],
-  ["turn", ["cost", "ctx", "tok", "cache", "clock", "eta", "split", "five",
-    "week", "diff"]],
+  ["turn", ["cost", "spend", "ctx", "tok", "cache", "clock", "eta", "split",
+    "five", "week", "diff"]],
   ["main", GRID_CELLS.map((c) => c.key)],
-  ["session", ["cost", "tok", "cache", "clock", "split", "five", "week",
-    "diff"]],
+  ["session", ["cost", "spend", "tok", "cache", "clock", "split", "five",
+    "week", "diff"]],
   ["agent", GRID_CELLS.map((c) => c.key)],
 ];
 
@@ -664,7 +670,7 @@ export function possibleRows(): Row[] {
 
 /** [cols, keys]: the terminal width a row is drawn for and the columns
  * every row draws there.  With no width known, the narrowest that drops no
- * column; see the Python's panel_layout. */
+ * column. */
 export function panelLayout(st: Settings, cols: number | null = null,
   hide: readonly string[] = []): [number, string[]] {
   const rows = possibleRows();
@@ -711,7 +717,7 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
     pyTruthy(shownEta) &&
     etaFinish(shownEta!)! <= etaFinish(ownEta!)! + 1e-6;
   // An agent that has ended has its ⛳ read at its end, as its ⌛ is; one
-  // that signed off at zero draws none.  See the Python.
+  // that signed off at zero draws none.
   const etaNow = end === null ? now
     : Math.min(now === null ? Date.now() / 1000 : now, end);
   const etaCell = !live && signedOff ? [] : renderAgentEta(st, shownEta,
@@ -734,7 +740,7 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
     ["clock", clocked
       ? renderAgentElapsed(st, task.startTime, now, end, first) : []],
     ["eta", etaCell],
-    ["split", renderAgentSplit(clocked
+    ["split", renderAgentSplit(st, clocked
       ? agentElapsed(task.startTime, now, end, first) : null,
       ua(usage, "model_s") as number | null,
       ua(usage, "tool_s", 0.0) as number | null)],
@@ -754,7 +760,7 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
 
 /** The row's label as grid pieces under the agent scope: the kind, the
  * counts (unranked: their columns leave every row at once, panelCounts),
- * the name, the branch and the activity; see the Python's agent_label.
+ * the name, the branch and the activity.
  * `packed` draws only the row's own counts, each at its own width, as the
  * band's tree does, where depth already moves each name. */
 export function agentLabel(st: Settings, task: Dict, usage: unknown,
@@ -802,7 +808,7 @@ export function agentLabel(st: Settings, task: Dict, usage: unknown,
 }
 
 /** Render one fully prepared task on the grid, without its chrome, which
- * Claude Code draws; see the Python's render_agent_row for each argument.
+ * Claude Code draws.
  * `eta` false is the row's own. */
 export function renderAgentRow(st: Settings, task0: unknown, usage: unknown,
   meta0: unknown, shares0: unknown, limits: Limits,
@@ -815,7 +821,7 @@ export function renderAgentRow(st: Settings, task0: unknown, usage: unknown,
     now, eta, waitingOn, depth, kids, kidsW, widths), keys, cols, hide);
 }
 
-/** agent_row: the grid row for one prepared task; see renderAgentRow. */
+/** agentRow: the grid row for one prepared task; see renderAgentRow. */
 export function agentRow(st: Settings, task0: unknown, usage: unknown,
   meta0: unknown, shares0: unknown, limits: Limits,
   now: number | null = null, eta: Eta | false = false, waitingOn = false,
@@ -832,7 +838,7 @@ export function agentRow(st: Settings, task0: unknown, usage: unknown,
   };
 }
 
-/** draw_agent_row: the row on the panel's columns, without the chrome
+/** drawAgentRow: the row on the panel's columns, without the chrome
  * Claude Code draws. */
 export function drawAgentRow(st: Settings, row: Row, keys: readonly string[],
   cols: number, hide: readonly string[] = []): Span[] {
@@ -853,7 +859,7 @@ export type Count = typeof COUNTS_LEAVING[number];
 /** The label's pieces that are cut before a count column leaves. */
 export const CUT_FIRST: readonly string[] = ["workspace.branch", "chat.doing"];
 
-/** label_fits: whether the row's label, but for its branch and activity,
+/** labelFits: whether the row's label, but for its branch and activity,
  * fits the room the grid gives it. */
 export function labelFits(st: Settings, row: Row, keys: readonly string[],
   cols: number, hide: readonly string[] = []): boolean {
@@ -863,7 +869,7 @@ export function labelFits(st: Settings, row: Row, keys: readonly string[],
     labelRoom(st, row, keys, cols, hide);
 }
 
-/** panel_counts: the rows with the count columns the whole panel keeps;
+/** panelCounts: the rows with the count columns the whole panel keeps;
  * `relabel(gone)` gives their labels without the counts in `gone`. */
 export function panelCounts(st: Settings,
   relabel: (gone: ReadonlySet<Count>) => Piece[][], rows0: readonly Row[],
@@ -945,7 +951,7 @@ export function renderTaskRowSpans(st: Settings,
   return rows;
 }
 
-/** render_task_rows: `(task id, row)` pairs, each row joined into escape
+/** renderTaskRows: `(task id, row)` pairs, each row joined into escape
  * codes where the panel prints it. */
 export function renderTaskRows(st: Settings, prepared: readonly Prepared[],
   limits: Limits, cols: number | null = null, now: number | null = null,

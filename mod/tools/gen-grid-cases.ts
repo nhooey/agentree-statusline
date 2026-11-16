@@ -2,15 +2,18 @@
 //
 //   node mod/tools/gen-grid-cases.ts
 //
-// Unlike the rest of tests/fixtures/, these are written by the TypeScript:
-// the redesigned grid is built here first, and the Python cells the agent
-// panel keeps are brought to it after, checked against these cases.
 // mod/test/grid.test.ts runs every case and fails when this generator's
 // output differs from what is committed, so regenerating is the only way
 // to change them.
 //
 // One file per terminal profile, since the profile widens 🧩, 🧠 and 💰 by a
-// column; profiles whose cases come out the same share one.  Each holds:
+// column.  The first profile's file holds every case.  The other profiles'
+// hold a sample, the cases a profile can change: each layout case whose
+// columns differ from the first profile's, with its draw cases, and every
+// draw case at the widest width, where the widened cells show whole.
+// mod/test/grid.test.ts replays the first profile's other layout cases
+// under every profile.  Profiles whose samples come out the same share one
+// file.  Each holds:
 //
 //   settings  the profiles, each with the environment it is read from
 //   rows      the mockup's sample rows, by id, as plain data: each row's
@@ -21,11 +24,13 @@
 //             `hide`, `fixed`, and the `keys` layout() keeps
 //   draw      one case a line: a row (`row`, by id) drawn on `keys` at
 //             `cols` with `hide` and `spill`, and what draw() makes of it,
-//             as `spans` and as `line`, the spans joined with their escape
-//             codes
+//             as `spans`
 //
-// A span is written as an array, [text] for plain text and [text, colour,
-// dim, bold, bg] otherwise, trailing defaults left off.
+// The first draw case in a file also has its spans joined with their
+// escape codes, `line`; tests/fixtures/formatting/spans.json pins the
+// joining for the rest.  A span is written as an array, [text] for plain
+// text and [text, colour, dim, bold, bg] otherwise, trailing defaults left
+// off.
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join as pathJoin } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,10 +52,13 @@ export const PROFILES: { readonly [name: string]: Env } = {
   tmux: { TMUX: "/tmp/tmux-501/default,1,0" },
 };
 
-// From a wide terminal, 300 and 240, down past the drop: at 11 columns a
-// row nested two deep has no room for its label, and at 6 its chrome alone
-// runs past the right edge.
-const COLS = [300, 240, 200, 160, 150, 125, 100, 80, 60, 40, 20, 11, 6];
+// The widths: a wide terminal, 300, where every column and label piece
+// fits; then each width at which the mockup's columns drop under some hide
+// set and grid (160 keeps every column and sheds the 💳 row's clock, 150
+// drops the first column, and 125 to 20 each drop more); then the drop's
+// end: at 11 columns a row nested two deep has no room for its label, and
+// at 6 its chrome alone runs past the right edge.
+const COLS = [300, 160, 150, 125, 100, 80, 60, 40, 20, 11, 6];
 // Hide sets that reach each rule: a whole scope, a group on every row, one
 // metric on one row, label pieces, a column hidden on some rows only.
 const HIDES: readonly (readonly string[])[] = [
@@ -110,12 +118,22 @@ function rows(st: Settings): Map<string, Row> {
   ]);
 }
 
+/** A layout case's inputs, as the first profile's columns are looked up
+ * by. */
+function layoutKey(cols: number, hide: readonly string[], fixed: boolean,
+  ids: readonly string[]): string {
+  return JSON.stringify([cols, hide, fixed, ids]);
+}
+
 /** The cases under one profile's settings, as the file's text after its
- * settings line. */
-function cases(st: Settings): string {
+ * settings line, and the columns of each layout case by layoutKey.  With
+ * `first`, the first profile's columns, only the sample the header names. */
+function cases(st: Settings, first?: ReadonlyMap<string, string>):
+  [string, Map<string, string>] {
   const table = rows(st);
   const scope = (id: string): string => table.get(id)!.scope;
   const layouts: string[] = [], draws: string[] = [];
+  const columns = new Map<string, string>();
   const seen = new Set<string>();
   for (const cols of COLS) {
     for (const hide of HIDES) {
@@ -135,12 +153,17 @@ function cases(st: Settings): string {
       ];
       for (const [fixed, ids, drawnAgents] of sets) {
         if (!ids.length) continue;
-        const key = JSON.stringify([cols, hide, fixed, ids]);
+        const key = layoutKey(cols, hide, fixed, ids);
         if (seen.has(key)) continue;
         seen.add(key);
         const keys = layout(st, ids.map((id) => table.get(id)!), cols, hide,
           fixed);
-        layouts.push(JSON.stringify({ cols, hide, fixed, rows: ids, keys }));
+        columns.set(key, JSON.stringify(keys));
+        const moved = !first || first.get(key) !== JSON.stringify(keys);
+        if (moved) {
+          layouts.push(JSON.stringify({ cols, hide, fixed, rows: ids, keys }));
+        }
+        if (!moved && cols !== COLS[0]) continue;
         const drawn = [...band, ...(band.includes("main")
           ? ["main.running"] : []), ...receipt, ...drawnAgents];
         for (const id of drawn) {
@@ -150,7 +173,8 @@ function cases(st: Settings): string {
             seen.add(dk);
             const out = draw(st, table.get(id)!, keys, cols, hide, spill);
             draws.push(JSON.stringify({ row: id, keys, cols, hide, spill,
-              spans: out.map(spanJson), line: join(out) }));
+              spans: out.map(spanJson),
+              ...(draws.length ? {} : { line: join(out) }) }));
           }
         }
       }
@@ -158,25 +182,27 @@ function cases(st: Settings): string {
   }
   const rowLines = [...table].map(([id, r]) =>
     "  " + JSON.stringify(id) + ": " + JSON.stringify(rowJson(r)));
-  return ' "rows": {\n' + rowLines.join(",\n") +
+  return [' "rows": {\n' + rowLines.join(",\n") +
     '\n },\n "layout": [\n' + layouts.map((l) => "  " + l).join(",\n") +
     '\n ],\n "draw": [\n' + draws.map((l) => "  " + l).join(",\n") +
-    "\n ]}\n";
+    "\n ]}\n", columns];
 }
 
-/** Every file, by name.  Profiles whose cases come out the same share a
- * file, named for them all, which says so: the profiles differ only in
- * glyphs the sample rows do not draw. */
+/** Every file, by name: the first profile's every case, and the other
+ * profiles' samples, profiles whose samples come out the same sharing a
+ * file, named for them all. */
 export function generate(): Map<string, string> {
-  const groups = new Map<string, string[]>();
-  for (const name of Object.keys(PROFILES)) {
-    const body = cases(settings(PROFILES[name]));
-    groups.set(body, [...(groups.get(body) ?? []), name]);
+  const [first, ...rest] = Object.keys(PROFILES);
+  const [body, columns] = cases(settings(PROFILES[first]));
+  const groups = new Map<string, string[]>([[body, [first]]]);
+  for (const name of rest) {
+    const [sample] = cases(settings(PROFILES[name]), columns);
+    groups.set(sample, [...(groups.get(sample) ?? []), name]);
   }
-  return new Map([...groups].map(([body, names]) => [
+  return new Map([...groups].map(([text, names]) => [
     names.join("-") + ".json",
     '{"settings": ' + JSON.stringify({ profiles: Object.fromEntries(
-      names.map((n) => [n, PROFILES[n]])) }) + ",\n" + body]));
+      names.map((n) => [n, PROFILES[n]])) }) + ",\n" + text]));
 }
 
 if (import.meta.main) {

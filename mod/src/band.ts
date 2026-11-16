@@ -16,13 +16,13 @@
 // as for claude_cost.ts.
 import {
   CHROME_DEPTH, E_ACCT, E_DATE, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN,
-  E_TOOL, E_WORK, GRID_CELLS, MAG_DUR_S, QUIET_WARN_S, STALE_MARK_S,
+  E_TOOL, E_WORK, GRID_CELLS, QUIET_WARN_S, STALE_MARK_S,
 } from "./spec.ts";
-import { durFmt, magDim, padVal, visWidth } from "./formatting.ts";
+import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { cut, span, width } from "./spans.ts";
+import { cut, ink, paint, span, width } from "./spans.ts";
 import type { Span } from "./spans.ts";
-import { pyLen, pyRstrip, pySlice } from "./py.ts";
+import { isDict, pyLen, pyRstrip, pySlice } from "./py.ts";
 import { pyFloat } from "./sources.ts";
 import {
   W_CACHE_READ, W_CACHE_WRITE, etaFinish, tsEpoch,
@@ -39,13 +39,18 @@ import {
 } from "./figures.ts";
 import { decodeTurn } from "./claude_cost.ts";
 import {
-  CELLS, accountLabel, cacheRate, hms, mainLabel, sessionLabel, turnLabel,
-  untilReset, workspacePieces, ymd,
+  CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, mainLabel, sessionLabel,
+  turnLabel, untilReset, workspacePieces, ymd,
 } from "./cells.ts";
-import type { Workspace } from "./cells.ts";
+import type { SideWindow, Workspace } from "./cells.ts";
+import type { Limits } from "./claude_sources.ts";
+import { WEEKLY_WINDOWS } from "./sources.ts";
+import type { WeeklyKey } from "./sources.ts";
 import { creditCell } from "./credits.ts";
+import { PAYER_GLYPHS } from "./spending.ts";
+import type { Spending } from "./spending.ts";
 import { treeRows } from "./band_tree.ts";
-import type { Folds } from "./band_tree.ts";
+import type { Folds, TreeInput } from "./band_tree.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
 import { draw, hidden, layout } from "./grid.ts";
 import type { Piece, Row } from "./grid.ts";
@@ -83,6 +88,9 @@ export type BandOpts = {
   /** The most subagent rows the tree draws, `subagent-rows`;
    * SUBAGENT_ROWS where absent. */
   readonly cap?: number;
+  /** How many seconds the tree keeps a row that finished drawn,
+   * `finished-linger`; none where absent. */
+  readonly linger?: number;
   /** The band's tree's folds, by key (band_tree.ts); each row's default
    * where absent. */
   readonly folds?: Folds;
@@ -181,13 +189,13 @@ export function fixedKeys(st: Settings, cols: number,
 // Shared by the rows.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** A turn's ▴, weighed as cost_group weighs it, and its ▾. */
+/** A turn's ▴, weighed as costGroup weighs it, and its ▾. */
 export function turnTokens(t: Turn): [number, number] {
   return [t.fresh + W_CACHE_WRITE * t.cache_write +
     W_CACHE_READ * t.cache_read, t.out];
 }
 
-/** A turn's 🎯, as cost_group works it out. */
+/** A turn's 🎯, as costGroup works it out. */
 export function turnCache(t: Turn): number {
   return cacheRate(t.cache_read, t.fresh + t.cache_write + t.cache_read);
 }
@@ -195,8 +203,8 @@ export function turnCache(t: Turn): number {
 /** 🤖 🔧 🚦 off an accounting's seconds, drawn as proportions of
  * themselves: agents running side by side put more agent-seconds in it
  * than the wall clock has (decision 5). */
-export function accountingSplit(a: Accounting): Span[] {
-  return CELLS.split(a.model_s + a.tool_s + a.blocked_s, a.model_s,
+export function accountingSplit(st: Settings, a: Accounting): Span[] {
+  return CELLS.split(st, a.model_s + a.tool_s + a.blocked_s, a.model_s,
     a.tool_s);
 }
 
@@ -209,8 +217,28 @@ export function shareCells(st: Settings, a: Accounting, sessPct: string,
     week: CELLS.week(st, weekPct, a.week_share) };
 }
 
+/** The document's `spending`, the pool paying other than the plan and
+ * each row's figure of it (spending.ts), or null while the plan pays. */
+export function docSpending(fig: Dict): Spending | null {
+  const s = fig.spending;
+  return isDict(s) && Object.hasOwn(PAYER_GLYPHS, String(s.kind))
+    ? s as unknown as Spending : null;
+}
+
+/** The column after 💰 on the row `row` names in the document's
+ * `spending`, set in `cells` where the row has a figure: the paying
+ * credit's glyph and its dollars.  Blank while the plan pays. */
+function spendCell(st: Settings, fig: Dict,
+  row: "turn" | "main" | "session", cells: Cells): void {
+  const s = docSpending(fig);
+  const usd = s === null ? null : s[row];
+  if (s !== null && typeof usd === "number") {
+    cells.spend = CELLS.spend(st, PAYER_GLYPHS[s.kind], usd);
+  }
+}
+
 /** The main thread's ⛳, as today's ⌛ row draws it: its own last report,
- * pushed out by a live agent's (inherit_eta), counted from the turn's
+ * pushed out by a live agent's (inheritEta), counted from the turn's
  * prompt; nothing with no transcript. */
 function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
   if (!tr.start_s) return [];
@@ -245,7 +273,7 @@ function etaNow(tr: Transcript, now: number): number {
   return tr.idle_at ? Math.min(now, tr.idle_at) : now;
 }
 
-/** The working directory under `home` as "~", as render_status shows it. */
+/** The working directory under `home` as "~", as renderStatus shows it. */
 function homeDir(dir: string, home: string): string {
   if (dir === home) return "~";
   if (home && dir.startsWith(home + "/")) {
@@ -293,13 +321,14 @@ export function workspaceOf(fig: Dict, home: string): Workspace {
 // ════════════════════════════════════════════════════════════════════════════
 
 /** 💳: the plan's two windows, `limits.session_pct` and `weekly_pct` as the
- * source gave them, then the weekly Fable window, `limits.fable_pct`,
- * where the source has one, and on the label the time to each reset,
- * `limits.session_reset`, `weekly_reset` and `fable_reset`, then 📅 🕐
- * off `clock.now`.  The Fable window's 🔜 is left out where it is the
- * weekly one's, already drawn after 🪫, unless `weekHidden`.  A reading
- * STALE_MARK_S or more old, by `usage.reading.as_of`, has each figure
- * marked with 🧊 and its age. */
+ * source gave them, then the weekly windows beside them, SIDE_MARKS (the
+ * Fable window, `limits.fable_pct`, and the others, `limits.opus_pct` and
+ * the like), each where the source has it, and on the label the time to
+ * each reset, `limits.session_reset`, `weekly_reset`, `fable_reset` and
+ * the like, then 📅 🕐 off `clock.now`.  A side window's 🔜 is left out
+ * where it is the weekly one's, already drawn after 🪫, unless
+ * `weekHidden`.  A reading STALE_MARK_S or more old, by
+ * `usage.reading.as_of`, has each figure marked with 🧊 and its age. */
 function accountRow(st: Settings, fig: Dict, now: number,
   weekHidden = false): Row {
   const lim = decodeLimits(fig.limits);
@@ -324,16 +353,20 @@ function accountRow(st: Settings, fig: Dict, now: number,
     spans: creditCell(st, d.credit as Dict,
       d.tint as "red" | "amber" | null, owed?.original === true, now) }));
   const week = pct(lim.weekly_pct);
-  const fable = pct(lim.fable_pct);
-  // One 🔜 for the two weekly windows where they reset together: the
-  // weekly one's, while 🪫 is drawn.
-  const shared = !weekHidden && (week !== null || reset("weekly_reset")
-    !== null) && raw.fable_reset !== null &&
-    raw.fable_reset === raw.weekly_reset;
+  const weekDrawn = !weekHidden && (week !== null ||
+    reset("weekly_reset") !== null);
+  // Each side window with a share; one 🔜 for it and the plan's week
+  // where they reset together: the weekly one's, while 🪫 is drawn.
+  const side: SideWindow[] = SIDE_MARKS.flatMap(([key]) => {
+    const v = pct(lim[(key + "_pct") as keyof Limits]);
+    if (v === null) return [];
+    const at = (raw[key + "_reset"] ?? null) as number | null;
+    const shared = weekDrawn && at !== null && at === raw.weekly_reset;
+    return [{ key, pct: v, reset: shared ? null : reset(key + "_reset") }];
+  });
   return { scope: "account", label: accountLabel(st,
     pct(lim.session_pct), week, reset("session_reset"),
-    reset("weekly_reset"), ymd(now), hms(now), stale, credits,
-    fable, fable === null || shared ? null : reset("fable_reset")),
+    reset("weekly_reset"), ymd(now), hms(now), stale, credits, side),
     cells: {} };
 }
 
@@ -367,11 +400,12 @@ function turnRow(st: Settings, fig: Dict, tr: Transcript, now: number,
   if (acc) {
     Object.assign(cells, {
       cost: CELLS.cost(st, acc.cost_usd),
-      split: accountingSplit(acc),
+      split: accountingSplit(st, acc),
       ...shareCells(st, acc, sessPct, weekPct),
       diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
     });
   }
+  spendCell(st, fig, "turn", cells);
   return { scope: "turn", label: turnLabel(), cells };
 }
 
@@ -395,8 +429,9 @@ function toolCell(st: Settings, tr: Transcript, now: number): Span[] | null {
   const [mark, since] = mainDoing(tr);
   if (mark !== E_TOOL) return null;
   const secs = Math.max(0.0, now - since);
-  return [span(E_TOOL + " "), span(padVal(st, 4, durFmt(st, secs)), "F_PRW",
-    magDim(secs, MAG_DUR_S))];
+  const fig = durFmt(st, secs);
+  return [span(E_TOOL + " "),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** What the main thread is doing, as today's Doing cell says it: the mark
@@ -409,8 +444,9 @@ function doingCell(st: Settings, tr: Transcript, now: number):
   if (!mark || mark === E_TOOL) return null;
   const secs = Math.max(0.0, now - since);
   const amber = mark === E_WORK && secs >= QUIET_WARN_S;
-  return [span(mark + " "), span(padVal(st, 4, durFmt(st, secs)),
-    amber ? "F_AMB" : "F_PRW", !amber && magDim(secs, MAG_DUR_S))];
+  const fig = durFmt(st, secs);
+  return [span(mark + " "), paint(amber ? ink("F_AMB")
+    : grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** 🤖: the main thread alone, before its agents' figures are added.  The
@@ -444,7 +480,7 @@ function mainRow(st: Settings, fig: Dict, tr: Transcript, now: number,
       tok: CELLS.tok(st, tr.own_tok_up, tr.own_tok_down),
       cache: CELLS.cache(st, tr.own_cache_pct),
       clock: CELLS.clock(st, age),
-      split: CELLS.split(age, Math.max(0.0, tr.busy_s - wait - tr.tool_s),
+      split: CELLS.split(st, age, Math.max(0.0, tr.busy_s - wait - tr.tool_s),
         tr.tool_s),
       diff: CELLS.diff(st, tr.lines_added, tr.lines_removed),
     });
@@ -460,6 +496,7 @@ function mainRow(st: Settings, fig: Dict, tr: Transcript, now: number,
   // 📨 only while it runs too: the receipt stamps this row once the turn
   // has ended, and a count frozen there would be gone by the next turn.
   const inbox = opts.phase === "running" ? tr.queued : 0;
+  spendCell(st, fig, "main", cells);
   return { scope: "main", label: mainLabel(inbox), cells };
 }
 
@@ -481,7 +518,7 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
   if (acc) {
     Object.assign(cells, {
       cost: CELLS.cost(st, acc.cost_usd),
-      split: accountingSplit(acc),
+      split: accountingSplit(st, acc),
       ...shareCells(st, acc, sessPct, weekPct),
       diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
     });
@@ -489,6 +526,7 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
       cells.clock = CELLS.clock(st, now - acc.start_s);
     }
   }
+  spendCell(st, fig, "session", cells);
   return { scope: "session", label: sessionLabel(), cells };
 }
 
@@ -502,20 +540,37 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
  * has one; its 📛 is the transcript's session name, in its colour. */
 export function treeOf(st: Settings, fig: Dict, rows: BandRows,
   opts: BandOpts, hide: readonly string[]): Row[] {
-  const tr = decodeTranscript(fig.transcript);
-  const running = opts.phase === "running";
   const above = phaseRows(rows, opts.phase, opts.live, "above", opts.places);
   const drawn = (name: RowName, row: Row): Row | null =>
     above.includes(row) && !hidden(hide, scopeOf(name)) ? row : null;
+  return treeRows(st, treeInput(fig, drawn("session", rows.session),
+    drawn("agent", rows.main), drawn("turn", rows.turn), opts), hide);
+}
+
+/** A row of `rows` drawn under the footer line, its label as the band's
+ * tree draws it, alone: no tree's lines, no subagents, and on 🎮 no
+ * workspace, which the footer's 💳 line has. */
+function alone(st: Settings, fig: Dict, rows: BandRows, row: Row,
+  opts: BandOpts, hide: readonly string[]): Row {
+  const only = (r: Row): Row | null => r === row ? r : null;
+  return treeRows(st, { ...treeInput(fig, only(rows.session),
+    only(rows.main), only(rows.turn), opts), workspace: null,
+  agents: null }, hide)[0] ?? row;
+}
+
+/** What the band's tree is drawn from (treeRows), with the rows
+ * `session`, `main` and `turn`, each null where it is not drawn. */
+function treeInput(fig: Dict, session: Row | null, main: Row | null,
+  turn: Row | null, opts: BandOpts): TreeInput {
+  const tr = decodeTranscript(fig.transcript);
+  const running = opts.phase === "running";
   const doc = fig.agents as Dict | undefined;
   const when = opts.agents ?? "running";
   const shown = doc !== undefined &&
     (running ? when !== "never" : when === "always");
   const now = (fig.clock as Dict).now as number;
-  return treeRows(st, {
-    session: drawn("session", rows.session),
-    main: drawn("agent", rows.main),
-    turn: drawn("turn", rows.turn),
+  return {
+    session, main, turn,
     workspace: workspaceOf(fig, ""),
     mainPhase: !running ? E_PHASE_END : tr.wait_at ? E_PHASE_PAUSE
       : E_PHASE_RUN,
@@ -527,13 +582,17 @@ export function treeOf(st: Settings, fig: Dict, rows: BandRows,
     agents: shown ? { tasks: (doc.tasks ?? []) as TreeTask[],
       limits: decodeLimits(fig.limits), now,
       turnStart: running ? tr.turn_s || null : null,
-      mainBackground: (doc.main_background ?? []) as BgTask[] } : null,
+      mainBackground: (doc.main_background ?? []) as BgTask[],
+      mainEnded: (doc.main_background_ended ?? []) as BgTask[],
+      linger: opts.linger ?? 0,
+      spending: docSpending(fig),
+      home: typeof doc.home === "string" ? doc.home : "" } : null,
     cap: opts.cap ?? SUBAGENT_ROWS,
     folds: opts.folds,
     repo: typeof fig.github === "string" ? fig.github : null,
     sessionName: tr.session_name,
     sessionColour: tr.session_color,
-  }, hide);
+  };
 }
 
 /** Whether the band's tree draws its root, 🎮, now: `rows.session`'s
@@ -600,6 +659,16 @@ export function accountText(st: Settings, fig: Dict,
   hide: readonly string[], home = "", rooted = false): string {
   return accountPieces(st, fig, hide, home, rooted)
     .flatMap((p) => p.spans.map((s) => s.text)).join("").trim();
+}
+
+/** The hide paths the 💳 row is drawn under: `hide`, and
+ * `account.plan.<key>` for each weekly window `windows` (the option
+ * `weekly-windows`) leaves off.  The option, not the defaults' `hide`,
+ * keeps them off, since a file's `hide` replaces that list whole. */
+export function accountHide(hide: readonly string[],
+  windows: { readonly [key in WeeklyKey]: boolean }): string[] {
+  return [...hide, ...WEEKLY_WINDOWS.filter(([key]) => !windows[key])
+    .map(([key]) => "account.plan." + key)];
 }
 
 /** accountText's pieces, in their colours; none under the hide path
@@ -819,7 +888,8 @@ export function bandLines(st: Settings, fig: Dict, cols: number,
 /** bandLines, each row with its scope (`turn` for 🎤, `main` for 🧵,
  * `session` for 🎮, `agent` for a subagent's), so a caller can tell the
  * rows apart: the rows of `opts.place` alone where it is given, above the
- * prompt as the band's tree (treeOf). */
+ * prompt as the band's tree (treeOf), and under the footer line each with
+ * the tree's label (alone). */
 export function bandScoped(st: Settings, fig: Dict, cols: number,
   hide: readonly string[], opts: BandOpts):
   { scope: string; spans: Span[] }[] {
@@ -828,7 +898,8 @@ export function bandScoped(st: Settings, fig: Dict, cols: number,
   const rows = bandRows(st, fig, opts);
   return (opts.place === "above" ? treeOf(st, fig, rows, opts, hide)
     : phaseRows(rows, opts.phase, opts.live, opts.place, opts.places)
-      .filter((r) => !hidden(hide, r.scope)))
+      .filter((r) => !hidden(hide, r.scope))
+      .map((r) => alone(st, fig, rows, r, opts, hide)))
     .map((r) => ({ scope: r.scope,
       spans: draw(st, indented(r, opts.indent ?? 0), keys, drawn, hide) }));
 }

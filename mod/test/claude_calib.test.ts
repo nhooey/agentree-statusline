@@ -1,9 +1,8 @@
-// claude_calib.ts against the calibration in claude.py, case by case.
+// claude_calib.ts, case by case.
 //
-// tests/fixtures/gen/calib.py runs the Python and writes each call's
-// inputs and result under tests/fixtures/calib/; this runs the same call
-// through the TypeScript and compares the two with deepEqual.  A call the
-// Python raises on is {"raises": true}, and the TypeScript must throw.
+// tests/fixtures/calib/ holds each call's inputs and result as committed
+// data; this runs the same call through the TypeScript and compares the
+// two with deepEqual.  A call written {"raises": true} must throw.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -21,12 +20,12 @@ import { STATE_KINDS } from "../src/state_spec.ts";
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
 const DIR = path.join(REPO, "tests/fixtures/calib");
-// cases.py's PIN_NOW, the clock every scenario step runs at unless it says.
+// The clock every scenario step runs at unless it says.
 const PIN_NOW = 1786847000;
 
 type Case = { [k: string]: any };
 
-/** The generator's JSON back to values: {"$float": ...} is what JSON
+/** The fixtures' JSON back to values: {"$float": ...} is what JSON
  * cannot spell. */
 function revive(v: any): any {
   if (Array.isArray(v)) return v.map(revive);
@@ -131,7 +130,7 @@ suite("values", {
 // shares.json
 // ════════════════════════════════════════════════════════════════════════════
 
-/** calib.py's own(): every part of the turns, taken as the main
+/** Every part of the turns, taken as the main
  * thread's own, and their total. */
 function own(ts: readonly Turn[]):
   { own_usd: number; own_parts: (readonly [number | null, number])[] } {
@@ -210,7 +209,7 @@ function scenario(c: Case): void {
   for (const f of c.files) put(f);
   let override = "";
   let last: unknown = null;
-  // The one scan cache both ports share, so byte for byte.
+  // The one scan cache, so byte for byte.
   const costsPath = statePath(state, "window-costs");
   const costsCache = (s: Case, where: string) => {
     let got: string | null = null;
@@ -237,7 +236,7 @@ function scenario(c: Case): void {
       const snap = s.snap ?? {};
       if (s.glob) {
         // The TypeScript's own listing finds the same files; the order is
-        // the filesystem's, and the step's is the one the Python saw.
+        // the filesystem's, and the step's is the one the case pins.
         const own = cc.projectFiles(projects)
           .map((p) => path.relative(projects, p));
         assert.deepEqual([...own].sort(), [...s.glob].sort(),
@@ -262,7 +261,7 @@ function scenario(c: Case): void {
       } else if (s.op === "calibration") {
         const got = attempt(() => cc.calibration(snap, env, s.scan ?? true));
         assert.deepEqual(plain(got), s.out, `${where}: the units`);
-        // The one file both ports share, so byte for byte.
+        // The one shared file, so byte for byte.
         let text: string | null = null;
         try {
           text = fs.readFileSync(cc.calibrationCachePath(snap, env), "utf-8");
@@ -289,20 +288,20 @@ for (const c of load("scan")) {
   test(`scan: ${c.name} (${c.steps.length} steps)`, () => scenario(c));
 }
 
-// gen/calib.py's pin_costs_format: while the window-cost cache's format is
-// the pinned one, the corpus's scan cache is the pinned text, so a change
-// to what this port bills or writes has to bump the format too.
+// costs-format.json: while the window-cost cache's format is the pinned
+// one, the corpus's scan cache is the pinned text, so a change to what
+// this port bills or writes has to bump the format too.
 test("the window-cost cache's text is held to its format", () => {
   const pin = JSON.parse(fs.readFileSync(path.join(DIR, "costs-format.json"),
     "utf-8"));
   assert.equal(pin.format, STATE_KINDS["window-costs"].format,
-    "costs-format.json is for another format: run gen/calib.py");
+    "costs-format.json is for another format: write its text again");
   assert.equal(load("scan")[0].steps[0].costs_cache, pin.text);
 });
 
-// The mod's half of _sweep_calibrations (tests/claude-sources.py has the
-// Python's): a calibration cache's name, as a regular file, untouched for
-// CALIB_MAX_AGE_S, and nothing else in the state directory.
+// The sweep of old calibration caches: a calibration cache's name, as a
+// regular file, untouched for CALIB_MAX_AGE_S, and nothing else in the
+// state directory.
 test("staleCalibrations: old calibration caches by name", () => {
   const now = 2_000_000_000;
   const old = (now - cc.CALIB_MAX_AGE_S - 60) * 1000;
@@ -327,7 +326,7 @@ test("staleCalibrations: old calibration caches by name", () => {
   ], now), [c + h + ".cache", w + h + ".cache", w + h + ".cache.4242"]);
 });
 
-// The mod's half of _sweep_fold_dir: a fold directory's own names, once
+// The pure half of the fold directory's sweep: its own names, once
 // none of its entries has been written for CALIB_MAX_AGE_S.
 test("staleFoldFiles: a fold directory nobody has written to", () => {
   const now = 2_000_000_000;
@@ -348,8 +347,8 @@ test("staleFoldFiles: a fold directory nobody has written to", () => {
   assert.ok(!cc.FOLD_DIR.test("claude-agent-folds-mod"));
 });
 
-// The mod's half of _remove_old_window_costs: the names before
-// spec/state.jsonc's window-costs kind, and nothing else.
+// The mod's half of removeOldCostsVia: the names before
+// mod/src/state_spec.ts's window-costs kind, and nothing else.
 test("oldWindowCosts: the window-cost caches by their old names", () => {
   const h = "0123456789abcdef".repeat(4);
   const w = "claude-window-costs";

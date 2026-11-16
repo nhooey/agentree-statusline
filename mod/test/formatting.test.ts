@@ -1,11 +1,10 @@
-// formatting.ts against formatting.py, case by case.
+// formatting.ts against its cases, case by case.
 //
-// tests/fixtures/gen/formatting.py runs the Python under each terminal
-// environment, mark spacing and subscript setting, and writes each call's
-// inputs and result under tests/fixtures/formatting/; this builds the same
-// Settings from the same environment and flags, runs the same call through
-// the TypeScript and compares.  A call the Python raises on is {"raises":
-// true}, and the TypeScript must throw.
+// tests/fixtures/formatting/ is committed data: each call's inputs and
+// result under each terminal environment, mark spacing and subscript
+// setting.  This builds the same Settings from the same environment and
+// flags, runs the same call through the TypeScript and compares.  A call
+// that raises is {"raises": true}, and the TypeScript must throw.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -74,10 +73,11 @@ test("settings: the constants and the colour escapes", () => {
   }
 });
 
-// Each Python function by name, called with the case's arguments as the
-// Python was: settings first where the port takes them.
+// Each case's function by name, called with the case's arguments:
+// settings first where the function takes them.
 const FNS: { [fn: string]: (st: Settings, a: any[]) => unknown } = {
-  reset_dim: (_st, a) => fm.resetDim(a[0]),
+  grade: (st, a) => fm.grade(a[0], a[1], a[2], st.colourMode),
+  ramp: (_st, a) => [...fm.ramp(a[0], a[1])],
   mag_dim: (_st, a) => fm.magDim(a[0], a[1]),
   share_dims: (_st, a) => fm.shareDims(a[0], a[1]),
   cache_dims: (_st, a) => fm.cacheDims(a[0], a[1]),
@@ -139,7 +139,7 @@ test("values: every function over its awkward inputs", () => {
     if (savedTz === undefined) delete process.env.TZ;
     else process.env.TZ = savedTz;
   }
-  // Every function the generator wrote cases for has some.
+  // Every function the fixtures hold cases for has some.
   for (const fn of Object.keys(FNS)) assert.ok(counts.get(fn), fn);
 });
 
@@ -157,7 +157,7 @@ test("term_cols: the walk over scripted process tables", () => {
 
 // Under tmux's limited mode, and wherever the level is in doubt, every
 // colour drawn is the 256 set's: an xterm entry that Claude Code's
-// rounding to 256 colours gives back as it was (tools/gen-spec.py's
+// rounding to 256 colours gives back as it was (spec.test.ts's
 // palette), in the panel's escapes and in the mod's Text colours alike.
 const CUBE = [0, 95, 135, 175, 215, 255];
 const xterm = (i: number): number[] => i >= 232

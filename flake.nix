@@ -1,5 +1,5 @@
 {
-  description = "coding-agent-usage-line: Claude Code's usage status line, and the usage-band mod";
+  description = "coding-agent-usage-line: the usage-band mod for Claude Code";
 
   inputs = {
     # Rolling, for a current Node: the mod's tests run TypeScript straight
@@ -72,6 +72,8 @@
             packages = [
               nodejs
               pkgs.git
+              # For the scripts under tools/: usage-dev and the fixture and
+              # palette reviews.
               pkgs.python3
             ];
             env = [
@@ -102,7 +104,7 @@
               {
                 category = "test";
                 name = "typecheck";
-                help = "type-check the TypeScript port and the mod (usage-dev typecheck)";
+                help = "type-check the mod (usage-dev typecheck)";
                 command = ''python3 "$PRJ_ROOT/tools/usage-dev.py" typecheck "$@"'';
               }
             ];

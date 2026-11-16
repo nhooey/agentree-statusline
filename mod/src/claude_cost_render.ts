@@ -1,12 +1,11 @@
 // Pure layout for Claude's prepared Stop-cost report.
 //
-// A port of coding_agent_usage_line/claude_cost_render.py, function for
-// function.  The caller supplies turns plus already-prepared window,
+// The caller supplies turns plus already-prepared window,
 // accounting and plan totals: each turn's cost and window shares are worked
 // out before drawing, and only read here.  Nothing here reads a transcript,
 // a cache, an account source, the clock or the environment.  The metric
-// groups are arguments, so the groups claude_cost.ts draws stay beside the
-// notes claude.py keeps on them.
+// groups are arguments, so the groups stay in claude_cost.ts, which draws
+// them.
 //
 // Labels, tags and groups are all spans, joined into escape codes once,
 // where renderCostLine hands back the finished rows.  As formatting.ts
@@ -180,12 +179,12 @@ export type CostAccounting = {
   readonly session: Accounting;
 };
 
-/** cost_group's shape: a turn and its accounting drawn as a group. */
+/** costGroup's shape: a turn and its accounting drawn as a group. */
 export type CostGroup = (st: Settings, t: Turn, shares: Accounting,
   win: number, colour: boolean, now: number, acct: boolean,
   stamps: boolean) => Span[];
 
-/** cost_totals_group's shape: every turn and the session's accounting. */
+/** costTotalsGroup's shape: every turn and the session's accounting. */
 export type TotalsGroup = (st: Settings, turns: readonly Turn[],
   totals: PlanTotals, win: number, colour: boolean, now: number,
   shares: Accounting, acct: boolean, stamps: boolean) => Span[];
@@ -222,8 +221,7 @@ export function renderCostLine(st: Settings, turns: readonly Turn[],
     turns.forEach((t, i) => {
       if (t.agent) pending.push(i);
     });
-    // Array#sort is stable, as list.sort is, and cmpStr orders by code
-    // point, as Python compares strings.
+    // Array#sort is stable, and cmpStr orders by code point.
     pending = [...pending].sort((a, b) => cmpStr(turns[a].ts, turns[b].ts));
   }
   const acct = opts.account_totals, stamps = opts.stamps;

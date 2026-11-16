@@ -33,8 +33,10 @@
 //   start     one case a line: a status document's start line under
 //             `hide`, as `spans`
 //   account   one case a line: a status document's 💳 row drawn at `cols`
-//             under `hide`, `indent` blanks in, as `row`; the last ones
-//             two documents at widths that shed their pieces
+//             under `hide` (the paths accountHide gives, where a case is
+//             of the option weekly-windows), `indent` blanks in, as `row`;
+//             the last ones three documents at widths that shed their
+//             pieces
 //
 // The first case of each kind in a file also has its spans joined with
 // their escape codes, `lines` or `line`; tests/fixtures/formatting/
@@ -50,7 +52,9 @@ import type { Settings } from "../src/formatting.ts";
 import { join } from "../src/spans.ts";
 import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";
-import { accountLine, bandLines } from "../src/band.ts";
+import { accountHide, accountLine, bandLines } from "../src/band.ts";
+import { WEEKLY_WINDOWS } from "../src/sources.ts";
+import type { WeeklyKey } from "../src/sources.ts";
 import type { Phase, Place, RowsPlace } from "../src/band.ts";
 import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
 import type { Rows } from "../src/config.ts";
@@ -78,11 +82,11 @@ const START_HIDES: readonly string[][] = [[], ["tag.plan.five_hour"]];
 // takes the shared 🔜 with it unless the Fable window draws its own.
 const FABLE_HIDES: readonly string[][] = [["account.plan.fable"],
   ["account.plan.week"]];
-// A document with every piece of the 💳 row, 🔀 and 🎨 among them, and one
-// with the Fable window's 🦊 and its own 🔜, drawn at widths that shed
-// them one by one.
+// A document with every piece of the 💳 row, 🔀 and 🎨 among them, one
+// with the Fable window's 🦊 and its own 🔜, and one with the other weekly
+// windows, drawn at widths that shed them one by one.
 const SHED_DOCS = ["status/04-pr-and-style",
-  "status/fable-own-reset"];
+  "status/fable-own-reset", "status/weekly-windows"];
 // The 🛫 the mod would pass, at one width: the documents carry the counts
 // it works one out from, never the rate itself.
 const RATE = 220, RATE_COLS = 200;
@@ -90,6 +94,18 @@ const RATE = 220, RATE_COLS = 200;
 // cases by place are drawn at.
 const DEFAULT_ROWS = parseDefaults(DEFAULTS_REL, readFileSync(
   pathJoin(HERE, "..", DEFAULTS_REL), "utf8")).rows as Rows;
+// The weekly windows as the defaults file leaves them, all off, and the
+// hide paths of a document with any of them: as shipped; a file's own
+// `hide`, which leaves them off; Opus alone turned on; and every one on
+// with the weekly window hidden, which gives each its own 🔜.
+const DEFAULT_WINDOWS = parseDefaults(DEFAULTS_REL, readFileSync(
+  pathJoin(HERE, "..", DEFAULTS_REL), "utf8"))["weekly-windows"] as
+  { [key in WeeklyKey]: boolean };
+const WINDOW_HIDES: readonly string[][] = [
+  accountHide([], DEFAULT_WINDOWS),
+  accountHide(["*.plan.five_hour", "*.context.share"], DEFAULT_WINDOWS),
+  accountHide([], { ...DEFAULT_WINDOWS, opus: true }),
+  ["account.plan.week"]];
 export const PLACES: RowsPlace = Object.fromEntries(
   (["turn", "agent", "session"] as const).map((r) =>
     [r, DEFAULT_ROWS[r].place as Place]));
@@ -165,9 +181,12 @@ export function withBackground(doc: Dict, now: number): Dict {
     kind === "bash" ? "Build the docs site" : "Watch the CI checks";
   return { ...doc, main_background: [
     { id: "msh", kind: "bash", label: "Run the plugin tests",
-      start: now - 372 },
+      start: now - 372, command: "npm test -- --watch",
+      output: "/private/tmp/claude-501/-Users-u-git-p/0f3c9a7e-5b1d-4e2a" +
+        "-9c8b-1a2b3c4d5e6f/tasks/b3qupkikw.output" },
     { id: "mmon", kind: "monitor", label: "Watch PR #38 for comments",
-      start: now - 1500 }],
+      start: now - 1500, command: "gh pr view 38 --comments ⏎ sleep 30",
+      output: "/Users/u/.cache/tasks/mmon.output" }],
   tasks: (doc.tasks as Dict[]).map((t) => ({ ...t,
     bgTasks: ((t.usage as Dict).background as [string, string][] ?? [])
       .map(([id, kind]) => ({ id, kind, label: label(kind),
@@ -270,13 +289,18 @@ function bandCases(doc: string): BandCase[] {
 
 /** Every account case of one document: at each width and hiding the band
  * cases take, and once indented, as above the prompt; a document with the
- * Fable window also with each weekly window hidden. */
+ * Fable window also with each weekly window hidden, and one with any
+ * other weekly window under WINDOW_HIDES. */
 function accountCases(doc: string, fig: Dict): AccountCase[] {
-  const fable = (fig.limits as Dict).fable_pct !== null;
+  const lim = fig.limits as Dict;
+  const fable = lim.fable_pct !== null;
+  const others = WEEKLY_WINDOWS.some(([key]) => lim[key + "_pct"] !== null);
   return [...COLS.map((cols) => ({ doc, cols, hide: [], indent: 0 })),
     ...HIDES.map((hide) => ({ doc, cols: HIDE_COLS, hide: [...hide],
       indent: 0 })),
     ...(fable ? FABLE_HIDES : []).map((hide) => ({ doc, cols: HIDE_COLS,
+      hide: [...hide], indent: 0 })),
+    ...(others ? WINDOW_HIDES : []).map((hide) => ({ doc, cols: HIDE_COLS,
       hide: [...hide], indent: 0 })),
     { doc, cols: HIDE_COLS, hide: [], indent: 2 }];
 }

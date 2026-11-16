@@ -4,6 +4,25 @@
 /** A figures document, as claude.ts builds it. */
 export type FiguresDoc = { readonly [key: string]: unknown };
 
+/** The `spending` value: `spell` is `{session, kind, since}`, `kind` one
+ * of "cloud", "promo", "prepaid", "extra" or null for the plan and `since`
+ * epoch seconds or null for the whole session; `bracket` is `{session,
+ * id, remaining, as_of}`.  Either may be null, or absent as an older load
+ * left it. */
+export type SpendingKept = {
+  readonly spell?: {
+    readonly session: string;
+    readonly kind: "cloud" | "promo" | "prepaid" | "extra" | null;
+    readonly since: number | null;
+  } | null;
+  readonly bracket?: {
+    readonly session: string;
+    readonly id: string;
+    readonly remaining: number;
+    readonly as_of: number;
+  } | null;
+};
+
 declare module 'claude-code' {
   interface PluginState {
     'usage-band': {
@@ -34,6 +53,14 @@ declare module 'claude-code' {
        * is its row's default.  An agent's, and its grouped rows', go once
        * it ends. */
       folds: { [key: string]: boolean };
+      /** Which credit pays for the session other than the plan and since
+       * when, and the first reading of its balance for the 🎮 row's
+       * measured fall (src/spending.ts), as the last document found them,
+       * so a reload counts on from them; `$.store` keeps a copy under
+       * `spending:<session id>` for a restart.  Read back through keptSpending,
+       * which takes either part of another shape, or a value absent, as
+       * nothing kept. */
+      spending: SpendingKept | null;
     }
   }
 }

@@ -86,27 +86,27 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `AR5` | Docs, and the acceptance check, live | `AR3`, `AR4` | none | `docs/layout.md`, `docs/options.md` |
 | `CB1` | **Done.** The trial: what the session's credential reaches of the dollar credits, logged | none | none | `mod/hooks/register.tsx` |
 | `CB1b` | **Done.** The second trial: `extra_usage`'s figures and the cloud credit's `used` per turn, logged | `CB1` | none | `mod/hooks/register.tsx` |
-| `CB2` | **Built.** The `credits[]` reading, parsed in both ports | `CB1b` | none | `mod/src/sources.ts`, `coding_agent_usage_line/sources.py`, `docs/usage-sources.md` |
+| `CB2` | **Built.** The `credits[]` reading, parsed | `CB1b` | none | `mod/src/sources.ts`, `docs/usage-sources.md` |
 | `CB3` | **Built.** The sources: the OAuth answer's credits, asked every 5 minutes, and the shared cache | `CB2` | none | `mod/hooks/edges.ts`, `mod/src/sources.ts` |
-| `CB4` | **Built.** The conditions in both ports, the glyphs, and each credit's cell | `CB2` | none | `coding_agent_usage_line/credits.py`, `mod/src/credits.ts`, `spec/layout.jsonc` |
+| `CB4` | **Built.** The conditions, the glyphs, and each credit's cell | `CB2` | none | `mod/src/credits.ts`, `spec/layout.jsonc` |
 | `CB4b` | **Built.** The credits drawn: the `credits` option, its condition lists in both configuration readers, the 💳 row, and the Console's credits from `credits.command` | `CB3`, `CB4` | `AR3` | `spec/options.jsonc`, `mod/defaults/config.jsonc`, `mod/src/band.ts` |
-| `CB6` | The spending column on the turn, agent, session and subagent rows | `CB3`, `CB4b` | none | `mod/src/band.ts`, `mod/src/cells.ts`, `coding_agent_usage_line/claude.py` |
+| `CB6` | **Built.** The spending column on the turn, agent, session and subagent rows | `CB3`, `CB4b` | none | `mod/src/band.ts`, `mod/src/cells.ts` |
 | `CB5` | Docs, and the acceptance check, live | `CB3`, `CB6` | none | `docs/layout.md`, `docs/options.md`, `docs/usage-sources.md` |
 | `OP1` | **Done.** Which entries reach each Python module: the panel, Codex, the fold worker, the tests | none | none | `tools/python-module-reach.py`, `one-panel-port.md` |
 | `OP2` | **Done.** Remove the agent panel command: `--mode subagent`, its suite, goldens, tools and docs | `OP1` | none | `cli.py`, `claude.py`, `tests/`, `tools/`, `examples/claude/settings.json`, `README.md`, `docs/` |
 | `OP3` | **Done.** The band's tree: 🎮 the root, 🧵 main, 🎤 the turn and the subagents under them, with `✅ N done`, the cap and progress updates | `OP1` | `OP2` (`docs/layout.md`) | `spec/options.jsonc`, `mod/defaults/config.jsonc`, `mod/hooks/`, `mod/src/`, `docs/layout.md` |
 | `OP4` | **Done.** The mod's fold worker in TypeScript: the mod folds big transcripts and agent files in pieces itself, and spawns no Python | `OP1` | none | `mod/hooks/transcripts.ts`, `mod/scripts/` |
-| `OP5` | The Python's Claude twins removed, `--mode status` and `--mode cost` for Claude among them | `OP2`, `OP3`, `OP4` | none | `coding_agent_usage_line/`, `tests/` |
-| `OP6` | 🧬 for the model cell, so 🤖 keeps one job | `OP5` | none | `spec/layout.jsonc`, `mod/src/` |
+| `OP5` | **Done.** The Python removed, Codex and the CLI with it; the mod is the project | `OP2`, `OP3`, `OP4` | none | `coding_agent_usage_line/`, `tests/`, `spec/options.jsonc`, `tools/gen-spec.py`, `tools/usage-dev.py`, `docs/` |
+| `OP6` | **Done.** 🧬 for the model cell, so 🤖 keeps one job | none | none | `spec/layout.jsonc`, `README.md`, `docs/layout.md` |
 | `OP7` | **Done.** The band's clicks: a label switches to its thread, a row with children folds, 📦 🌿 🔀 link | `OP3` | none | `mod/hooks/`, `mod/mod-tests/` |
 | `OP8` | **Done.** Each open background shell and Monitor a row under the thread that started it | `OP3` | none | `mod/src/`, `mod/hooks/edges.ts`, `coding_agent_usage_line/` (the folds), `spec/state.jsonc` |
 | `TF1` | **Done.** The saved folds as one file of digests, `fold-saves.json` | the plan's approval | none | `tests/fixtures/gen/state.py`, `tests/fold.py`, `mod/test/*_fold.test.ts`, `tests/fixtures/fold-saves.json` |
 | `TF2` | **Done.** One figures document per distinct document, sparse | the plan's approval | none | `tests/run-cases.py`, `tests/fixtures/gen/cases.py`, `tests/fixtures/figures/`, `mod/test/`, `mod/tools/gen-row-cases.ts`, `mod/tools/draw-figures.ts` |
 | `TF3` | **Done.** `rows/` in one form, the second profile a sample | the plan's approval | `TF2` (it regenerates `rows/`) | `mod/tools/gen-row-cases.ts`, `mod/test/rows.test.ts`, `tests/fixtures/rows/` |
-| `TF4` | The status line, the old receipt and the panel removed from the TypeScript, with their goldens | `OP5`, and the plan's decision 1 | none | `mod/src/claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts`, `figures.ts`, `tests/golden/`, `tests/fixtures/{receipt,render}/` |
+| `TF4` | The status line, the old receipt and the panel removed from the TypeScript, with their goldens | `OP5` | none | `mod/src/claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts`, `figures.ts`, `tests/golden/`, `tests/fixtures/{receipt,render}/` |
 | `TF5` | The panel's inputs as tree cases | `TF4` | `TF3` | `tests/fixtures/panel/`, `mod/tools/gen-row-cases.ts`, `tests/fixtures/rows/` |
 | `TF6` | The differential families written once, by the TypeScript | `OP5` | `TF4` (`render/`) | `mod/tools/`, `tests/fixtures/{records,calib,formatting,render,claude}/` |
-| `TF7` | `grid/` in one form, on fewer widths | `OP5` | none | `mod/tools/gen-grid-cases.ts`, `tests/fixtures/grid/`, `tools/diff-grid-fixtures.py` |
+| `TF7` | **Done.** `grid/` in one form, on fewer widths | `OP5` | none | `mod/tools/gen-grid-cases.ts`, `mod/test/grid.test.ts`, `tests/fixtures/grid/`, `tools/diff-grid-fixtures.py` |
 
 `RT8`'s and `RT6`/`RT7`'s edges in the plan: steps 4 to 7 land in order,
 step 8 needs steps 1 and 4 (done), step 9 needs step 1 (done).
@@ -162,7 +162,6 @@ flowchart LR
     OP1 --> OP2 --> OP5
     OP1 --> OP3 --> OP5
     OP1 --> OP4 --> OP5
-    OP5 --> OP6
     OP3 --> OP7
     OP3 --> OP8
     OP2 -.-> OP3
@@ -221,7 +220,7 @@ The fixture plan's waves, once the user approves it:
 |---|---|---|
 | T0 | `TF1`, `TF2` | the plan is approved; they share no file |
 | T1 | `TF3`, then `OP5` | `TF2` lands, and `TF1` for `OP5` |
-| T2 | `TF4`, `TF7` | `OP5` lands, and the plan's decision 1 for `TF4` |
+| T2 | `TF4`, `TF7` | `OP5` lands |
 | T3 | `TF5`, `TF6` | `TF4` lands |
 
 - **`TF1`, `TF2` ⇢ `OP5`:** `OP5` moves or removes `gen/state.py` and

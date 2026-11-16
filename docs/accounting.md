@@ -1,31 +1,31 @@
 # Accounting
 
 Where every figure on the readouts comes from: what is read straight from
-Claude Code, what this program computes, and what it has to estimate. The
-Claude sections come first; [Codex](#codex) is at the end.
+Claude Code, what the mod computes, and what it has to estimate.
 
 ## Where each figure comes from
 
-| Figure | Readout | Source | Counts agents? |
+The rows are those of [Layout](layout.md#the-rows): 🎮 the session, 🧵 the
+main thread, 🎤 the turn, a row for each subagent, and 💳 the account; the
+receipt is the turn's rows frozen as it ended.
+
+| Figure | Rows | Source | Counts agents? |
 |---|---|---|---|
-| 🧩 ▴ ▾ tokens | status, cost | The transcript and every agent file beside it, deduplicated per request. ▴ is weighted input, ▾ is output. See [tokens](#tokens). | yes |
-| 🎯 cache rate | status, cost | Cache reads over all input tokens, from the same requests. | yes |
-| 🛫 token rate | status | The slope of 🧩's total over samples the status line keeps between renders. | yes |
-| 🛫 token rate | panel | The slope of the token samples Claude Code hands the panel, at its 5-second tick. | the agent's own |
-| 🧠 context | status | The last main-thread request's whole input over the window size in the payload. | no |
-| 🧠 context | cost | How much the context grew or shrank during the turn; the totals row prints the current level. | no |
-| 💰 cost | status | Claude Code's own `cost.total_cost_usd` from the payload. Not computed here. | as Claude Code reports it |
-| 💰 cost | cost, panel | List price of every request at its own model's rates. See [dollars](#dollars). | yes |
-| 📖 📝 cost shares | status, cost | Share of a turn's or session's cost spent re-reading cache (📖) or writing it (📝). | yes |
-| 🔋 🪫 🎤 🎮 window shares | status, cost, panel | Estimated: cost spent inside the window, divided by a calibrated dollars-per-percent. See [plan-window shares](#plan-window-shares). | yes |
-| 💳 account % | status, cost | The usage source's plan reading. See [usage sources](usage-sources.md). | — |
-| 🔜 reset | status | The usage source's reset time for that window. | — |
-| ⌛ 🤖 🔧 🚦 | status | Timestamps in the main thread's own transcript. See [time](#time). | no: an agent's time is on its row |
-| ⛳ | status, panel | The last ETA the main thread reported in the current answer, or the agent's last, pushed out to the latest of any running descendant's. See [ETA](layout.md#eta). | yes, descendants |
-| ⌛🤖 🔧 | cost | The status line's 🤖 and 🔧, over each turn's span, plus each agent's own, filed with its requests. The totals row sums the rows. See [time](#time). | yes |
-| ⌛ 🤖 🔧 🚦 | panel | ⌛ is the agent's age. 🤖 🔧 🚦 are gauges of its share, by the status line's rule. See [time](#time). | no |
-| 💾 diff | status | Claude Code's `cost.total_lines_added` / `total_lines_removed`. | as Claude Code reports it |
-| 💾 diff | panel | Lines in the agent's own Edit patches and new-file Writes. | the agent's own |
+| 🧩 ▴ ▾ tokens | 🎮 🎤, receipt | The transcript and every agent file beside it, deduplicated per request. ▴ is weighted input, ▾ is output. See [tokens](#tokens). | yes |
+| 🧩 ▴ ▾ tokens | 🧵, subagent | That thread's own requests. | no |
+| 🎯 cache rate | every row | Cache reads over all input tokens, from the same requests. | as 🧩 |
+| 🛫 token rate | 🎤 | The slope of 🧩's total over samples kept between renders. | yes |
+| 🧠 context | 🧵, subagent | The thread's last request's whole input over its window size. | no |
+| 🧠 context | 🎤, receipt | How much the context grew or shrank during the turn. | no |
+| 💰 cost | every row | List price of every request at its own model's rates. See [dollars](#dollars). | as 🧩 |
+| 🔋 🪫 window shares | every row but 💳 | Estimated: cost spent inside the window, divided by a calibrated dollars-per-percent. See [plan-window shares](#plan-window-shares). | as 🧩 |
+| 💳 account % | 💳, the receipt's tag | The usage source's plan reading. See [usage sources](usage-sources.md). | — |
+| 🔜 reset | 💳 | The usage source's reset time for that window. | — |
+| ⌛ 🤖 🔧 🚦 | 🧵, subagent | Timestamps in that thread's own transcript. See [time](#time). | no: an agent's time is on its row |
+| ⌛ 🤖 🔧 🚦 | 🎤, receipt | The same rule over the turn's span, plus each agent's own, filed with its requests. See [time](#time). | yes |
+| ⌛ 🤖 🔧 🚦 | 🎮 | The session's age, and the agent-seconds of every thread. | yes |
+| ⛳ | 🧵 🎤, subagent | The last ETA the thread reported in the current answer, pushed out to the latest of any running descendant's. See [ETA](layout.md#eta). | yes, descendants |
+| 💾 diff | every row but 💳 | Lines in the thread's own Edit patches and new-file Writes; summed on 🎮. | as 🧩 |
 
 "Counts agents" means subagents, forks, workflow agents, and agents those
 agents spawned. 🧠 never counts them because every agent has its own context
@@ -60,8 +60,8 @@ over turns.
 
 ## Dollars
 
-The cost line, the agent panel and the window shares price every request at
-**its own model's** list price, so a Sonnet fork inside an Opus turn costs
+Every 💰 and the window shares price every request at **its own model's**
+list price, so a Sonnet fork inside an Opus turn costs
 Sonnet money. Prices per million tokens, from the model catalog built into
 Claude Code (`MODEL_PRICE`):
 
@@ -87,8 +87,7 @@ plus a summary of `len(summary) / 4` tokens at the Opus output rate.
 
 ## Turns
 
-The cost line reports one turn, and the status line's 🎤 figures describe the
-same turn. A turn opens on any of these:
+🎤 and the receipt describe one turn. A turn opens on any of these:
 
 * **A prompt the user sent**: a `type: user` record from
   `userType: external` that is not `isMeta`, with `promptSource` of `typed`,
@@ -139,8 +138,8 @@ requests, opens nothing either. Claude Code writes it in one of two ways:
   yet set, before the answer has ended (an assistant `end_turn`, a
   `stop_hook_summary` or a `turn_duration`).
 
-Claude Code runs no Stop hook before either, and answers the prompt in the
-turn still running. So the turn runs from the prompt that opened it to the
+Claude Code ends no turn before either, and answers the prompt in the turn
+still running. So the turn runs from the prompt that opened it to the
 end of its answer: it keeps that prompt's text, its `promptId` and its
 clock, and every request after the mid-turn prompt is the turn's, on the
 🎤 row and on the receipt alike. A `"queued"` record after the answer
@@ -165,14 +164,12 @@ slash command's caveat — do not extend it, so time spent reading and typing is
 not charged as answering time.
 
 **Which turn is reported** is the last one that made main-thread requests and
-is not a compaction or the [👥 turn](#the--row). The cost line's 🎤 row and
-the status line's 🎤 figures use the same rule, so they always describe the
-same prompt.
+is not a compaction or an agents' turn. The live 🎤 and the receipt's use the
+same rule, so they always describe the same prompt.
 
-**Waiting for the transcript.** Claude Code does not flush the transcript in
-step with the Stop hook; a turn's last requests can be missing when the hook
-reads the file. If the turn being reported has no requests yet, the hook
-re-reads the transcript whenever it grows, for up to 1.5 s, before reporting.
+**Waiting for the transcript.** Claude Code writes a turn's last records
+after the turn ends, so the receipt waits for them before it is stamped;
+see [the receipt](layout.md#the-receipt).
 
 ## Agents
 
@@ -203,79 +200,37 @@ An agent's requests add to the turn's tokens, dollars and call count. They do
 not change the turn's 🧠 reading or its end time, because agents have their
 own windows and run in parallel with the answer.
 
-**Agent-panel rows** read one agent's own transcript: its tokens, cost,
+**Subagent rows** read one agent's own transcript: its tokens, cost,
 context, cache rate, diff and time are its own and do not include its
 children. See [time](#time) for how the row splits ⌛.
 
-### The 👥 row
+### Agents on the receipt
 
-A Stop prints one 🎤 row, for the turn described above. Agent spend filed on
-any other turn would be counted in the totals and printed on no row. That
-happens in two ways:
+A turn's receipt draws, under its 🎤, every agent the turn ran that had
+finished when it was stamped, each with what it billed. One still running
+is owed a row, which the first receipt stamped after it ends draws. The
+main transcript says when an agent finished: a `<task-notification>` for
+its id that carries a `<status>`, for a background agent, or the Agent
+call's result with its `agentId` and a terminal status, for a foreground
+one. An agent resumed by SendMessage after it ended is running again until
+its next end. See [the receipt](layout.md#the-receipt) for how the tree is
+drawn.
 
-* The turn was already reported, and the agent finished afterwards (a
-  background agent, a fork left running, a workflow).
-* The turn never gets its own Stop: a record the transcript does not mark as
-  delivered mid-run, such as an older transcript's queue removal, opens a
-  turn inside the run, and the run's single Stop reports only the last of
-  them.
+### Agent folds
 
-Such a request, if no earlier Stop has seen it, goes into a separate
-**agents** turn instead of its own, one for each agent file, and prints on
-that agent's 👥 row above the 🎤 row at the next Stop. It is not also added to the turn that spawned it, which would
-bill it twice.
-
-The row waits for the agent to finish, so a Stop lists the agents that ended
-since the last one, not every agent that billed something since. The main
-transcript says when an agent finished: a `<task-notification>` for its id
-that carries a `<status>`, for a background agent, or the Agent call's result
-with its `agentId` and a terminal status, for a foreground one. Until then, its
-new requests stay on the turn that spawned it, where the totals count them,
-and the Stop does not record them as reported. The Stop after the agent ends
-prints one row with everything it billed since it was last reported. An agent
-resumed by SendMessage after it ended is running again until its next end.
-An agent whose end never reaches the main transcript never gets a row; its
-spend is still in the totals.
-
-"Not seen by an earlier Stop" is measured in bytes. After rendering, the Stop
-hook records how far into each agent file the requests it reported reached,
-in a per-session file in private state (`claude-agent-offsets-<digest>.json`).
-A request whose line ends past that offset is new. Agent files are
-append-only, so this is exact. For the first Stop of a session, with no offsets
-file yet, the fallback is the timestamp of the last `stop_hook_summary`
-record; that can miss a request stamped before the Stop but written after it,
-so it errs towards reporting a request at most once.
-
-Every render reads every agent file of the session, and a long session can
+Every read reads every agent file of the session, and a long session can
 have hundreds of them. So each file's fold is saved, per session, in
-`claude-agent-fold-<digest>/` in private state, as `spec/state.jsonc`'s
-`agent-fold` row names it, and a render reads only the lines written since.
-The agent panel, the status line, the Stop hook and the mod share those
-files. A saved fold is read only while the 4 KiB before its offset are the
-bytes it was folded from, so a file rewritten in place is read afresh.
-Requests are deduped across files after the folds, on every render, so a
-saved fold never changes which requests are counted.
-
-```
-fork fork1      📊 👥 Usage: Agents (other)  🧩 ▴7.2k ▾900   🎯 99٪                  💰+  0.1   🔋+ 0.01٪ 📖 56٪  🪫+ 0.01٪ 📝  5٪  ⌛🤖+4.3m  🔧+  0s
-
-📊 🎤 Usage: Prompt (last)   🧩 ▴ 28k ▾7.1k  🎯 95٪  🧠+ 3.4٪ +6.8k  💰+  0.2   🔋+ 0.03٪ 📖 32٪  🪫+ 0.05٪ 📝 18٪  ⌛🤖+  4m  🔧+  3m  📅 2026-08-16
-📊 🎮 Usage: Session (total) 🧩 ▴ 68k ▾ 14k  🎯 97٪  🧠 27.1٪   54k  💰   0.6   🔋  0.1٪  💳 41٪  🪫  0.14٪ 💳 63٪  ⌛🤖  13m  🔧   3m  🕐   02:23:20
-```
-
-Each 👥 row is one agent: its name — the description in its `.meta.json`,
-or its type — and then its id, cut to ten columns as the agent panel cuts it
-and padded to ten, lead the row. Where the rows are right-aligned they sit in
-its pad, C_MIN_GAP columns left of the 📊, so the ids of several 👥 rows stand
-in one column; the name is cut to fit, and both are left off where the pad
-cannot hold the id. The rows are the agent spend
-the 🎤 row cannot carry, so the rows above 🎮 add up to it, less what agents
-still running have billed since their last row.
+`claude-agent-fold-<digest>/` in private state, as `mod/src/state_spec.ts`'s
+`agent-fold` row names it, and a read takes only the lines written since.
+A saved fold is read only while the 4 KiB before its offset are the bytes
+it was folded from, so a file rewritten in place is read afresh. Requests
+are deduped across files after the folds, on every read, so a saved fold
+never changes which requests are counted.
 
 ## Time
 
-The status line's ⌛ row and every agent row split one thread's age by the
-same rule (`thread_clock`), reading that thread's own transcript alone:
+🧵 and every subagent row split one thread's age by the same rule
+(`threadClock`), reading that thread's own transcript alone:
 
 | Mark | Meaning | How it is measured |
 |---|---|---|
@@ -289,7 +244,7 @@ its first record and the task's `startTime`, because Claude Code restarts
 `startTime` when it resumes an agent. It runs to now while the agent is
 running or parked, and stops at its last record once it has finished.
 **Parked** means Claude Code marks the agent completed, but its last message
-still carries a live ETA, or an agent under it on the panel is still running.
+still carries a live ETA, or an agent under it is still running.
 
 **Working spans** run from the record that opens an answer to the last
 record it produced. An agent's span closes when its answer ends its turn, so
@@ -306,47 +261,41 @@ prompts are not moved: nothing in the transcript marks one, and a tool that
 waited for approval did hold up the thread.
 
 **A call still running** counts to now: a running agent's, and the main
-thread's on a live status line. An offline `--transcript` read counts only
-calls that returned, as does an agent that has finished.
+thread's while its turn runs. An agent that has finished counts only calls
+that returned.
 
-**Why its own thread alone.** Were the status line to union every agent's
-spans into its busy clock, or an agent row to add its children's tool time
-to its 🔧, a coordinator parked on five background agents would read as
-fully busy the whole time it sat waiting on them. Waiting on an agent is 🚦
-on both readouts, and the agent's work shows on its own row.
+**Why its own thread alone.** Were 🧵 to union every agent's spans into
+its busy clock, or an agent row to add its children's tool time to its 🔧,
+a coordinator parked on five background agents would read as fully busy
+the whole time it sat waiting on them. Waiting on an agent is 🚦, and the
+agent's work shows on its own row.
 
-On an agent row the split is drawn as three Braille gauges of ⌛ rather than
+On every row the split is drawn as three Braille gauges of ⌛ rather than
 as figures. They hold eight dots between them, shared by largest remainder,
 and a share of at least 1% always gets a dot. The figures come off records
 and ⌛ off the clock as well, so they can overrun it by a moment. The shares
 are then of their sum.
 
-**The cost line** splits each turn by the same rule (`turn_clock`), over the
-turn's span from opener to last answer record rather than over the age. 🔧 is
-the turn's tool calls less its waiting calls, and ⌛🤖 is the span less both,
-so it is the status line's 🤖 over that turn. Each call is filed under the turn
-its result arrives in and clipped to that turn's span. Summed over the turns,
-for a transcript whose calls all returned, this main-thread part equals the
-status line's 🤖 and 🔧; each row then adds its agents' time (below). The turn's waiting seconds are in neither figure, and the
-cost line has no 🚦: they are time the prompt waited on something, not time it
-spent.
+**🎤 and the receipt** split each turn by the same rule (`turnClock`), over
+the turn's span from opener to last answer record rather than over the
+age. 🔧 is the turn's tool calls less its waiting calls, and 🤖 is the span
+less both. Each call is filed under the turn its result arrives in and
+clipped to that turn's span. Summed over the turns, for a transcript whose
+calls all returned, this main-thread part equals 🧵's 🤖 and 🔧; each turn
+then adds its agents' time (below).
 
-Two main-thread cases differ from the status line. A compaction's ⌛🤖 is the
-`durationMs` its boundary records, and its 🔧 is zero, since the summariser
-runs no tool. The rest of the answer an auto compaction lands in is billed to
-the 🤏 row but timed on neither row. A call still running when the Stop hook
-reads the transcript is not counted, as on an offline status-line read.
+A compaction's 🤖 is the `durationMs` its boundary records, and its 🔧 is
+zero, since the summariser runs no tool.
 
-**Agents** add their own 🤖 and 🔧 to the row that bills them. Each agent's
-clock, by the panel's rule, is cut at every request it bills: a request
-carries the agent's time since the one before it. Time after its last
-request is left for the request that follows, so a Stop that lands while an
-agent is mid-tool prints that stretch once, on the next Stop's row. The time is then filed with the request, under the
-🎤 row, the 👥 row or an earlier turn, exactly as its tokens are, so it is
-printed once. The main thread's wait on an `Agent` call is in neither figure,
-so no agent second is counted twice. Agents run beside the answer and beside
-each other, so these are agent-seconds: a row can read more than its turn
-took, and the 🎮 row is the status line's 🤖 and 🔧 plus every agent's.
+**Agents** add their own 🤖 and 🔧 to the turn that bills them. Each
+agent's clock, by its row's rule, is cut at every request it bills: a
+request carries the agent's time since the one before it, and time after
+its last request is left for the request that follows. The time is then
+filed with the request, exactly as its tokens are, so it is counted once.
+The main thread's wait on an `Agent` call is in neither figure, so no agent
+second is counted twice. Agents run beside the answer and beside each
+other, so these are agent-seconds: a turn can read more than it took, and
+🎮's 🤖 and 🔧 are 🧵's plus every agent's.
 
 ## Plan-window shares
 
@@ -383,20 +332,10 @@ Each file's priced requests are kept between scans in one
 last complete line read and a digest of the 4 KiB before it. A scan reads only
 what was appended since. A file that shrank, or whose bytes before the offset
 changed, is read again from the start. Reading everything took 6.2 seconds on
-a week of 836 MB; a scan from the cache takes a tenth of a second. The Python
-and the mod read and write the same file, in the same bytes, through a
-temporary file renamed over it, so whichever scans first warms it for the
-other. Its name is a digest of its format in `spec/state.jsonc`, which moves
-when the prices or what is billed do, so only such a change starts it cold.
-While it fills, the Python saves it every second: Claude Code kills a status
-line when the next refresh starts, and a killed scan leaves the next one only
-the files it had not reached.
-
-The agent panel never runs the scan. Claude Code kills its command after five
-seconds and puts its own rows back, so a panel tick that started a cold scan
-showed stock rows and left the scan for the next tick. It divides by the
-cached scan for the current windows however old, and shows `?` when there is
-none; the status line and the Stop hook keep it filled.
+a week of 836 MB; a scan from the cache takes a tenth of a second. The mod
+writes it through a temporary file renamed over it. Its name is a digest of
+its format in `mod/src/state_spec.ts`, which moves when the prices or what is
+billed do, so only such a change starts it cold.
 
 **Too small to divide by.** Percentages arrive as whole numbers, so a reading
 of 1% means anywhere from 0.5% to 1.5%. Below 2% (`CALIB_MIN_PCT`) no rate is
@@ -443,89 +382,34 @@ resets under a running session.
 
 Each render takes one plan reading from the selected usage source, and
 everything that needs it — the 💳 percentages, the window boundaries, and the
-calibration's percentages — uses that same reading (`seed_limits_snapshot`).
+calibration's percentages — uses that same reading (`seedLimitsSnapshot`).
 Mixing readings taken at different times can put a boundary from an expired
 window beside a percentage from the current one. An explicitly selected source
 that fails leaves the cells blank rather than falling back to another source.
 See [usage sources](usage-sources.md) for how the reading is chosen and how
 old it may be.
 
-## State shared between the readouts
+## State kept between loads
 
-The status line, the Stop hook and the agent panel run as separate processes,
-so what one learns for another is written to files in the program's private
-state directory (see [refresh and storage](usage-sources.md#refresh-and-storage)).
-Session-scoped files are named by a SHA-256 digest of the session id.
-
-| File | Written by | Read by | Why |
-|---|---|---|---|
-| context window | status line | Stop hook | The status payload carries `context_window.context_window_size`; the Stop payload does not, and the transcript names both Opus windows `claude-opus-5`. Without it the Stop hook guesses 1M if any turn exceeded 200k, else 200k. |
-| rate history | status line | status line | 🛫 needs a history the payload does not give it: up to 16 samples of 🧩's total, at least 5 seconds apart. |
-| agent offsets | Stop hook | Stop hook | Which agent requests have been reported; see [the 👥 row](#the--row). |
-| calibration | any | any | The window scan and the readings it was taken with; see [caching](#plan-window-shares). |
-| source cache | any | any | The last usage-source reading; see [usage sources](usage-sources.md). |
+The mod keeps what it has learnt in files in its private state directory
+(see [refresh and storage](usage-sources.md#refresh-and-storage)), so a
+reload or a new session starts from it: the calibration and the window scan
+(see [caching](#plan-window-shares)), the transcript's and each agent's
+folds, the inbox's, and the last usage-source reading. Each kind, its name
+and its format are in `mod/src/state_spec.ts`; a session's files are named by a
+SHA-256 digest of its key.
 
 ## Compactions
 
-A compaction writes no usage record and gets no Stop of its own (`/compact`
-is a local command, and an automatic compaction happens inside another turn).
-It is read from the `compact_boundary` record instead: `preTokens` (the
-context that was summarised), `durationMs`, and whether it was manual or
-automatic. It becomes a turn of its own, or fills the `/compact` prompt's turn
-when that prompt made no requests.
+A compaction writes no usage record. It is read from the
+`compact_boundary` record instead: `preTokens` (the context that was
+summarised), `durationMs`, and whether it was manual or automatic. A
+`/compact` is a turn of its own, or fills the `/compact` prompt's turn when
+that prompt made no requests. An automatic compaction lands inside another
+turn, and is billed to that turn's 🎤 and receipt, its dollars and tokens
+with the rest of what the turn spent. A subagent row counts its thread's
+compactions under 🤏.
 
-Each compaction is reported exactly once, on a 🤏 row at the next Stop. Claude
-Code writes a `stop_hook_summary` record each time the Stop hook runs, and
-any compaction after the last such record has not been reported yet. A
-transcript with no such records falls back to reporting the compactions
-between the previous prompt and the current one.
-
-```
-📊 🤏 Usage: Compact (last)  🧩 ▴ 29k ▾  4k  🎯 99٪                  💰+  0.2   🔋+ 0.05٪ 📖 59٪  🪫+ 0.06٪ 📝  0٪  ⌛🤖+ 41s  🔧+  0s
-
-📊 🎤 Usage: Prompt (last)   🧩 ▴ 12k ▾800   🎯 98٪  🧠-19.5٪ -195k  💰+  0.1   🔋+ 0.01٪ 📖 61٪  🪫+ 0.02٪ 📝 14٪  ⌛🤖+  1m  🔧+  0s  📅 2026-08-16
-📊 🎮 Usage: Session (total) 🧩 ▴ 76k ▾  6k  🎯 99٪  🧠  9.7٪   97k  💰   0.5   🔋  0.1٪  💳 41٪  🪫  0.13٪ 💳 63٪  ⌛🤖 3.7m  🔧   0s  🕐   02:23:20
-```
-
-The prompt after a compaction reports the drop in context across it (`🧠-19.5٪
--195k` above): the context change is measured from the last turn that had a
+The turn after a compaction reports the drop in context across it (`🧠-195k
+-19٪`): the context change is measured from the last turn that had a
 reading, skipping the compaction turn, which has none.
-
-## Codex
-
-Codex's accounting shares no estimates with Claude's. It reports what Codex
-records and leaves the rest blank.
-
-**Requests.** Tokens are summed from Codex's per-response `token_usage`
-records, deduplicated on response id, so history copied into a forked child is
-not counted again. Cached input and reasoning output are subsets of input and
-output, not extra tokens. Where a rollout has only older cumulative records
-for a turn, per-response records take precedence; `--diagnose` reports the
-ambiguity instead of inventing request ids. Missing categories stay
-unavailable rather than zero.
-
-**Children.** Child threads are found through the spawn edges in Codex's
-`state_5.sqlite` index (under `$CODEX_HOME`, default `~/.codex`), or through
-indexed subagent rollouts that name their parent thread. A child's requests
-belong to a parent turn only through an explicit `root_turn_id`; without one
-they are reported as separate child usage, never guessed onto the current
-turn. `--diagnose` reports incomplete coverage, such as a missing index or
-rollout file.
-
-**Stop reports.** A Stop prints the requests it has not printed before. A
-locked, session-scoped journal in private state records reported request ids
-and turns, so a child that finishes after its root turn was reported appears
-at the next Stop under that root. A Stop with nothing new prints `{}`.
-`--all` (plain history) and an explicit `--transcript` report without
-consuming the journal.
-
-**No dollars, no per-child quota.** Codex reports thread token usage and
-account quota separately, with no documented conversion between them, so
-subscription tokens are not priced and children get no share of a quota
-window. Claude's calibration is not applied. Organization API totals are
-separate account-period rows, never added to a session.
-
-**Quota buckets** keep their own ids, labels, model or feature metadata and
-windows. A weekly-only bucket stays weekly-only even when another bucket (such
-as Spark's) has a 5-hour window, and reset times are never shared between
-buckets.

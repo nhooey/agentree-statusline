@@ -1,12 +1,9 @@
-// inbox_fold.ts against inbox_fold.py: each fixture file's inbox entry,
-// folded at each line end, digests as tests/fixtures/fold-saves.json holds
-// it, which the Python writes (tests/fixtures/gen/state.py) and
-// tests/fold.py holds the Python to; the counts read on from the fold are
-// the counts of the whole files; and the two ports save the same bytes to
-// the same files and read on from each other's.
+// inbox_fold.ts: each fixture file's inbox entry, folded at each line
+// end, digests as tests/fixtures/fold-saves.json holds it, which
+// mod/tools/gen-fold-saves.ts writes; and the counts read on from the fold
+// are the counts of the whole files.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -33,8 +30,8 @@ let folded: Fixture[] | null = null;
 
 /** Each file tests/fixtures/fold-saves.json names, its inbox entry folded
  * from the start at each line end: a session's own transcript as `main`,
- * whose deliveries are not folded.  Which files hold an inbox mark is the
- * Python's to say. */
+ * whose deliveries are not folded.  Which files hold an inbox mark is
+ * mod/tools/gen-fold-saves.ts's to say. */
 function fixtures(): Fixture[] {
   folded ??= Object.keys(foldSaves("inbox-fold").saves).sort().map((file) => {
     const data = fs.readFileSync(file);
@@ -53,24 +50,23 @@ function fixtures(): Fixture[] {
   return folded;
 }
 
-// The format honest, and the two ports' texts byte for byte the same: the
-// Python's digest is of the texts it wrote.
+// The format honest: a change to the entry, or to what is saved of it,
+// fails here until the format is bumped and the digests written again.
 test("each fixture file's inbox entry folds as " +
   "tests/fixtures/fold-saves.json holds it", () => {
   const want = foldSaves("inbox-fold");
   assert.equal(want.format, INBOX_FOLD_FORMAT,
-    "run tests/fixtures/gen/state.py");
+    "run node mod/tools/gen-fold-saves.ts");
   const all = fixtures();
   assert.ok(all.length > 3);
   for (const fx of all) {
     assert.equal(digest(fx.texts), want.saves[fx.file],
       `${fx.file}: the fold changed; bump "inbox-fold" in ` +
-      "spec/state.jsonc");
+      "mod/src/state_spec.ts");
   }
 });
 
-// The entry at each line end, the Python's too, read here, reads on to the
-// last.
+// The entry at each line end, read back, reads on to the last.
 test("the saved inbox entry reads on here", () => {
   for (const fx of fixtures()) {
     const data = fs.readFileSync(fx.file);
@@ -136,37 +132,5 @@ test("the inbox read on from its fold counts as the whole files", () => {
   const { tr, files, targets } = session(tmp, longest);
   assert.deepEqual(Object.fromEntries(
     cr.inboxFoldCounts(state, tr, files, targets)), { b1: 1 });
-  fs.rmSync(tmp, { recursive: true });
-});
-
-// The Node port and the Python's panel save to the same files, byte for
-// byte: one reads on from the other's.
-test("an inbox fold the Python saved is read on here, and the reverse", () => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "inbox-fold-"));
-  const python = (state: string, tr: string, files: string[],
-    targets: Map<string, string>) => execFileSync("python3", ["-c",
-    "import json, sys\nfrom coding_agent_usage_line import inbox_fold\n" +
-    "a = json.loads(sys.argv[1])\n" +
-    "print(json.dumps(inbox_fold.counts(*a)))",
-    JSON.stringify([tr, files, Object.fromEntries(targets)])],
-  { env: { ...process.env, CODING_AGENT_USAGE_LINE_STATE_DIR: state } })
-    .toString();
-  const slot = (state: string, tr: string, i: number) => fs.readFileSync(
-    path.join(inboxFoldDir(state, tr), INBOX_SLOTS[i]), "utf-8");
-  const py = path.join(tmp, "py"), node = path.join(tmp, "node");
-  // Each from nothing, at half the session: the same bytes.
-  let s = session(tmp, 1500);
-  assert.equal(python(py, s.tr, s.files, s.targets).trim(),
-    JSON.stringify(Object.fromEntries(
-      cr.inboxFoldCounts(node, s.tr, s.files, s.targets))));
-  assert.equal(slot(node, s.tr, 1), slot(py, s.tr, 1));
-  // Each read on from the other's, to the end: the same bytes again.
-  s = session(tmp, 3100);
-  python(node, s.tr, s.files, s.targets);
-  cr.inboxFoldCounts(py, s.tr, s.files, s.targets);
-  assert.equal(slot(node, s.tr, 0), slot(py, s.tr, 0));
-  const [seq, entries] = inboxFoldOf(slot(py, s.tr, 0))!;
-  assert.equal(seq, 2);
-  assert.equal(entries.get(s.tr)!.pos, fs.statSync(s.tr).size);
   fs.rmSync(tmp, { recursive: true });
 });

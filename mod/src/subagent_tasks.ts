@@ -2,15 +2,13 @@
 // agent's entry in `$.agent.list()`, its `.meta.json` sidecar and the fold
 // of its transcript (claude_records.ts's AgentFold), worked out as the
 // renderer's prepared tasks (claude_subagent_render.ts's Prepared):
-// (task, usage, meta, shares).  A port of claude.py's agent_usage_of,
-// agent_clock and agent_window_shares, and of prepare_subagent_tasks's
-// assembly, with the task the payload's task list gave the Python built
-// here from the agent list and the fold instead.
+// (task, usage, meta, shares), each task built from the agent list and the
+// fold.
 //
 // Pure: the reads are the hooks' (hooks/subagents.ts), and `now` comes in.
 import {
   W_CACHE_READ, W_CACHE_WRITE, _usd, closeAgentSpan, ETA_LINE,
-  backgroundTasks, openToolSpans, threadClock,
+  backgroundTasks, endedTasks, openToolSpans, threadClock,
 } from "./claude_records.ts";
 import type { AgentFold, BgTask, Span } from "./claude_records.ts";
 import { _naiveTimestamp, _windowStarts } from "./claude_calib.ts";
@@ -19,14 +17,14 @@ import { isDict, pyGet, pyTruthy } from "./py.ts";
 import type { Dict } from "./py.ts";
 import type { Prepared } from "./claude_subagent_render.ts";
 
-/** sum() of floats, left to right: claude_records.py's add_up. */
+/** sum() of floats, left to right. */
 function addUp(values: Iterable<number>): number {
   let total = 0;
   for (const v of values) total += v;
   return total;
 }
 
-/** What an agent's fold comes to, as agent_usage_of reads it: its usage
+/** What an agent's fold comes to, as agentUsageOf reads it: its usage
  * deduped on requestId, first wins, summed and priced per record, and its
  * clock's spans as they stand, the open one closed on a copy so the fold
  * can go on.  The fields are AgentUsage's, the renderer reading them by
@@ -87,7 +85,7 @@ export function agentUsageOf(fold: AgentFold): Dict {
   };
 }
 
-/** The agent's 🤖 and 🔧 seconds off its own transcript, as agent_clock
+/** The agent's 🤖 and 🔧 seconds off its own transcript, as agentClock
  * reads them: a running agent's open span and every tool call still
  * waiting on its result run on to `now`; a finished one's stop where its
  * file does. */
@@ -106,10 +104,9 @@ export function agentClock(usage: Dict, running: boolean, now: number):
   return [Math.max(0.0, busy - tool - wait), tool];
 }
 
-/** The agent's share of each plan window, in percent, as
- * agent_window_shares works it out: what it billed since the window
- * opened over the calibrated dollars a percent; null for a window with no
- * calibration, or an agent that billed nothing. */
+/** The agent's share of each plan window, in percent: what it billed
+ * since the window opened over the calibrated dollars a percent; null for
+ * a window with no calibration, or an agent that billed nothing. */
 export function agentShares(usage: Dict, calib: Calib | null,
   snap: Snapshot | null): { sess: number | null; week: number | null } {
   const out: { sess: number | null; week: number | null } =
@@ -164,7 +161,7 @@ export type AgentInput = {
 
 /** The agents of `agents` whose inbox is counted, each by its id to its
  * file, `pathOf(id)`, and the earliest any of them started, in epoch
- * seconds (null for none): prepare_subagent_tasks's targets and firsts.  A
+ * seconds (null for none): preparedOf's targets and firsts.  A
  * killed or failed agent's inbox is dropped with it, and one with no file
  * has none. */
 export function inboxTargets(
@@ -188,7 +185,9 @@ export function inboxTargets(
 
 /** One prepared task, its latest progress update and the background
  * shells and Monitors it has open, in the order they opened (none where
- * absent), as the band's document carries them (`agents.tasks`). */
+ * absent), and the ones it last closed, each with its end, in the order
+ * they closed (none where absent), as the band's document carries them
+ * (`agents.tasks`). */
 export type TreeTask = {
   readonly task: Dict;
   readonly usage: Dict;
@@ -196,6 +195,7 @@ export type TreeTask = {
   readonly shares: { sess: number | null; week: number | null };
   readonly progress: string;
   readonly bgTasks?: readonly BgTask[];
+  readonly bgEnded?: readonly BgTask[];
 };
 
 /** The task the renderer reads, from the agent list and the fold: its id,
@@ -229,7 +229,7 @@ function taskOf(a: AgentInput, usage: Dict | null): Dict {
   };
 }
 
-/** The prepared tasks of `agents`, as prepare_subagent_tasks hands them
+/** The prepared tasks of `agents`, as preparedOf hands them
  * to the renderer, each with its progress update: the usage off its fold,
  * its clock run on to `now` while it runs, the window `windowOf` gives
  * its model, its inbox and branch, its shares of the plan windows; the
@@ -255,10 +255,11 @@ export function treeTasks(agents: readonly AgentInput[], now: number,
     if (!meta.parentAgentId && a.listed?.parentId) {
       meta.parentAgentId = a.listed.parentId;
     }
+    const gone = endedTasks(a.fold?.bgEnded);
     return { task, usage: filled, meta,
       shares: agentShares(filled, calib, snap), progress: a.progress,
       bgTasks: a.fold ? backgroundTasks(a.fold.background, a.fold.bgInfo)
-        : [] };
+        : [], ...gone.length ? { bgEnded: gone } : {} };
   });
 }
 

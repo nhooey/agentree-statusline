@@ -1,10 +1,10 @@
 // The mod's constants, and the settings it carries until the user's own
 // configuration file holds them.
 //
-// What the mod draws is set by the options (spec/options.jsonc), merged
+// What the mod draws is set by the options (options_spec.ts), merged
 // from the configuration files over the defaults file
-// (defaults/config.jsonc) the way the Python merges them
-// (docs/options.md, "Configuration files"; configuration.ts, options()).
+// (defaults/config.jsonc) (docs/options.md, "Configuration files";
+// configuration.ts, options()).
 // What stays here are the constants no file may set: the version the
 // caches are keyed by, and the timings (agents/plans/open/config-merge.md,
 // Decided 5 and 15).  A change here is a change to the mod: edit, then
@@ -12,8 +12,8 @@
 import type { Value } from '../src/config.ts'
 
 export const CONFIG = {
-  // The version the mod's caches are keyed by, apart from the Python's
-  // digest of its source: a change to the accounting is a new version.
+  // The version the mod's caches are keyed by: a change to the
+  // accounting is a new version.
   version: "usage-band 0.2.0",
   // How often a live agent's fold, and the main transcript's, is saved, so
   // a reload reads on from it.

@@ -1,7 +1,6 @@
 // tests/fixtures/fold-saves.json, read: each fold's format and a digest of
-// each fixture's save, which tests/fixtures/gen/state.py writes from the
-// Python and the *_fold tests hold this port to.  A save is digested as
-// state.py's digest() does it, so both ports must write it byte for byte.
+// each fixture's save, which mod/tools/gen-fold-saves.ts writes and the
+// *_fold tests hold the folds to.
 import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 

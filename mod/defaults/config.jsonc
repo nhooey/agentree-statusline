@@ -1,12 +1,11 @@
-// The defaults of coding-agent-usage-line and its usage-band mod: every
-// option a configuration file may set, with the value both ports use when
-// no file sets it.
+// The defaults of the usage-band mod: every option a configuration file
+// may set, with the value the mod uses when no file sets it.
 //
-// Both ports read this file at every run, and nothing else holds these
+// The mod reads this file at every run, and nothing else holds these
 // values: a key missing here, one that is no option, or a value of the
 // wrong type is an error, drawn where the status line or the band would be.
 // The options' types, allowed values and documentation are in
-// spec/options.jsonc and docs/options.md.
+// mod/src/options_spec.ts and docs/options.md.
 //
 // To change a setting, write only that key in your own file,
 // ~/.config/coding-agent-usage-line/config.jsonc (or a project's
@@ -18,15 +17,17 @@
 // changes.  A key that is no option refuses the whole file, with a
 // warning naming it.
 {
-  // ── Both ports ─────────────────────────────────────────────────────────
+  // ── The usage source ───────────────────────────────────────────────────
   // Where plan and quota figures come from: auto, native, none, off,
-  // claude-usage-tracker, codex-app-server, anthropic-admin, openai-admin,
-  // experimental-claude-oauth, experimental-codex-api, or cmd:PATH.
+  // claude-usage-tracker, anthropic-admin, experimental-claude-oauth, or
+  // cmd:PATH.
   "usage-source": "auto",
   // A non-secret label that keeps cached readings for accounts apart.
   "account": "default",
   // The UTC period of the organization reports: day, week or month.
   "account-period": "day",
+
+  // ── The grid ───────────────────────────────────────────────────────────
   // Columns each grid row leaves blank at the right edge.  null
   // follows rows.*.place: 5 when any row drawn live is "above", where
   // Claude Code's [-] stands, else 2.
@@ -35,34 +36,12 @@
   // any one part (docs/options.md, "Hiding").
   "hide": [],
 
-  // ── Claude's display ───────────────────────────────────────────────────
-  // Faint | rules between the columns.
-  "column-rules": false,
   // A blank between a mark and its value.
   "mark-spacing": true,
   // The digits after a decimal point as subscripts.
   "subscript-decimals": false,
-  // Colour the cost rows.
-  "color": false,
-  // The cost line's 🎮 session-totals row.
-  "totals": true,
-  // The cost rows flush right.
-  "right-align": true,
-  // The account half of each 🔋 and 🪫 cell.
-  "account-totals": true,
-  // The cost rows' 📅 date and 🕐 time cells.
-  "datetime": true,
-  // The "Usage: …" words in the cost rows' labels.
-  "usage-text": true,
-  // Always start the cost message with a blank line.
-  "force-newline": false,
-  // The mark at the start of each cost row.
-  "prefix": "📊",
-  // The label of the cost line's prompt row.  null follows usage-text:
-  // "🎤 Usage: Prompt (last)  " when it is on, "🎤" when it is off.
-  "label": null,
 
-  // ── The mod's ──────────────────────────────────────────────────────────
+  // ── The rows ───────────────────────────────────────────────────────────
   // Each row the mod draws.  place: "above", in the band above the
   // prompt, or "footer", under Claude Code's footer line; live: "never",
   // "running" (while a turn runs) or "always"; transcript: whether a
@@ -90,10 +69,26 @@
   // How many subagent rows the band's tree draws at most; the later
   // siblings past it are summed on their parent's "… N more" row.
   "subagent-rows": 6,
+  // How many seconds a tree row that finished stays drawn where it stood,
+  // ended: a subagent before it goes into "✅ N done", a background shell
+  // or Monitor before it goes.  Counted from when it finished; 0 moves it
+  // at once.
+  "finished-linger": 5,
   // Where the 💳 account is drawn: "row", a row of its own where
   // rows.account.place puts it, in its colours, or "tail", at the footer
   // line's right end, plain and dim, whatever rows.account.place says.
   "account-place": "row",
+  // Ask api.anthropic.com for the plan's windows, the weekly Fable one
+  // among them, once a minute with the session's own credential, which
+  // Claude Code sets and the mod never sees; drawn under usage-source
+  // "auto" over Claude Code's own reading.
+  "plan-usage": true,
+  // The other weekly windows on the 💳 row after 🦊, each where the usage
+  // source gives it: 🎼 seven_day_opus, 🎭 seven_day_sonnet, 🍳
+  // seven_day_omelette, 🔌 seven_day_oauth_apps, 🤝 seven_day_cowork.  A
+  // file may turn on one alone; the rest stay off.
+  "weekly-windows": {"opus": false, "sonnet": false, "omelette": false,
+                     "oauth_apps": false, "cowork": false},
   // The account's credits on the 💳 row (docs/options.md, "The credits").
   // A condition is {field, op, value, unit}: field "balance" (unit "usd"
   // or "percent"), "spent" ("usd") or "expiry" ("days", "hours",

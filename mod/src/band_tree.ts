@@ -14,7 +14,9 @@
 // Monitors (📡), each a leaf row with its call's label and how long it has
 // run, in the order they opened; they count against no cap.  Under 🧵
 // main, after those, `✅ N done` sums the subagents that finished in the
-// turn.  Past the cap, the later siblings under one parent are summed on
+// turn.  A row that finishes, an agent that ends or a shell or Monitor
+// that closes, stays where it stood, ⚫, for `finished-linger` seconds
+// after it finished, and only then goes into `✅ N done` or goes.  Past the cap, the later siblings under one parent are summed on
 // that parent's `… N more`, and every shown row's parents stay.  A row
 // with children draws ⊟ in its tree line, or ⊞ where it is folded; a
 // folded thread counts every agent hidden under it with 👶🏻 and its own
@@ -41,11 +43,11 @@ import {
   E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MODE_MONITOR, E_MODE_SHELL,
   E_MORE, E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN, E_SESS,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
-  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_EFF_HIGH, E_IDLE, MAG_DUR_S,
+  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_IDLE,
 } from "./spec.ts";
-import { durFmt, magDim, padVal } from "./formatting.ts";
+import { durFmt, grade, padVal } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { pressed, span, spans } from "./spans.ts";
+import { paint, pressed, span, spans } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
 import { pyFormatF } from "./py.ts";
 import type { Dict } from "./py.ts";
@@ -59,7 +61,9 @@ import {
   renderAgentSplit, renderBackground, renderInbox, runningParents, treeShape,
 } from "./claude_subagent_render.ts";
 import type { Eta } from "./claude_subagent_render.ts";
-import { sessionNamePieces, workspacePieces } from "./cells.ts";
+import { CELLS, sessionNamePieces, workspacePieces } from "./cells.ts";
+import { PAYER_GLYPHS, partsSince } from "./spending.ts";
+import type { Payer } from "./spending.ts";
 import type { Workspace } from "./cells.ts";
 import { preparedOf } from "./subagent_tasks.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
@@ -78,10 +82,27 @@ export type TreeAgents = {
   readonly now: number;
   readonly turnStart: number | null;
   readonly mainBackground?: readonly BgTask[];
+  /** The main thread's background tasks that closed, each with its end;
+   * each agent's are its task's `bgEnded`. */
+  readonly mainEnded?: readonly BgTask[];
+  /** How many seconds after it finished a row stays drawn as it was
+   * (`finished-linger`): an agent that ended, before it goes into `✅ N
+   * done`, and a shell or Monitor that closed, before it goes.  None where
+   * absent or 0. */
+  readonly linger?: number;
+  /** The home folder, the document's `agents.home`, which a background
+   * task's toast draws as `~` in its output file (bgPath); none where
+   * absent. */
+  readonly home?: string;
   /** The agents an earlier receipt left out while they were still at
    * work, by id: the stamped tree owes each its row once it has ended
    * (stampedSplit). */
   readonly owed?: readonly string[];
+  /** The pool paying other than the plan, and since when (spending.ts):
+   * each agent's row bills its own parts from `since` on in the column
+   * after 💰.  None while the plan pays, and on the receipt. */
+  readonly spending?: { readonly kind: Payer; readonly since: number | null }
+    | null;
 };
 
 /** What the tree is drawn from.  The rows `session`, `main` and `turn` are
@@ -202,39 +223,97 @@ function bgCounts(bg: readonly BgTask[]): Piece[] {
 
 /** The ⌛ cell of a row that has run `age` seconds. */
 function ageCell(st: Settings, age: number): Span[] {
-  return [span(E_IDLE), span(padVal(st, 4, durFmt(st, age)), "F_PRW",
-    magDim(age, MAG_DUR_S))];
+  const fig = durFmt(st, age);
+  return [span(E_IDLE),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
-/** What a press on an open background task's row shows, one line: its
- * glyph and kind, 🟢 running, ⌛ how long it has run where its start is
- * known, and `label`, its call's description, else its command's first
- * line (backgroundLabel). */
+/** How long background task `b` has run at `now`: to its end, for one
+ * that has closed; null where its start is not known. */
+function bgAge(b: BgTask, now: number): number | null {
+  return b.start === null ? null
+    : Math.max(0, (b.end ?? now) - b.start);
+}
+
+/** The longest output path a task's toast draws whole; a longer one keeps
+ * its first two folders and its file name (bgPath). */
+export const BG_PATH_MAX = 80;
+
+/** What a task's toast puts before its output file: drawn only in the
+ * toast, never on a row, so it is no mark of the spec's. */
+const TOAST_OUTPUT = "⤷";
+
+/** Output file `path` as a task's toast draws it: `home`, where given and
+ * the path is under it, as `~`, and where still longer than BG_PATH_MAX,
+ * its first two folders, `…` and its file name. */
+export function bgPath(path: string, home = ""): string {
+  const p = home && (path === home || path.startsWith(home + "/"))
+    ? "~" + path.slice(home.length) : path;
+  if (Array.from(p).length <= BG_PATH_MAX) return p;
+  const segs = p.split("/");
+  const lead = p.startsWith("/") ? 3 : 2;
+  return segs.length > lead + 1
+    ? [...segs.slice(0, lead), "…", segs.at(-1)].join("/") : p;
+}
+
+/** What a press on a background task's row shows, one line: its glyph
+ * and kind, 🟢 running or ⚫ ended, ⌛ how long it has run, or ran, where
+ * its start is known; `label`, its call's description, else its
+ * command's first line (backgroundLabel), left out where the command
+ * starts with it; `$` and its command on one line (backgroundCommand),
+ * where known; and ⤷ the file its output is written to (bgPath), where
+ * known. */
 export function bgText(st: Settings, b: BgTask, label: string,
-  now: number): string {
+  now: number, home = ""): string {
   const shell = b.kind === "bash";
+  const age = bgAge(b, now);
+  const cmd = b.command ?? "";
+  const out = b.output ?? "";
   return [shell ? E_MODE_SHELL + " shell" : E_MODE_MONITOR + " Monitor",
-    E_PHASE_RUN + " running",
-    ...(b.start === null ? []
-      : [E_IDLE + " " + durFmt(st, Math.max(0, now - b.start)).trim()]),
-    label].join(" · ");
+    b.end === undefined ? E_PHASE_RUN + " running" : E_PHASE_END + " ended",
+    ...(age === null ? [] : [E_IDLE + " " + durFmt(st, age).trim()]),
+    ...(cmd && b.label && cmd.startsWith(b.label) ? [] : [label]),
+    ...(cmd ? ["$ " + cmd] : []),
+    ...(out ? [TOAST_OUTPUT + " " + bgPath(out, home)] : [])].join(" · ");
 }
 
-/** The row of an open background task: 💻 for a shell, 📡 for a Monitor,
- * with 🟢 as every running thread has, then its call's label, or else
- * its kind; ⌛ how long it has run, where its start is known.  A leaf
- * whose label shows bgText as a toast: it has no transcript to switch to,
- * and no call opens one task's own view. */
-function bgNode(st: Settings, b: BgTask, now: number): Node {
+/** The row of a background task: 💻 for a shell, 📡 for a Monitor, with
+ * 🟢 as every running thread has, or ⚫ once it has closed, then its
+ * call's label, or else its kind; ⌛ how long it has run, or ran, where
+ * its start is known.  A leaf whose label shows bgText as a toast: it has
+ * no transcript to switch to, and no call opens one task's own view. */
+function bgNode(st: Settings, b: BgTask, now: number, home: string):
+  Node {
   const shell = b.kind === "bash";
   const label = squash(b.label).trim() || (shell ? "shell" : "monitor");
+  const age = bgAge(b, now);
   return { folded: false, kids: [], row: { scope: "agent",
     label: pressingAll([headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
-      E_PHASE_RUN),
+      b.end === undefined ? E_PHASE_RUN : E_PHASE_END),
     { path: "name.label", spans: [span(label)], drop: 0 }],
-    { kind: "task", row: b.id, text: bgText(st, b, label, now) }),
-    cells: b.start === null ? {}
-      : { clock: ageCell(st, Math.max(0, now - b.start)) } } };
+    { kind: "task", row: b.id, text: bgText(st, b, label, now, home) }),
+    cells: age === null ? {} : { clock: ageCell(st, age) } } };
+}
+
+/** Whether a row that finished at `end` is still drawn at `now`, `linger`
+ * seconds after it finished: never where `end` is not known. */
+export function lingers(end: number | null | undefined, now: number,
+  linger: number): boolean {
+  return linger > 0 && typeof end === "number" && now - end < linger;
+}
+
+/** The background rows a thread draws at `now`: its open tasks `open`,
+ * and those of its closed tasks `gone` that still linger (lingers), each
+ * where it stood, in the order they opened. */
+export function bgRows(open: readonly BgTask[], gone: readonly BgTask[],
+  now: number, linger: number): readonly BgTask[] {
+  const ids = new Set(open.map((b) => b.id));
+  const still = gone.filter((b) => !ids.has(b.id) &&
+    lingers(b.end, now, linger));
+  if (!still.length) return open;
+  const at = (b: BgTask): number => b.start ?? Infinity;
+  return [...open, ...still].sort((x, y) =>
+    at(x) === at(y) ? 0 : at(x) < at(y) ? -1 : 1);
 }
 
 /** A thread's head, its kind glyph and its state circle in two columns,
@@ -280,7 +359,7 @@ function drawNode(n: Node, lasts: readonly boolean[], out: Row[],
   marks = true): void {
   const line = treeLine(lasts, marks && (n.kids.length > 0 || n.folded),
     n.folded, n.fold);
-  out.push({ ...n.row, left: true, label: [
+  out.push({ ...n.row, label: [
     ...(line.length ? [{ path: "tree", spans: line, drop: 0 }] : []),
     ...n.row.label] });
   if (!n.folded) walk(n.kids, lasts, out, marks);
@@ -385,10 +464,13 @@ function ended(t: Dict, u: Dict, busy: ReadonlySet<string>): boolean {
 /** The subagents as the tree's nodes under 🧵 main: each live agent under
  * the agent that started it (treeShape, which steps over a finished
  * ancestor), in the order they started; an ended agent only where a live
- * one hangs under it.  At most `cap` agent rows, in the tree's order: the
- * siblings past it are summed on their parent's `… N more`.  After each
- * thread's agents, its open shells and Monitors (bgNode), past no cap.
- * Then `✅ N done`, the agents that ended since the turn opened. */
+ * one hangs under it, or for `a.linger` seconds after it ended, as it
+ * stood.  At most `cap` agent rows, in the tree's order, a lingering one
+ * counted as a live one is: the siblings past it are summed on their
+ * parent's `… N more`.  After each thread's agents, its open shells and
+ * Monitors (bgNode), and the closed ones that linger, past no cap.  Then
+ * `✅ N done`, the agents that ended since the turn opened and linger no
+ * more. */
 function agentNodes(st: Settings, a: TreeAgents, cap: number,
   folds: Folds): Node[] {
   const prepared = preparedOf(a.tasks);
@@ -410,11 +492,19 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     const t = byId.get(id)!;
     return ended(t.task, t.usage, busy);
   };
+  const linger = a.linger ?? 0;
+  // When an agent ended: its last record.
+  const endOf = (id: string): number | null => {
+    const u = byId.get(id)!.usage;
+    return (u.last_seen ?? u.last_epoch) as number | null;
+  };
+  // Drawn as a live one is: at work, ended under `linger` seconds ago, or
+  // over a live agent.
   const liveMemo = new Map<string, boolean>();
   const live = (id: string): boolean => {
     if (!liveMemo.has(id)) {
       liveMemo.set(id, false);
-      liveMemo.set(id, !isEnded(id) ||
+      liveMemo.set(id, !isEnded(id) || lingers(endOf(id), a.now, linger) ||
         (kidsOf.get(id) ?? []).some((k) => live(k)));
     }
     return liveMemo.get(id)!;
@@ -426,10 +516,14 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
   // A thread's open shells and Monitors, the main thread's under "".
   const bgOf = (id: string): readonly BgTask[] => id === ""
     ? a.mainBackground ?? [] : byId.get(id)!.bgTasks ?? [];
+  // Its rows: the open ones and the closed ones that linger.
+  const bgDrawn = (id: string): readonly BgTask[] => bgRows(bgOf(id),
+    id === "" ? a.mainEnded ?? [] : byId.get(id)!.bgEnded ?? [], a.now,
+    linger);
   const bgNodes = (id: string): Node[] =>
-    bgOf(id).map((b) => bgNode(st, b, a.now));
+    bgDrawn(id).map((b) => bgNode(st, b, a.now, a.home ?? ""));
   const shut = (id: string): boolean =>
-    (shownKids(id).length > 0 || bgOf(id).length > 0) &&
+    (shownKids(id).length > 0 || bgDrawn(id).length > 0) &&
     foldShut(folds, id, false);
   const agentRow = (id: string): Row => {
     const t = byId.get(id)!;
@@ -445,8 +539,8 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     return { scope: "agent",
       label: pressingAll([...label, ...progressPiece(t.progress)],
       { kind: "view", agent: id }),
-      cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
-        a.now, eta, waitingOn) };
+      cells: spendOn(st, a, [t], agentCells(st, t.task, t.usage, t.meta,
+        t.shares, a.limits, a.now, eta, waitingOn)) };
   };
   // `capped`: the rows count against the cap.  The rows an opened `… N
   // more` lists are past it, and drawn whole.
@@ -478,8 +572,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
   const nodes = [...place(""), ...bgNodes("")];
   if (a.turnStart !== null) {
     const done = [...byId.keys()].filter((id) => !live(id) && (() => {
-      const u = byId.get(id)!.usage;
-      const end = (u.last_seen ?? u.last_epoch) as number | null;
+      const end = endOf(id);
       return end !== null && end >= a.turnStart!;
     })());
     if (done.length) {
@@ -573,8 +666,9 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
       ? { ...p, spans: p.spans.map((s) => ({ ...s,
         text: s.text.replace(E_PHASE_END, E_PHASE_DONE) })) } : p);
     return { scope: "agent",
-      label: [...label, ...progressPiece(t.progress)], cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
-        a.now, eta, waitingOn) };
+      label: [...label, ...progressPiece(t.progress)],
+      cells: spendOn(st, a, [t], agentCells(st, t.task, t.usage, t.meta,
+        t.shares, a.limits, a.now, eta, waitingOn)) };
   };
   // Agents whose parents run in a cycle are left out, as no thread
   // started them.
@@ -584,11 +678,25 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
   });
 }
 
+/** `cells` with the column after 💰 for the billed `tasks`, summed: their
+ * parts from the paying pool's `since` on, under its glyph.  As they are
+ * while the plan pays, or where none of them billed. */
+function spendOn<C extends { readonly [key: string]: readonly Span[] }>(
+  st: Settings, a: TreeAgents, tasks: readonly TreeTask[], cells: C):
+  C | (C & { spend: Span[] }) {
+  const pay = a.spending;
+  const parts = tasks.flatMap((t) =>
+    t.usage.parts as [number | null, number][]);
+  if (!pay || !parts.length) return cells;
+  return { ...cells, spend: CELLS.spend(st, PAYER_GLYPHS[pay.kind],
+    partsSince(parts, pay.since)) };
+}
+
 /** A grouped row that sums `tasks`, kept under `fold`, folded or opened
- * over `kids`: `… N more` past the cap, or `✅ N done`.  Its 🛫 column says 🏃 and how many of them run, or ✅ and how
- * long since the last of them ended; 💰 🧩 💾 and the plan's shares are
- * their sums, 🎯 their cache rates weighed by their ▴, ⌛ their ages
- * summed and 🤖 🔧 🚦 their split of it, as proportions of themselves, as
+ * over `kids`: `… N more` past the cap, or `✅ N done`.  Its 🛫 column says 🟢 and how many of them run, or ✅ and how
+ * long since the last of them ended; 💰, the column after it, 🧩 💾 and
+ * the plan's shares are their sums, 🎯 their cache rates weighed by their
+ * ▴, ⌛ their ages summed and 🤖 🔧 🚦 their split of it, as proportions of themselves, as
  * 🎮's agent-seconds are.  No model, 🧠 or ⛳: they are each agent's
  * own. */
 function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
@@ -601,7 +709,7 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
   const cells: { [key: string]: Span[] } = {};
   if (kind === "more") {
     cells.rate = renderAgentRate(st, tasks.filter((t) =>
-      t.task.status === "running").length, E_EFF_HIGH);
+      t.task.status === "running").length, E_PHASE_RUN);
   } else {
     const ends = tasks.map((t) => num(t.usage.last_seen ?? t.usage.last_epoch))
       .filter((e) => e);
@@ -652,11 +760,12 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
     cells.clock = ageCell(st, age);
     const timed = tasks.filter((t) => t.usage.model_s !== null);
     if (timed.length) {
-      cells.split = renderAgentSplit(age, sum((t) => num(t.usage.model_s),
+      cells.split = renderAgentSplit(st, age, sum((t) => num(t.usage.model_s),
         timed), sum((t) => num(t.usage.tool_s), timed));
     }
   }
   for (const k of Object.keys(cells)) if (!cells[k].length) delete cells[k];
+  if (billed.length) Object.assign(cells, spendOn(st, a, billed, {}));
   return { folded, kids, fold, row: { scope: "agent", cells,
     label: [{ path: "name.label", spans: spans(span(name, "F_BLU")),
       drop: 0 }] } };

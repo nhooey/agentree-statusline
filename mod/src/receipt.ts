@@ -6,12 +6,13 @@
 // turn's records are in the transcript, the mod stamps them there frozen, a
 // `$.ui.log` line each: a head, 🔺🔖 the turn's tag, the account's limits
 // and when it was stamped, and over it the same two rows, from the cost document
-// (`cost_figures`), dim so history reads apart from the live band.  As
+// (`costFigures`), dim so history reads apart from the live band.  As
 // a turn starts, the mod draws the same tag under the prompt, 🔻 pointing
 // down at the turn it opens, from the status document.  The rows are drawn
 // on the band's fixed grid (band.ts), so the receipt's columns are the
-// band's and the panel's.  A turn that ran subagents stamps them too, as
-// the band's tree (band_tree.ts) draws them, stamped: 🧵 the parent, 🎤
+// band's and the panel's.  Each row is drawn as the band's tree
+// (band_tree.ts) draws it, stamped: 🎤🏁 `turn` and the prompt it
+// answered.  A turn that ran subagents stamps them too: 🧵 the parent, 🎤
 // under it first, then every agent the turn ran, 🏁 on each that ended.
 //
 // Pure, as band.ts is: the clock is drawn in the TZ the edge sets.
@@ -235,7 +236,7 @@ function turnRow(st: Settings, t: Turn, acc: Accounting, win: number,
     // seconds between the sign-off and the turn's last record, so no ⛳.
     eta: t.eta.length > 0 && t.eta[1] === 0 ? []
       : CELLS.eta(st, t.eta, null, now),
-    split: accountingSplit(acc),
+    split: accountingSplit(st, acc),
     ...shareCells(st, acc, sessPct, weekPct),
     diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
   };
@@ -250,7 +251,7 @@ function addUp(values: readonly number[]): number {
 }
 
 /** 🎮: the session, `accounting.session`, its 🧩 🎯 every turn summed
- * as cost_totals_group sums them, ⌛ its age from `start_s` (decision 5),
+ * as costTotalsGroup sums them, ⌛ its age from `start_s` (decision 5),
  * and its mark alone on the label, as the band's 🎮 is. */
 function sessionRow(st: Settings, turns: readonly Turn[], acc: Accounting,
   now: number, sessPct: string, weekPct: string): Row {
@@ -261,7 +262,7 @@ function sessionRow(st: Settings, turns: readonly Turn[], acc: Accounting,
       addUp(tokens.map(([, d]) => d))),
     cache: CELLS.cache(st, cacheRate(addUp(turns.map((t) => t.cache_read)),
       addUp(turns.map((t) => t.fresh + t.cache_write + t.cache_read)))),
-    split: accountingSplit(acc),
+    split: accountingSplit(st, acc),
     ...shareCells(st, acc, sessPct, weekPct),
     diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
   };
@@ -372,17 +373,15 @@ export function stampedOf(fig: Dict | null,
   };
 }
 
-/** The receipt as drawn at `cols` under `hide`: 🎤, `main`, the band's 🤖
- * row, where there is one, and 🎮 on the band's fixed grid, `inset`
- * columns in (the mod's is hint-inset, where the band's rows start), then
- * the tag line
- * (receiptHead) under them.  A hidden scope's row is
- * left out, and so is a row not `stamped` (RowName: the rows whose
+/** The receipt as drawn at `cols` under `hide`: its rows as the band's
+ * tree draws them, stamped (receiptTree), on the band's fixed grid,
+ * `inset` columns in (the mod's is hint-inset, where the band's rows
+ * start), then the tag line (receiptHead) under them.  A hidden scope's
+ * row is left out, and so is a row not `stamped` (RowName: the rows whose
  * `rows.<row>.transcript` is true), and the tag line without `tags`
  * (`rows.tag.transcript`).  `dim` draws every span dim, as the stamped
- * receipt is drawn, its colours kept.  Where `agents` holds an agent the
- * turn ran, and `main` is given, the rows are the band's tree, stamped
- * (receiptTree). */
+ * receipt is drawn, its colours kept.  `main` is the band's 🧵 row,
+ * where the caller has it, and `agents` the subagents the turn ran. */
 export function receiptLines(st: Settings, fig: Dict, cols: number,
   hide: readonly string[], dim = false, main: Row | null = null,
   stamped: readonly RowName[] = ROW_NAMES, inset = 0, tags = true,
@@ -392,27 +391,32 @@ export function receiptLines(st: Settings, fig: Dict, cols: number,
 }
 
 /** The receipt's rows as the band's tree, stamped (treeRows): 🎮 where
- * it is `kept`, 🧵 `main` whatever `kept` says, as the agents' parent,
- * and under it 🎤 where it is kept, 🏁 and the prompt it bills, then every
- * agent the turn ran.  Null where the turn ran none, or none is drawn. */
+ * it is `kept`, as the root, and under it 🎤 where it is kept, 🏁 `turn`
+ * and the prompt it bills.  Where `agents` holds an agent the turn ran,
+ * 🧵 `main` stands over 🎤 whatever `kept` says, as the agents' parent,
+ * with every agent the turn ran under it; else 🧵 where it is kept. */
 function receiptTree(st: Settings, turn: Row | null, session: Row,
-  main: Row, prompt: string, agents: Stamped, kept: readonly string[],
-  hide: readonly string[]): Row[] | null {
+  main: Row | null, prompt: string, agents: Stamped | null,
+  kept: readonly string[], hide: readonly string[]): Row[] {
   const shown = (r: Row | null): Row | null =>
     r !== null && kept.includes(r.scope) && !hidden(hide, r.scope) ? r
       : null;
-  const rows = treeRows(st, {
-    session: shown(session),
-    main: hidden(hide, main.scope) ? null : main,
-    turn: shown(turn), workspace: null,
-    mainPhase: E_PHASE_END, mainInbox: 0, mainProgress: agents.mainProgress,
-    turnPhase: E_PHASE_DONE, turnPrompt: prompt,
-    agents: agents.agents, cap: Infinity, stamped: true,
-  }, hide);
-  return rows.some((r) => r.scope === "agent") ? rows : null;
+  const tree = (parent: Row | null, ran: Stamped | null): Row[] =>
+    treeRows(st, {
+      session: shown(session),
+      main: parent !== null && !hidden(hide, parent.scope) ? parent : null,
+      turn: shown(turn), workspace: null,
+      mainPhase: E_PHASE_END, mainInbox: 0,
+      mainProgress: ran?.mainProgress ?? "",
+      turnPhase: E_PHASE_DONE, turnPrompt: prompt,
+      agents: ran?.agents ?? null, cap: Infinity, stamped: true,
+    }, hide);
+  const ran = main && agents ? tree(main, agents) : [];
+  return ran.some((r) => r.scope === "agent") ? ran
+    : tree(shown(main), null);
 }
 
-/** receiptLines, each line with its scope (`turn` for 🎤, `main` for 🤖,
+/** receiptLines, each line with its scope (`turn` for 🎤, `main` for 🧵,
  * `session` for 🎮, `agent` for a subagent's, `blank` and `tag` for the
  * tag line and the row above it), so a caller can tell the rows apart. */
 export function receiptScoped(st: Settings, fig: Dict, cols: number,
@@ -420,14 +424,8 @@ export function receiptScoped(st: Settings, fig: Dict, cols: number,
   stamped: readonly RowName[] = ROW_NAMES, inset = 0, tags = true,
   agents: Stamped | null = null): { scope: string; spans: Span[] }[] {
   const { turn, session, prompt } = receiptRows(st, fig);
-  // 🤖 between 🎤 and 🎮, as the band stacks them, where the caller has
-  // the band's row for it.
-  const kept = scopesOf(stamped);
-  const tree = main && agents
-    ? receiptTree(st, turn, session, main, prompt, agents, kept, hide)
-    : null;
-  const rows = tree ?? [turn, main, session].filter((r): r is Row =>
-    r !== null && kept.includes(r.scope) && !hidden(hide, r.scope));
+  const rows = receiptTree(st, turn, session, main, prompt, agents,
+    scopesOf(stamped), hide);
   // `inset` columns in, led by as many blanks and that much narrower, on
   // the columns laid out at `cols`, so they stack on the band's rows,
   // which start that far in and keep the same columns; the tag line stays

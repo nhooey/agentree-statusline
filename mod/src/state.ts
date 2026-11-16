@@ -1,5 +1,5 @@
-// The files both ports keep in the state directory, named as state.py's
-// state_name and state_path name them, from spec/state.jsonc's table.
+// The files kept in the state directory, named by stateName and
+// statePath from state_spec.ts's table.
 import { pyJoin } from "./claude_records.ts";
 import { sha256Hex } from "./sha256.ts";
 import { STATE_KINDS } from "./state_spec.ts";
@@ -7,8 +7,7 @@ import { STATE_KINDS } from "./state_spec.ts";
 export type StateKind = keyof typeof STATE_KINDS;
 
 /** The kind's prefix, the sha256 of its format and the key's parts joined
- * by NULs, and its suffix.  Throws for the wrong number of parts, where the
- * Python raises. */
+ * by NULs, and its suffix.  Throws for the wrong number of parts. */
 export function stateName(kind: StateKind, ...key: string[]): string {
   const row = STATE_KINDS[kind];
   if (key.length !== row.key.length) {

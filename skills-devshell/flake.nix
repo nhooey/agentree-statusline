@@ -52,7 +52,7 @@
       };
     };
 
-    # Python style, for coding-agent-usage-line.py and its package.
+    # Python style, for the scripts under tools/.
     python-skills = {
       url = "github:nhooey/python-skills/overnight-skills";
       inputs = {

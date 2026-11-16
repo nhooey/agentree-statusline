@@ -1,30 +1,83 @@
-# Tests for `coding-agent-usage-line.py`
+# Tests
 
 How to run the suites, and what CI runs, is in [docs/tests.md](../docs/tests.md).
-This file is for someone changing or adding a test: how the goldens work, what
-the pinned environment holds still, what each case is for, and which recorded
-behaviours are deliberate.
+This file is for someone changing or adding a test: what each fixture family
+holds and which side writes it, what the pinned environment holds still, what
+each case is for, and which recorded behaviours are deliberate.
 
+- [The committed corpora](#the-committed-corpora)
 - [Golden files](#golden-files)
 - [The pinned environment](#the-pinned-environment)
-- [The generated corpora](#the-generated-corpora)
 - [Figures](#figures)
 - [Status cases](#status-cases)
 - [Cost cases](#cost-cases)
 - [Subagent row cases](#subagent-row-cases)
-- [Assertion suites](#assertion-suites)
+- [Grid cases](#grid-cases)
+- [Row cases](#row-cases)
+- [The folds' saves](#the-folds-saves)
+- [The configuration cases](#the-configuration-cases)
 - [Manual checks](#manual-checks)
 - [Behaviours that look like bugs](#behaviours-that-look-like-bugs)
 
+## The committed corpora
+
+Everything under `fixtures/` is committed, and each family is one of two
+kinds: written by a generator under `mod/tools/`, or committed data that no
+generator writes, which the mod's tests read as the reference. Payload paths are `${HOME}` and `${FIXTURES}` placeholders that
+the tests fill in, so neither the fixtures nor the goldens carry a
+username.
+
+```
+fixtures/
+  cases.json             every case, in order: id, suite, input, cols, env,
+                         flags, figures
+  env/<name>.json        clock, zone, locale, terminal, usage source,
+                         calibration, tracker store, which repo
+  payloads/status/       status-line payloads
+  transcripts/status/    the transcripts and agent files they point at
+  transcripts/cost/      the Stop hook's transcripts
+  transcripts/subagent/  sessions with agents, for the fold and calibration
+                         fixtures; see Subagent row cases below
+  figures/<suite>/       the figures documents the cases name; see Figures
+  panel/<group>.json     the subagent rows from the renderer's inputs;
+                         see Subagent row cases below
+  records/ calib/ render/ receipt/ claude/
+                         calls of the accounting, the calibration, the cells
+                         and the receipt, each with its arguments and result
+  config/                the configuration files' cases; see The
+                         configuration cases below
+  formatting/ sources/   calls of the formatters, the spans and the
+                         usage-source reader, each with its arguments and
+                         result
+  grid/<profiles>.json   the grid's layouts and rows; see Grid cases below
+  rows/<profiles>.json   the band's and the receipt's rows from the figures;
+                         see Row cases below
+  fold-saves.json        a digest of each fixture's saved folds; see The
+                         folds' saves below
+```
+
+| Family | Written by | Read by |
+|---|---|---|
+| `config/` | `node mod/tools/gen-config-cases.ts` | the node suite |
+| `grid/`, `rows/` | `node mod/tools/gen-grid-cases.ts`, `node mod/tools/gen-row-cases.ts` | the node suite, which also runs each generator again and fails on a difference |
+| `fold-saves.json` | `node mod/tools/gen-fold-saves.ts` | the node suite |
+| everything else | nothing: committed data | the node suite |
+
+A family with a generator changes only through it: a hand edit is lost on
+the next run. `tests/all.sh`'s `generated` step reruns them all and fails
+on a difference, and the node suite runs each again in memory.
+
 ## Golden files
 
-`run-cases.py` renders each case in `fixtures/cases.json` and compares stdout,
-byte for byte, with a file under `golden/status/` or `golden/cost/`.
-`golden.sh` and `golden-cost.sh` run one suite each through it. A golden's name is
-`CASE@WIDTH.txt`, where `WIDTH` is the `--cols` it was rendered at and `none`
-means `--cols 0`, the program's "terminal width unknown" path. The cost suite
-compares the hook's `systemMessage`, not the JSON envelope around it, so a diff
-is readable.
+`golden/status/` and `golden/cost/` hold the status line and the Stop hook's
+receipt of each case in `fixtures/cases.json`, byte for byte, committed
+data. `mod/test/claude_render.test.ts` draws each status case's figures
+document with `mod/src/claude_render.ts` and compares it with its golden, and
+`mod/test/claude_cost.test.ts` each cost case's with
+`mod/src/claude_cost_render.ts`. A golden's name is `CASE@WIDTH.txt`, where
+`WIDTH` is the case's `cols`, the width it is drawn at, and `none` means 0, the
+"terminal width unknown" path. A cost golden is the hook's `systemMessage`,
+not the JSON envelope around it, so a diff is readable.
 
 The files keep their ANSI escapes. To look at one as the terminal would:
 
@@ -33,35 +86,20 @@ cat tests/golden/status/01-baseline@196.txt                        # in colour
 sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g' tests/golden/status/01-baseline@196.txt
 ```
 
-A layout change is supposed to show up as a golden diff. Re-record with
-`--regen`, read `git diff tests/golden/` line by line, and commit the goldens
-with the change. `--regen` rewrites the case's [figures](#figures) as well,
-and a layout change leaves them alone. There is no second implementation to agree with: a golden is
-a claim about what the program prints, and the reviewed diff is what keeps it
-honest.
-
-To add a case, add the payload or transcript to its generator
-(`fixtures/gen/status.py` or `fixtures/gen/cost.py`), or the case and any new
-environment to `fixtures/gen/cases.py`. Then run
-`usage-dev fixtures`, then `usage-dev goldens`, and read both diffs.
-
 ## The pinned environment
 
-Each case names an environment in `fixtures/env/`, and `run-cases.py` turns
-it into what the program reads. It holds still everything the readout reads
-that is not the payload; a golden is only as reproducible as this list.
+Each case names an environment in `fixtures/env/`, which holds still
+everything a case's figures read that is not its input:
 
 | Pinned | Without it |
 |---|---|
-| `CODING_AGENT_USAGE_LINE_NOW=1786847000` (2026-08-16 02:23:20 UTC) | every duration and both clock cells move |
-| `TZ=UTC`, `LC_ALL=en_US.UTF-8` | 🕐 and 📅 shift by the local offset |
-| `TMPDIR` and `CODING_AGENT_USAGE_LINE_STATE_DIR` in a fresh scratch directory | context, rate samples and source caches written by one case leak into the next, or into your real state |
-| `CODING_AGENT_USAGE_LINE_CLAUDE_CALIB_CACHE`, planted as `{"sess": 5.50, "week": 4.10}` | the window shares depend on your own history |
-| `CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST`, a fixture Claude Usage Tracker store | `auto` could read the tracker app installed on this machine |
-| `CODING_AGENT_USAGE_LINE_CONFIG_DIR`, a scratch directory whose `config.jsonc` gives the environment's usage source, and `CODING_AGENT_USAGE_LINE_PROJECT_DIR`, the case's repository | your own config files, user-global or above a payload's directory, would change what every case draws |
-| an environment's `source`, served as a `cmd:` usage source with a fixed `as_of`, one command per environment | the plan percentages come from whatever source the host has |
-| `TMUX` and `TERM_PROGRAM` unset, so the `unknown` profile | the width profile depends on the terminal that ran the suite |
-| a clean fixture repo (branch `golden-clean`) and a dirty one (`golden-dirty`) as the working directory | 🌿, 💾 and the project name record your checkout |
+| `now`, 1786847000 (2026-08-16 02:23:20 UTC) | every duration and both clock cells move |
+| `tz`, UTC, and `locale` | 🕐 and 📅 shift by the local offset |
+| `calib`, the calibration cache, `{"sess": 5.50, "week": 4.10}` | the window shares depend on your own history |
+| `tracker`, a Claude Usage Tracker store | `auto` could read the tracker app installed on this machine |
+| `source`, a usage source's version-1 reading with a fixed `as_of` | the plan percentages come from whatever source the host has |
+| `terminal`, empty, so the `unknown` profile | the width profile depends on the terminal that runs the suite |
+| `repo`, a clean fixture repo (branch `golden-clean`) or a dirty one (`golden-dirty`) | 🌿, 💾 and the project name record your checkout |
 
 The pinned instant is 6.7 minutes before `01-baseline`'s 5-hour reset and 1.9
 days before its weekly one, so both 🔜 countdowns draw real figures, and it is
@@ -69,43 +107,9 @@ after every generated record, so every elapsed figure is positive.
 
 The cases of one suite share one state directory, in the order
 `cases.json` lists them: a payload with `rate_limits` writes the cache that a
-later payload without them reads. Anything else that runs the cases has to
-keep that order.
+later payload without them reads, and the documents record it.
 
-`run-cases.py` runs the program with `/usr/bin/python3`, not the first
-`python3` on `PATH`; `--python`, or `TEST_PYTHON` in the environment, picks
-another (`TEST_PYTHON` also runs `golden.sh` and `golden-cost.sh`
-themselves).
-
-## The generated corpora
-
-`fixtures/gen/all.py` writes everything under `fixtures/` but `gen/`, and the
-output is committed, so a second implementation can read the same inputs.
-Only the generators change it: a hand edit is lost on the next run. Payload
-paths are `${HOME}` and `${FIXTURES}` placeholders that `run-cases.py` fills
-in, and the readout prints the home as `~`, so neither the fixtures nor the
-goldens carry a username.
-
-```
-fixtures/
-  cases.json             every case, in order: id, suite, input, cols, env, flags
-  env/<name>.json        clock, zone, locale, terminal, usage source,
-                         calibration, tracker store, which repo
-  payloads/status/       status-line payloads
-  transcripts/status/    the transcripts and agent files they point at
-  transcripts/cost/      the Stop hook's transcripts
-  transcripts/subagent/  sessions with agents, for the fold and calibration
-                         fixtures; see Subagent row cases below
-  figures/<suite>/       the figures documents the cases name, written by
-                         run-cases.py; see Figures below
-  panel/<group>.json     the subagent rows from the renderer's inputs;
-                         see Subagent row cases below
-  grid/<profiles>.json   the redesigned grid's layouts and rows, written by
-                         the TypeScript; see Grid cases below
-  rows/<profiles>.json   the band's and the receipt's rows from the figures,
-                         written by the TypeScript; see Row cases below
-  gen/                   the generators
-```
+## The input transcripts
 
 The main status transcript is built to reach branches a recorded session only
 reaches by accident:
@@ -122,41 +126,32 @@ reaches by accident:
 
 ## Figures
 
-The program runs each readout in two stages, and `run-cases.py` checks each
-on its own as well as the two together:
+A readout runs in two stages:
 
 1. **Figures.** The inputs read -- payload, transcript and agent files, usage
    source, calibration cache, repository, the clock -- and every figure the
-   rows draw worked out from them: `status_figures` in `claude.py` for the
-   status line, and `cost_figures`, after the transcript read in
-   `main_cost`, for the cost line. Everything that reads a file or a cache,
-   runs a command, reads the clock or writes session state happens here.
-2. **Render.** `render_status_figures` and `render_cost_figures` draw a
-   figures document at a width, under the flags and the terminal profile,
-   and read nothing else. The live path goes through the document too, so a
-   figure the rows need and the document lacks fails every golden.
+   rows draw worked out from them: `statusFigures` in `mod/src/claude.ts`
+   for the status line and the band, and `costFigures` for the receipt.
+   Everything that reads a file or a cache, runs a command or reads the
+   clock happens here.
+2. **Render.** A figures document drawn at a width, under the flags and the
+   terminal profile, reading nothing else.
 
 Between them is a figures document. A document has no width and no flags,
 so each case names one in `cases.json`'s `figures`, and the cases that come
 to the same document name the same one, committed once as
-`fixtures/figures/<suite>/<figures>.json`. A normal run compares the
-document each case writes, made sparse as below, with the one it names,
-byte for byte, so a case whose document differs fails; checks that the
-document's records have exactly their fields; then draws the committed one
-alone and compares that with the golden. `--regen` rewrites the documents
-with the goldens; `--regen-figures` rewrites only the documents, for a
-change to their shape that must not move a row; either fails two cases
-that name one document and write different ones, and removes a document no
-case names. To draw one by hand, filled out (`tests/_figures.py`'s
-`full`) and its placeholders filled in first:
+`fixtures/figures/<suite>/<figures>.json`. `mod/test/claude.test.ts` builds
+each case's document from its inputs and compares it, field for field,
+with the one it names, so a case whose document differs fails, and checks
+that the document's records have exactly their fields. The goldens'
+tests draw the committed documents, and the row cases are drawn from them
+too. To draw one by hand:
 
 ```sh
-coding-agent-usage-line.py --agent claude --mode status --cols 120 \
-    --from-figures FILE [render flags]
+node mod/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
 ```
 
-The documents are written for a second implementation to produce and
-compare, so the text is canonical:
+The text is canonical:
 
 - **Keys sorted**, two-space indent, UTF-8 unescaped, a newline at the end.
 - **Numbers exact**: the shortest decimal that reads back as the same double,
@@ -176,12 +171,10 @@ compare, so the text is canonical:
   field of a record (a `Payload`, `Transcript`, `Git`, `Limits`,
   `CacheShares` or `Turn`) whose value is null, so a schema number touches
   no document and a new record field only the documents that have a value
-  for it. `tests/_figures.py` and `mod/test/figures_doc.ts` put them back,
-  each port its own schema number, and `mod/test/claude.test.ts` checks the
-  two ports' numbers agree. The other nulls, of the document's own shape,
-  stay in the text.
+  for it. `mod/test/figures_doc.ts` puts them back, with the mod's schema
+  number. The other nulls, of the document's own shape, stay in the text.
 
-`schema` is 5 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
+`schema` is 6 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
 the figures the redesigned grid draws and today's rows do not: the status
 document's `turn` and `accounting`, the accounting's time and 💾 figures, the
 `Turn`'s lines and the `Transcript`'s main-thread figures. Schema 3, the same
@@ -193,7 +186,10 @@ need: the status document's `open_turn` and `accounting.open_turn`,
 moved either time. Schema 4 added the `Transcript`'s `session_name` and
 `session_color`, which the band's 🎮 row draws, and schema 5 the `Limits`'
 weekly Fable window, `fable_pct` and `fable_reset`, which the 💳 row draws as
-🦊. Both modes carry:
+🦊. Schema 6 added the `Limits`' other weekly windows, `opus_pct`,
+`sonnet_pct`, `omelette_pct`, `oauth_apps_pct` and `cowork_pct` with a
+`_reset` each, which the 💳 row draws after 🦊 once the option
+`weekly-windows` turns them on. Both modes carry:
 
 | Key | Holds |
 |---|---|
@@ -203,15 +199,15 @@ weekly Fable window, `fable_pct` and `fable_reset`, which the 💳 row draws as
 | `usage.plan` | the plan figures the accounting divided by: `session_pct`, `weekly_pct`, `session_resets_at`, `weekly_resets_at` |
 | `usage.account_text` | the account summary row, when one is drawn |
 
-A status document adds the records `render_status` takes, field for field
-as `claude_records.py` defines them:
+A status document adds the records the status line takes, field for field
+as `mod/src/claude_records.ts` defines them:
 
 | Key | Record |
 |---|---|
 | `payload` | `Payload`: the status-line JSON as read, its strings as given |
 | `transcript` | `Transcript`: tokens, cache rate, context, the last exchange, the ⌛ durations and their epochs, ETAs, queue and compactions; and the main thread's own, apart from its agents: `own_tok_up`, `own_tok_down` and `own_cache_pct` over its own requests; `own_parts`, an `[epoch, dollars]` pair for each of those requests and each compaction in the order written, a compaction's stamped where its turn is (at a `/compact` prompt with no calls, else at its boundary); `own_usd`, the parts totalled; `own_est`, true when a compaction is in them, whose summary's cost is an estimate; `lines_added` and `lines_removed` off its own tool results; the `prompt_id` and `turn_index` of the turn opened last; and `session_name` and `session_color`, the session's name and Claude Code's colour for it, off its latest `custom-title` (else `agent-name`) and `agent-color` records |
 | `git` | `Git`: branch, dirty, toplevel, worktree |
-| `limits` | `Limits`: the window percentages as the source gave them, this session's and this turn's share of each, the weekly Fable window's percentage (`fable_pct`, no shares), the resets as epochs |
+| `limits` | `Limits`: the window percentages as the source gave them, this session's and this turn's share of each, the weekly Fable window's percentage (`fable_pct`, no shares) and the other weekly windows' (`opus_pct` and the like, no shares), the resets as epochs |
 | `cache_shares` | `CacheShares`: 📖 and 📝 for the turn and the session |
 | `rate` | the session's token rate per second, or null |
 | `turn` | the `Turn` the 🎤 figures are about, the last one with main-thread calls that is not a compaction (`_with_shares`' pick), or null |
@@ -272,17 +268,19 @@ unknown (114 goldens), then:
 | `subdec-*@*` | `--subscript-decimals` |
 | `model-fable@196`, `model-mythos@196` | model families other than Opus, Sonnet and Haiku in the 🤖 cell |
 | `fable-own-reset@196`, `fable-shared-reset@196` | a weekly Fable window beside the plan's two, resetting after the weekly one and with it; the status line draws neither, the 💳 row's cases do |
+| `weekly-windows@196` | the weekly Opus window resetting with the plan's week and the weekly Sonnet window two days after it; the status line draws neither, the 💳 row's cases do, off as the defaults leave them and on |
 
 The column rules are opt-in, and only 196 is wide enough for them (the cut-off
 is 170), so the two `rules-*@196` goldens are the only ruled ones.
 
-The main loop runs with `--usage-source auto`. `01-baseline` carries native
-`rate_limits`, which are cached for 60 seconds, so later payloads without their
-own (`02`, `10`) quote that cached reading — `💳 15٪` and `87٪`.
+The status cases' documents read `--usage-source auto`. `01-baseline`
+carries native `rate_limits`, which are cached for 60 seconds, so later
+payloads without their own (`02`, `10`) quote that cached reading — `💳 15٪`
+and `87٪`.
 
 ## Cost cases
 
-`fixtures/gen/cost.py` writes eleven transcripts, one per branch of the turn reader:
+`transcripts/cost/` holds eleven transcripts, one per branch of the turn reader:
 
 | Transcript | Branch |
 |---|---|
@@ -311,15 +309,15 @@ Each renders at 196, 150, 120, 92 and unknown (55 goldens), then:
 | `uncalibrated-01@*` | a reading too coarse to calibrate from |
 | `subdec-*` | `--subscript-decimals` |
 
-`force-nl-01` is checked at 196 on purpose: the program adds that newline by
+`force-nl-01` is checked at 196 on purpose: the receipt adds that newline by
 itself when the window is narrow, so a narrow case would pass without the flag.
 
 ## Subagent row cases
 
-`fixtures/gen/panel.py` writes two things: the sessions under
-`transcripts/subagent/`, a main transcript each with its agents' files
-beside it, which the fold fixtures and the calibration scan read; and the
-render cases under `panel/`.
+Two families: the sessions under `transcripts/subagent/`, a main
+transcript each with its agents' files beside it, which the fold fixtures,
+the calibration scan and the band's tree cases read; and the render cases
+under `panel/`.
 
 | Session | What it holds |
 |---|---|
@@ -329,20 +327,18 @@ render cases under `panel/`.
 | `04-bare` | no agent files: its tasks were shells and a remote agent |
 | `05-empty` | no agent files and no tasks |
 
-**Render**, `fixtures/panel/<group>.json`: `render_task_rows`' inputs and the
+**Render**, `fixtures/panel/<group>.json`: `renderTaskRows`' inputs and the
 rows it draws, each as the joined string and as its spans. The inputs are
 the prepared `(task, usage, meta, shares)` records, the `Limits`, `cols` (the
 terminal's width), `now` and, where there are any, the `--hide` paths
-`hide`; a group is one terminal profile and one setting of the two switches,
-since the program fixes those per process. The shapes are in the generator's
-docstring. `corpus*.json` are committed data: the inputs prepared from
+`hide`; a group is one terminal profile and one setting of the two switches.
+`corpus*.json` hold the inputs prepared from
 these sessions' task lists, with 🥚 a queued task, shells, a remote agent,
 a status never seen, tasks with no id or not an object, a worktree's 🌿
 and a label that repeats the description, at 220, 160, 120, 92, 60 and
 unknown, and 01 and 03 again at 220 and 120 under `--no-mark-spacing`,
 `--subscript-decimals` and the `tmux`, `iterm`, unknown and true-colour
-terminals. The generator reads their inputs from the files and draws their
-rows again. The rest are made by hand for
+terminals. The rest are made by hand for
 what the corpus does not reach: `states`, `eta`, `counts`, `tree`,
 `gauges`, `figures`, `who` (the name, branch and activity), `widths` (one
 mixed panel from 400 columns down to 20), `hide` (the mixed panel under `--hide` paths), `missing` (no usage, a partial
@@ -350,16 +346,16 @@ one, no meta or shares, tasks that are skipped), and the mixed panel again
 under each switch and terminal (`tight`, `subdec`, `tmux`, `iterm`,
 `unknown`).
 
-`run-cases.py` runs the render cases as its `panel` suite: the generator run
-again in memory, under `--python`, and compared with what is committed.
+`mod/test/claude_subagent_render.test.ts` draws every case and compares
+both forms with what is committed. `tests/fixtures/claude/agent-usage.json`
+holds each session's agents' usage, field for field, which
+`mod/test/band_tree.test.ts` holds `agentUsageOf` to.
 
 ## Grid cases
 
 `fixtures/grid/` pins the redesigned grid
-([the plan](../agents/plans/closed/redesign.md)), `mod/src/grid.ts`. Unlike the rest
-of `fixtures/`, these are written by the TypeScript, with
-`usage-dev grid-cases`: the grid is built there first, and the
-Python's `grid.py` is checked against them by `tests/grid.py`. `all.py` does not touch them.
+([the plan](../agents/plans/closed/redesign.md)), `mod/src/grid.ts`. They are written by the
+TypeScript, with `usage-dev grid-cases`.
 
 The inputs are plain data: the mockup's sample rows by id, each its scope, its
 panel depth, its label's pieces (path, spans, drop rank) and its cells as
@@ -367,24 +363,21 @@ spans by column key, so a port lays them out without any renderer. Each
 `layout` case is a set of rows, `cols`, the `--hide` patterns and the fixed or
 from-the-rows grid, with the column keys `layout` keeps; each `draw` case is
 one row on those keys, with and without the label's spill, and what `draw`
-makes of it as spans and as the joined line. The matrix is 300 to 6
-columns, from a wide terminal (240 and 300) down
-to where a label has no room and the chrome alone runs past the right edge, eight hide sets, both grids, agents to each depth and both phases'
-rows, deduplicated. A file is one terminal profile's, and profiles whose
-cases come out the same share one: `iterm` and `tmux` share
-`iterm-tmux.json`, where `_PAD` widens 🧩, 🧠 and 💰, and `unknown.json` is
-the third. The
-shapes are in the generator's header.
+makes of it as spans; the first draw case in a file also has the joined
+line. The matrix is 300 to 6 columns, a wide terminal and then each width
+at which a column drops, down to where a label has no room and the chrome
+alone runs past the right edge, ten hide sets, both grids, agents to each
+depth and both phases' rows, deduplicated. `unknown.json` holds every case.
+`iterm-tmux.json`, where `_PAD` widens 🧩, 🧠 and 💰, holds the sample a
+profile can change: the layout cases whose columns differ, with their draw
+cases, and every draw case at 300 columns. The shapes are in the
+generator's header.
 
-`mod/test/grid.test.ts` replays every case under each of its file's profiles
-and runs the generator again in memory, failing if what it writes differs
-from what is committed, so regenerating and reading the diff is the only way
-to change them.
-`grid.py` replays the same cases against `coding_agent_usage_line/grid.py`,
-the Python port: each profile's environment is set and `formatting.py`
-reloaded, as a process with it would have it, and the kept keys, the spans
-and the joined line must match. It only reads the cases; a disagreement is
-the port's to fix.
+`mod/test/grid.test.ts` replays every case under each of its file's
+profiles, and `unknown.json`'s layout cases under every other profile but
+where that profile's file has the case, and runs the generator again in
+memory, failing if what it writes differs from what is committed, so
+regenerating and reading the diff is the only way to change them.
 
 ## Row cases
 
@@ -428,131 +421,53 @@ usage-dev figures tests/fixtures/figures/cost/<name>.json \
     --status tests/fixtures/figures/status/<name>.json
 ```
 
-## Assertion suites
+## The folds' saves
 
-These pin values rather than rows, so they assert instead of comparing files.
+`fixtures/fold-saves.json` holds, for each of the mod's three saved folds
+(the main transcript's, each agent's, and the inbox's), its format number and
+a digest of what it saves of each fixture transcript, which
+`node mod/tools/gen-fold-saves.ts` writes; `--show PATH` prints a save's
+text, to read a change by running it before and after.
+`mod/test/main_fold.test.ts`, `agent_fold.test.ts` and `inbox_fold.test.ts`
+save each fold again and fail where its digest differs or its format is not
+`mod/src/state_spec.ts`'s, so a change to a fold's text cannot land without a new
+format. They also break the folds anywhere: each fixture folded to every
+record boundary, finished, and folded on to the end reads as its whole
+fold, and so does one with a half-written last line folded on a copy and
+then completed; and each save is read back at every line end and read on,
+saved a part at a time, and read past a torn head.
 
-- **`agents.py`** — reading agent files, pricing each request at its own model,
-  folding agent spend into the turn that spawned it, the 👥 row for spend that
-  lands after its turn printed, and the ⌛ partition of the main thread's own
-  time (agents' work stays on their rows; a question, or an Agent call, is
-  waiting; a call still running counts to now on a live session), and the
-  same partition per turn, which the receipt's ⌛🤖 and 🔧 draw and which sums
-  to the status line's.
-- **`fold.py`** — `read_transcript` and `read_turns` as a fold and a
-  finish: each fixture transcript folded to every record boundary, finished,
-  and folded on to the end reads as its whole fold, and so does one with a
-  half-written last line folded on a copy and then completed. Then the
-  folds saved as text by `main_fold.py`: each fixture's save digests as
-  `tests/fixtures/fold-saves.json` holds it (`gen/state.py` writes it, and
-  `gen/state.py --show PATH` prints a save's text; a change to the fold
-  needs a new format in `spec/state.jsonc`), read back at every line end
-  and read on, saved a part at a time, and read past a torn head; the
-  agents' folds and the inbox's the same way.
-  `mod/test/main_fold.test.ts` runs the same cases through the TypeScript,
-  and hands state between the ports both ways.
-- **`subagent.py`** — the subagent rows, `prepare_subagent_tasks` and the
-  renderer together: finding an agent's file (directly
-  under `subagents/`, or under `subagents/workflows/*/`), deduplicating
-  requests, lines written, the agent's own ⌛ 🤖 🔧 🚦 split (a coordinator
-  parked on its agents keeps its ⌛ running and reads the wait as 🚦), 5-hour
-  and weekly shares, and the row's shape as stripped text. It checks that a nested row
-  pays two columns per level for the tree's chrome, so every depth ends
-  on the same column.
-- **`rate.py`** — the 🛫 sampler against a stepped clock (tick, history
-  depth, a damaged history file) and its cell; column 3's 📖 📝 shares and
-  🧠's alignment; the per-kind brightness cuts; and the ⌛ row's 🔧 🤖 🚦
-  partition of Σ, with and without a blocking question.
-- **`grid.py`** — the Python grid engine against the TypeScript-written
-  [grid cases](#grid-cases), under each profile they name.
-- **`usage-source.py`** — the Claude Usage Tracker reader, `cmd:` sources,
-  normalization, and the scoped cache. Its fixture store is the tracker's
-  schema as last observed; a pre-migration store is a separate case, because
-  the tracker once moved its data and the old reader silently returned `{}`.
-  To check the fixture against an installed tracker after an app update:
+## The configuration cases
 
-  ```sh
-  defaults export HamedElfayome.Claude-Usage - > /tmp/store.plist
-  CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST=/tmp/store.plist python3 tests/usage-source.py
-  ```
-
-- **`sources-v1.py`, `source-cache.py`, `http-sources.py`, `app-server.py`,
-  `claude-sources.py`** — the usage-source layer described in
-  [docs/usage-sources.md](../docs/usage-sources.md), all against fixtures and
-  fake transports.
-- **`codex.py`, `port-cli.py`** — Codex rollout accounting, and the public CLI
-  run as a subprocess against temporary homes.
-- **`config.py`** — the configuration files: the shared cases in
-  `fixtures/config/cases.json`, which `fixtures/gen/config.py` writes and the
-  mod's port runs too, `--show-config`, and a check that files planted
-  wherever a developer's own could be change no golden. The mod's side:
-  `mod/test/config.test.ts` runs the cases without flags over a fake file
-  system and fails on any path asked outside the case's tree;
-  `mod/mod-tests/config.test.ts` checks the read through `$.fs`, its lines
-  in the mod's log, and that no path the mod asks for lies outside the
-  test's own world.
-- **`formatting.py`, `claude-subagent-render.py`** — pure helpers, no I/O.
-- **`usage-dev.py`** — `tools/usage-dev.py`, the dev shell's `usage-dev`:
-  its argument parsing and the steps each command runs, checked as data,
-  and `run` against stand-in programs.
-- **`py39-floor.sh`** — `py_compile` over every file under 3.9 (catches
-  syntax), then one render per mode under 3.9 (catches a name 3.9 lacks). It
-  prefers `/usr/bin/python3`, which is 3.9 on macOS, or `PY39` if set.
+`fixtures/config/cases.json` holds, for each case, a tree of configuration
+files, the environment, the directory the walk starts from, and what
+`mod/src/config.ts` makes of them: the project root, each layer's path, the
+options a layer above the defaults set, each with its layer, each table
+field a file set, and the warnings, word for word.
+`fixtures/config/defaults-cases.json` holds the shipped defaults file and
+changes to it, each with the error the strict reading gives, or null.
+`node mod/tools/gen-config-cases.ts` writes both from the cases in its
+source. `mod/test/config.test.ts` runs every case over a fake file system
+and fails on any path asked outside the case's tree;
+`mod/mod-tests/config.test.ts` checks the read through `$.fs`, its lines in
+the mod's log, and that no path the mod asks for lies outside the test's own
+world.
 
 ## Manual checks
-
-### Replaying real sessions
-
-```sh
-tests/compaction-once.py [TRANSCRIPT...]   # default: every eligible transcript
-tests/agents-once.py [TRANSCRIPT...]
-```
-
-Some rules are properties of a whole session, not of one render. A compaction
-writes no usage record and gets no Stop of its own, so it has to be reported
-by the next Stop, exactly once. `compaction-once.py` rebuilds what each Stop
-hook saw from the `stop_hook_summary` and `compact_boundary` records, and
-renders each Stop twice: *settled*, with the transcript caught up, and
-*racing*, without the trailing assistant records the hook often cannot see
-yet. `ok*` marks a transcript whose compaction predates its first Stop record,
-meaning the hook was installed mid-session.
-
-`agents-once.py` checks that every agent request lands on a 🎤 or 👥 row at
-the first Stop that saw it, and on a 👥 row at no later Stop. A request whose
-agent is still running is held back, and is first seen at the Stop after the
-agent ends; `held` counts the ones whose agent never ended. It imports the
-program rather than running it.
-
-Both walk `~/.claude/projects/`, so their runtime scales with your history:
-one run read 149 sessions and took over ten minutes. Pass transcripts to bound
-it, and give it no timeout.
 
 ### Breaking the folds over real transcripts
 
 ```sh
-usage-dev folds [--largest N] [--seed S] [FILE...]  # both ports
-python3 tests/fold_real.py [...]                 # the Python alone
-node mod/tools/check-fold.ts [...]               # the TypeScript alone
+usage-dev folds [--largest N] [--seed S] [FILE...]  # in the dev shell
+node mod/tools/check-fold.ts [...]                  # the same, outside it
 ```
 
-`fold.py` breaks the main transcript's folds over the fixtures; these break
-them over every `*.jsonl` under `~/.claude/projects/`, the agents' files
-too, at three seeded record boundaries, either side of every compaction and
-once inside a line, and check each reads on as the whole fold; at each
-break the fold is also saved as text, read back and read on. One line a
-file, with its saved state's size, and a total. Over 4,495 files and 10.1 GB on 2026-10-20 the Python
-took 173s and the TypeScript 109s; `--largest 3` takes seconds.
-
-### `--selftest`
-
-```sh
-usage-dev selftest
-```
-
-Draws specimen rows and measures them against the live terminal. It is the
-only check that catches a glyph which measures correctly and paints wrong, so
-look at the drawn rows as well as the deltas. Run it in each terminal you use,
-from a real tab: it needs a tty to query.
+The node suite breaks the main transcript's folds over the fixtures; this
+breaks them over every `*.jsonl` under `~/.claude/projects/`, the agents'
+files too, at three seeded record boundaries, either side of every
+compaction and once inside a line, and checks each reads on as the whole
+fold. One line a file, and a total. Over 4,495 files and 10.1 GB it took
+109s; `--largest 3` takes seconds.
 
 ### `probe-advance.sh`
 
@@ -560,10 +475,10 @@ from a real tab: it needs a tty to query.
 usage-dev probe-advance
 ```
 
-Prints this terminal's cursor advance for every glyph the program uses, by
+Prints this terminal's cursor advance for every glyph the mod uses, by
 drawing each one and asking the terminal for the cursor position (DSR). The
-glyph list is parsed from the `E_*` constants and `EAW_WIDE` in
-`coding_agent_usage_line/spec.py`, generated from `spec/layout.jsonc`. It asserts nothing. Run it after a
+glyph list is the `E_*` constants and `EAW_WIDE` of `mod/src/spec.ts`,
+read with Node. It asserts nothing. Run it after a
 terminal update and before changing any glyph or width-table entry. See
 [glyphs and terminals](../docs/glyphs-and-terminals.md).
 
@@ -583,18 +498,9 @@ Each of these is deliberate and recorded in the goldens.
 4. **A cost block too narrow for its labels cuts every row's label together.**
    `place_stacked` decides once against the tightest row, so the 📊 marks stay
    stacked. The `@92` and `@120` goldens show the whole block cut at once.
-5. **`--mode cost` waits up to 1.5 s for the turn it reports.** The transcript
-   is not flushed in step with the Stop hook; without the wait, the line
-   reports the previous prompt. `--transcript` names a file nothing is
-   appending to, so the goldens never wait.
-6. **The status line publishes the context window size; the cost line reads
-   it.** The Stop payload carries no model, and the transcript names both
-   Opus context sizes the same way, so without it 🧠 on the cost line could be
-   5× too high on a 1M-window session. The value goes to a per-session file in
-   the state directory, which the suites point at scratch.
-7. **`13-empty-transcript` shows `🎮 0٪` beside `🎤 ?`.** An empty transcript
+5. **`13-empty-transcript` shows `🎮 0٪` beside `🎤 ?`.** An empty transcript
    has a session with no spend, but no last turn to take a share of.
 
-Some case names predate the current source layer: the `plan-cache-*` and
-`stale-plan-*` cases no longer involve the status line's old plan cache. They
-plant `cmd:` source readings, as described in the tables above.
+The `plan-cache-*` and `stale-plan-*` cases plant `cmd:` source readings,
+as described in the tables above; no plan cache of the status line's is
+involved.

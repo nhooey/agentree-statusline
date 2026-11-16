@@ -1,8 +1,7 @@
-// The agent panel's inbox counts, read on from a saved fold: inbox_fold.py's
-// port, written byte for byte as it writes them.  spec/state.jsonc's
-// "inbox-fold" row names the directory and the format;
-// agents/plans/closed/saved-running-totals.md has the design, and
-// inbox_fold.py's docstring the text:
+// The agent panel's inbox counts, read on from a saved fold.
+// state_spec.ts's "inbox-fold" row names the directory and the format;
+// agents/plans/closed/saved-running-totals.md has the design.  The
+// text:
 //
 //   {"format":N,"seq":S,"files":[[PATH,POS,MTIME,TAIL,SENDS,GOT],...]}
 //
@@ -54,7 +53,7 @@ export function inboxFoldDir(stateDir: string, transcript: string): string {
 
 /** Fold `data`, the whole lines of a file from `e.pos` on, into `e`;
  * `main` for the session's own transcript, whose deliveries are not
- * folded (inbox_fold.fold_entry has why). */
+ * folded. */
 export function foldInboxEntry(e: InboxEntry, data: Uint8Array,
   main = false): void {
   e.sends.push(...inboxSendsOf(data));
@@ -68,7 +67,7 @@ export function inboxEntryText(path: string, e: InboxEntry): string {
 }
 
 /** The session's fold as the text a save writes, with its sequence
- * number, byte for byte as inbox_fold.fold_text writes it. */
+ * number, byte for byte as inboxFoldText writes it. */
 export function inboxFoldText(entries: ReadonlyMap<string, InboxEntry>,
   seq: number): string {
   return `{"format":${INBOX_FOLD_FORMAT},"seq":${seq},"files":[` +

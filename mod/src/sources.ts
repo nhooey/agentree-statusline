@@ -1,27 +1,22 @@
 // Usage source selection and the versioned, safe custom-command contract.
 //
-// A port of coding_agent_usage_line/sources.py, as far as the band needs it:
-// the version-1 reading (normalise and its validators), the payload's own
-// rate_limits (nativeReading), the scoped cache (cachedReading and the
-// refresh cadence), the custom command (commandReading), the tracker
-// (claudeUsageTracker) and collect, which chooses between them.  Each
-// function keeps its Python name in camelCase, so a change to one names the
-// place to change in the other.
+// As far as the band needs it: the version-1 reading (normalise and its
+// validators), the payload's own rate_limits (nativeReading), the scoped
+// cache (cachedReading and the refresh cadence), the custom command
+// (commandReading), the tracker (claudeUsageTracker) and collect, which
+// chooses between them.
 //
-// NOT PORTED: the HTTP sources' requests (anthropic-admin, openai-admin,
-// experimental-codex-api, with request_json, request_pages and
-// _retry_after) and the Codex app-server collector; validateSource still
-// accepts their names, so a spec that names one fails the way an
-// unavailable source does (no reading) rather than as an unknown source.
+// NOT READ HERE: anthropic-admin's request; validateSource accepts its
+// name, so a spec that names it fails the way an unavailable source does
+// (no reading) rather than as an unknown source.
 // experimental-claude-oauth's answer is read here (claudeOauthReading); the
 // mod makes its request with the session's own credential.
 //
-// What Python gives for free and this file spells out, because the shared
-// cases would otherwise drift on it: float() on strings, str() on JSON
-// values, json.loads' NaN and Infinity, datetime.fromisoformat as 3.9
-// parses it, and "%.6f"'s half-even rounding.  They are at the top, under
-// "Python's semantics"; truthiness, dict.get and strip() are in py.ts,
-// shared with the other ports.
+// The reading follows Python's rules, which this file spells out: float()
+// on strings, str() on JSON values, json.loads' NaN and Infinity,
+// datetime.fromisoformat as 3.9 parses it, and "%.6f"'s half-even
+// rounding.  They are at the top, under "Python's semantics"; truthiness,
+// dict.get and strip() are in py.ts, shared with the other modules.
 //
 // The I/O, the cache files, running a command and reading the tracker, is
 // in sources_node.ts for Node and in the mod's handlers for the mod, which
@@ -41,8 +36,7 @@ export type Reading = Dict;
 
 export const VALID_SOURCES = [
   "auto", "native", "none", "off", "claude-usage-tracker",
-  "codex-app-server", "anthropic-admin", "openai-admin",
-  "experimental-claude-oauth", "experimental-codex-api",
+  "anthropic-admin", "experimental-claude-oauth",
 ] as const;
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -54,7 +48,7 @@ const PY_FLOAT = new RegExp(
   "^[+-]?(?:(?:" + DIGITS + "(?:\\.(?:" + DIGITS + ")?)?|\\." + DIGITS +
   ")(?:[eE][+-]?" + DIGITS + ")?|inf|infinity|nan)$", "i");
 
-// float(text), or null where Python raises ValueError.  Like float(), it
+// float(text), or null where float() raises ValueError.  Like float(), it
 // reads any Unicode decimal digit as its ASCII one.
 export function pyFloatText(text: string): number | null {
   const s = pyStrip(pyAsciiDigits(text));
@@ -66,7 +60,7 @@ export function pyFloatText(text: string): number | null {
   return Number(s.replaceAll("_", ""));
 }
 
-// float(value), or null where Python raises TypeError or ValueError.
+// float(value), or null where float() raises TypeError or ValueError.
 // Bytes come from a plist's <data>; float() reads them as ASCII.
 export function pyFloat(value: unknown): number | null {
   if (typeof value === "boolean") return value ? 1 : 0;
@@ -119,7 +113,7 @@ function pyRepr(value: unknown): string {
 
 // json.loads: JSON, plus the NaN, Infinity and -Infinity Python reads and
 // writes.  JSON.parse refuses those, so a command printing one would be a
-// failed reading here and a reading with that one field missing in Python.
+// failed reading rather than a reading with that one field missing.
 export function pyJsonLoads(text: string): unknown {
   let i = 0;
   const fail = (): never => {
@@ -205,8 +199,8 @@ export function pyJsonLoads(text: string): unknown {
 }
 
 // json.dumps with ensure_ascii, the separators and sort_keys given.  A
-// whole number is written as an int; `floats` names the keys Python holds
-// as floats, which it writes with ".0".
+// whole number is written as an int; `floats` names the keys held as
+// floats, which json.dumps writes with ".0".
 export function pyJsonDumps(value: unknown, sortKeys = false,
                             floats: readonly string[] = [],
                             key = ""): string {
@@ -275,14 +269,13 @@ export function splitTimestamp(t: number): [number, number] {
   return [secs, us];
 }
 
-// datetime.fromisoformat as Python 3.9's C implementation parses, which is
-// what /usr/bin/python3 runs the status line with: YYYY-MM-DD, any one
-// separator, HH[:MM[:SS[.fff[fff]]]], and an offset of +HH:MM[:SS[.ffffff]].
-// Newer Pythons accept more (a bare "Z", basic formats); a reading that
-// leans on those is unavailable to both.  The C walks UTF-8 bytes with a
-// NUL after the last, and so does this, so its corner cases land the same
-// way.  The result is Unix seconds, a naive time read as UTC, as epoch()
-// reads it; null where Python raises.
+// datetime.fromisoformat as Python 3.9's C implementation parses:
+// YYYY-MM-DD, any one separator, HH[:MM[:SS[.fff[fff]]]], and an offset
+// of +HH:MM[:SS[.ffffff]].  Newer Pythons accept more (a bare "Z", basic
+// formats); a reading that leans on those is unavailable.  The C walks
+// UTF-8 bytes with a NUL after the last, and so does this, so its corner
+// cases land the same way.  The result is Unix seconds, a naive time read
+// as UTC, as epoch() reads it; null where fromisoformat raises.
 export function fromIsoformat(text: string): number | null {
   const head = text.slice(0, 10);
   if (/[^\x00-\x7f]/.test(head)) return null;
@@ -592,8 +585,7 @@ export function hasReading(value: unknown): boolean {
 
 // `kind:` and the first 24 hex digits of the sha256 of an account's id, or
 // "" for no id: what keys the calibration cache to an account
-// (seedLimitsSnapshot) without the id itself reaching any file.  In
-// claude.py, beside the tracker reader.
+// (seedLimitsSnapshot) without the id itself reaching any file.
 export function hashedAccountId(kind: string, value: unknown): string {
   if (typeof value !== "string" || !value) return "";
   return kind + ":" + sha256Hex(value).slice(0, 24);
@@ -668,25 +660,17 @@ export function tagIdentity(reading: Reading, agent: string, source: string,
            account_name: namespace, period_start: periodKey };
 }
 
-export function validateSource(agent: string, spec: string | null): string {
+export function validateSource(_agent: string, spec: string | null): string {
   spec = spec || "auto";
   if (spec.startsWith("cmd:")) return spec;
   if (!(VALID_SOURCES as readonly string[]).includes(spec)) {
     throw new Error("unknown usage source '" + spec + "'");
   }
-  if (agent === "claude" && ["codex-app-server", "openai-admin",
-                             "experimental-codex-api"].includes(spec)) {
-    throw new Error(spec + " is a Codex source");
-  }
-  if (agent === "codex" && ["claude-usage-tracker", "anthropic-admin",
-                            "experimental-claude-oauth"].includes(spec)) {
-    throw new Error(spec + " is a Claude source");
-  }
   return spec;
 }
 
 // The UTC period an account reading covers, as [start, end].  End is now
-// as Python returns it: through a datetime, so to the microsecond.
+// through a datetime, so to the microsecond.
 export function periodBounds(kind: string, now: number): [number, number] {
   const [secs, us] = splitTimestamp(now);
   const day = Math.floor(secs / 86400);
@@ -703,9 +687,7 @@ export function periodBounds(kind: string, now: number): [number, number] {
 
 const CREDENTIALS: { [spec: string]: string } = {
   "anthropic-admin": "ANTHROPIC_ADMIN_KEY",
-  "openai-admin": "OPENAI_ADMIN_KEY",
   "experimental-claude-oauth": "CLAUDE_OAUTH_ACCESS_TOKEN",
-  "experimental-codex-api": "CODEX_USAGE_ACCESS_TOKEN",
 };
 
 // Avoid cache reuse after an implicit managed-account switch.  The
@@ -717,10 +699,7 @@ export function cacheNamespace(spec: string, account: string, context: unknown,
   const ctx = isDict(context) ? context : {};
   // os.environ.get("") is "" in practice, as the empty name is never set.
   const name = CREDENTIALS[spec] ?? "";
-  let value = (name && env[name]) || "";
-  if (spec === "experimental-codex-api") {
-    value += "\0" + (env.CODEX_USAGE_ACCOUNT_ID ?? "");
-  }
+  const value = (name && env[name]) || "";
   if (value) {
     return "credential:" +
       sha256Hex(value).slice(0, 24);
@@ -734,29 +713,33 @@ export function cacheNamespace(spec: string, account: string, context: unknown,
 // window a week long that the 💳 row draws apart from the plan's own.
 export const FABLE_WINDOW = "seven_day_overage_included";
 
-// Translate a transcript/native quota snapshot without inventing fields.
+// The other weekly windows the 💳 row can draw after the Fable one, each
+// by its key in the `weekly-windows` option and the `hide` group `plan`,
+// with the window's id.  A seven_day_* window not named here is kept in
+// the reading but drawn nowhere: it has no mark of its own.
+export const WEEKLY_WINDOWS = [["opus", "seven_day_opus"],
+  ["sonnet", "seven_day_sonnet"], ["omelette", "seven_day_omelette"],
+  ["oauth_apps", "seven_day_oauth_apps"],
+  ["cowork", "seven_day_cowork"]] as const;
+export type WeeklyKey = typeof WEEKLY_WINDOWS[number][0];
+
+// Translate Claude Code's rate_limits without inventing fields.
 export function nativeWindows(value: unknown): Dict[] {
   const raw = isDict(value) ? pyGet(value, "rate_limits", value) : {};
   const windows: Dict[] = [];
   if (!isDict(raw)) return windows;
   const sourceBucket = pyStr(pyTruthy(raw.limit_id) ? raw.limit_id
-    : pyTruthy(raw.limitId) ? raw.limitId : "default");
-  for (const key of ["five_hour", "seven_day", FABLE_WINDOW, "primary",
-                     "secondary"]) {
+                             : "default");
+  const others: string[] = WEEKLY_WINDOWS.map(([, id]) => id);
+  const weekly = ["seven_day", FABLE_WINDOW, ...others];
+  for (const key of ["five_hour", "seven_day", FABLE_WINDOW, ...others]) {
     const item = pyGet(raw, key);
     if (!isDict(item)) continue;
     const usage = pyGet(item, "used_percentage", pyGet(item, "used_percent"));
     if (usage === null) continue;
-    let duration = pyGet(item, "duration_seconds",
-      pyGet(item, "limit_window_seconds", pyGet(item, "window_minutes")));
-    if (pyGet(item, "window_minutes") !== null &&
-        pyGet(item, "duration_seconds") === null &&
-        pyGet(item, "limit_window_seconds") === null) {
-      const n = number(duration);
-      duration = n !== null ? n * 60 : null;
-    }
+    let duration = pyGet(item, "duration_seconds");
     if (duration === null && key === "five_hour") duration = 5 * 3600;
-    if (duration === null && (key === "seven_day" || key === FABLE_WINDOW)) {
+    if (duration === null && weekly.includes(key)) {
       duration = 7 * 86400;
     }
     windows.push({
@@ -767,55 +750,7 @@ export function nativeWindows(value: unknown): Dict[] {
       heading: pyStr(firstTruthy(pyGet(item, "heading"), sourceBucket)),
     });
   }
-  // Codex native rateLimit snapshots have primary/secondary windows nested.
-  const snapshots: { snapshot: unknown; mapKey: string | null }[] = [];
-  const byId = pyGet(raw, "rateLimitsByLimitId");
-  if (isDict(byId)) {
-    for (const [key, snapshot] of Object.entries(byId)) {
-      snapshots.push({ snapshot, mapKey: key });
-    }
-  }
-  for (const snapshot of [pyGet(raw, "rateLimits"), raw]) {
-    if (!isDict(snapshot)) continue;
-    const ident = pyGet(snapshot, "limitId");
-    if (isDict(byId) && ident !== null && Object.hasOwn(byId, pyStr(ident))) {
-      continue;
-    }
-    snapshots.push({ snapshot, mapKey: null });
-  }
-  for (const { snapshot, mapKey } of snapshots) {
-    if (!isDict(snapshot)) continue;
-    for (const slot of ["primary", "secondary"]) {
-      const item = pyGet(snapshot, slot);
-      if (!isDict(item) || !Object.hasOwn(item, "usedPercent")) continue;
-      const bucketId = pyStr(firstTruthy(pyGet(snapshot, "limitId"),
-                                         pyGet(item, "limitId"), mapKey,
-                                         "rate_limit"));
-      windows.push({
-        id: slot,
-        duration_seconds:
-          ((number(pyGet(item, "windowDurationMins")) || 0) * 60) || null,
-        used_percent: pyGet(item, "usedPercent"),
-        resets_at: pyGet(item, "resetsAt"),
-        bucket_id: bucketId,
-        heading: pyStr(firstTruthy(pyGet(snapshot, "limitName"), bucketId)),
-        model: pyGet(snapshot, "normalModelSlug"),
-        feature: pyGet(snapshot, "feature"),
-      });
-    }
-  }
-  const unique: Dict[] = [];
-  const seen = new Set<string>();
-  for (const item of windows) {
-    // Keyed on the values normalise will keep, which always hash: a list
-    // in `resets_at` raised TypeError here and took the line down.  Joined
-    // into a string, as a Set of arrays would keep every one.
-    const key = JSON.stringify([item.bucket_id, item.id,
-                                number(item.duration_seconds),
-                                epoch(item.resets_at)]);
-    if (!seen.has(key)) { seen.add(key); unique.push(item); }
-  }
-  return unique;
+  return windows;
 }
 
 // `a or b or c`.
@@ -824,11 +759,10 @@ function firstTruthy(...values: unknown[]): unknown {
   return values[values.length - 1];
 }
 
-// Native readings are supplied by the active agent, never refreshed.
+// Native readings are supplied by Claude Code, never refreshed.
 export function nativeReading(_agent: string, context: unknown): Reading {
   const ctx = isDict(context) ? context : {};
-  const raw = firstTruthy(pyGet(ctx, "rate_limits"), pyGet(ctx, "rateLimits"),
-                          pyGet(ctx, "quota"), {});
+  const raw = firstTruthy(pyGet(ctx, "rate_limits"), {});
   const windows = nativeWindows(raw);
   if (!windows.length) return {};
   return normalise({ schema_version: 1, as_of: pyGet(ctx, "as_of"),
@@ -836,8 +770,7 @@ export function nativeReading(_agent: string, context: unknown): Reading {
 }
 
 // The tracker's figures, read down by trackerReading, as a v1 reading.
-// sources.py does this inside claude_usage_tracker, between the read and
-// its except; split out here so the reading is pure and the read is not.
+// Apart from the read, so the reading is pure and the read is not.
 export function trackerV1(raw: Dict): Reading {
   const windows: Dict[] = [];
   for (const [ident, pct, reset, duration] of [
@@ -863,8 +796,7 @@ export function trackerV1(raw: Dict): Reading {
 }
 
 // What a command is handed on stdin: the scalar scope, never a payload.
-// Inline in command_reading in Python; json.dumps writes the period bounds
-// as floats, so they keep their ".0" here too.
+// json.dumps writes the period bounds as floats, so they keep their ".0".
 export function commandInput(context: unknown): string {
   const ctx = isDict(context) ? context : {};
   const safe: Dict = {};
@@ -906,7 +838,7 @@ export function commandOutput(output: Uint8Array): Reading {
 // collect: which reading, from where.
 // ════════════════════════════════════════════════════════════════════════════
 
-// The scoped cache, as state.py keeps it.  sources_node.ts's fileStore is
+// The scoped cache, in the state directory.  sources_node.ts's fileStore is
 // the real one in Node; the mod's reads through `$`, so each method may
 // answer with a promise.
 export interface Store {
@@ -919,21 +851,109 @@ export interface Store {
 }
 
 // Runs one collector.  `failure` may be given a retry_after, as the HTTP
-// sources do; none of the ported ones sets it.
-/** experimental_claude_oauth's reading of /api/oauth/usage's answer `raw`,
- * taken at `now`: each window with a utilization, the 5-hour one and the
- * four 7-day ones. */
+// sources do; none of the ones read here sets it.
+/** oauthWindowNames: the plan windows of /api/oauth/usage's answer `raw`
+ * to read, in order: the 5-hour one, the plan's week and the Fable week,
+ * then every other `seven_day_*` key, by name, since the answer adds
+ * per-model weeks under names of its own (seven_day_opus,
+ * seven_day_sonnet, seven_day_omelette, …).  The plan's week comes before
+ * the others, which are as long. */
+export function oauthWindowNames(raw: Dict): string[] {
+  const first = ["five_hour", "seven_day", FABLE_WINDOW];
+  return [...first, ...Object.keys(raw)
+    .filter((k) => k.startsWith("seven_day_") && !first.includes(k) &&
+      k !== FABLE_KEY)
+    .sort()];
+}
+
+/** The answer's key that also holds the Fable week, read where
+ * FABLE_WINDOW's own key has no utilization. */
+export const FABLE_KEY = "seven_day_fable";
+
+/** The window `name` of the answer `raw` as its keys give it, where it has
+ * a utilization, else null: the Fable window from FABLE_WINDOW's key, else
+ * from FABLE_KEY. */
+function legacyWindow(raw: Dict, name: string): Dict | null {
+  const keys = name === FABLE_WINDOW ? [FABLE_WINDOW, FABLE_KEY] : [name];
+  for (const key of keys) {
+    const item = pyGet(raw, key, {});
+    if (isDict(item) && pyGet(item, "utilization") !== null) return item;
+  }
+  return null;
+}
+
+// The per-model weeks of the answer's `limits` list, by the words a
+// model's scope is told by, as Claude Usage.app tells them: a display name
+// equal to one, or a model id holding one.  The first that matches wins.
+const OAUTH_LIMIT_MODELS: [string, string, string[]][] = [
+  ["fable", FABLE_WINDOW, ["fable", "mythos"]],
+  ["opus", "seven_day_opus", ["opus"]],
+  ["sonnet", "seven_day_sonnet", ["sonnet"]],
+  ["omelette", "seven_day_omelette", ["design", "omelette"]],
+];
+
+/** The per-model weeks in the `limits` list of
+ * /api/oauth/usage's answer `raw`, as [key, window id, entry], in the
+ * list's order.  Each is a `weekly_scoped` entry with a model scope and a
+ * percent: the Fable one is FABLE_WINDOW, the Opus, Sonnet and Design
+ * ones their seven_day_* windows, and another model
+ * `seven_day_<its id, else its name>`, lowercased with every run of other
+ * characters an underscore.  An entry of any other kind, the session's
+ * and the plan's week among them, is not read here. */
+export function oauthLimitWindows(raw: unknown): [string, string, Dict][] {
+  const limits = isDict(raw) ? pyGet(raw, "limits") : null;
+  const out: [string, string, Dict][] = [];
+  for (const entry of Array.isArray(limits) ? limits : []) {
+    if (!isDict(entry) || pyGet(entry, "kind") !== "weekly_scoped" ||
+        pyGet(entry, "percent") === null) continue;
+    const scope = pyGet(entry, "scope");
+    const model = isDict(scope) ? pyGet(scope, "model") : null;
+    if (!isDict(model)) continue;
+    const text = (v: unknown) => typeof v === "string" ? v.toLowerCase() : "";
+    const id = text(pyGet(model, "id"));
+    const name = text(pyGet(model, "display_name"));
+    const known = OAUTH_LIMIT_MODELS.find(([, , words]) =>
+      words.some((w) => name === w || id.includes(w)));
+    if (known) {
+      out.push([known[0], known[1], entry]);
+      continue;
+    }
+    const key = (id || name).replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (key) out.push([key, "seven_day_" + key, entry]);
+  }
+  return out;
+}
+
+/** The experimental-claude-oauth source's reading of /api/oauth/usage's
+ * answer `raw`, taken at `now`: each window oauthWindowNames names that
+ * has a utilization, and each per-model week of its `limits` list, which
+ * stands over the window of the same id, keeping that window's reset
+ * where it gives none.  The answer nulls the per-model seven_day_* windows
+ * where the list holds them. */
 export function claudeOauthReading(raw: unknown, now: number): Reading {
   if (!isDict(raw)) return {};
+  const scoped = new Map<string, Dict>();
+  for (const [, id, entry] of oauthLimitWindows(raw)) scoped.set(id, entry);
+  const names = oauthWindowNames(raw);
+  const first = names.slice(0, 3);
+  const rest = [...new Set([...names.slice(3), ...scoped.keys()])]
+    .filter((k) => !first.includes(k)).sort();
   const windows: Dict[] = [];
-  for (const name of ["five_hour", "seven_day", FABLE_WINDOW,
-                      "seven_day_opus", "seven_day_sonnet"]) {
-    const item = pyGet(raw, name, {});
-    if (isDict(item) && pyGet(item, "utilization") !== null) {
-      windows.push({ id: name,
-                     duration_seconds: name === "five_hour" ? 18000 : 604800,
-                     used_percent: pyGet(item, "utilization"),
-                     resets_at: pyGet(item, "resets_at") });
+  for (const name of [...first, ...rest]) {
+    const legacy = legacyWindow(raw, name);
+    const entry = scoped.get(name);
+    const duration = name === "five_hour" ? 18000 : 604800;
+    if (entry !== undefined) {
+      const reset = pyGet(entry, "resets_at");
+      windows.push({ id: name, duration_seconds: duration,
+                     used_percent: pyGet(entry, "percent"),
+                     resets_at: reset !== null ? reset
+                       : legacy !== null ? pyGet(legacy, "resets_at") : null });
+    } else if (legacy !== null) {
+      windows.push({ id: name, duration_seconds: duration,
+                     used_percent: pyGet(legacy, "utilization"),
+                     resets_at: pyGet(legacy, "resets_at") });
     }
   }
   return normalise({ schema_version: 1, as_of: now, windows },
@@ -989,23 +1009,24 @@ export type Fetch = (selected: string, context: Dict, start: number,
 
 export type Env = { [name: string]: string | undefined };
 
-// Claude Code's signed-in account, hashed, as claude.config_account_id
+// Claude Code's signed-in account, hashed, as configAccountId
 // reads it from its config; "" for none.  The edge reads the file.
 export type AccountOf = () => string | Promise<string>;
 
-const HTTP_SOURCES = ["anthropic-admin", "openai-admin",
-                      "experimental-claude-oauth", "experimental-codex-api"];
+const HTTP_SOURCES = ["anthropic-admin", "experimental-claude-oauth"];
 
 // Collect one selected reading with source/account/UTC-period isolation.
-// Under auto, Claude's fallback is `claudeFallback`: the tracker, as the
-// Python has it, or for the mod, which can ask with the session's own
-// credential, experimental-claude-oauth.
+// Under auto, Claude's fallback is `claudeFallback`: the tracker, or for
+// the mod, which can ask with the session's own credential,
+// experimental-claude-oauth.  The mod alone may also pass
+// `preferred`, the plan's usage windows it asked the account's usage
+// endpoint for itself (hooks/plan_usage.ts), which auto takes over the
+// native reading, since Claude Code's native reading names only the plan's
+// week; null for none.
 //
 // The cache and the collectors are arguments, so this decides and they do.
-// Python takes a non-blocking flock around the refresh, so two renders do
-// not run one command twice; Node has no flock, and the cost of two
-// refreshes racing is one extra tracker read, so the lock and the re-read
-// under it are left out.
+// No lock is taken around the refresh: Node has no flock, and the cost of
+// two refreshes racing is one extra tracker read.
 //
 // Each window of the reading is at the highest the account has read for it
 // (accountHigh).
@@ -1014,11 +1035,12 @@ export async function collect(agent: string, spec: string | null,
                               context: unknown, now: number, store: Store,
                               fetch: Fetch, env: Env = {},
                               configAccount: AccountOf = () => "",
-                              claudeFallback = "claude-usage-tracker"):
+                              claudeFallback = "claude-usage-tracker",
+                              preferred: Reading | null = null):
     Promise<Reading> {
   return accountHigh(agent, await collectOne(agent, spec, account, period,
-    context, now, store, fetch, env, configAccount, claudeFallback), now,
-    store);
+    context, now, store, fetch, env, configAccount, claudeFallback,
+    preferred), now, store);
 }
 
 // A plan window's use only rises until it resets, so the highest any
@@ -1041,8 +1063,7 @@ function accountOf(reading: Dict): string {
 }
 
 /** A window's key among the highs.  Sources stamp one reset a fraction of
- * a second apart: by the nearest minute, rounded half up, as the Python's
- * _high_key rounds it. */
+ * a second apart: by the nearest minute, rounded half up. */
 function highKey(bucket: Dict, window: Dict, reset: number): string {
   const name = (d: Dict) => {
     const v = pyGet(d, "id");
@@ -1109,7 +1130,8 @@ async function collectOne(agent: string, spec: string | null,
                           context: unknown, now: number, store: Store,
                           fetch: Fetch, env: Env,
                           configAccount: AccountOf,
-                          claudeFallback: string):
+                          claudeFallback: string,
+                          preferred: Reading | null):
     Promise<Reading> {
   spec = validateSource(agent, spec);
   const [start, end] = periodBounds(period, now);
@@ -1138,6 +1160,18 @@ async function collectOne(agent: string, spec: string | null,
     saved.fetched_at = now;
     await store.save(agent, "native", namespace, periodKey, saved);
     cachedNative = currentNative = saved;
+  }
+  // The mod's own reading of the account's usage endpoint, under auto,
+  // over the native one: shared by every session on the account, as the
+  // HTTP sources' are.
+  if (spec === "auto" && agent === "claude" && preferred !== null &&
+      hasReading(preferred)) {
+    const id = await configAccount();
+    const mine = cachedReading(preferred, "experimental-claude-oauth", now,
+                               300);
+    if (id) mine.account_id = id;
+    return tagIdentity(mine, agent, "experimental-claude-oauth",
+                       id || namespace, periodKey);
   }
   // Auto starts with active native data, then only its native cache;
   // external fallback is deliberately restricted to the local managed
@@ -1177,7 +1211,7 @@ async function collectOne(agent: string, spec: string | null,
     if (pyTruthy(cachedNative) && !pyTruthy(cachedNative.stale)) {
       return tagIdentity(cachedNative, agent, "native", namespace, periodKey);
     }
-    selected = agent === "codex" ? "codex-app-server" : claudeFallback;
+    selected = claudeFallback;
   }
   const ttl = HTTP_SOURCES.includes(selected) ? 300 : 60;
   // An HTTP source asked with the session's own credential, not one in the
@@ -1232,7 +1266,7 @@ export function cacheName(agent: string, source: string, account: string,
 }
 
 /** A name cacheName could have given: the only files findCompatible opens,
- * as state.find_compatible's _CACHE_NAME. */
+ * as findCompatible's cache name. */
 export function isCacheName(name: string): boolean {
   return /^[0-9a-f]{64}\.json$/.test(name);
 }

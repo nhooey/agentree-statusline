@@ -3,7 +3,7 @@
 
     usage-dev test                      # every suite (tests/all.sh)
     usage-dev test status node          # the suites named
-    usage-dev spec --check              # spec/*.jsonc outputs up to date?
+    usage-dev option-docs               # rewrite docs/options.md's table
     usage-dev figures FILE --cols 160   # draw a figures document
     usage-dev --list                    # every command, one line each
 
@@ -17,8 +17,8 @@ Exit status: the failing step's own status (tests/all.sh's is the number of
 suites that failed), 0 when every step passed, 2 for a usage error, and 127
 when a step's program is not on PATH.
 
-Standard-library Python only, so it runs on the 3.9 floor and off the dev
-shell: `python3 tools/usage-dev.py ...`.
+Standard-library Python only, so it runs off the dev shell too:
+`python3 tools/usage-dev.py ...`.
 """
 import argparse
 import os
@@ -46,7 +46,7 @@ COMMANDS = {
     "stress": ("test", "rerun suites under CPU load and count failures; "
                "[--runs N] [--jobs J] [--burn B] [SUITE...]",
                [step(["bash", "tools/stress-suites.sh"])]),
-    "typecheck": ("test", "type-check the TypeScript port and the mod",
+    "typecheck": ("test", "type-check the mod",
                   [step(["npm", "run", "-s", "typecheck"], cwd="mod",
                         rest=False)]),
     "mod-test": ("test", "run the mod's node --test suites (test/*.test.ts)",
@@ -57,38 +57,24 @@ COMMANDS = {
                     [step(["npm", "run", "-s", "test:plugin"], cwd="mod",
                           rest=False)]),
     # manual: what CI cannot run
-    "folds": ("manual", "break the transcript folds over ~/.claude/projects "
-              "in both ports; [--largest N] [--seed S] [FILE...]",
-              [step(["python3", "tests/fold_real.py"]),
-               step(["node", "mod/tools/check-fold.ts"])]),
+    "folds": ("manual", "break the transcript folds over ~/.claude/projects; "
+              "[--largest N] [--seed S] [FILE...]",
+              [step(["node", "mod/tools/check-fold.ts"])]),
     "window-costs": ("manual", "time the window-cost scan over "
-                     "~/.claude/projects, cold and cached, in both ports; "
-                     "[--runs N]",
-                     [step(["python3", "tools/time-window-costs.py"]),
-                      step(["node", "mod/tools/time-window-costs.ts"])]),
-    "compaction-once": ("manual", "replay real sessions: each compaction "
-                        "reported once; [TRANSCRIPT...]",
-                        [step(["python3", "tests/compaction-once.py"])]),
-    "agents-once": ("manual", "replay real sessions: agent spend reported "
-                    "late, once; [TRANSCRIPT...]",
-                    [step(["python3", "tests/agents-once.py"])]),
-    "selftest": ("manual", "measure the layout in this terminal; needs a "
-                 "real tty",
-                 [step(["python3", "coding-agent-usage-line.py",
-                        "--selftest"])]),
+                     "~/.claude/projects, cold and cached; [--runs N]",
+                     [step(["node", "mod/tools/time-window-costs.ts"])]),
     "probe-advance": ("manual", "measure each glyph's cursor advance in "
                       "this terminal; needs a real tty",
                       [step(["bash", "tests/probe-advance.sh"])]),
     # generate
-    "spec": ("generate", "regenerate spec.py and spec.ts from "
-             "spec/layout.jsonc; --check to compare only",
-             [step(["python3", "tools/gen-spec.py"])]),
-    "fixtures": ("generate", "rerun the fixture generators of "
-                 "tests/fixtures/gen/",
-                 [step(["python3", "tests/fixtures/gen/all.py"])]),
-    "goldens": ("generate", "re-record the goldens and figures "
-                "(run-cases.py --regen); [--suite S]",
-                [step(["python3", "tests/run-cases.py", "--regen"])]),
+    "option-docs": ("generate", "rewrite docs/options.md's option table "
+                    "from mod/src/options_spec.ts",
+                    [step(["node", "mod/tools/gen-option-docs.ts"],
+                          rest=False)]),
+    "fixtures": ("generate", "regenerate the configuration cases and the "
+                 "fold saves under tests/fixtures/",
+                 [step(["node", "mod/tools/gen-config-cases.ts"]),
+                  step(["node", "mod/tools/gen-fold-saves.ts"])]),
     "grid-cases": ("generate", "regenerate tests/fixtures/grid from the "
                    "TypeScript grid",
                    [step(["node", "mod/tools/gen-grid-cases.ts"])]),
@@ -111,9 +97,6 @@ COMMANDS = {
     "palette": ("look", "draw the two colour sets side by side; "
                 "[--old REV] [--nearest N]",
                 [step(["python3", "tools/palette-review.py"])]),
-    "module-reach": ("look", "which entry points reach each Python module; "
-                     "[--json]",
-                     [step(["python3", "tools/python-module-reach.py"])]),
     # update
     "npm-lock": ("update", "re-resolve mod/package-lock.json from "
                  "mod/package.json",

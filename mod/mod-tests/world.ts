@@ -39,8 +39,12 @@ const encoder = new TextEncoder()
 export type World = {
   files: Map<string, Uint8Array>
   store: Map<string, unknown>
+  // Each key the mod set in `$.store`, oldest first, once per set.
+  stored: string[]
   // Each status document the mod filed in `$.state`, oldest first.
   docs: Dict[]
+  // Each `spending` value the mod wrote in `$.state`, oldest first.
+  spending: unknown[]
   // Whether `$.session.usage` is refused, and, while `hung` holds a list,
   // each ask held unanswered until its function is called; `rateLimits`
   // is what it answers for them, none by default.
@@ -53,15 +57,24 @@ export type World = {
   clock: MockClock
   // The session `$.session.id` answers, which a /resume switches.
   session: { id: string }
-  // The usage endpoint's answer, and the requests made of it; with no
-  // answer there is no credential, and nothing is asked.
-  oauth: { body: string | null; asked: { url: string; auth?: string }[];
+  // The usage endpoint's answer, its status (200 by default), the kind of
+  // credential `$.session.authorize` answers (a bearer one by default), and
+  // the requests made of it; with no answer there is no credential, and
+  // nothing is asked.
+  oauth: { body: string | null; status?: number;
+    headers?: Record<string, string>;
+    kind?: 'bearer' | 'api-key';
+    asked: { url: string; auth?: string;
+      headers?: Record<string, string> }[];
     hang?: boolean }
   // The path of each `$.fs.read` and each `$.fs.list`, and the argv of
   // each `$.process.run`, in order.
   reads: string[]
   lists: string[]
   runs: (readonly string[])[]
+  // Each directory `mkdir` made, by path, with when, in ms; `rmdir`
+  // removes it.  A test may seed one, as another session's lock.
+  made: Map<string, number>
   // Each file's mtime in ms where a test set one; NOW otherwise.
   mtimes: Map<string, number>
 }
@@ -87,9 +100,11 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   files.set(USER_FILE, encoder.encode(JSON.stringify(USER_SETTINGS)))
   const clock = mock.clock(on, { now: NOW * 1000 })
   const store = new Map<string, unknown>()
+  const stored: string[] = []
   on('store.get', ($, e) => ({ value: store.get(e.key) }))
   on('store.set', ($, e) => {
     store.set(e.key, e.value)
+    stored.push(e.key)
     return { value: undefined }
   })
   on('store.delete', ($, e) => {
@@ -97,10 +112,15 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     return { value: undefined }
   })
   on('store.keys', () => ({ value: [...store.keys()] }))
-  // The kit keeps `$.state`; this only watches the documents go by.
+  // The kit keeps `$.state`; this only watches the documents, and the
+  // spending kept for a reload, go by.
   const docs: Dict[] = []
+  const spending: unknown[] = []
   on('state.set', ($, e: any, next) => {
     if (e.plugin === 'usage-band' && e.key === 'status') docs.push(e.value)
+    if (e.plugin === 'usage-band' && e.key === 'spending') {
+      spending.push(e.value)
+    }
     return next(e)
   })
   mock.env(on, {
@@ -121,6 +141,11 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const isDir = (p: string) => [...files.keys()].some((f) =>
     f.startsWith(p.endsWith('/') ? p : p + '/'))
   on('fs.stat', ($, e) => {
+    const lock = made.get(e.path)
+    if (lock !== undefined) {
+      return { value: { kind: 'dir' as const, size: 0, mtimeMs: lock,
+        isLink: false } }
+    }
     const f = fileAt(e.path)
     if (f) {
       return { value: { kind: 'file' as const, size: f.length,
@@ -164,8 +189,28 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
       mtimeMs: mtimes.get(dir + name) ?? NOW * 1000, isLink: false })) }
   })
   const runs: (readonly string[])[] = []
+  const made = new Map<string, number>()
   on('process.run', ($, e) => {
     runs.push(e.argv)
+    const prog = e.argv[0]
+    const path = e.argv[e.argv.length - 1]
+    if (prog === '/bin/mkdir' && path.endsWith('.lock')) {
+      if (made.has(path)) {
+        const busy: Ran = { exitCode: 1, stdout: '', stderr: 'File exists',
+          isStdoutTruncated: false, isStderrTruncated: false }
+        return { value: busy }
+      }
+      made.set(path, clock.now())
+      const ok: Ran = { exitCode: 0, stdout: '', stderr: '',
+        isStdoutTruncated: false, isStderrTruncated: false }
+      return { value: ok }
+    }
+    if (prog === '/bin/rmdir' && path.endsWith('.lock')) {
+      made.delete(path)
+      const ok: Ran = { exitCode: 0, stdout: '', stderr: '',
+        isStdoutTruncated: false, isStderrTruncated: false }
+      return { value: ok }
+    }
     return { value: run(e) }
   })
   on('session.cwd', () => ({ value: CWD }))
@@ -175,12 +220,16 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   on('session.id', () => ({ value: session.id }))
   const oauth: World['oauth'] = { body: null, asked: [] }
   on('session.authorize', () => ({ value: oauth.body === null ? null
-    : { handle: 'test-handle', kind: 'bearer' as const } }))
+    : { handle: 'test-handle', kind: oauth.kind ?? 'bearer' } }))
   on('http.fetch', ($, e: any) => {
-    oauth.asked.push({ url: e.url, auth: e.init?.auth })
+    oauth.asked.push({ url: e.url, auth: e.init?.auth,
+      headers: e.init?.headers })
     if (oauth.hang) return new Promise(() => {})
+    const status = oauth.status ?? 200
     return oauth.body === null ? { deny: 'no network in tests' } as any
-      : { value: { status: 200, ok: true, headers: {}, text: oauth.body } }
+      : { value: { status, ok: status >= 200 && status < 300,
+        headers: oauth.headers ?? {},
+        text: oauth.body } }
   })
   const usage: World['usage'] = { down: usageDown }
   const reading = () => ({ value: { startedAt: NOW * 1000,
@@ -204,6 +253,6 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     ;(e.to === 'debug' ? debug : logged).push(e.text)
     return { value: undefined }
   })
-  return { files, store, docs, usage, debug, logged, clock, session,
-    oauth, reads, lists, runs, mtimes }
+  return { files, store, stored, docs, spending, usage, debug, logged, clock, session,
+    oauth, reads, lists, runs, made, mtimes }
 }

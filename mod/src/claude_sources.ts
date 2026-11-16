@@ -1,14 +1,13 @@
 // Prepared shared usage readings for Claude orchestration.
 //
-// A port of coding_agent_usage_line/claude_sources.py: collect once, and
-// project the reading into the two plan windows the band draws.  It also
-// holds what that needs from claude.py, which is not otherwise ported: the
-// tracker's store (ClaudeUsageTrackerSource, trackerReading and the plist
-// it is read from) and the context main_status hands the collector.
+// Collect once, and project the reading into the two plan windows the
+// band draws.  It also holds what that needs: the tracker's store
+// (ClaudeUsageTrackerSource, trackerReading and the plist it is read
+// from) and the context the status line hands the collector.
 //
-// NOT PORTED: account_summary, the account line under the status line,
-// which is a renderer and goes with the cells (build step 4).  So
-// PreparedClaudeReading has no accountText yet.
+// Not here: the account line under the status line, which is a renderer
+// and goes with the cells (build step 4).  So PreparedClaudeReading has
+// no accountText yet.
 //
 // Pure, so the mod can import it: reading the tracker's store, through its
 // plist or `defaults export`, is claude_sources_node.ts's in Node and the
@@ -18,16 +17,17 @@ import { STAMP_FMT } from "./spec.ts";
 import { isDict, pyGet, pyStrip, pyTruthy, utf8 } from "./py.ts";
 import {
   collect, FABLE_WINDOW, hashedAccountId, pyFloatText, pyJsonLoads,
-  splitTimestamp,
+  splitTimestamp, WEEKLY_WINDOWS,
 } from "./sources.ts";
 import type {
   AccountOf, Dict, Env, Fetch, Reading, Store,
 } from "./sources.ts";
 
-// The two plan windows and the weekly Fable window, as
+// The two plan windows, the weekly Fable window and the other weekly
+// windows, as
 // claude_records.Limits holds them.  Percentages
 // are strings because a missing figure is the empty string throughout.
-// The fields keep Python's names, as the reading's do, so the shared cases
+// The fields keep snake_case names, as the reading's do, so the cases
 // compare them as they are.  When claude_records.ts lands with its own
 // Limits, this one should become an import of it.
 export type Limits = {
@@ -44,13 +44,35 @@ export type Limits = {
   // two plan windows alone.  "" where the source has no such window.
   readonly fable_pct: string;
   readonly fable_reset: string;
+  // The other weekly windows, WEEKLY_WINDOWS, each `<key>_pct` and
+  // `<key>_reset` as the Fable window's are: no shares, "" where the
+  // source has no such window.
+  readonly opus_pct: string;
+  readonly opus_reset: string;
+  readonly sonnet_pct: string;
+  readonly sonnet_reset: string;
+  readonly omelette_pct: string;
+  readonly omelette_reset: string;
+  readonly oauth_apps_pct: string;
+  readonly oauth_apps_reset: string;
+  readonly cowork_pct: string;
+  readonly cowork_reset: string;
 };
 
 export const NO_LIMITS: Limits = {
   session_pct: "", session_reset: "", session_share: "",
   weekly_pct: "", weekly_reset: "", weekly_share: "",
   session_turn: "", weekly_turn: "", fable_pct: "", fable_reset: "",
+  opus_pct: "", opus_reset: "", sonnet_pct: "", sonnet_reset: "",
+  omelette_pct: "", omelette_reset: "", oauth_apps_pct: "",
+  oauth_apps_reset: "", cowork_pct: "", cowork_reset: "",
 };
+
+/** SIDE_WINDOW_FIELDS: the fields of the weekly windows beside the plan's
+ * pair, the Fable one's and the others'. */
+export const SIDE_WINDOW_FIELDS = (Object.keys(NO_LIMITS) as
+  (keyof Limits)[]).filter((f) => /_(pct|reset)$/.test(f) &&
+  !/^(session|weekly)_/.test(f));
 
 // NamedTuples compare by value; these are records, so by field.
 export function limitsEqual(a: Limits, b: Limits): boolean {
@@ -58,11 +80,13 @@ export function limitsEqual(a: Limits, b: Limits): boolean {
     .every((k) => a[k] === b[k]);
 }
 
-/** no_plan: whether `lim` holds neither plan window.  The Fable window
- * alone is not a plan reading: the accounting divides by the two plan
- * windows, and the status line's grid draws only them. */
+/** noPlan: whether `lim` holds neither plan window.  The Fable window and
+ * the other weekly windows alone are not a plan reading: the accounting
+ * divides by the two plan windows, and the status line's grid draws only
+ * them. */
 export function noPlan(lim: Limits): boolean {
-  return limitsEqual({ ...lim, fable_pct: "", fable_reset: "" }, NO_LIMITS);
+  return limitsEqual({ ...lim, ...Object.fromEntries(
+    SIDE_WINDOW_FIELDS.map((f) => [f, ""])) }, NO_LIMITS);
 }
 
 export type PreparedClaudeReading = {
@@ -134,28 +158,38 @@ export function legacyLimits(reading: unknown): Limits {
       !(label === null || label === "" || label === "default")) {
     return NO_LIMITS;
   }
+  // The weekly windows beside the plan's, by id: the Fable one and the
+  // others.  Each is a week long too, so each is told by its id.
+  const sideKeys = new Map<unknown, string>([[FABLE_WINDOW, "fable"],
+    ...WEEKLY_WINDOWS.map(([key, id]) => [id, key] as [string, string])]);
   let five: Dict | null = null, week: Dict | null = null;
-  let fable: Dict | null = null;
+  const side = new Map<string, Dict>();
   const windows = pyGet(bucket, "windows", []);
   for (const window of Array.isArray(windows) ? windows : []) {
     if (!isDict(window) || pyGet(window, "used_percent") === null ||
         pyTruthy(pyGet(window, "expired"))) continue;
     const duration = pyGet(window, "duration_seconds");
-    // The Fable window is a week long too, so it is told by its id.
-    if (pyGet(window, "id") === FABLE_WINDOW) {
-      if (fable === null) fable = window;
+    const id = pyGet(window, "id");
+    const key = sideKeys.get(id);
+    if (key !== undefined) {
+      if (!side.has(key)) side.set(key, window);
+    } else if (typeof id === "string" && id.startsWith("seven_day_")) {
+      // Another seven_day_* window is a week beside the plan's with no
+      // mark of its own: drawn nowhere, and never taken for the plan's.
+      continue;
     } else if (duration === 18000 && five === null) five = window;
     else if (duration === 604800 && week === null) week = window;
   }
-  if (five === null && week === null && fable === null) return NO_LIMITS;
+  if (five === null && week === null && !side.size) return NO_LIMITS;
   return {
     ...NO_LIMITS,
     session_pct: five ? pct(pyGet(five, "used_percent")) : "",
     session_reset: five ? reset(pyGet(five, "resets_at")) : "",
     weekly_pct: week ? pct(pyGet(week, "used_percent")) : "",
     weekly_reset: week ? reset(pyGet(week, "resets_at")) : "",
-    fable_pct: fable ? pct(pyGet(fable, "used_percent")) : "",
-    fable_reset: fable ? reset(pyGet(fable, "resets_at")) : "",
+    ...Object.fromEntries([...side].flatMap(([key, w]) => [
+      [key + "_pct", pct(pyGet(w, "used_percent"))],
+      [key + "_reset", reset(pyGet(w, "resets_at"))]])),
   };
 }
 
@@ -166,20 +200,21 @@ export async function prepareClaudeReading(
     spec: string | null, account: string, period: string, context: unknown,
     now: number, env: Env, store: Store,
     fetch: Fetch, configAccount: AccountOf = () => "",
-    claudeFallback = "claude-usage-tracker"):
+    claudeFallback = "claude-usage-tracker",
+    preferred: Reading | null = null):
     Promise<PreparedClaudeReading> {
   const safe = isDict(context) ? context : {};
   const reading = await collect("claude", spec, account, period, safe, now,
                                 store, fetch, env, configAccount,
-                                claudeFallback);
+                                claudeFallback, preferred);
   return { reading, limits: legacyLimits(reading) };
 }
 
-// What main_status hands the collector: the session's scope, the time the
-// payload was observed (so native data without its own as_of is not marked
-// stale for lacking one), and the payload's own rate_limits, but only for
-// the sources that may read them.  An explicit external command receives
-// no quota envelope.  Inline in claude.py; a function here.
+// What the status line hands the collector: the session's scope, the time
+// the payload was observed (so native data without its own as_of is not
+// marked stale for lacking one), and the payload's own rate_limits, but
+// only for the sources that may read them.  An explicit external command
+// receives no quota envelope.
 export function statusSourceContext(spec: string, session: string,
                                     model: string, asOf: number,
                                     payload: unknown): Dict {
@@ -193,7 +228,7 @@ export function statusSourceContext(spec: string, session: string,
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// The Claude Usage Tracker's store, from claude.py.
+// The Claude Usage Tracker's store.
 // ════════════════════════════════════════════════════════════════════════════
 
 export const APPLE_EPOCH = 978307200;  // 2001-01-01 UTC, in Unix seconds.
@@ -295,7 +330,7 @@ export function trackerReading(store: unknown): Dict {
 
 // Claude Code's global config (~/.claude.json) read down to its signed-in
 // account, hashed: `oauthAccount.accountUuid`, and nothing else.  The read
-// is the edge's; claude.config_account_id does both.
+// is the edge's; configAccountId does both.
 export function configAccountOf(text: string): string {
   let data: unknown;
   try { data = JSON.parse(text); } catch { return ""; }

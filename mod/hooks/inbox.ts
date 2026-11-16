@@ -128,8 +128,7 @@ async function tailAt($: $, path: string, pos: number, size: number):
 }
 
 /** File `f`'s entry in `k` read on to its end, PIECE at a time, and its
- * last line, with no newline yet, read as its rest: inbox_fold.read_on's
- * port.  An entry from the save is read on from only where its check
+ * last line, with no newline yet, read as its rest.  An entry from the save is read on from only where its check
  * digest still matches, and one past the file's end not at all: either
  * is folded afresh.  A file that will not read loses its entry. */
 async function readOn($: $, k: Kept, f: Listed, main: boolean):

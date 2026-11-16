@@ -1,32 +1,27 @@
 // Pure Claude status-line renderers.
 //
-// A port of coding_agent_usage_line/claude_render.py, function for
-// function and in the same order.  The Python's docstrings carry each
-// cell's history and the argument for its shape, and are not copied: the
-// comments here say what the port has to do to draw the same bytes.
-//
-// All data arrives as arguments.  Where the Python reads module state, the
-// settings come first as `st` (formatting.ts's Settings: the profile's
-// widths, the mark spacing and the subscript switch); where it falls back
-// to the clock, `now` is required; and where it reads HOME to shorten the
-// working directory, render_status takes `home`.  Each cell returns spans,
-// [] for nothing to draw, and only drawnLine joins them into escapes.
+// All data arrives as arguments.  The settings come first as `st`
+// (formatting.ts's Settings: the profile's widths, the mark spacing and
+// the subscript switch); where a cell reads the clock, `now` is required;
+// and to shorten the working directory under HOME, renderStatus takes
+// `home`.  Each cell returns spans, [] for nothing to draw, and only
+// drawnLine joins them into escapes.
 import {
   E_ACCT, E_COST, E_DIR, E_DIRTY, E_DOWN, E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX,
   E_EFF_MED, E_EFF_XHIGH, E_ETA, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_INBOX,
   E_MODE_MONITOR, E_MODE_SHELL, E_PCT, E_PROJ, E_ROW_COMPACT, E_SESSION,
   E_SUP_DIGITS, E_TOOL, E_TURN, E_UP, E_WAIT, E_WORK, LEFT_GAP, LIM_ACCT_W,
   LIM_FIG_W, LMIN_BRANCH, LMIN_PATH, LMIN_PROJ, LWT_BRANCH, LWT_PATH,
-  LWT_PROJ, MAG_COST, MAG_DIFF, MAG_DUR_S, MAG_RATE, MAG_TOK, MAX_ROW,
+  LWT_PROJ, MAG_COST, MAX_ROW,
   MIN_GAP, MODEL_FAMILIES, QUIET_S, QUIET_WARN_S, RIGHT_MARGIN, RST_W,
   SHARE_FIG_W, VAL_W, VAL2_W, W_STY,
 } from "./spec.ts";
 import {
   EOL_CLEAR, LINE_CLEAR, S_BOT, S_DATE, S_DIFF, S_HUMAN, S_IDLE, S_PR,
   S_READ, S_RESET, S_SESS, S_STY, S_TIME, S_WEEK, S_WRITE, cacheColor,
-  cacheDims, durFmt, fitCols, fitHead, fitPath, gridRow, humanize, limitPct,
-  magDim, moneyFig, padVal, pct, pct2, rateFig, resetDim, rulesOn, seg,
-  shareDims, shortDur, visWidth,
+  cacheDims, durFmt, fitCols, fitHead, fitPath, gridRow,
+  humanize, limitPct, magDim, moneyFig, padVal, pct, pct2, rateFig,
+  grade, rulesOn, seg, shareDims, shortDur, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import {
@@ -58,8 +53,8 @@ export function projectName(git: Git, projectDir: string): string {
 // Status-line segment renderers.
 //
 // One per metric, each padded to its own width and placed by the layout
-// below.  float(s), where the Python parses a payload string, is pyFloat:
-// null where Python raises.
+// below.  float(s), where a payload string is parsed, is pyFloat: null
+// where float() raises.
 // ════════════════════════════════════════════════════════════════════════════
 
 /** The ▴/▾ billable-equivalent token totals, each half dimmed on its own
@@ -68,12 +63,12 @@ export function projectName(git: Git, projectDir: string): string {
 export function renderTokens(st: Settings, up: unknown, down: unknown,
   downW: number = VAL2_W): Span[] {
   if (up === null || up === undefined) return [];
-  const u = up as number, dn = down as number;
+  const u = humanize(st, up as number), dn = humanize(st, down as number);
   return [span(st.sTok),
-    span(padVal(st, VAL_W, E_UP + padVal(st, 4, humanize(st, u)), true),
-      "F_TUP", magDim(u, MAG_TOK)),
-    span(padVal(st, downW, E_DOWN + padVal(st, 4, humanize(st, dn))),
-      "F_TDN", magDim(dn, MAG_TOK))];
+    paint(grade("count", "F_TUP", u, st.colourMode),
+      padVal(st, VAL_W, E_UP + padVal(st, 4, u), true)),
+    paint(grade("count", "F_TDN", dn, st.colourMode),
+      padVal(st, downW, E_DOWN + padVal(st, 4, dn)))];
 }
 
 /** What the main thread is doing, as the Doing mark and the epoch it
@@ -94,14 +89,17 @@ export function renderRateCache(st: Settings, rate: number | null,
     (secs === null || secs < QUIET_S));
   let head: Span[];
   if (!showRate && secs !== null) {
+    const fig = durFmt(st, secs);
     const style = mark === E_WORK && secs >= QUIET_WARN_S ? ink("F_AMB")
-      : ink("F_PRW", magDim(secs, MAG_DUR_S));
+      : grade("duration", "F_PRW", fig, st.colourMode);
     head = [span(mark + st.doingPad),
-      paint(style, padVal(st, VAL_W - 1, durFmt(st, secs)) + " ")];
+      paint(style, padVal(st, VAL_W - 1, fig) + " ")];
   } else {
-    const fig = rate === null ? "" : rateFig(st, rate) + "/s";
+    const num = rate === null ? "" : rateFig(st, rate);
+    const fig = rate === null ? "" : num + "/s";
     head = [span(mark ? mark + st.doingPad : st.sRate),
-      span(padVal(st, VAL_W, fig), "F_RATE", magDim(rate, MAG_RATE))];
+      paint(grade("count", "F_RATE", num, st.colourMode),
+        padVal(st, VAL_W, fig))];
   }
   return [...head, ...padVal(st, st.col2Val2W, [
     span(st.sCache),
@@ -118,10 +116,11 @@ export function renderCtx(st: Settings, ctxPct: number | null,
     st.markSp.length + SHARE_FIG_W;
   const sizeW = turnEnd - visWidth(st.sCtx, st.widths);
   const pctW = st.rightGrid[2] - turnEnd;
-  const style = ink("F_PNK", magDim(ctxTokens, MAG_TOK));
+  const size = humanize(st, ctxTokens);
+  const style = grade("count", "F_PNK", size, st.colourMode);
   const tilde = est ? "~" : "";
   return [span(st.sCtx),
-    paint(style, padVal(st, sizeW, tilde + humanize(st, ctxTokens))),
+    paint(style, padVal(st, sizeW, tilde + size)),
     paint(style, padVal(st, pctW, tilde + pyIntStr(ctxPct) + E_PCT))];
 }
 
@@ -131,7 +130,7 @@ export function renderCost(st: Settings, costUsd: string,
   mark: string = st.sCost): Span[] {
   if (!costUsd || costUsd === "null") return [];
   const c = pyFloat(costUsd);
-  // json reads NaN and 1e400 as floats; the Python drops both.
+  // json reads NaN and 1e400 as floats; both are dropped.
   if (c === null || !Number.isFinite(c)) return [];
   return [span(mark),
     span(padVal(st, 4, moneyFig(st, c)), "F_YEL", magDim(c, MAG_COST))];
@@ -160,8 +159,8 @@ export function renderLimit(st: Settings, emoji: string, pctS: string,
   let rst: Span[];
   if (d) {
     rst = [span(S_RESET + st.markSp),
-      span(padVal(st, RST_W - visWidth(S_RESET, st.widths), d), colour,
-        resetDim(d))];
+      paint(grade("countdown", colour, d, st.colourMode),
+        padVal(st, RST_W - visWidth(S_RESET, st.widths), d))];
   } else {
     rst = [span(" ".repeat(RST_W + st.markSp.length))];
   }
@@ -172,7 +171,7 @@ export function renderLimit(st: Settings, emoji: string, pctS: string,
       return [span(mark + st.markSp),
         span(padVal(st, w, "?"), "F_CRM", true)];
     }
-    // limit_pct's own threshold, so the glyph and the string agree.
+    // limitPct's own threshold, so the glyph and the string agree.
     if (v >= 99.5) {
       return [span(mark + st.markSp),
         paint(col, padVal(st, w, E_HUNDRED + E_PCT))];
@@ -229,7 +228,8 @@ export function renderDiff(st: Settings, added: string,
     // humanize's unit column kept, so 💾 stacks digit under digit down the
     // grid, " 30k" over "  6 ".
     const fig = v === null ? "? " : humanize(st, v);
-    return span(sign + padVal(st, 4, fig), col, magDim(v, MAG_DIFF));
+    return paint(grade("count", col, fig, st.colourMode),
+      sign + padVal(st, 4, fig));
   };
 
   return [span(S_DIFF), half("+", n(added), "F_GRN"), span(" "),
@@ -275,7 +275,7 @@ export function modelSpec(modelId: string): string {
   return pySlice(fam, null, 2);
 }
 
-/** 🤖, the two-character model spec and the effort's glyph, "🤖O⁵🏃". */
+/** 🧬, the two-character model spec and the effort's glyph, "🧬O⁵🏃". */
 export function renderModel(st: Settings, model: string,
   effort = ""): Span[] {
   if (!model) return [];
@@ -339,7 +339,7 @@ export function renderDate(st: Settings, now: number): Span[] {
   return [span(S_DATE), span(padVal(st, 11, ymd), "F_CRM")];
 }
 
-/** eta_reading's three answers: null where there is no transcript to
+/** etaReading's three answers: null where there is no transcript to
  * report in, [] for no live estimate (drawn "?"), and otherwise the share
  * done and the seconds left. */
 export type EtaReading = null | readonly [] | readonly [number, number];
@@ -370,7 +370,7 @@ export function etaReading(eta: readonly number[] | null | undefined,
 }
 
 // An agent whose file has been silent this long no longer holds the status
-// line's ⛳ open; see the Python.
+// line's ⛳ open.
 export const ETA_LIVE_S = 1800.0;
 
 /** max(xs) as Python's: the first of equals, and a NaN only where it
@@ -411,9 +411,9 @@ export function etaFig(st: Settings, reading: EtaReading, w: number,
       span(padVal(st, w, "+" + durFmt(st, -left, Math.min(digits, w - 2))),
         signedOff ? "F_OVER" : "F_AMB")];
   }
+  const fig = durFmt(st, left, digits);
   return [span(E_ETA + st.markSp),
-    span(padVal(st, w, durFmt(st, left, digits)), "F_ETA",
-      magDim(left, MAG_DUR_S))];
+    paint(grade("duration", "F_ETA", fig, st.colourMode), padVal(st, w, fig))];
 }
 
 /** The session's clock: ⛳ the turn's ETA, then 🤖 🔧 🚦, which partition
@@ -435,8 +435,8 @@ export function renderElapsed(st: Settings, busyS: number, startS: number,
   const fig = (mark: string, v: number, w: number = LIM_FIG_W,
     digits = 2): Span[] =>
     [span(mark + st.markSp),
-      span(padVal(st, w, durFmt(st, v, digits)), "F_PRW",
-        magDim(v, MAG_DUR_S))];
+      paint(grade("duration", "F_PRW", durFmt(st, v, digits), st.colourMode),
+        padVal(st, w, durFmt(st, v, digits)))];
 
   const shown = inheritEta(eta, agentEtas
     .filter(([, last]) => last !== null && t - last <= ETA_LIVE_S)
@@ -574,7 +574,7 @@ export function chatRow(st: Settings, prefix: string, text: string,
 
   const out = [span(prefix, fg), span(body, fg, dim, false, "B_DRK")];
   if (tl.length) {
-    // tailW stays 0 at an unknown width, as the Python's does; the pad
+    // tailW stays 0 at an unknown width; the pad
     // clamps to MIN_GAP either way.
     let pad = (cols || 0) - RIGHT_MARGIN - tailW -
       visWidth(prefix + body, st.widths);
@@ -612,7 +612,7 @@ export function drawnLine(row: SpanLike, grid = true,
 /** The whole readout, as one string ending in a newline: three rows, or
  * four when the terminal is too narrow for line 3 to hold both halves.
  *
- * `home` is what the Python's os.path.expanduser("~") reads, for showing
+ * `home` is what os.path.expanduser("~") reads, for showing
  * the working directory under it as "~". */
 export function renderStatus(st: Settings, pay: Payload, tr: Transcript,
   git: Git, lim: Limits, cols: number | null, now: number, rules = true,

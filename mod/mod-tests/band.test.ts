@@ -12,7 +12,7 @@
 // span's colour must match.  That proves the edges (that `$.fs` was read
 // as the bytes are), the filing (the start line's trip through `$.store`)
 // and the drawing (spans to Text); the documents themselves are proven
-// against the Python's by test/claude.test.ts.  The receipt, which the mod
+// against the goldens by test/claude.test.ts.  The receipt, which the mod
 // writes rather than draws, is checked as the `$.ui.log` lines it sends,
 // against receiptLines over the same bytes.
 import { expect } from 'claude-code/testing'
@@ -28,7 +28,7 @@ import {
   WINDOW, world,
 } from './world.ts'
 import type { Ran, Run, World } from './world.ts'
-import { partsOf, startKey } from '../hooks/register.tsx'
+import { partsOf, receiptKey, startKey } from '../hooks/register.tsx'
 import { drawingNote, ioText } from '../hooks/profile.ts'
 import { LOG_NAME } from '../hooks/log.ts'
 import { CONFIG } from '../hooks/config.ts'
@@ -65,11 +65,13 @@ import {
   ROW_NAMES, accountLine, bandLines, bandRows, rootDrawn,
 } from '../src/band.ts'
 import {
-  receiptLines, stampedOf, startLine, withEngineDuration,
+  receiptLines, stampedOf, startLine, turnKey, withEngineDuration,
 } from '../src/receipt.ts'
 import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
 import type { Dict } from '../src/py.ts'
+import { backoffAfter, retryAfter } from '../hooks/plan_usage.ts'
+import { TRACKER_NO_PROFILES } from '../hooks/usage.ts'
 
 const COLS = 150
 // The options the mod draws with here: the user file over the defaults.
@@ -392,12 +394,48 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
     expect((lastDoc(w).limits as Dict).fable_pct).toBe(null)
   })
 
+/** The 💳 row under the footer line, as JSON, of a session whose usage
+ * names the plan's week and the weekly Opus window, under the file
+ * `config`; and the Opus window's share in its document. */
+async function weeklyOpus($: any, on: On, config: string) {
+  const w = world(on)
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode(config))
+  w.usage.rateLimits = [
+    { kind: 'seven_day', percentUsed: 87,
+      resetsAt: '2026-08-18T01:00:00+00:00' },
+    { kind: 'seven_day_opus', percentUsed: 30,
+      resetsAt: '2026-08-18T01:00:00+00:00' }]
+  await start($, w, 'terminal', STATUS)
+  const drawn = JSON.stringify(await drawnOf(await $.ui.mount({
+    plugin: 'usage-band', surface: 'terminal', component: 'PromptHint',
+    props: { isDraft: false, isWorking: false, hint: '-- INSERT --' } })))
+  return { drawn, opus: (lastDoc(w).limits as Dict).opus_pct }
+}
+
+test('the other weekly windows reach the document but not the 💳 row, ' +
+  'a file\'s own hide replacing the defaults\' list', async ($, on) => {
+    const got = await weeklyOpus($, on, '{"usage-source": "native", ' +
+      '"hide": ["*.plan.five_hour"]}')
+    expect(String(got.opus)).toMatch(/^30/)
+    expect(got.drawn).toContain(spec.E_WEEK)
+    expect(got.drawn).not.toContain(spec.E_OPUS)
+  })
+
+test('weekly-windows turns one weekly window on beside a file\'s hide, ' +
+  'under 🪫\'s 🔜 where they reset together', async ($, on) => {
+    const got = await weeklyOpus($, on, '{"usage-source": "native", ' +
+      '"hide": ["*.plan.five_hour"], "weekly-windows": {"opus": true}}')
+    expect(got.drawn).toContain(spec.E_OPUS)
+    expect(got.drawn.split(spec.E_RESET).length - 1).toBe(1)
+  })
+
 test('under auto, with no native reading, the plan comes from the usage ' +
   'endpoint, asked as the session, once per 5 minutes for every session ' +
-  'on the account', async ($, on) => {
+  'on the account, with plan-usage off', async ($, on) => {
     const w = world(on)
     w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
-      encoder.encode('{"usage-source": "auto"}'))
+      encoder.encode('{"usage-source": "auto", "plan-usage": false}'))
     w.files.set('/claude/.claude.json', encoder.encode(
       '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
     w.oauth.body = JSON.stringify({
@@ -408,7 +446,8 @@ test('under auto, with no native reading, the plan comes from the usage ' +
       seven_day_opus: null })
     await start($, w, 'terminal', STATUS)
     expect(w.oauth.asked[0]).toEqual({
-      url: 'https://api.anthropic.com/api/oauth/usage', auth: 'test-handle' })
+      url: 'https://api.anthropic.com/api/oauth/usage', auth: 'test-handle',
+      headers: { 'anthropic-beta': 'oauth-2025-04-20' } })
     expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^24/)
     expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^6/)
     // Read again within the 5 minutes: the cached reading, nothing asked.
@@ -427,6 +466,272 @@ test('under auto, with no native reading, the plan comes from the usage ' +
     await settle()
     expect(w.oauth.asked.length).toBe(asked)
     expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^24/)
+  })
+
+/** A world under auto whose session names only the plan's week, at 87٪,
+ * as Claude Code's does, with the usage endpoint answering `answer`. */
+function planWorld(on: On, answer: Dict | null, settings = '{}'): World {
+  const w = world(on)
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode(JSON.stringify({ 'usage-source': 'auto',
+      ...JSON.parse(settings) })))
+  w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 87,
+    resetsAt: '2026-08-18T01:00:00+00:00' }]
+  w.oauth.body = answer === null ? null : JSON.stringify(answer)
+  return w
+}
+
+const PLAN_ANSWER: Dict = {
+  five_hour: { utilization: 18.0, resets_at: '2026-08-16T05:00:00+00:00' },
+  seven_day: { utilization: 24.0, resets_at: '2026-08-18T01:00:00+00:00' },
+  seven_day_overage_included: { utilization: 6.0,
+    resets_at: '2026-08-19T01:00:00+00:00' },
+  seven_day_omelette: { utilization: 3.0,
+    resets_at: '2026-08-19T01:00:00+00:00' },
+  seven_day_opus: null,
+  seven_day_sonnet: { utilization: null },
+}
+
+const PLAN_URL = 'https://api.anthropic.com/api/oauth/usage'
+
+test('under plan-usage, the plan\'s windows are asked of the usage ' +
+  'endpoint as the session once a minute, the Fable week among them, and ' +
+  'drawn over Claude Code\'s own; their keys are logged once, then as ' +
+  'they change', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked).toEqual([{ url: PLAN_URL, auth: 'test-handle',
+      headers: { 'anthropic-beta': 'oauth-2025-04-20' } }])
+    await w.clock.advance(31_000)
+    await settle()
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^24/)
+    expect(String(limits.session_pct)).toMatch(/^18/)
+    expect(String(limits.fable_pct)).toMatch(/^6/)
+    // Every seven_day_* window with a utilization is kept, by its key.
+    const kept = w.store.get('plan-usage:default') as Dict
+    const ids = (((kept.reading as Dict).buckets as Dict[])[0]
+      .windows as Dict[]).map((x) => x.id)
+    expect(ids).toEqual(['five_hour', 'seven_day',
+      'seven_day_overage_included', 'seven_day_omelette'])
+    // Within the minute, nothing asked; after it, asked again.
+    expect(w.oauth.asked.length).toBe(1)
+    await w.clock.advance(31_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    const line = 'plan usage: five_hour seven_day seven_day_omelette ' +
+      'seven_day_overage_included · no reading: seven_day_opus ' +
+      'seven_day_sonnet\n'
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // The keys alone, never a figure.
+    expect(logOf(w)).not.toContain('utilization')
+    // The Fable window gone from the answer: logged again.
+    const { seven_day_overage_included: _, ...noFable } = PLAN_ANSWER
+    w.oauth.body = JSON.stringify(noFable)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(logOf(w)).toContain(
+      'plan usage: five_hour seven_day seven_day_omelette · no reading: ' +
+      'seven_day_opus seven_day_sonnet\n')
+  })
+
+// The live answer: the per-model keys null, the weeks in `limits`.
+const LIMITS_ANSWER: Dict = {
+  five_hour: null,
+  seven_day: { utilization: 24.0, resets_at: '2026-08-18T01:00:00+00:00' },
+  seven_day_opus: null,
+  seven_day_sonnet: null,
+  limits: [
+    { kind: 'weekly_all', group: 'weekly', percent: 24,
+      resets_at: '2026-08-18T01:00:00+00:00', scope: null },
+    { kind: 'weekly_scoped', group: 'weekly', percent: 6,
+      resets_at: '2026-08-19T01:00:00+00:00',
+      scope: { model: { id: null, display_name: 'Fable' }, surface: null } },
+    { kind: 'weekly_scoped', group: 'weekly', percent: 11,
+      resets_at: '2026-08-19T01:00:00+00:00',
+      scope: { model: { id: 'claude-opus-5', display_name: null } } },
+  ],
+}
+
+test('under plan-usage, the Fable week of the answer\'s limits list is ' +
+  'drawn as the seven_day_overage_included one is, and the log names the ' +
+  'list\'s weeks', async ($, on) => {
+    const w = planWorld(on, LIMITS_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^24/)
+    expect(String(limits.fable_pct)).toMatch(/^6/)
+    expect(String(limits.opus_pct)).toMatch(/^11/)
+    const kept = w.store.get('plan-usage:default') as Dict
+    const ids = (((kept.reading as Dict).buckets as Dict[])[0]
+      .windows as Dict[]).map((x) => x.id)
+    expect(ids).toEqual(['seven_day', 'seven_day_overage_included',
+      'seven_day_opus'])
+    expect(logOf(w)).toContain('plan usage: seven_day · limits: fable opus' +
+      ' · no reading: five_hour seven_day_opus seven_day_sonnet\n')
+  })
+
+for (const kind of ['none', 'api-key'] as const) {
+  test(`plan-usage asks nothing of a session with ${kind === 'none'
+    ? 'no first-party credential' : 'an API key'}`, async ($, on) => {
+      const w = planWorld(on, kind === 'none' ? null : PLAN_ANSWER)
+      if (kind === 'api-key') w.oauth.kind = 'api-key'
+      await start($, w, 'terminal', STATUS)
+      await w.clock.advance(61_000)
+      await settle()
+      expect(w.oauth.asked).toEqual([])
+      expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^87/)
+      expect(logOf(w)).not.toContain('plan usage')
+    })
+}
+
+test('plan-usage off asks nothing, and draws Claude Code\'s own',
+  async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER, '{"plan-usage": false}')
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked).toEqual([])
+    expect(String((lastDoc(w).limits as Dict).weekly_pct)).toMatch(/^87/)
+  })
+
+test('a failed plan-usage ask is logged once and waited out, the wait ' +
+  'doubling with each failure in a row up to an hour, the last reading ' +
+  'kept meanwhile', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    w.oauth.status = 503
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    const line = 'plan usage failed: HTTP 503\n'
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // The last reading, still fresh, is still drawn.
+    expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^6/)
+    // Each failure in a row counted in the store, its wait not asked in.
+    const runs: number[] = []
+    for (let i = 0; i < 7; i++) {
+      const kept = w.store.get('plan-usage:default') as Dict
+      const asked = w.oauth.asked.length
+      runs.push(Number(kept.failures))
+      await w.clock.advance(Number(kept.retry_at) * 1000 - w.clock.now() -
+        1_000)
+      await settle()
+      expect(w.oauth.asked.length).toBe(asked)
+      await w.clock.advance(62_000)
+      await settle()
+      expect(w.oauth.asked.length).toBe(asked + 1)
+    }
+    expect(runs).toEqual([1, 2, 3, 4, 5, 6, 7])
+    // 2, 4, 8, ... minutes, held to an hour.
+    expect([1, 2, 3, 4, 5, 6, 7].map(backoffAfter))
+      .toEqual([120, 240, 480, 960, 1920, 3600, 3600])
+    // The same failure is not logged again.
+    expect(logOf(w).split(line).length - 1).toBe(1)
+    // An answer ends the run: the next failure waits 2 minutes again.
+    w.oauth.status = 200
+    const kept = w.store.get('plan-usage:default') as Dict
+    await w.clock.advance(Number(kept.retry_at) * 1000 - w.clock.now() +
+      1_000)
+    await settle()
+    expect((w.store.get('plan-usage:default') as Dict).failures)
+      .toBeUndefined()
+    w.oauth.status = 503
+    await w.clock.advance(61_000)
+    await settle()
+    const after = w.store.get('plan-usage:default') as Dict
+    expect(after.failures).toBe(1)
+    expect(Math.round((Number(after.retry_at) - w.clock.now() / 1000) / 60))
+      .toBe(2)
+  })
+
+test('a plan-usage ask that never answers counts as failed after 20 ' +
+  'seconds, so the next waits out the failure\'s wait', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    w.oauth.hang = true
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    await w.clock.advance(21_000)
+    await settle()
+    expect(logOf(w)).toContain('plan usage failed: no answer in 20 s\n')
+    const kept = w.store.get('plan-usage:default') as Dict
+    expect(kept.failures).toBe(1)
+    // The lock is let go, and the next ask waits the 2 minutes out.
+    expect(w.made.size).toBe(0)
+    await w.clock.advance(90_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(3)
+  })
+
+test('a 429 is waited out for its Retry-After, kept in the store for ' +
+  'every session on the account', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    w.oauth.status = 429
+    w.oauth.headers = { 'retry-after': '900' }
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    const kept = w.store.get('plan-usage:default') as Dict
+    // Waited from the failed ask, a minute after the reading kept.
+    const waited = Number(kept.retry_at) - Number(kept.fetched_at) - 900
+    expect(waited >= 60 && waited <= 61).toBe(true)
+    // Nothing asked for the 15 minutes the answer named.
+    for (let i = 0; i < 14; i++) {
+      await w.clock.advance(61_000)
+      await settle()
+    }
+    expect(w.oauth.asked.length).toBe(2)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(3)
+  })
+
+test('a Retry-After is read as seconds or an HTTP date, held to between ' +
+  'a minute and an hour', async () => {
+    expect(retryAfter('120', 0)).toBe(120)
+    expect(retryAfter('5', 0)).toBe(60)
+    expect(retryAfter('99999', 0)).toBe(3600)
+    const now = 1_800_000_000
+    expect(retryAfter(new Date((now + 600) * 1000).toUTCString(), now))
+      .toBe(600)
+    expect(retryAfter('soon', 0)).toBe(null)
+    expect(retryAfter(undefined, 0)).toBe(null)
+  })
+
+test('the plan-usage ask is taken under a lock directory, left alone ' +
+  'while another session holds it and taken over once abandoned',
+  async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    const mk = w.runs.find((a) => a[0] === '/bin/mkdir')!
+    const dir = mk[mk.length - 1]
+    expect(dir).toMatch(/\/plan-usage-[0-9a-f]{16}\.lock$/)
+    // Removed once the ask is answered.
+    expect(w.made.has(dir)).toBe(false)
+    // Another session takes it just before this one's minute is up.
+    await w.clock.advance(59_000)
+    await settle()
+    w.made.set(dir, w.clock.now())
+    await w.clock.advance(2_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(1)
+    expect(w.made.has(dir)).toBe(true)
+    // Held past 30 seconds, it is taken as abandoned and the ask made.
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    expect(w.made.has(dir)).toBe(false)
   })
 
 test('the credits are asked of the usage endpoint once per 5 minutes, ' +
@@ -472,6 +777,138 @@ test('the credits are asked of the usage endpoint once per 5 minutes, ' +
     await settle()
     expect(kept().length).toBe(1)
     expect(kept()[0]).toContain('"remaining":3')
+  })
+
+test('a plan login under its windows bills its rows to nothing',
+  async ($, on) => {
+    const w = world(on)
+    await start($, w, 'terminal', STATUS)
+    expect(lastDoc(w).spending).toBeUndefined()
+  })
+
+test('a Claude Code on the web session bills its rows to the cloud credit',
+  async ($, on) => {
+    const w = world(on, undefined, false, true,
+      { CLAUDE_CODE_REMOTE: 'true' })
+    await start($, w, 'terminal', STATUS)
+    const doc = lastDoc(w)
+    const spending = doc.spending as Dict
+    expect(spending.kind).toBe('cloud')
+    expect(spending.since).toBe(null)
+    expect(spending.main).toBeGreaterThan(0)
+    const drawn = text(bandLines(BAND_ST, doc, COLS, HIDE,
+      { rate: null, phase: 'running', ...AGENTS }).flat())
+    expect(drawn).toContain(spec.E_CLOUD)
+  })
+
+/** A world whose plan login has its 5-hour window full and extra usage on,
+ * so 💸 pays. */
+function extraWorld(on: On): World {
+  const w = world(on)
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode('{"usage-source": "native"}'))
+  w.files.set('/claude/.claude.json', encoder.encode(
+    '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
+  w.oauth.body = JSON.stringify({ extra_usage: { is_enabled: true,
+    monthly_limit: 50, used_credits: 10, currency: 'USD' } })
+  w.usage.rateLimits = [
+    { kind: 'five_hour', percentUsed: 100,
+      resetsAt: '2026-08-16T05:00:00+00:00' },
+    { kind: 'seven_day', percentUsed: 40,
+      resetsAt: '2026-08-18T01:00:00+00:00' }]
+  return w
+}
+
+// Extra usage paying since well before any of the session's records, as
+// an earlier load kept it.
+const EXTRA_SINCE = NOW - 30 * 86400
+const EXTRA_SPELL = { session: SESSION, kind: 'extra', since: EXTRA_SINCE }
+
+/** The band's 💸 counted from EXTRA_SINCE: every record is in, so 💸 is
+ * the whole of 💰, where a load counting from itself would have none. */
+function countsFromKeptStart(w: World) {
+  const doc = lastDoc(w)
+  const spending = doc.spending as Dict
+  expect(spending.kind).toBe('extra')
+  expect(spending.since).toBe(EXTRA_SINCE)
+  const acc = doc.accounting as Dict
+  const own = (acc.own as Dict).cost_usd as number
+  expect(own).toBeGreaterThan(0)
+  expect(Math.abs((spending.main as number) - own)).toBeLessThan(1e-9)
+  expect(Math.abs((spending.session as number) -
+    ((acc.session as Dict).cost_usd as number))).toBeLessThan(1e-9)
+  expect(text(bandLines(BAND_ST, doc, COLS, HIDE,
+    { rate: null, phase: 'running', ...AGENTS }).flat()))
+    .toContain(spec.E_EXTRA)
+}
+
+test('when extra usage began paying survives a reload: the 💸 figure ' +
+  'counts on from the start an earlier load kept in $.state',
+  async ($, on) => {
+    const w = extraWorld(on)
+    const seed = { spell: EXTRA_SPELL, bracket: null }
+    // The seed stands where the mod reads it until the mod writes its own.
+    on('state.get', ($, e: any, next) =>
+      e.plugin === 'usage-band' && e.key === 'spending'
+        ? { value: { value: w.spending.at(-1) ?? seed,
+          version: w.spending.length + 1 } } : next(e))
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    countsFromKeptStart(w)
+    // And kept as it was, not restarted from the reload: what the mod
+    // wrote carries the same start, with the credit's first reading.
+    const kept = w.spending.at(-1) as Dict
+    expect(kept.spell).toEqual(EXTRA_SPELL)
+    expect((kept.bracket as Dict).id).toBe('extra_usage')
+  })
+
+test('and a restart: with nothing in $.state, the start is read from the ' +
+  'session\'s entry in the store, and kept there', async ($, on) => {
+    const w = extraWorld(on)
+    w.store.set('spending:' + SESSION, { spell: EXTRA_SPELL, bracket: null,
+      saved_at: NOW - 86400 })
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    countsFromKeptStart(w)
+    const kept = w.store.get('spending:' + SESSION) as Dict
+    expect(kept.spell).toEqual(EXTRA_SPELL)
+    expect((kept.bracket as Dict).id).toBe('extra_usage')
+    expect(kept.saved_at).toBeGreaterThan(NOW - 86400)
+  })
+
+test('another session\'s entry in the store is not this one\'s start',
+  async ($, on) => {
+    const w = extraWorld(on)
+    const other = { spell: { ...EXTRA_SPELL, session: 'another-session' },
+      bracket: null, saved_at: NOW - 86400 }
+    w.store.set('spending:another-session', other)
+    // Under this session's key, but of another session: not read either.
+    w.store.set('spending:' + SESSION, other)
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    const spending = lastDoc(w).spending as Dict
+    expect(spending.kind).toBe('extra')
+    expect(spending.since).toBeGreaterThanOrEqual(NOW)
+    expect(w.store.get('spending:another-session')).toEqual(other)
+  })
+
+test('a session start drops the store\'s spending entries saved over 31 ' +
+  'days ago, and keeps the rest', async ($, on) => {
+    const w = world(on)
+    const entry = (days: number) => ({ spell: { ...EXTRA_SPELL,
+      session: 'old-' + days }, bracket: null, saved_at: NOW - days * 86400 })
+    w.store.set('spending:old-40', entry(40))
+    w.store.set('spending:old-30', entry(30))
+    w.store.set('spending:no-time', { spell: EXTRA_SPELL, bracket: null })
+    w.store.set('not-spending', entry(40))
+    await start($, w, 'terminal', STATUS)
+    expect(w.store.has('spending:old-40')).toBe(false)
+    expect(w.store.has('spending:no-time')).toBe(false)
+    expect(w.store.get('spending:old-30')).toEqual(entry(30))
+    expect(w.store.has('not-spending')).toBe(true)
   })
 
 test('a credits ask that never answers holds no document, and no second ' +
@@ -569,27 +1006,41 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(logOf(w)).toContain('right-edge 2 (derived)')
 })
 
+/** Where withShell's shell writes its output. */
+const SHELL_OUTPUT = '/private/tmp/claude-501/p/tasks/bsh1.output'
+
 /** The session file with a background shell the main thread opened,
- * `bsh1` labelled `Build the docs` and started at `stamp`, and with
- * `monitor` a Monitor after it, `mon1`, labelled `Watch the CI checks`
- * and started at `monitor`, placed as the status line's; its path. */
+ * `bsh1` labelled `Build the docs` and started at `stamp`, its call's
+ * result naming SHELL_OUTPUT, and with `monitor` a Monitor after it,
+ * `mon1`, labelled `Watch the CI checks` and started at `monitor`, an
+ * event's notification naming its output file under HOME, placed as the
+ * status line's; its path. */
 function withShell(w: World, stamp: string, monitor?: string): string {
   const path = sessionFile('-shell')
   place(w, STATUS, path)
   const call = (ts: string, id: string, name: string, input: Dict) => ({
     type: 'assistant', timestamp: ts, message: { id: 'req-' + id,
       content: [{ type: 'tool_use', id, name, input }] } })
-  const result = (ts: string, id: string, res: Dict) => ({ type: 'user',
-    timestamp: ts, message: { content: [
-      { type: 'tool_result', tool_use_id: id }] }, toolUseResult: res })
+  const result = (ts: string, id: string, res: Dict, content = '') => ({
+    type: 'user', timestamp: ts, message: { content: [
+      { type: 'tool_result', tool_use_id: id, content }] },
+    toolUseResult: res })
   const records = [
-    call(stamp, 'tu-bg', 'Bash', { command: 'make docs',
+    call(stamp, 'tu-bg', 'Bash', { command: 'make docs\n  && open site',
       description: 'Build the docs', run_in_background: true }),
-    result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' }),
+    result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' },
+      'Command running in background with ID: bsh1. Output is being ' +
+      'written to: ' + SHELL_OUTPUT + '. You will be notified when it ' +
+      'completes.'),
     ...(monitor === undefined ? [] : [
       call(monitor, 'tu-mon', 'Monitor', { command: 'make watch',
         description: 'Watch the CI checks' }),
-      result(monitor, 'tu-mon', { taskId: 'mon1', timeoutMs: 300_000 })]),
+      result(monitor, 'tu-mon', { taskId: 'mon1', timeoutMs: 300_000 },
+        'Monitor started (task mon1).'),
+      { type: 'user', timestamp: monitor, message: { content:
+        '<task-notification><task-id>mon1</task-id><output-file>' + HOME +
+        '/tasks/mon1.output</output-file><event>green</event>' +
+        '</task-notification>' } }]),
   ]
   const extra = encoder.encode(records
     .map((r) => JSON.stringify(r) + '\n').join(''))
@@ -609,11 +1060,46 @@ test('the main thread\'s open background shell is in the document and ' +
   await start($, w, 'terminal', path)
   expect((lastDoc(w).agents as Dict).main_background).toEqual([
     { id: 'bsh1', kind: 'bash', label: 'Build the docs',
-      start: Date.parse(stamp) / 1000 }])
+      start: Date.parse(stamp) / 1000, command: 'make docs ⏎ && open site',
+      output: SHELL_OUTPUT }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
   const rows = (await drawnRows(ui.above)).map((r) => r.text)
   expect(rows.some((r) => /^ *   [├╰]─ 💻🟢 Build the docs /u.test(r)))
     .toBe(true)
+})
+
+test('a shell that closed stays drawn, ended, for finished-linger, and ' +
+  'goes when it runs out with no read in between', async ($, on) => {
+  const w = world(on)
+  const path = withShell(w, '2026-08-16T01:44:00Z')
+  // Its closing notification, 2 s before the clock's now.
+  const close = JSON.stringify({ type: 'user',
+    timestamp: new Date((NOW - 2) * 1000).toISOString(),
+    message: { content: '<task-notification><task-id>bsh1</task-id>' +
+      '<status>completed</status></task-notification>' } }) + '\n'
+  const was = w.files.get(path)!
+  const extra = encoder.encode(close)
+  const bytes = new Uint8Array(was.length + extra.length)
+  bytes.set(was)
+  bytes.set(extra, was.length)
+  w.files.set(path, bytes)
+  await start($, w, 'terminal', path)
+  const agents = lastDoc(w).agents as Dict
+  expect(agents.main_background).toEqual([])
+  expect(agents.main_background_ended).toEqual([{ id: 'bsh1', kind: 'bash',
+    label: 'Build the docs', start: Date.parse('2026-08-16T01:44:00Z') / 1000,
+    command: 'make docs ⏎ && open site', output: SHELL_OUTPUT,
+    end: NOW - 2 }])
+  const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
+  const shell = async () => (await drawnRows(ui.above))
+    .some((r) => /💻⚫ Build the docs/u.test(r.text))
+  expect(await shell()).toBe(true)
+  // The clock alone moves it on: no document is read before it goes.
+  const docs = w.docs.length
+  await w.clock.advance(4_000)
+  await settle()
+  expect(w.docs.length).toBe(docs)
+  expect(await shell()).toBe(false)
 })
 
 /** Each mark in `row`, a drawn row standing `from` columns in from the
@@ -882,6 +1368,18 @@ test('a turn started with no plan reading has no 💳 on its tag',
   })
 
 
+test('a tracker store with no profiles_v3 is logged once a load, and ' +
+  'gives no reading', async ($, on) => {
+    const w = world(on)
+    w.files.set('/tracker.plist', encoder.encode(
+      '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict>' +
+      '<key>activeProfileId</key><string>golden</string></dict></plist>\n'))
+    const { doc } = await promptTagged($, w)
+    expect((doc.limits as Dict).weekly_pct ?? null).toBe(null)
+    await promptTagged($, w)
+    expect(logOf(w).split(TRACKER_NO_PROFILES).length - 1).toBe(1)
+  })
+
 test('a transcript over 4 MiB is read in pieces through the shell',
   async ($, on) => {
     // The shell's `tail -c +N | head -c L | base64`, over the world's
@@ -915,8 +1413,8 @@ test('a transcript over 4 MiB is read in pieces through the shell',
   })
 
 // With no calibration yet, a document starts the scan behind it, which
-// writes the window-cost cache the Python shares, in window_costs_text's
-// bytes, through the shell: a temporary file renamed over it, never
+// writes the shared window-cost cache, in _windowCostsText's bytes,
+// through the shell: a temporary file renamed over it, never
 // `$.fs.write`, which a reader can see torn.
 test('a scan writes the shared window-cost cache through a rename',
   async ($, on) => {
@@ -1513,12 +2011,16 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     await askLive($, w, true)
     await until(w, 5_000)
     const want = await receiptOf(w, w.clock.now() / 1000)
-    // 🎤, 🧵 and 🎮 at no indent, a blank row, then the 🔺🔖 tag line,
-    // drawn as the start line is.
+    // 🎮, 🧵 and 🎤 as the band's tree stacks them, 🎤's row `🎤🏁 turn`
+    // and the prompt, a blank row, then the 🔺🔖 tag line, drawn as the
+    // start line is.
     expect(want.length).toBe(5)
-    expect(text(want[0]).trimStart().startsWith(spec.E_TURN)).toBe(true)
-    expect(text(want[1]).trimStart().startsWith(spec.E_THREAD)).toBe(true)
-    expect(text(want[2]).trimStart().startsWith(spec.E_SESSION)).toBe(true)
+    expect(text(want[0]).trimStart().startsWith(spec.E_SESSION)).toBe(true)
+    expect(text(want[1]).trimStart()).toMatch(
+      new RegExp('^' + spec.E_TREE_LAST + spec.E_TREE_DASH + ' ' +
+        spec.E_THREAD, 'u'))
+    expect(text(want[2]).trimStart()).toContain(spec.E_TURN +
+      spec.E_PHASE_DONE + ' turn  ' + ASKED.slice(0, 8))
     expect(text(want[3])).toBe(' ')
     expect(text(want[4])).toContain('p-resume'.slice(0, 8))
     expect(text(want[4]).startsWith(spec.E_TURN_PAST)).toBe(true)
@@ -1842,7 +2344,8 @@ test('a turn the context was compacted in gets its receipt and tag',
     expect(stamped(w)).toBe(true)
     const want = await receiptOf(w, w.clock.now() / 1000)
     // 🎤 is the turn, by its tag, the compaction billed in it.
-    expect(text(want[0]).trimStart()).toMatch(/^🎤/)
+    expect(text(want.find((l) => text(l).includes('🎤🏁'))!)).toContain(
+      ' turn  ' + ASKED.slice(0, 8))
     expect(text(want.at(-1)!)).toContain('p-resume'.slice(0, 8))
     expect(await closing($, ASKED_MS)).toEqual(expected(want))
     await w.clock.advance(5_000)
@@ -1862,6 +2365,95 @@ test('a turn whose records never land logs why and stamps nothing',
     await blankClosing($, 'Worked', ASKED_MS)
     expect(logOf(w)).toContain('no receipt: the turn was not billed ' +
       'within 30s')
+  })
+
+/** The records Claude Code writes once a turn's answer is done: its Stop
+ * hooks' summary, then the turn's clock, which its closing line is drawn
+ * with. */
+const TURN_DONE = [
+  { isSidechain: false, subtype: 'stop_hook_summary', type: 'system',
+    timestamp: '2026-08-16T02:20:05.100Z' },
+  { durationMs: ASKED_MS, isSidechain: false, subtype: 'turn_duration',
+    type: 'system', timestamp: '2026-08-16T02:20:05.200Z' },
+]
+
+/** The turn askAndAnswer runs, written whole to the transcript before the
+ * mod's load sees it, as a reload just after its end finds it. */
+function answered(w: World) {
+  resumed(w)
+  grow(w, { message: { content: ASKED }, promptId: 'p-resume',
+    promptSource: 'typed', timestamp: '2026-08-16T02:20:00Z', type: 'user',
+    userType: 'external' }, ANSWER, ...TURN_DONE)
+}
+
+/** How many times the mod filed a receipt for a closing line. */
+function filedCount(w: World): number {
+  return w.stored.filter((k) => k.startsWith('receipt-at:')).length
+}
+
+test('a load stamps the last finished turn its turn.complete never stamped',
+  async ($, on) => {
+    const w = world(on)
+    answered(w)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await until(w, 5_000)
+    expect(w.store.has('receipt-at:' + ASKED_MS)).toBe(true)
+    expect(logOf(w)).toContain('receipt stamped on load: ' +
+      'p-resume'.slice(0, 8))
+    expect(logOf(w)).not.toContain('no receipt')
+    await w.clock.advance(5_000)
+    expect(filedCount(w)).toBe(1)
+  })
+
+test('a load stamps nothing for a last turn already stamped',
+  async ($, on) => {
+    const w = world(on)
+    answered(w)
+    const records = _recordsOf(bytesOf(w, RESUMED))
+    const readings = readingsOf(w, RESUMED)
+    const turns = turnsOf(records, (s) => agentRecordsOf(readings, s, null),
+      null, new Map(), labelIn(w))
+    w.store.set(receiptKey(SESSION, turnKey(turns)), true)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await until(w, 5_000)
+    expect(stamped(w)).toBe(false)
+    expect(logOf(w)).not.toContain('receipt stamped on load')
+  })
+
+test('a load stamps nothing while the last turn is still running',
+  async ($, on) => {
+    const w = world(on)
+    // A turn before it finished, then a prompt with no clock after it.
+    answered(w)
+    grow(w, { message: { content: 'And again.' }, promptId: 'p-running',
+      promptSource: 'typed', timestamp: '2026-08-16T02:21:00Z',
+      type: 'user', userType: 'external' })
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await settle()
+    await until(w, 5_000)
+    expect(stamped(w)).toBe(false)
+    expect(logOf(w)).not.toContain('receipt stamped on load')
+  })
+
+test('a turn.complete arriving with the load stamps its turn once',
+  async ($, on) => {
+    const w = world(on)
+    answered(w)
+    await $.session.start({ cwd: CWD, surface: 'terminal',
+      isInteractive: true })
+    await $.turn.complete(COMPLETE)
+    await settle()
+    await until(w, 5_000)
+    expect(w.store.has('receipt-at:' + ASKED_MS)).toBe(true)
+    await w.clock.advance(5_000)
+    await settle()
+    expect(filedCount(w)).toBe(1)
+    expect(logOf(w)).not.toContain('no receipt')
   })
 
 /** A prompt sent before it was finished, as the transcript held it live
@@ -2246,7 +2838,8 @@ async function shellBand($: any, on: On) {
 }
 
 test('a press on an open shell\'s or Monitor\'s row toasts what the band ' +
-  'knows of it, and runs no command', async ($, on) => {
+  'knows of it, its command and output file too, and runs no command',
+async ($, on) => {
   const { band, toasts, ran } = await shellBand($, on)
   const keys: string[] = (await band.findAll({ type: 'Button' }))
     .map((b: { key?: string }) => b.key ?? '')
@@ -2256,9 +2849,11 @@ test('a press on an open shell\'s or Monitor\'s row toasts what the band ' +
   await band.press({ key: 'task:mon1' })
   await settle()
   expect(toasts).toEqual([
-    { text: '💻 shell · 🟢 running · ⌛ 39m · Build the docs',
+    { text: '💻 shell · 🟢 running · ⌛ 39m · Build the docs · ' +
+        '$ make docs ⏎ && open site · ⤷ ' + SHELL_OUTPUT,
       timeoutMs: CONFIG.taskToastMs },
-    { text: '📡 Monitor · 🟢 running · ⌛ 33m · Watch the CI checks',
+    { text: '📡 Monitor · 🟢 running · ⌛ 33m · Watch the CI checks · ' +
+        '$ make watch · ⤷ ~/tasks/mon1.output',
       timeoutMs: CONFIG.taskToastMs }])
   expect(ran).toEqual([])
 })

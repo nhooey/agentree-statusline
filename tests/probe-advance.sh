@@ -11,23 +11,14 @@
 # /dev/tty; the report goes to stdout, so it can be redirected to a file.
 export LC_ALL=en_US.UTF-8
 
-# The program under measurement. Beside this script, the way
-# compaction-once.py finds it, since this probe lives in the program's own
-# repo now: it parses the E_* constants and EAW_WIDE out of that file, so it
-# is coupled to it and a wrong path is a silent wrong answer. Overridable so a
-# candidate can be probed without touching the checked-in one.
-#
-# This read statusline.sh until 2026-08-25, and that was wrong in a way no run
-# of this probe could report: statusline.sh is a test reference that
-# settings.json does not run, so the probe measured the glyph set of a file
-# nothing draws with. Four glyphs live only in the Python — E_COSTLINE and the
-# three E_ROW_* — and this probe had never measured one of them.
+# The glyphs under measurement, found beside this script: it parses the E_*
+# constants and EAW_WIDE out of that file, so it is coupled to it and a wrong
+# path is a silent wrong answer. Overridable so a candidate can be probed
+# without touching the checked-in one.
 DIR="$(cd "$(dirname "$0")" && pwd)"
-# Glyph constants are written in spec/layout.jsonc and generated into
-# spec.py, which formatting.py imports; this parses spec.py, where they are
-# Python literals.
-LIVE="${PROBE_PROG:-$DIR/../coding_agent_usage_line/spec.py}"
-PY=/usr/bin/python3
+# Glyph constants are written in mod/src/spec.ts, which the mod imports;
+# this imports spec.ts with Node.
+LIVE="${PROBE_PROG:-$DIR/../mod/src/spec.ts}"
 
 exec 3<>/dev/tty || { echo "no controlling terminal"; exit 1; }
 
@@ -93,53 +84,35 @@ report() {                        # $1 label, $2 glyph, $3 class (used|sample|se
   printf '%-9s %-4s advance=%s\n' "$1" "$g" "$a"
 }
 
-# ── reading the live program ────────────────────────────────────────────────
+# ── reading the layout ──────────────────────────────────────────────────────
 #
-# Both extractions PARSE the Python. They do not eval it and they do not
-# import it. The bash constants this probe used to read were single-quoted
-# literals a shell could eval straight; the Python's are double-quoted, three
-# of them are written as \U0001F4AC escapes, and EAW_WIDE is a tuple of pairs
-# — none of which a shell can read. Importing the module would read all of it
-# perfectly and also run a status line as a side effect. ast does neither.
+# spec.ts is constants and nothing else, so importing it runs nothing; the
+# names are read off the module, and EAW_WIDE is its array of pairs.
 glyph_constants() {   # -> "U+XXXX<TAB>glyph" per codepoint, first use wins
-  "$PY" - "$LIVE" <<'PYEOF'
-import ast, re, sys
-src = open(sys.argv[1], encoding="utf-8").read()
-seen = set()
-for node in ast.parse(src).body:
-    if not isinstance(node, ast.Assign) or len(node.targets) != 1:
-        continue
-    t = node.targets[0]
-    if not isinstance(t, ast.Name) or not re.fullmatch(r"E_[A-Z0-9_]+", t.id):
-        continue
-    v = node.value
-    if not isinstance(v, ast.Constant) or not isinstance(v.value, str):
-        continue
-    for ch in v.value:
-        cp = ord(ch)
-        if cp < 128 or cp in seen:      # spaces and ASCII; already emitted
-            continue
-        seen.add(cp)
-        print("U+%04X\t%s" % (cp, ch))
-PYEOF
+  node --input-type=module -e '
+    const spec = await import(process.argv[1]);
+    const seen = new Set();
+    for (const [name, v] of Object.entries(spec)) {
+      if (!/^E_[A-Z0-9_]+$/.test(name) || typeof v !== "string") continue;
+      for (const ch of v) {
+        const cp = ch.codePointAt(0);
+        if (cp < 128 || seen.has(cp)) continue;
+        seen.add(cp);
+        console.log("U+" + cp.toString(16).toUpperCase().padStart(4, "0") +
+          "\t" + ch);
+      }
+    }' "$LIVE"
 }
 
 wide_table() {        # -> "lo-hi lo-hi ..." from EAW_WIDE
-  "$PY" - "$LIVE" <<'PYEOF'
-import ast, sys
-src = open(sys.argv[1], encoding="utf-8").read()
-for node in ast.parse(src).body:
-    if isinstance(node, ast.Assign) and len(node.targets) == 1 \
-            and isinstance(node.targets[0], ast.Name) \
-            and node.targets[0].id == "EAW_WIDE":
-        print(" ".join("%d-%d" % (lo, hi)
-                       for lo, hi in ast.literal_eval(node.value)))
-        break
-PYEOF
+  node --input-type=module -e '
+    const { EAW_WIDE } = await import(process.argv[1]);
+    console.log(EAW_WIDE.map(([lo, hi]) => lo + "-" + hi).join(" "));
+  ' "$LIVE"
 }
 
 printf -- '--- glyphs this status line uses ---\n'
-printf -- '(derived from the E_* constants in coding_agent_usage_line/spec.py,\n'
+printf -- '(derived from the E_* constants in mod/src/spec.ts,\n'
 printf -- ' not a list kept here: a list kept here drifts the moment a glyph\n'
 printf -- ' changes)\n'
 
@@ -214,7 +187,7 @@ for m in $MEASURED; do
   [ "$got" = 2 ] && [ "$says" = 1 ] && icons="$icons $cp"
 done
 
-printf -- '\n--- paste into WIDTH_PROFILES in spec/layout.jsonc ---\n'
+printf -- '\n--- paste into WIDTH_PROFILES in mod/src/spec.ts ---\n'
 printf '# probed %s\n' "$(date '+%Y-%m-%d %H:%M')"
 printf '#   TERM_PROGRAM=%s TERM=%s TMUX=%s%s\n' \
   "${TERM_PROGRAM:-unset}" "${TERM:-unset}" \

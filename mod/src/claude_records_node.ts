@@ -3,7 +3,7 @@
 // claude_records.ts is pure, so the mod, which runs with no Node, can
 // import it and feed it what its own handlers read through `$`.  These are
 // the same readers over node:fs, for the tests, the tools and anything
-// else run by Node; each keeps its Python name, as the pure core does.
+// else run by Node.
 // Everything claude_records.ts exports is exported from here too, so a
 // Node caller imports one module.
 import * as fs from "node:fs";
@@ -53,7 +53,7 @@ export function _records(path: string): Rec[] {
  * `subagents/agent-<id>.jsonl` for the Agent tool, forks, and agents that
  * agents spawned; `subagents/workflows/wf_<id>/agent-<id>.jsonl` for a
  * workflow's agents.  The workflow's `journal.jsonl` carries no usage and
- * is not matched.  Walked as the Python's recursive glob walks: hidden
+ * is not matched.  Walked as Python's recursive glob walks: hidden
  * names are skipped, and a directory is entered through a symlink. */
 export function agentFiles(transcript: string): string[] {
   const d = _agentDir(transcript);
@@ -104,8 +104,7 @@ export function _readAgentFile(path: string): AgentReading | null {
 }
 
 /** Agent file `path`'s fold, read on from the one saved for it in `dir`
- * to the file's end, and saved back where it folded anything:
- * agent_fold.fold_file's port.  A saved fold is read only where the file
+ * to the file's end, and saved back where it folded anything.  A saved fold is read only where the file
  * still holds the bytes it was folded from, its offset within the file and
  * the digest of the bytes before it the same.  A last line with no newline
  * yet is folded on a copy, which is returned and not saved.  null for a
@@ -177,8 +176,8 @@ export function _agentFileReadings(transcript: string,
 }
 
 /** Write `text` to `path` through a temporary file renamed over it, private
- * to the user, as the Python does; a failure leaves the old file.  True
- * when it was written. */
+ * to the user; a failure leaves the old file.  True when it was
+ * written. */
 export function writeAtomic(path: string, text: string): boolean {
   const tmp = `${path}.${process.pid}`;
   const slash = path.lastIndexOf("/");
@@ -272,7 +271,7 @@ export function inboxDeliveries(path: string): number[] {
   return inboxDeliveriesOf(fileBytes(path));
 }
 
-/** A file's mtime in seconds, as the Python's os.path.getmtime gives it. */
+/** A file's mtime in seconds, as os.path.getmtime gives it. */
 function mtimeS(path: string): number {
   return Number(fs.statSync(path, { bigint: true }).mtimeNs) / 1e9;
 }
@@ -306,8 +305,8 @@ export function inboxCounts(files: readonly string[],
 }
 
 /** File `path`'s entry in `entries`, read on to the file's end, and what
- * its last line, with no newline yet, holds: inbox_fold.read_on's port,
- * as [[entry, sends, deliveries] or null, whether `entries` changed]. */
+ * its last line, with no newline yet, holds, as [[entry, sends,
+ * deliveries] or null, whether `entries` changed]. */
 function inboxReadOn(entries: Map<string, InboxEntry>, path: string,
   main: boolean): [[InboxEntry, [number, string][], number[]] | null,
     boolean] {

@@ -17665,6 +17665,26 @@
      null,
      true,
      false,
+     "<task-notification><task-id>m4</task-id><output-file> /private/tmp/claude-501/p/tasks/m4.output </output-file><event>x</event></task-notification>"
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     "<task-notification><task-id>m4</task-id><output-file>/elsewhere.output</output-file><event>y</event></task-notification>"
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
      ""
     ],
     [
@@ -17952,37 +17972,51 @@
      [
       "5",
       "",
-      1787000002.0
+      1787000002.0,
+      "",
+      ""
      ],
      [
       "m3",
       "",
-      1787000009.0
+      1787000009.0,
+      "",
+      ""
      ],
      [
       "c6",
       "still waiting",
-      null
+      null,
+      "still waiting",
+      ""
      ],
      [
       "b4",
       "Run the tests",
-      1787000041.0
+      1787000041.0,
+      "npm test -- --watch ⏎ && echo done",
+      "/private/tmp/claude-501/p/tasks/b4.output"
      ],
      [
       "m4",
       "tail -f log",
-      1787000042.0
+      1787000042.0,
+      "tail -f log ⏎ more",
+      "/private/tmp/claude-501/p/tasks/m4.output"
      ],
      [
       "b5",
       "",
-      null
+      null,
+      "",
+      ""
      ],
      [
       "b6",
       "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
-      1787000045.0
+      1787000045.0,
+      "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé…",
+      "/Users/u/tasks/b6.output"
      ]
     ]
    ]
@@ -18169,6 +18203,18 @@
      [],
      false,
      1787000041.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000042.0,
+     null
+    ],
+    [
+     [],
+     false,
+     1787000042.0,
      null
     ],
     [
@@ -18421,6 +18467,30 @@
      [
       1787000030.0,
       1787000041.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000042.0
+     ],
+     [
+      [
+       1787000000.0,
+       1787000020.0
+      ]
+     ]
+    ],
+    [
+     [
+      1787000030.0,
+      1787000042.0
      ],
      [
       [
@@ -20185,6 +20255,413 @@
   },
   {
    "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "classify",
+   "kw": {},
+   "out": [
+    [
+     true,
+     null,
+     0,
+     false,
+     "go",
+     false,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     false,
+     false,
+     ""
+    ],
+    [
+     false,
+     null,
+     0,
+     false,
+     null,
+     true,
+     false,
+     ""
+    ]
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl",
+    null
+   ],
+   "fn": "scan_tool_spans",
+   "kw": {},
+   "out": {
+    "blocked": [],
+    "pending": [],
+    "tools": [
+     [
+      1787000010.0,
+      1787000020.0
+     ],
+     [
+      1787000030.0,
+      1787000031.0
+     ]
+    ]
+   }
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl",
+    1787001000.0
+   ],
+   "fn": "scan_tool_spans",
+   "kw": {},
+   "out": {
+    "blocked": [],
+    "pending": [],
+    "tools": [
+     [
+      1787000010.0,
+      1787000020.0
+     ],
+     [
+      1787000030.0,
+      1787000031.0
+     ]
+    ]
+   }
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "tool_spans",
+   "kw": {},
+   "out": [
+    [
+     [
+      1787000010.0,
+      1787000020.0
+     ],
+     [
+      1787000030.0,
+      1787000031.0
+     ]
+    ],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "agent_diff",
+   "kw": {},
+   "out": [
+    0,
+    0
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "scan_background",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "scan_background_info",
+   "kw": {},
+   "out": [
+    [],
+    []
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "scan_agent_end",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "live_eta",
+   "kw": {},
+   "out": [
+    [
+     [],
+     false,
+     1787000000.0,
+     null
+    ],
+    [
+     [
+      1787000010.0,
+      600.0
+     ],
+     false,
+     1787000010.0,
+     "h1"
+    ],
+    [
+     [
+      1787000010.0,
+      600.0
+     ],
+     false,
+     1787000020.0,
+     "h1"
+    ],
+    [
+     [
+      1787000030.0,
+      0.0
+     ],
+     false,
+     1787000030.0,
+     "h2"
+    ],
+    [
+     [
+      1787000030.0,
+      0.0
+     ],
+     false,
+     1787000031.0,
+     "h2"
+    ],
+    [
+     [
+      1787000030.0,
+      0.0
+     ],
+     false,
+     1787000060.0,
+     "h2"
+    ],
+    [
+     [
+      1787000070.0,
+      300.0
+     ],
+     false,
+     1787000070.0,
+     "h3"
+    ]
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "eta_report",
+   "kw": {},
+   "out": [
+    1787000070.0,
+    300.0
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "agent_span",
+   "kw": {},
+   "out": [
+    [
+     [
+      1787000000.0,
+      1787000000.0
+     ],
+     []
+    ],
+    [
+     [
+      1787000000.0,
+      1787000010.0
+     ],
+     []
+    ],
+    [
+     [
+      1787000000.0,
+      1787000020.0
+     ],
+     []
+    ],
+    [
+     [
+      1787000000.0,
+      1787000030.0
+     ],
+     []
+    ],
+    [
+     [
+      1787000000.0,
+      1787000031.0
+     ],
+     []
+    ],
+    [
+     [
+      1787000000.0,
+      1787000031.0
+     ],
+     []
+    ],
+    [
+     [
+      1787000000.0,
+      1787000070.0
+     ],
+     []
+    ],
+    [
+     [
+      null,
+      null
+     ],
+     [
+      [
+       1787000000.0,
+       1787000070.0
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "args": [
+    [
+     [
+      1787000000.0,
+      1787000070.0
+     ]
+    ],
+    [
+     [
+      1787000010.0,
+      1787000020.0
+     ],
+     [
+      1787000030.0,
+      1787000031.0
+     ]
+    ],
+    []
+   ],
+   "fn": "thread_clock",
+   "kw": {},
+   "out": [
+    70.0,
+    11.0,
+    0.0
+   ]
+  },
+  {
+   "args": [
+    [
+     [
+      1787000000.0,
+      1787000070.0
+     ]
+    ],
+    [
+     [
+      1787000010.0,
+      1787000020.0
+     ],
+     [
+      1787000030.0,
+      1787000031.0
+     ]
+    ],
+    [],
+    []
+   ],
+   "fn": "split_clock",
+   "kw": {},
+   "out": []
+  },
+  {
+   "args": [
+    [
+     [
+      1787000010.0,
+      1787000020.0
+     ],
+     [
+      1787000030.0,
+      1787000031.0
+     ]
+    ],
+    [],
+    1787000005.0,
+    1787000120.0
+   ],
+   "fn": "turn_clock",
+   "kw": {},
+   "out": [
+    11.0,
+    0.0
+   ]
+  },
+  {
+   "args": [
     "tests/fixtures/records/inputs/eta.jsonl"
    ],
    "fn": "classify",
@@ -20557,7 +21034,9 @@
      [
       "t1",
       "",
-      null
+      null,
+      "",
+      ""
      ]
     ]
    ]
@@ -23538,7 +24017,9 @@
      [
       "t3",
       "",
-      null
+      null,
+      "",
+      ""
      ]
     ]
    ]
@@ -29256,7 +29737,9 @@
      [
       "y3",
       "",
-      null
+      null,
+      "",
+      ""
      ]
     ]
    ]
@@ -29896,7 +30379,9 @@
      [
       "z1",
       "",
-      null
+      null,
+      "",
+      ""
      ]
     ]
    ]
@@ -31168,7 +31653,9 @@
      [
       "c1",
       "",
-      null
+      null,
+      "",
+      ""
      ]
     ]
    ]

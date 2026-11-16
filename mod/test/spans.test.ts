@@ -1,10 +1,10 @@
-// spans.ts against spans.py, case by case.
+// spans.ts against its cases, case by case.
 //
-// tests/fixtures/gen/formatting.py writes tests/fixtures/formatting/
-// spans.json: hand-made span lists for each of join's special cases, then
-// seeded random ones, each with what spans.py's helpers make of it and the
-// bytes `join` writes under each of its switches.  The escapes have to be
-// the Python's byte for byte: they are what the goldens pin.
+// tests/fixtures/formatting/spans.json is committed data: hand-made span
+// lists for each of join's special cases, then seeded random ones, each
+// with what the helpers make of it and the bytes `join` writes under each
+// of its switches.  The escapes have to match byte for byte: they are what
+// the goldens pin.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";

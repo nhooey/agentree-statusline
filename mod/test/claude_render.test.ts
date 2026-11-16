@@ -1,12 +1,10 @@
 // claude_render.ts and figures.ts against the status goldens.
 //
 // Each status case in tests/fixtures/cases.json names a committed figures
-// document and has a golden, and tests/run-cases.py's render stage draws the
-// one and compares it with the other.  This does the same through the
-// TypeScript: the document's placeholders filled as run-cases.py fills
-// them, the settings from the case's environment and flags, and the drawn
-// text compared byte for byte, less trailing newlines, which the shell
-// suites' $( ) dropped.
+// document and has a golden.  This draws the one and compares it with the
+// other: the document's placeholders filled, the settings from the case's
+// environment and flags, and the drawn text compared byte for byte, less
+// trailing newlines.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -44,7 +42,7 @@ const cases = (JSON.parse(fs.readFileSync(path.join(FIXTURES, "cases.json"),
   "utf-8")).cases as Case[]).filter((c) => c.suite === "status");
 
 test("every status case has its figures and golden", () => {
-  assert.equal(cases.length, 144);
+  assert.equal(cases.length, 145);
 });
 
 test("status goldens, drawn from their figures", () => {
@@ -55,7 +53,7 @@ test("status goldens, drawn from their figures", () => {
       const fig = readFigures<any>("status", c.figures, fill);
       const env = JSON.parse(fs.readFileSync(
         path.join(FIXTURES, "env", c.env + ".json"), "utf-8"));
-      // _fig_zone: the clock cells are drawn in the document's zone.
+      // The clock cells are drawn in the document's zone.
       process.env.TZ = fig.clock.tz ?? env.tz;
       const argv = ["--cols", String(c.cols), ...c.flags];
       const got = renderStatusFigures(statusSettings(env.terminal, argv),

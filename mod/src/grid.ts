@@ -16,8 +16,8 @@
 // Settings, as claude_subagent_render.ts computes them.  Nothing here joins
 // spans into escape codes: that is the printing's job.
 import {
-  CHROME_DEPTH, DROP_ORDER, E_PCT, GRID_CELLS, GRID_SCOPES, LABEL_MIN,
-  PANEL_CHROME, VAL_W, VAL2_W,
+  CHROME_DEPTH, DROP_ORDER, E_CLOUD, E_EXTRA, E_PCT, E_PREPAID, E_PROMO,
+  GRID_CELLS, GRID_SCOPES, LABEL_MIN, PANEL_CHROME, VAL_W, VAL2_W,
 } from "./spec.ts";
 import { padVal, seg, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
@@ -38,15 +38,12 @@ export type Piece = {
 };
 
 /** One row: its scope (GRID_SCOPES), how deep in the agent panel it sits
- * (absent for a row outside the panel), whether its label is drawn flush
- * left whatever its scope (`left`: a row of the band's tree, whose label
- * holds the tree's lines), its label, and its cells by GRID_CELLS key.  A
- * key that is missing is a column the row has nothing for; one that is
- * present is drawn, even as no spans. */
+ * (absent for a row outside the panel), its label, drawn from the left,
+ * and its cells by GRID_CELLS key.  A key that is missing is a column the
+ * row has nothing for; one that is present is drawn, even as no spans. */
 export type Row = {
   readonly scope: string;
   readonly depth?: number;
-  readonly left?: boolean;
   readonly label: readonly Piece[];
   readonly cells: { readonly [key: string]: readonly Span[] };
 };
@@ -59,6 +56,8 @@ export function cellWidth(st: Settings, rule: number | string): number {
   switch (rule) {
     case "A_RATE_W": return A_RATE_W;
     case "COST_W": return visWidth(st.sCost, st.widths) + 4;
+    case "SPEND_W": return Math.max(...[E_CLOUD, E_PROMO, E_PREPAID, E_EXTRA]
+      .map((g) => visWidth(g, st.widths))) + 4;
     case "A_CTX_W": return aCtxW(st);
     case "TOK_W": return visWidth(st.sTok, st.widths) + VAL_W + VAL2_W;
     case "A_CLOCK_W": return A_CLOCK_W;
@@ -219,23 +218,11 @@ export function layout(st: Settings, rows: readonly Row[], cols: number,
   return keys;
 }
 
-/** The scopes whose label is drawn flush right, against the model's
- * column, with no spill: 🎤, 🧵 and 🎮, whose marks then sit beside the
- * figures they name, ending at one column on every row.  A row marked
- * `left` is drawn flush left whatever its scope. */
-const FLUSH_RIGHT: ReadonlySet<string> = new Set(["turn", "main", "session"]);
-
-/** Whether the row's label is drawn flush right (FLUSH_RIGHT). */
-function flushRight(row: Row): boolean {
-  return FLUSH_RIGHT.has(row.scope) && !row.left;
-}
-
 /** The columns `draw` gives the row's label on the columns `keys`: what
  * the chrome and the cells leave of the width, and with `spill` the row's
- * own leading blank columns too, unless its label is FLUSH_RIGHT. */
+ * own leading blank columns too. */
 export function labelRoom(st: Settings, row: Row, keys: readonly string[],
   cols: number, patterns: readonly string[], spill = true): number {
-  spill = spill && !flushRight(row);
   const ws = GRID_CELLS.filter((c) => keys.includes(c.key)).map((c) =>
     [c.gap + colWidth(st, c, patterns), shows(row, c.key, c.hide, patterns)] as
       const);
@@ -250,8 +237,7 @@ export function labelRoom(st: Settings, row: Row, keys: readonly string[],
 
 /** One row on the columns `keys`.  With `spill`, the label runs on over
  * the row's own leading blank columns, up to its first figure, instead of
- * stopping where the first column starts; a FLUSH_RIGHT label never
- * spills, and ends where the first column starts.  Every row ends st.rightEdge
+ * stopping where the first column starts.  Every row ends st.rightEdge
  * columns short of the terminal's edge (RIGHT_EDGE unless --right-edge
  * says), and never runs past that: a label with no room draws nothing, not
  * even a `…`, and a row whose chrome and cells are wider than the terminal
@@ -270,12 +256,10 @@ export function draw(st: Settings, row: Row, keys: readonly string[],
   }
   const head = chrome(row.depth);
   const end = cols - st.rightEdge;
-  const flush = flushRight(row);
-  spill = spill && !flush;
   const room = labelRoom(st, row, keys, cols, patterns, spill);
   while (spill && cells.length && cells[0][1] === null) cells.shift();
   const right = cells.flatMap(([w, c]) => c ?? [span(" ".repeat(w))]);
   const out = [...head,
-    ...seg(st, room, labelText(st, row, patterns, room), !flush), ...right];
+    ...seg(st, room, labelText(st, row, patterns, room)), ...right];
   return width(out, st.widths) > end ? cut(out, end, st.widths) : out;
 }

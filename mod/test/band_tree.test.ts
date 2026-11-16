@@ -1,12 +1,11 @@
 // The band's tree (band_tree.ts) and the subagents' facts it draws
-// (subagent_tasks.ts): agentUsageOf against claude.py's agent_usage_of
-// over the fixture agents, the progress update off a transcript's tail,
+// (subagent_tasks.ts): agentUsageOf against the committed answers over
+// the fixture agents, the progress update off a transcript's tail,
 // and the tree's lines, groups, cap and folds over the panel corpus's
 // tasks.  The drawn rows themselves are pinned by the rows' cases
 // (rows.test.ts, gen-row-cases.ts's tree cases).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +14,7 @@ import { join, span } from "../src/spans.ts";
 import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";
 import { githubRepo } from "../src/github.ts";
+import { NO_LIMITS } from "../src/claude_sources.ts";
 import { foldAgentBytes, newAgentFold } from "../src/claude_records.ts";
 import type { BgTask } from "../src/claude_records.ts";
 import {
@@ -24,7 +24,7 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  bgText, foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows,
+  bgPath, bgText, foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows,
   workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
@@ -42,9 +42,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
 const ST = settings({}, true, false, 5);
 const NOW = 1786847000;
-const LIMITS = { session_pct: "15", session_reset: "", session_share: "",
-  weekly_pct: "87", weekly_reset: "", weekly_share: "", session_turn: "",
-  weekly_turn: "", fable_pct: "", fable_reset: "" };
+const LIMITS = { ...NO_LIMITS, session_pct: "15", weekly_pct: "87" };
 
 /** The fixture agents' transcripts, every one under
  * tests/fixtures/transcripts/subagent/. */
@@ -61,24 +59,27 @@ function agentFiles(): string[] {
   return out;
 }
 
-test("agentUsageOf is claude.py's agent_usage_of, field for field, over " +
-  "every fixture agent", () => {
+// tests/fixtures/claude/agent-usage.json holds each fixture agent's usage
+// as committed data, field for field.
+test("agentUsageOf is each fixture agent's committed usage, field for " +
+  "field", () => {
   const files = agentFiles();
   assert.ok(files.length > 3);
-  const py = JSON.parse(execFileSync("python3", ["-c",
-    "import sys, json\nfrom coding_agent_usage_line import claude\n" +
-    "print(json.dumps([claude.read_agent_usage(p)._asdict() " +
-    "for p in sys.argv[1:]]))", ...files], { cwd: REPO, encoding: "utf8" }));
-  files.forEach((f, i) => {
+  const want = JSON.parse(fs.readFileSync(path.join(REPO,
+    "tests/fixtures/claude/agent-usage.json"), "utf8")) as
+    Record<string, Dict>;
+  assert.deepEqual(Object.keys(want).sort(),
+    files.map((f) => path.relative(REPO, f)).sort());
+  for (const f of files) {
     const fold = newAgentFold();
     foldAgentBytes(fold, fs.readFileSync(f), true);
     const got = JSON.parse(JSON.stringify(agentUsageOf(fold))) as Dict;
-    const want = py[i] as Dict;
-    assert.deepEqual(Object.keys(got).sort(), Object.keys(want).sort(), f);
-    for (const k of Object.keys(want)) {
-      assert.deepEqual(got[k], want[k], path.basename(f) + " " + k);
+    const w = want[path.relative(REPO, f)];
+    assert.deepEqual(Object.keys(got).sort(), Object.keys(w).sort(), f);
+    for (const k of Object.keys(w)) {
+      assert.deepEqual(got[k], w[k], path.basename(f) + " " + k);
     }
-  });
+  }
 });
 
 test("agentClock runs a running agent's open span on to now, and stops a " +
@@ -432,18 +433,20 @@ test("a waiting agent's progress update stays drawn", () => {
 /** The tree under 🧵 main over corpus case `id`'s agents with open
  * background tasks (withBackground: a shell and a Monitor of the main
  * thread's, and each agent's usage's), `edit` changing the document
- * first, as plain lines at 200 columns. */
+ * first, as plain lines at 200 columns, a finished row kept `linger`
+ * seconds. */
 function bgTree(id: string, over: Partial<TreeInput> = {},
   hide: string[] = [], turnStart: number | null = null,
-  edit: (doc: Dict) => Dict = (d) => d): string[] {
+  edit: (doc: Dict) => Dict = (d) => d, linger = 0): string[] {
   const doc = edit(withBackground(corpusAgents(id, ""), NOW));
   const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
   const rows = treeRows(ST, { session: null, main: blank("main"),
     turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
     mainProgress: "", turnPhase: "🟢", agents: {
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart,
-      mainBackground: doc.main_background as BgTask[] }, cap: 10, ...over },
-  hide);
+      mainBackground: doc.main_background as BgTask[],
+      mainEnded: (doc.main_background_ended ?? []) as BgTask[], linger },
+    cap: 10, ...over }, hide);
   const keys = fixedKeys(ST, 200, hide);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, hide)))
     .trimEnd());
@@ -467,6 +470,70 @@ test("each open shell and Monitor is a leaf under the thread that " +
   const done = bgTree("01-mixed@220", {}, [], NOW - 3600);
   assert.match(done.at(-2)!, /📡🟢 Watch PR #38/u);
   assert.match(done.at(-1)!, /✅ 4 done/u);
+});
+
+/** The tree over 01-mixed's agents, Elm's last record `ago` seconds
+ * before NOW, a finished row kept `linger` seconds, at most `cap` agent
+ * rows, the turn opened an hour before NOW. */
+function lingerTree(ago: number, linger: number, cap = 10): string[] {
+  const doc = corpusAgents("01-mixed@220", "");
+  const tasks = (doc.tasks as TreeTask[]).map((t) => t.task.id === "e1"
+    ? { ...t, usage: { ...t.usage, last_seen: NOW - ago,
+      last_epoch: NOW - ago } } : t);
+  const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
+  const rows = treeRows(ST, { session: null, main: blank("main"),
+    turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
+    mainProgress: "", turnPhase: "🟢", agents: { tasks, limits: LIMITS,
+      now: NOW, turnStart: NOW - 3600, linger }, cap }, []);
+  const keys = fixedKeys(ST, 200, []);
+  return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, [])))
+    .trimEnd());
+}
+
+test("an agent that ended under finished-linger ago keeps its own row, " +
+  "ended, and goes into ✅ N done once it has lingered", () => {
+  const kept = lingerTree(2, 5);
+  assert.ok(kept.some((l) => /^├─ \S+⚫ Elm/u.test(l)), kept.join("\n"));
+  assert.match(kept.at(-1)!, /✅ 3 done/u);
+  // Past it, Elm is in ✅ N done, as with no linger at all.
+  for (const lines of [lingerTree(6, 5), lingerTree(2, 0)]) {
+    assert.ok(!lines.some((l) => l.includes("Elm")), lines.join("\n"));
+    assert.match(lines.at(-1)!, /✅ 4 done/u);
+  }
+});
+
+test("a lingering agent row counts toward subagent-rows as a live one " +
+  "does", () => {
+  const more = (lines: string[]): number => Number(lines.find((l) =>
+    l.includes("more"))?.match(/… (\d+) more/u)?.[1] ?? 0);
+  assert.equal(more(lingerTree(2, 5, 4)), more(lingerTree(2, 0, 4)) + 1);
+});
+
+test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
+  "stopped, for finished-linger, and then goes", () => {
+  const gone = (ago: number) => (d: Dict): Dict => ({ ...d,
+    main_background: [(d.main_background as BgTask[])[1]],
+    main_background_ended: [{ ...(d.main_background as BgTask[])[0],
+      end: NOW - ago }] });
+  const kept = bgTree("02-parked@220", {}, [], null, gone(2), 5);
+  // In the order they opened: the Monitor 25m ago, the shell 6.2m ago.
+  assert.match(kept.at(-2)!, /^├─ 📡🟢 Watch PR #38 for comments/u);
+  assert.match(kept.at(-1)!, /^╰─ 💻⚫ Run the plugin tests +⌛6\.2m$/u);
+  for (const lines of [bgTree("02-parked@220", {}, [], null, gone(6), 5),
+    bgTree("02-parked@220", {}, [], null, gone(2), 0)]) {
+    assert.ok(!lines.some((l) => l.includes("Run the plugin tests")));
+    assert.match(lines.at(-1)!, /^╰─ 📡🟢 Watch PR #38/u);
+  }
+  // An agent's own closed shell lingers under it the same way.
+  const poppy = bgTree("02-parked@220", {}, [], null, (d) => ({ ...d,
+    tasks: (d.tasks as TreeTask[]).map((t) => t.bgTasks?.length === 2
+      ? { ...t, bgTasks: [t.bgTasks[0]],
+        bgEnded: [{ ...t.bgTasks[1], end: NOW - 1 }] } : t) }), 5);
+  const at = poppy.findIndex((l) => l.includes("Poppy"));
+  assert.match(poppy[at + 2], /^│  ╰─ 💻⚫ Build the docs site/u);
+  const shown = bgText(ST, { id: "x", kind: "bash", label: "x",
+    start: NOW - 60, end: NOW - 1 }, "Build", NOW);
+  assert.equal(shown, "💻 shell · ⚫ ended · ⌛ 59s · Build");
 });
 
 test("a shell with no label draws its kind, and one with no start no ⌛",
@@ -611,7 +678,8 @@ test("each open shell's and Monitor's label toasts what the band knows " +
     turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
     mainProgress: "", turnPhase: "🟢", agents: {
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW,
-      turnStart: null, mainBackground: doc.main_background as BgTask[] },
+      turnStart: null, mainBackground: doc.main_background as BgTask[],
+      home: "/Users/u" },
     cap: 10 }, []);
   const bg = (doc.main_background as BgTask[]).map((b) => b.id);
   const tail = rows.slice(-bg.length);
@@ -626,8 +694,10 @@ test("each open shell's and Monitor's label toasts what the band knows " +
     return p?.kind === "task" ? p.text : "";
   });
   assert.deepEqual(texts, [
-    "💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests",
-    "📡 Monitor · 🟢 running · ⌛ 25m · Watch PR #38 for comments"]);
+    "💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · " +
+      "$ npm test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output",
+    "📡 Monitor · 🟢 running · ⌛ 25m · Watch PR #38 for comments · " +
+      "$ gh pr view 38 --comments ⏎ sleep 30 · ⤷ ~/.cache/tasks/mmon.output"]);
 });
 
 test("a task's toast leaves out ⌛ where its start is not known", () => {
@@ -637,6 +707,31 @@ test("a task's toast leaves out ⌛ where its start is not known", () => {
     "💻 shell · 🟢 running · shell");
   assert.equal(bgText(ST, b("monitor", NOW - 5), "monitor", NOW),
     "📡 Monitor · 🟢 running · ⌛ 5s · monitor");
+});
+
+test("a task's toast gives its command once: the label is left out where " +
+  "it is the command's own first line", () => {
+  const b: BgTask = { id: "x", kind: "bash", label: "make docs",
+    start: NOW - 5, command: "make docs ⏎ open site", output: "" };
+  assert.equal(bgText(ST, b, "make docs", NOW),
+    "💻 shell · 🟢 running · ⌛ 5s · $ make docs ⏎ open site");
+  assert.equal(bgText(ST, { ...b, label: "Build", end: NOW - 1 }, "Build",
+    NOW, "/Users/u"),
+  "💻 shell · ⚫ ended · ⌛ 4s · Build · $ make docs ⏎ open site");
+});
+
+test("a task's output file is drawn with ~ for home, and a long one as its " +
+  "first two folders and its file name", () => {
+  assert.equal(bgPath("/Users/u/x/y.output", "/Users/u"), "~/x/y.output");
+  assert.equal(bgPath("/Users/uv/y.output", "/Users/u"), "/Users/uv/y.output");
+  assert.equal(bgPath("/Users/u/x/y.output"), "/Users/u/x/y.output");
+  const long = "/private/tmp/" + "d".repeat(80) + "/tasks/b1.output";
+  assert.equal(bgPath(long, "/Users/u"), "/private/tmp/…/b1.output");
+  // Too few folders to leave any out: drawn whole however long.
+  assert.equal(bgPath("/Users/u/" + "d".repeat(80) + "/b1.output",
+    "/Users/u"), "~/" + "d".repeat(80) + "/b1.output");
+  assert.equal(bgPath("/Users/u/a/" + "d".repeat(80) + "/b1.output",
+    "/Users/u"), "~/a/…/b1.output");
 });
 
 test("the presses change nothing drawn", () => {

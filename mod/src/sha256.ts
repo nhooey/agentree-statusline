@@ -1,7 +1,7 @@
 // SHA-256, in plain TypeScript.
 //
-// The caches and the usage source's namespace are keyed by sha256 digests,
-// as the Python's hashlib keys them.  Node's crypto is not there in the
+// The caches and the usage source's namespace are keyed by sha256 digests.
+// Node's crypto is not there in the
 // mod, which runs with no Node at all, and the Web Crypto digest there is
 // asynchronous, which would make every path that names a cache file
 // asynchronous with it.  These digests are of short keys, so a synchronous

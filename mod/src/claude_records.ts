@@ -1,38 +1,37 @@
 // Claude payload records and transcript/accounting parser.
 //
-// The port of claude_records.py, function for function under the same names
-// in camelCase; a record's fields keep the Python's snake_case names, as
-// claude_sources.ts's do, so a record reads the same in both and the shared
-// cases compare it as it is.  It owns Claude-specific JSONL interpretation and price
-// accounting, and has no terminal rendering.
+// A record's fields keep snake_case names, as claude_sources.ts's do, so
+// the shared cases compare a record as it is.  It owns Claude-specific
+// JSONL interpretation and price accounting, and has no terminal
+// rendering.
 //
-// The Python reads files inside its functions; here every reader that takes
-// a path is a thin edge over a pure core that takes the bytes or the parsed
-// records (`_recordsOf`, `transcriptOf`, `turnsOf`, ...), so the mod can
-// feed it what its own handlers read.  The state directory, the clock and
+// Every reader that takes a path is a thin edge over a pure core that
+// takes the bytes or the parsed records (`_recordsOf`, `transcriptOf`,
+// `turnsOf`, ...), so the mod can feed it what its own handlers read.
+// The state directory, the clock and
 // the cache version are arguments, never read from the environment here.
 //
-// What does not carry over from Python by itself, decided once:
+// Python's rules this follows, decided once:
 //
 //   - Truthiness.  `r.get("x") or y` treats 0, "", [], {} and None alike;
 //     JavaScript does not, so every such test goes through py.ts's
 //     `pyTruthy` and `pyOr`.
 //   - Missing is null, never undefined and never zero.  `pyGet` returns
 //     null for an absent key, as `d.get("k")` does, and `pyHas` is `"k" in
-//     d` where the Python tells the two apart.
-//   - Numbers.  JSON.parse cannot tell 5 from 5.0, so the two places the
-//     Python asks `isinstance(v, int)` accept an integral float here; and an
+//     d` where the two must be told apart.
+//   - Numbers.  JSON.parse cannot tell 5 from 5.0, so the two places that
+//     ask `isinstance(v, int)` accept an integral float here; and an
 //     integer past 2**53 loses precision.
 //   - Strings.  Python counts and iterates code points, and its regexes'
-//     \d and \s are Unicode classes; the port does the same explicitly.
+//     \d and \s are Unicode classes; this does the same explicitly.
 //   - Bytes.  Agent files are read as bytes and their offsets are byte
 //     offsets; lines are found in a Uint8Array, never in a decoded string.
-//   - Crashes.  Where a malformed field makes the Python raise (a record
-//     that is not an object, a usage count that is not a number), the port
-//     carries on with the field missing.  No shared case pins those inputs.
+//   - Crashes.  Where a field is malformed (a record that is not an
+//     object, a usage count that is not a number), this carries on with
+//     the field missing.  No shared case pins those inputs.
 
 import { sha256Hex } from "./sha256.ts";
-import { E_FOLD, E_ETA_REPORT, E_ETA_REPORT_OLD } from "./spec.ts";
+import { E_FOLD, E_ETA_REPORT } from "./spec.ts";
 import {
   daysIn, isDict, PY_SPACE, pyAsciiDigits, pyDig, pyFloatRepr, pyGet, pyHas,
   pyLen, pyOr, pyStrip, pyTruthy,
@@ -51,8 +50,8 @@ function num0(v: unknown): number {
   return typeof v === "number" && pyTruthy(v) ? v : 0;
 }
 
-/** A number field read `u.get(k, 0)`: present and null is the Python's
- * TypeError, read here as 0. */
+/** A number field read `u.get(k, 0)`: present and null, a TypeError in
+ * Python, is read here as 0. */
 function numGet(d: unknown, k: string): number {
   const v = pyGet(d, k);
   return typeof v === "number" ? v : 0;
@@ -116,7 +115,7 @@ export function pyStr(v: unknown): string {
 }
 
 /** os.path.join for two parts, which unlike path.join normalises nothing,
- * so a path built here is spelt as the Python spells it. */
+ * so a path built here is spelt as os.path.join spells it. */
 export function pyJoin(a: string, b: string): string {
   if (b.startsWith("/")) return b;
   return a === "" || a.endsWith("/") ? a + b : a + "/" + b;
@@ -181,7 +180,7 @@ export const P_IN = 5e-6, P_OUT = 25e-6, P_CR = 0.5e-6, P_CW = 10e-6;
 export type Prices = readonly [number, number, number, number];
 
 // Per-model prices.  For the calibration scan, which sees other sessions'
-// turns and so cannot assume one model; and for every record read_turns
+// turns and so cannot assume one model; and for every record readTurns
 // prices, because an agent can run a model its session does not.
 // $/token: fresh, output, cache-read, cache-write at the 2x TTL.
 //
@@ -252,8 +251,7 @@ export interface Payload {
  * is a different state from a transcript that exists and is empty: the
  * first suppresses the token segment, the second renders it as zeros.  Two
  * empty states, two renderings, and conflating them was how a fresh session
- * grew a "▴0 ▾0" that looked like a stall.  The fields are documented on
- * the Python's Transcript, field for field. */
+ * grew a "▴0 ▾0" that looked like a stall. */
 export interface Transcript {
   readonly tok_up: number | null;
   readonly tok_down: number;
@@ -263,7 +261,7 @@ export interface Transcript {
   readonly user_text: string;
   readonly asst_ts: string;
   readonly asst_text: string;
-  readonly busy_s: number;          // this thread's answering; thread_clock
+  readonly busy_s: number;          // this thread's answering; threadClock
   readonly start_s: number;         // epoch of the first STAMPED record
   readonly tool_s: number;          // inside a tool, less the waiting spans
   readonly blocked_s: number;       // inside a WAITING_TOOLS call
@@ -357,8 +355,7 @@ export function cacheShares(c: Partial<CacheShares> = {}): CacheShares {
 export const NO_CACHE_SHARES: CacheShares = cacheShares();
 
 /** One prompt the user typed, and everything billed while answering it,
- * its agents' requests included.  Field by field as the Python's Turn,
- * which says what each one means. */
+ * its agents' requests included. */
 export interface Turn {
   readonly ts: string;
   readonly text: string;
@@ -512,9 +509,9 @@ const DECODE_STRICT = { decode: (b: Uint8Array) => utf8(b, true) };
 
 /** Every line of `data` that parses, in order, as `_records` yields them.
  *
- * The Python opens the file in text mode, whose universal newlines split on
- * "\r\n", "\r" and "\n" alike.  A record that is not an object is dropped:
- * the Python yields it and its first reader raises on it. */
+ * Lines split as Python's text mode's universal newlines split them, on
+ * "\r\n", "\r" and "\n" alike.  A record that is not an object is
+ * dropped. */
 export function _recordsOf(data: Uint8Array): Rec[] {
   const out: Rec[] = [];
   for (const line of DECODE_REPLACE.decode(data).split(/\r\n|\r|\n/)) {
@@ -612,8 +609,7 @@ export function _textPres(cp: number): boolean {
  * ASCII: <27F3> in place of a reset arrow, exact in width and saying what
  * was there.  Three families qualify: U+2190-U+2BFF (arrows, misc
  * technical, misc symbols, dingbats), the variation selectors, and the
- * text-presentation pictographs of EAW_TEXT_PRES.  The Python's docstring
- * has the history. */
+ * text-presentation pictographs of EAW_TEXT_PRES. */
 export function squash(s: string, fold: string = E_FOLD): string {
   let out = "";
   for (const ch of s) {
@@ -649,8 +645,7 @@ function utcEpoch(y: number, mo: number, d: number, h: number, mi: number,
 /** A transcript timestamp as a Unix epoch, or null if it is not one.
  *
  * Transcript stamps are UTC with a trailing "Z"; the fraction is dropped
- * and the Z's stripped, as the Python's strptime dance does.  Not cached:
- * the Python's lru_cache is there for strptime's cost. */
+ * and the Z's stripped.  Not cached. */
 export function tsEpoch(ts: unknown): number | null {
   if (!pyTruthy(ts) || typeof ts !== "string") return null;
   const s = ts.split(".")[0].replace(/Z+$/, "");
@@ -810,29 +805,59 @@ const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
 export const MONITOR_EXPIRED = "[Monitor expired";
 
 /** What a thread knows of its background tasks beyond their kind, for the
- * band's tree, as [label, start]: by task id, of each task scanBackground's
- * `open` holds, its label and the epoch it opened, null where the record
- * that opened it had no stamp; and by tool-use id, of each Bash or Monitor
- * call still waiting on its result, its label and a null start.  A key
- * `open` does not hold is a call's. */
-export type BgInfo = Map<string, [string, number | null]>;
+ * band's tree, as [label, start, command, output]: by task id, of each
+ * task scanBackground's `open` holds, its label, the epoch it opened, null
+ * where the record that opened it had no stamp, its call's command on one
+ * line (backgroundCommand) and the file its output is written to, "" where
+ * no record has named one yet; and by tool-use id, of each Bash or Monitor
+ * call still waiting on its result, its label, a null start, its command
+ * and "".  A key `open` does not hold is a call's. */
+export type BgInfo = Map<string, [string, number | null, string, string]>;
 
-/** An open background task as the band's tree draws it: its task id, its
+/** A background task as the band's tree draws it: its task id, its
  * kind, "bash" or "monitor", its label and the epoch it opened, null
- * where that is not known. */
+ * where that is not known; its call's command on one line and the file
+ * its output is written to, each "" or absent where not known; and for
+ * one that has closed, the epoch of the record that closed it. */
 export type BgTask = {
   readonly id: string;
   readonly kind: string;
   readonly label: string;
   readonly start: number | null;
+  readonly command?: string;
+  readonly output?: string;
+  readonly end?: number;
 };
+
+/** The background tasks a thread has heard the end of, by task id, each
+ * with its `end`, the latest BG_ENDED_KEEP of them, for the band's tree
+ * to keep a closed task's row drawn a while (`finished-linger`).  The
+ * mod's alone: no save writes them, so a fold read back has none. */
+export type BgEnded = Map<string, BgTask>;
+
+/** How many closed background tasks a thread's BgEnded keeps. */
+export const BG_ENDED_KEEP = 8;
 
 /** The most characters of a call's text a background task keeps as its
  * label. */
 export const BG_LABEL_MAX = 120;
 
+/** The most characters of a call's command a background task keeps, the
+ * last of them `…` where it was cut. */
+export const BG_COMMAND_MAX = 300;
+
+/** What stands for each line break in a command kept on one line. */
+export const BG_NEWLINE = " ⏎ ";
+
 /** The tools whose calls can open a background task. */
 const BG_TOOLS: ReadonlySet<unknown> = new Set(["Bash", "Monitor"]);
+
+/** Where a background Bash call's result names the file its output is
+ * written to. */
+const BG_OUTPUT = /Output is being written to: (\S+?)\.?(?=\s|$)/;
+
+/** Where a `<task-notification>` names its task's output file. */
+const TASK_OUTPUT = /<output-file>([^<]+)<\/output-file>/;
 
 /** A background task's label off its call's input: its `description`,
  * else its `command`, each cut to its first line with text and to
@@ -847,35 +872,70 @@ export function backgroundLabel(input: unknown): string {
   return "";
 }
 
+/** A background task's command off its call's input, on one line: its
+ * lines with text, each stripped, joined by BG_NEWLINE, cut to
+ * BG_COMMAND_MAX characters with `…` last where it was longer; "" for
+ * none. */
+export function backgroundCommand(input: unknown): string {
+  const v = pyGet(input, "command");
+  if (typeof v !== "string") return "";
+  const cs = Array.from(v.split("\n").map(pyStrip).filter((l) => l)
+    .join(BG_NEWLINE));
+  return cs.length > BG_COMMAND_MAX
+    ? cs.slice(0, BG_COMMAND_MAX - 1).join("") + "…" : cs.join("");
+}
+
+/** The output file a tool result block names, as a background Bash call's
+ * result states it; "" for none. */
+export function backgroundOutput(block: unknown): string {
+  let c = pyGet(block, "content");
+  if (Array.isArray(c)) {
+    c = c.filter(isDict).map((b) => pyStr(pyOr(pyGet(b, "text"), "")))
+      .join("");
+  }
+  const m = typeof c === "string" ? BG_OUTPUT.exec(c) : null;
+  return m ? m[1] : "";
+}
+
 /** The open tasks of `open`, in the order they opened, each with what
  * `info` knows of it. */
 export function backgroundTasks(open: ReadonlyMap<string, string>,
   info: BgInfo): BgTask[] {
   return [...open].map(([id, kind]) => {
     const got = info.get(id);
-    return { id, kind, label: got?.[0] ?? "", start: got?.[1] ?? null };
+    return { id, kind, label: got?.[0] ?? "", start: got?.[1] ?? null,
+      command: got?.[2] ?? "", output: got?.[3] ?? "" };
   });
 }
 
-/** `info` as a save writes it: [key, label, start] for each entry. */
-export function bgInfoJson(info: BgInfo): [string, string, number | null][] {
-  return [...info].map(([k, [label, t]]) => [k, label, t]);
+/** The closed tasks of `ended`, in the order they closed. */
+export function endedTasks(ended: BgEnded | undefined): BgTask[] {
+  return [...(ended ?? new Map<string, BgTask>()).values()];
+}
+
+/** `info` as a save writes it: [key, label, start, command, output] for
+ * each entry. */
+export function bgInfoJson(info: BgInfo):
+  [string, string, number | null, string, string][] {
+  return [...info].map(([k, [label, t, cmd, out]]) =>
+    [k, label, t, cmd, out]);
 }
 
 /** A BgInfo read back from bgInfoJson's entries. */
-export function bgInfoOf(xs: readonly [string, string, number | null][]):
-  BgInfo {
-  return new Map(xs.map(([k, label, t]) => [k, [label, t]]));
+export function bgInfoOf(
+  xs: readonly [string, string, number | null, string, string][]): BgInfo {
+  return new Map(xs.map(([k, label, t, cmd, out]) =>
+    [k, [label, t, cmd, out]]));
 }
 
 /** A copy of `info` that folding on leaves `info` as it was. */
 export function copyBgInfo(info: BgInfo): BgInfo {
-  return new Map([...info].map(([k, [l, t]]) => [k, [l, t]]));
+  return new Map([...info].map(([k, [l, t, c, o]]) => [k, [l, t, c, o]]));
 }
 
 /** Fold one record into `open`, {task id: "bash" or "monitor"}, the
  * background tasks a thread started and has not heard the end of, and
- * into `info`, where given, their labels and starts (BgInfo).
+ * into `info`, where given, what the band's tree knows of them (BgInfo).
  *
  * These are what keep an agent that ended its turn alive while it waits:
  * Claude Code parks it on `bash:<id>` or `monitor:<id>` and marks it
@@ -885,37 +945,56 @@ export function copyBgInfo(info: BgInfo): BgInfo {
  * `<task-notification>` for that id that carries a `<status>`, or says
  * a Monitor expired (MONITOR_EXPIRED), which carries none, or on the
  * thread ending it itself: TaskStop's result, or TaskOutput reading it
- * finished.  Its label is its call's (backgroundLabel), kept from the
- * Bash or Monitor call until the call's result, which opens the task or
- * lets the call go. */
+ * finished.  Its label and command are its call's (backgroundLabel,
+ * backgroundCommand), kept from the Bash or Monitor call until the call's
+ * result, which opens the task or lets the call go.  Its output file is
+ * the one a Bash call's result names (backgroundOutput), or else the
+ * `<output-file>` of the first `<task-notification>` for it that names
+ * one, as each of a Monitor's does.  Where `ended` is given, an open task
+ * that closes on a stamped record goes into it with that stamp as its
+ * end (BgEnded). */
 export function scanBackground(r: Rec, open: Map<string, string>,
-  info: BgInfo | null = null): void {
+  info: BgInfo | null = null, ended: BgEnded | null = null): void {
   const content = pyDig(r, "message", "content");
-  const calls: string[] = [];
+  const calls: [string, string][] = [];
   if (info && Array.isArray(content)) {
     for (const b of content) {
       if (!isDict(b)) continue;
       const type = pyGet(b, "type");
       if (type === "tool_use" && BG_TOOLS.has(pyGet(b, "name")) &&
         pyTruthy(pyGet(b, "id"))) {
+        const input = pyGet(b, "input");
         info.set(pyStr(pyGet(b, "id")),
-          [backgroundLabel(pyGet(b, "input")), null]);
+          [backgroundLabel(input), null, backgroundCommand(input), ""]);
       } else if (type === "tool_result" &&
         pyTruthy(pyGet(b, "tool_use_id"))) {
-        calls.push(pyStr(pyGet(b, "tool_use_id")));
+        calls.push([pyStr(pyGet(b, "tool_use_id")), backgroundOutput(b)]);
       }
     }
   }
   const call = (c: string): boolean => info!.has(c) && !open.has(c);
   const opened = (id: string, kind: string): void => {
     if (info) {
-      const c = calls.find(call);
-      info.set(id, [c === undefined ? "" : info.get(c)![0],
-        tsEpoch(pyOr(pyGet(r, "timestamp"), ""))]);
+      const c = calls.find(([k]) => call(k));
+      const got = c === undefined ? undefined : info.get(c[0])!;
+      info.set(id, [got?.[0] ?? "",
+        tsEpoch(pyOr(pyGet(r, "timestamp"), "")), got?.[2] ?? "",
+        c?.[1] ?? ""]);
     }
     open.set(id, kind);
   };
   const closed = (id: string): void => {
+    const end = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
+    if (ended && open.has(id) && end !== null) {
+      const got = info?.get(id);
+      ended.delete(id);
+      ended.set(id, { id, kind: open.get(id)!, label: got?.[0] ?? "",
+        start: got?.[1] ?? null, command: got?.[2] ?? "",
+        output: got?.[3] ?? "", end });
+      for (const k of [...ended.keys()].slice(0, -BG_ENDED_KEEP)) {
+        ended.delete(k);
+      }
+    }
     open.delete(id);
     info?.delete(id);
   };
@@ -934,12 +1013,18 @@ export function scanBackground(r: Rec, open: Map<string, string>,
     }
   }
   if (info) {
-    for (const c of calls) if (call(c)) info.delete(c);
+    for (const [c] of calls) if (call(c)) info.delete(c);
   }
   const text = notificationText(r);
-  if (text && (text.includes("<status>") || text.includes(MONITOR_EXPIRED))) {
-    const m = TASK_ID.exec(text);
-    if (m) closed(pyStrip(m[1]));
+  const m = text ? TASK_ID.exec(text) : null;
+  if (m) {
+    const id = pyStrip(m[1]);
+    const got = open.has(id) ? info?.get(id) : undefined;
+    const out = TASK_OUTPUT.exec(text);
+    if (got && !got[3] && out) got[3] = pyStrip(out[1]);
+    if (text.includes("<status>") || text.includes(MONITOR_EXPIRED)) {
+      closed(id);
+    }
   }
 }
 
@@ -1078,19 +1163,18 @@ export function turnTimes(t: Turn): [number, number] {
 //
 //     ⛳ skills/coding-agent-usage-line-report-eta: ETA 4m
 //
-// The skill's path is the part matched; the flag may be missing, and the 🏁
-// the skill had it write before ⛳ is read as well.  Backticks and bold
-// around the line are forgiven.  A run of figure-and-unit pairs (`6h30m`)
-// is one figure, and a few words after a dash are not read.
+// The skill's path is the part matched, and the flag may be missing.
+// Backticks and bold around the line are forgiven.  A run of
+// figure-and-unit pairs (`6h30m`) is one figure, and a few words after a
+// dash are not read.
 //
-// The Python compiles this with re.MULTILINE, whose ^ and $ are at a "\n"
-// alone; JavaScript's m flag also breaks at "\r", U+2028 and U+2029, so the
-// line ends are spelt out as lookarounds instead.  \d is Unicode's, as the
-// Python's is.
+// Its ^ and $ are at a "\n" alone, as re.MULTILINE's are; JavaScript's m
+// flag also breaks at "\r", U+2028 and U+2029, so the line ends are spelt
+// out as lookarounds instead.  \d is Unicode's, as Python's is.
 export const ETA_SKILL = "coding-agent-usage-line-report-eta";
 export const ETA_PART = String.raw`\p{Nd}+(?:\.\p{Nd}+)? ?[smh]`;
 export const ETA_LINE = new RegExp(
-  String.raw`(?<![^\n])[ \t\x60*]*(?:[${E_ETA_REPORT}${E_ETA_REPORT_OLD}]` +
+  String.raw`(?<![^\n])[ \t\x60*]*(?:${E_ETA_REPORT}` +
   String.raw`[ \t]*)?skills/${ETA_SKILL}: ETA (${ETA_PART}` +
   String.raw`(?:[ \t]*${ETA_PART})*)(?:[ \t]+[—–\-][ \t]` +
   String.raw`[^\n]*?)?[ \t\x60*]*(?![^\n])`, "gu");
@@ -1136,6 +1220,18 @@ export function etaFinish(eta: readonly number[]): number | null {
   return eta[0] + eta[1];
 }
 
+/** The tool a subagent hands its final report back with.  The call ends
+ * the agent's run: Claude Code lists it completed once it is made. */
+export const HANDBACK_TOOL = "SubagentHandback";
+
+/** True for an assistant record that calls HANDBACK_TOOL. */
+export function handsBack(r: Rec): boolean {
+  if (pyGet(r, "type") !== "assistant") return false;
+  const content = pyDig(r, "message", "content");
+  return Array.isArray(content) && content.some((b) => isDict(b) &&
+    pyGet(b, "type") === "tool_use" && pyGet(b, "name") === HANDBACK_TOOL);
+}
+
 /** True for an assistant record that ends its answer. */
 export function endsTurn(r: Rec): boolean {
   return pyGet(r, "type") === "assistant" &&
@@ -1164,10 +1260,13 @@ export function newEtaState(): EtaState {
  * its turn to wait on a background task, and says in the same breath how
  * long it expects the rest to take.  A 0s in the message that ends the
  * turn is finishing, not parking; and one that ends without a line in its
- * last message reads as finished too.  A message is split over several
- * records, one per block, so the test is on the message id.  `opens`,
- * whether `r` opens a turn, is the caller's where it keeps a turnOpens
- * gate; else turnStartText's. */
+ * last message reads as finished too.  A hand-back (handsBack) is a 0s
+ * at its stamp: the line is read from the agent's own text only, so a
+ * sign-off written into the report it hands back is never seen, and the
+ * call ends the run whatever its last line said.  A message is split over
+ * several records, one per block, so the test is on the message id.
+ * `opens`, whether `r` opens a turn, is the caller's where it keeps a
+ * turnOpens gate; else turnStartText's. */
 export function liveEta(r: Rec, state: EtaState,
   opens: boolean | null = null): void {
   if (opens ?? (turnStartText(r) !== null)) {
@@ -1175,7 +1274,9 @@ export function liveEta(r: Rec, state: EtaState,
     state[1] = false;
     state[3] = null;
   } else if (isWork(r)) {
-    const report = etaReport([r]);
+    let report = etaReport([r]);
+    const at = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
+    if (at !== null && handsBack(r)) report = [at, 0];
     const mid = pyDig(r, "message", "id") ?? null;
     if (report.length) {
       state[0] = report;
@@ -1248,8 +1349,7 @@ export function closeAgentSpan(state: SpanState, spans: Span[]): void {
  * segment, and the typed branch takes every source a person's prompt comes
  * from (PROMPT_SOURCES), the SDK's and an accepted suggestion's among them.
  * A prompt with an image pasted in is a list of blocks; promptText reads
- * it.  Whether the turn is already open is turnOpens's to say.  The
- * Python's docstring has the measurements. */
+ * it.  Whether the turn is already open is turnOpens's to say. */
 export function opensTurn(r: Rec): boolean {
   if (pyGet(r, "type") !== "user" || pyGet(r, "userType") !== "external" ||
     pyTruthy(pyGet(r, "isCompactSummary"))) {
@@ -1321,8 +1421,7 @@ export function queuedText(r: Rec): string | null {
   // Text pulled back into the editor was never answered; read as a
   // delivery, it would open a turn holding the old text.
   if (!QUEUE_HANDED.includes(pyGet(r, "operation"))) return null;
-  // A message handed over while the answer runs is the same turn; the
-  // Python's comment has why.
+  // A message handed over while the answer runs is the same turn.
   if (pyGet(r, "reason") === "absorbed_mid_turn") return null;
   const c = pyGet(r, "content");
   return typeof c === "string" && c.length > 0 && !c.startsWith("<")
@@ -1434,7 +1533,7 @@ export function inFlightAfter(r: Rec): boolean | null {
  * records after it stay the turn's.  A run of them handed over together
  * leaves the answer in flight for the next.  Only "queued" is read so: a
  * prompt typed while the session is idle opens its turn whatever came
- * before it.  The Python's docstring has the measurements. */
+ * before it. */
 export function turnOpens(r: Rec, gate: TurnGate): string | null {
   const seen = gate[2];
   const flight = gate[3];
@@ -1680,14 +1779,14 @@ export function _readAgentBytes(data: Uint8Array): AgentReading {
 
 /** _readAgentBytes's fold, kept between reads of a growing file so each
  * reads only what was appended: `pos` is how far into the file it has
- * folded, at a line's end.  AgentFold in claude_records.py is the same
- * fold, and agent_fold.ts saves it as the same text.  Besides what
- * agentRecordsOf reads, it keeps what the Python's agent panel reads
- * (agent_usage_of): the compactions, the last stamp, the API-error flag,
+ * folded, at a line's end.  agent_fold.ts saves it as text.  Besides what
+ * agentRecordsOf reads, it keeps what the agent panel reads
+ * (agentUsageOf): the compactions, the last stamp, the API-error flag,
  * the cwd, the block count, the background tasks and the effort of the
  * last request it bills; and what the band's tree reads, the background
- * tasks' labels and starts (`bgInfo`).  `keys` is the request ids in
- * `recs`, for that effort; it is not saved, and is rebuilt on a load. */
+ * tasks' labels, starts, commands and output files (`bgInfo`).  `keys`
+ * is the request ids in `recs`, for that effort; it is not saved, and is
+ * rebuilt on a load. */
 export interface AgentFold {
   pid: unknown;
   etaState: EtaState;
@@ -1708,6 +1807,8 @@ export interface AgentFold {
   blocks: number;
   readonly background: Map<string, string>;
   readonly bgInfo: BgInfo;
+  /** scanBackground's closed tasks; never saved. */
+  readonly bgEnded?: BgEnded;
   effort: unknown;
   readonly keys: Set<unknown>;
 }
@@ -1717,7 +1818,8 @@ export function newAgentFold(): AgentFold {
     work: [], pending: new Map(), tools: [], waiting: [], recs: [],
     wrote: new Set(), added: 0, removed: 0, pos: 0, compactions: 0,
     lastSeen: null, apiError: false, cwd: "", blocks: 0,
-    background: new Map(), bgInfo: new Map(), effort: "", keys: new Set() };
+    background: new Map(), bgInfo: new Map(), bgEnded: new Map(),
+    effort: "", keys: new Set() };
 }
 
 /** A copy of `fold` that folds on apart from it. */
@@ -1729,7 +1831,7 @@ export function copyAgentFold(fold: AgentFold): AgentFold {
   tools: fold.tools.slice(), waiting: fold.waiting.slice(),
   recs: fold.recs.slice(), wrote: new Set(fold.wrote),
   background: new Map(fold.background), bgInfo: copyBgInfo(fold.bgInfo),
-  keys: new Set(fold.keys) };
+  bgEnded: new Map(fold.bgEnded ?? []), keys: new Set(fold.keys) };
 }
 
 /** Fold `data`, the file's bytes from `fold.pos` on, into `fold`.  Short
@@ -1772,7 +1874,7 @@ export function foldAgentRecord(fold: AgentFold, length: number,
   liveEta(r, fold.etaState);
   agentSpan(r, fold.spanState, fold.work);
   scanToolSpans(r, fold.pending, fold.tools, fold.waiting);
-  scanBackground(r, fold.background, fold.bgInfo);
+  scanBackground(r, fold.background, fold.bgInfo, fold.bgEnded ?? null);
   const [a, d] = diffLines(r, fold.wrote);
   fold.added += a;
   fold.removed += d;
@@ -1798,7 +1900,7 @@ export function foldAgentRecord(fold: AgentFold, length: number,
     fold.removed];
   fold.recs.push(rec);
   fold.added = fold.removed = 0;
-  // _dedupe_usage's choice, first wins, of what the panel bills.
+  // _dedupeUsage's choice, first wins, of what the panel bills.
   if (!fold.keys.has(k)) {
     fold.keys.add(k);
     if (rec[3] || rec[4] || rec[5] || rec[6]) {
@@ -1824,8 +1926,7 @@ export function agentReadingOf(fold: AgentFold): AgentReading {
 /** Where the Stop hook records how far into each agent file it reported.
  *
  * Per session, in private application state.  A one-way digest keeps a raw
- * transcript/session id out of the path.  The same file the Python's Stop
- * hook writes, so the two report each record once between them. */
+ * transcript/session id out of the path. */
 export function _agentStatePath(transcript: string, stateDir: string): string {
   let sid = pyBasename(transcript);
   if (sid.endsWith(".jsonl")) sid = sid.slice(0, -".jsonl".length);
@@ -2030,8 +2131,7 @@ export function inboxTally(sent: ReadonlyMap<string, number[]>,
 export type AgentEta = readonly [number | null, number | null, string?];
 
 /** The agents' ETAs as (finish, last record), less each agent the main
- * transcript says ended after its last record; the Python's
- * live_agent_etas has why. */
+ * transcript says ended after its last record. */
 export function liveAgentEtas(records: readonly Rec[],
   etas: readonly AgentEta[]): AgentEta[] {
   const ends = new Map<string, number>();
@@ -2074,7 +2174,7 @@ export function diffLines(r: Rec, seen: Set<string>): [number, number] {
   if (Array.isArray(patch) && patch.length) {
     for (const hunk of patch) {
       const lines = pyOr(pyGet(pyOr(hunk, {}), "lines"), []);
-      // A str is iterated by character, as the Python iterates it.
+      // A str is iterated by character, as Python iterates it.
       const each = typeof lines === "string" ? Array.from(lines)
         : Array.isArray(lines) ? lines : [];
       for (const line of each) {
@@ -2183,8 +2283,11 @@ export interface TranscriptFold {
   queued: number;
   compactions: number;
   background: Map<string, string>;
-  /** scanBackground's labels and starts, for the band's tree. */
+  /** scanBackground's labels, starts, commands and output files, for the
+   * band's tree. */
   bgInfo: BgInfo;
+  /** scanBackground's closed tasks; never saved. */
+  bgEnded?: BgEnded;
   idleAt: number;
   lastSeen: number;
   /** The turn opened last, for its promptId alone. */
@@ -2211,7 +2314,7 @@ export function newTranscriptFold(): TranscriptFold {
     asstText: "", spans: [], tools: [], blocked: [], pending: new Map(),
     first: null, openAt: null, prev: null, etaState: newEtaState(),
     queued: 0, compactions: 0, background: new Map(), bgInfo: new Map(),
-    idleAt: 0.0,
+    bgEnded: new Map(), idleAt: 0.0,
     lastSeen: 0.0, opened: { pid: "", tidx: null }, wrote: new Set(),
     added: 0, removed: 0, ends: new Map(), gate: newTurnGate(), title: "",
     agentName: "", color: "" };
@@ -2235,7 +2338,7 @@ export function copyTranscriptFold(f: TranscriptFold): TranscriptFold {
     etaState: [f.etaState[0].slice(), f.etaState[1], f.etaState[2],
       f.etaState[3]],
     background: new Map(f.background), bgInfo: copyBgInfo(f.bgInfo),
-    opened: { ...f.opened },
+    bgEnded: new Map(f.bgEnded ?? []), opened: { ...f.opened },
     wrote: new Set(f.wrote), ends: new Map(f.ends),
     gate: [f.gate[0], f.gate[1], f.gate[2], f.gate[3]] };
 }
@@ -2351,7 +2454,7 @@ function foldContext(f: TranscriptFold, r: Rec, kept: boolean): void {
     // compacted conversation alone; what it leaves out is the system
     // prompt, the tools and the files re-attached after it, which the
     // session's first reading carries too, or COMPACT_OVERHEAD without
-    // one.  The Python's comment has the measurements.
+    // one.
     const post = num0(pyDig(r, "compactMetadata", "postTokens"));
     if (post) {
       f.ctx = post + (f.firstCtx || COMPACT_OVERHEAD);
@@ -2414,7 +2517,7 @@ function foldClock(f: TranscriptFold, r: Rec, opens: boolean): void {
   _stampTurnId(f.opened, r);
   if (pyGet(r, "isSidechain") !== true) {
     liveEta(r, f.etaState, opens);
-    scanBackground(r, f.background, f.bgInfo);
+    scanBackground(r, f.background, f.bgInfo, f.bgEnded ?? null);
   }
   const t = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
   if (t === null) return;
@@ -2617,8 +2720,8 @@ export function _addUsd(cur: TurnBuild, epoch: number | null, model: unknown,
  * returned here by path for readTurns to freeze — once the agent has
  * FINISHED, by `ends`; until then they stay on their spawning turn and go
  * into `held`.  "New" is exact with `offsets`, the byte counts the last
- * Stop stored; without them, a record stamped after the last Stop record.
- * The Python's docstring has the measurements. */
+ * Stop stored; without them, a record stamped after the last Stop
+ * record. */
 export function _foldAgents(turns: TurnBuild[],
   byPid: ReadonlyMap<unknown, TurnBuild>, agents: readonly AgentRec[],
   lastStop: number | null = null,
@@ -2628,8 +2731,8 @@ export function _foldAgents(turns: TurnBuild[],
   const late = new Map<string, TurnBuild>();
   if (agents.length === 0 || turns.length === 0) return late;
   const stamped = turns.filter((t) => t.t0 !== null && !pyTruthy(t.compact));
-  // The turn the 🎤 row will be about: the same selection render_cost_line
-  // and _with_shares make.  `n` is main-thread calls, so folding agents in
+  // The turn the 🎤 row will be about: the same selection renderCostLine
+  // and _withShares make.  `n` is main-thread calls, so folding agents in
   // cannot move it.
   let prompt: TurnBuild | null = null;
   for (const t of turns) if (t.n && !pyTruthy(t.compact)) prompt = t;
@@ -2819,7 +2922,7 @@ export function foldTurns(f: TurnsFold, r: Rec): void {
     // cache-read rate, and its durationMs how long it took.  An AUTO
     // compaction lands inside whatever turn was running, so it gets a
     // turn of its own unless the one open is the /compact that asked for
-    // it.  The Python's comment has the measurements.
+    // it.
     const md = pyOr(pyGet(r, "compactMetadata"), {});
     if (cur === null || cur.n || pyStrip(cur.text) !== "/compact") {
       cur = _newTurn(pyStr(pyOr(pyGet(r, "timestamp"), "")),

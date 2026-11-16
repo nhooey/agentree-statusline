@@ -30,15 +30,14 @@ A new mark must be:
    font still has it.
 4. **Outside U+1F900–U+1F90B.** The program treats that band as wide, and
    Ghostty does not.
-5. **Declared as an `E_*` constant** in `spec/layout.jsonc`
+5. **Declared as an `E_*` constant** in `mod/src/spec.ts`
    and used by name, never as a literal in a renderer. `tests/probe-advance.sh`
-   finds the glyphs to measure by parsing those constants out of the generated
-   `coding_agent_usage_line/spec.py`; a literal is a glyph
-   nobody measures.
+   finds the glyphs to measure by reading those constants out of
+   `mod/src/spec.ts`; a literal is a glyph nobody measures.
 
 Then measure it. Run `usage-dev probe-advance` in a real terminal tab and
-check it advances two columns, and run `usage-dev selftest` and look at the drawn rows. A glyph can measure correctly and still
-paint wrong.
+check it advances two columns, and look at the mod's rows drawn with it. A
+glyph can measure correctly and still paint wrong.
 
 One glyph in use breaks rule 3: 🤏 `E_ROW_COMPACT` (U+1F90F) is Unicode 12. It
 measures two columns in Ghostty, so it stays. If it ever
@@ -76,8 +75,8 @@ hand-maintained `EAW_WIDE` table instead of `unicodedata`. Both look like bugs
 and both are deliberate: **replacing it with `wcwidth`, `unicodedata`, or any
 standards-correct implementation misaligns every row.** The standard answers
 what the character *should* do; the table records what the terminal *does*.
-Python 3.9's `unicodedata` also ships Unicode 13, older than several glyphs in
-conversation text.
+A runtime's own Unicode tables lag too: Python 3.9's `unicodedata` ships
+Unicode 13, older than several glyphs in conversation text.
 
 `EAW_WIDE` is a generated East Asian Width table corrected against the
 probe:
@@ -121,16 +120,17 @@ how those terminals behave.
 
 `tmux` is checked first on the evidence that tmux over iTerm2 measured the
 same as bare iTerm2, and Ghostty under tmux agreed. For another host terminal,
-`--selftest` under tmux settles whether the `tmux` profile is right glyph by
-glyph: a non-zero delta on any row means it needs its own profile.
+`probe-advance.sh` under tmux settles whether the `tmux` profile is right
+glyph by glyph: a glyph whose advance differs from the table means it needs
+its own profile.
 
 ## Measurements on record
 
-`--selftest` and `probe-advance.sh` have been run in:
+A specimen-row self-test and `probe-advance.sh` have been run in:
 
 | Terminal | Result |
 |---|---|
-| Ghostty under tmux | every `--selftest` specimen row delta 0; every glyph in the layout advances as the table says; 🤏 advances two; U+1F900 advances one |
+| Ghostty under tmux | every specimen row delta 0; every glyph in the layout advances as the table says; 🤏 advances two; U+1F900 advances one |
 | Ghostty, no tmux | 👥 advances two |
 | iTerm2 under tmux | the same as bare iTerm2, except one keycap sequence |
 

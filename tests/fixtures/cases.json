@@ -1328,6 +1328,15 @@
     },
     {
       "cols": 196,
+      "env": "default",
+      "figures": "weekly-windows",
+      "flags": [],
+      "id": "weekly-windows@196",
+      "input": "payloads/status/weekly-windows.json",
+      "suite": "status"
+    },
+    {
+      "cols": 196,
       "env": "app-41-63",
       "figures": "01-plain",
       "flags": [],

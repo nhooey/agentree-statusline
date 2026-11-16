@@ -1,6 +1,6 @@
 // The calibration: each plan window's cost, scanned from every project's
-// transcripts and kept in the window-costs cache the Python shares, with
-// the scan moved off the render and only changed files read again.
+// transcripts and kept in the window-costs cache, with the scan moved off
+// the render and only changed files read again.
 import type { EngineInterface } from 'claude-code'
 
 import { pyJoin } from '../src/claude_records.ts'
@@ -92,10 +92,10 @@ export async function calibrationVia($: $, places: Places, snap: Snapshot,
   return _calibrationOf(snap, cached, null)
 }
 
-/** _sweep_calibrations through `$`: the calibration caches untouched for
+/** The sweep through `$`: the calibration caches untouched for
  * CALIB_MAX_AGE_S, and the folds' directories none of whose files was
- * written for as long, removed at most once a day between this and the
- * Python, by the marker both stamp.  `$.fs` cannot remove a file, so `rm`
+ * written for as long, removed at most once a day, by the marker it
+ * stamps.  `$.fs` cannot remove a file, so `rm`
  * does, handed only names staleCalibrations and staleFoldFiles matched,
  * under the state directory, and `rmdir` then each fold directory, which
  * leaves one that holds anything else. */
@@ -130,10 +130,10 @@ async function sweepCalibrationsVia($: $, places: Places,
   }
 }
 
-/** _remove_old_window_costs through `$`: the window-cost caches as they
- * were named before spec/state.jsonc's window-costs kind, removed once,
- * by the marker the Python writes too.  `rm` is handed only the names
- * oldWindowCosts matched, under the state directory. */
+/** The window-cost caches as they were named before state_spec.ts's
+ * window-costs kind, removed once through `$`, by the marker it writes.
+ * `rm` is handed only the names oldWindowCosts matched, under the state
+ * directory. */
 async function removeOldCostsVia($: $, places: Places): Promise<void> {
   const marker = pyJoin(places.stateDir, OLD_COSTS_DONE)
   if (await fileSize($, marker) !== null) return
@@ -149,8 +149,8 @@ async function removeOldCostsVia($: $, places: Places): Promise<void> {
 
 /** A whole file written so no reader sees it torn: `$.fs.write` truncates
  * and then writes, and holds 4 MiB at most, so the text goes through the
- * shell's stdin to a temporary file beside `path`, renamed over it, as the
- * Python's os.replace does.  False where it could not be written. */
+ * shell's stdin to a temporary file beside `path`, renamed over it.
+ * False where it could not be written. */
 async function writeAtomicVia($: $, path: string, text: string):
   Promise<boolean> {
   try {
@@ -193,8 +193,8 @@ async function scanWindows($: $, places: Places, snap: Snapshot,
 
 /** The cost cache, once a load: each file's offset, the digest of the
  * bytes before it, and its priced records up to it, as _CostCache keeps
- * them, in the one file spec/state.jsonc's window-costs kind names, which
- * the Python reads and writes too.  Read in pieces past 4 MiB. */
+ * them, in the one file state_spec.ts's window-costs kind names.  Read
+ * in pieces past 4 MiB. */
 async function readCosts($: $, places: Places): Promise<void> {
   if (costsRead) return
   costsRead = true
@@ -203,7 +203,7 @@ async function readCosts($: $, places: Places): Promise<void> {
   if (st?.kind !== 'file') return
   let files: Record<string, CostKept> | null = null
   try {
-    // ASCII, as both ports write it.
+    // ASCII, as it is written.
     files = _windowCostsFiles(new TextDecoder()
       .decode(await readRange($, path, 0, st.size)))
   } catch {

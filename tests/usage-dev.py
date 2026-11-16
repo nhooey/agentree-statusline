@@ -8,18 +8,29 @@ import importlib.util
 import io
 import os
 import re
-import sys
+import stat
+import subprocess
 import tempfile
 import unittest
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from _checks import write_executable  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _spec = importlib.util.spec_from_file_location(
     "usage_dev", os.path.join(ROOT, "tools", "usage-dev.py"))
 dev = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(dev)
+
+
+def write_executable(path, text):
+    """Write a stand-in program, make it executable, and run it once.
+
+    macOS checks every new executable on its first run, in one daemon
+    shared by the whole machine, and the check queues behind the other
+    suites' writes; run here, it is paid before anything is counted."""
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    os.chmod(path, stat.S_IRWXU)
+    subprocess.run([path], stdin=subprocess.DEVNULL,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def main(*argv):
@@ -35,8 +46,8 @@ def main(*argv):
 
 class Split(unittest.TestCase):
     def test_options_before_the_command_are_its_own(self):
-        self.assertEqual(dev.split(["-n", "spec", "--check"]),
-                         (["-n"], "spec", ["--check"]))
+        self.assertEqual(dev.split(["-n", "figures", "--cols"]),
+                         (["-n"], "figures", ["--cols"]))
 
     def test_no_command(self):
         self.assertEqual(dev.split(["--list"]), (["--list"], None, []))
@@ -59,10 +70,10 @@ class Plan(unittest.TestCase):
                          [(".", ["node", "mod/tools/draw-figures.ts",
                                  "--help"])])
 
-    def test_every_step_of_a_two_port_command_gets_the_words(self):
-        self.assertEqual(dev.plan("folds", ["--largest", "3"]), [
-            (".", ["python3", "tests/fold_real.py", "--largest", "3"]),
-            (".", ["node", "mod/tools/check-fold.ts", "--largest", "3"]),
+    def test_every_step_of_a_command_gets_the_words(self):
+        self.assertEqual(dev.plan("fixtures", ["--help"]), [
+            (".", ["node", "mod/tools/gen-config-cases.ts", "--help"]),
+            (".", ["node", "mod/tools/gen-fold-saves.ts", "--help"]),
         ])
 
     def test_a_command_with_no_arguments_refuses_them(self):
@@ -107,9 +118,9 @@ class Main(unittest.TestCase):
                 re.escape(name), re.escape(text)))
 
     def test_command_help_is_usage_devs_own(self):
-        rc, out, _ = main("spec", "--help")
+        rc, out, _ = main("figures", "--help")
         self.assertEqual(rc, 0)
-        self.assertIn("usage-dev spec [ARGS...]", out)
+        self.assertIn("usage-dev figures [ARGS...]", out)
 
     def test_dry_run_prints_the_steps(self):
         rc, out, _ = main("-n", "test", "--repeat", "3", "node")
