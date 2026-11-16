@@ -801,8 +801,10 @@ export function notificationText(r: Rec): string {
 const TASK_ID = /<task-id>([^<]+)<\/task-id>/;
 
 /** What a Monitor's last notification says when it runs out its timeout,
- * with no `<status>`: it has ended all the same. */
-export const MONITOR_EXPIRED = "[Monitor expired";
+ * with no `<status>`: it has ended all the same.  Claude Code opens the
+ * event with it; the same words later in an event are the watched
+ * stream's own. */
+export const MONITOR_EXPIRED = "<event>[Monitor expired";
 
 /** What a thread knows of its background tasks beyond their kind, for the
  * band's tree, as [label, start, command, output]: by task id, of each
