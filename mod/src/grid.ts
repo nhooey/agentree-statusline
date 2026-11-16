@@ -16,8 +16,8 @@
 // Settings, as claude_subagent_render.ts computes them.  Nothing here joins
 // spans into escape codes: that is the printing's job.
 import {
-  CHROME_DEPTH, DROP_ORDER, E_PCT, GRID_CELLS, GRID_SCOPES, LABEL_MIN,
-  PANEL_CHROME, VAL_W, VAL2_W,
+  CHROME_DEPTH, DROP_ORDER, E_CLOUD, E_EXTRA, E_PCT, E_PREPAID, E_PROMO,
+  GRID_CELLS, GRID_SCOPES, LABEL_MIN, PANEL_CHROME, VAL_W, VAL2_W,
 } from "./spec.ts";
 import { padVal, seg, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
@@ -56,6 +56,8 @@ export function cellWidth(st: Settings, rule: number | string): number {
   switch (rule) {
     case "A_RATE_W": return A_RATE_W;
     case "COST_W": return visWidth(st.sCost, st.widths) + 4;
+    case "SPEND_W": return Math.max(...[E_CLOUD, E_PROMO, E_PREPAID, E_EXTRA]
+      .map((g) => visWidth(g, st.widths))) + 4;
     case "A_CTX_W": return aCtxW(st);
     case "TOK_W": return visWidth(st.sTok, st.widths) + VAL_W + VAL2_W;
     case "A_CLOCK_W": return A_CLOCK_W;

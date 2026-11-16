@@ -22,7 +22,7 @@ import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import { cut, ink, paint, span, width } from "./spans.ts";
 import type { Span } from "./spans.ts";
-import { pyLen, pyRstrip, pySlice } from "./py.ts";
+import { isDict, pyLen, pyRstrip, pySlice } from "./py.ts";
 import { pyFloat } from "./sources.ts";
 import {
   W_CACHE_READ, W_CACHE_WRITE, etaFinish, tsEpoch,
@@ -47,6 +47,8 @@ import type { Limits } from "./claude_sources.ts";
 import { WEEKLY_WINDOWS } from "./sources.ts";
 import type { WeeklyKey } from "./sources.ts";
 import { creditCell } from "./credits.ts";
+import { PAYER_GLYPHS } from "./spending.ts";
+import type { Spending } from "./spending.ts";
 import { treeRows } from "./band_tree.ts";
 import type { Folds, TreeInput } from "./band_tree.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
@@ -213,6 +215,26 @@ export function shareCells(st: Settings, a: Accounting, sessPct: string,
   weekPct: string): Cells {
   return { five: CELLS.five(st, sessPct, a.sess_share),
     week: CELLS.week(st, weekPct, a.week_share) };
+}
+
+/** The document's `spending`, the pool paying other than the plan and
+ * each row's figure of it (spending.ts), or null while the plan pays. */
+export function docSpending(fig: Dict): Spending | null {
+  const s = fig.spending;
+  return isDict(s) && Object.hasOwn(PAYER_GLYPHS, String(s.kind))
+    ? s as unknown as Spending : null;
+}
+
+/** The column after 💰 on the row `row` names in the document's
+ * `spending`, set in `cells` where the row has a figure: the paying
+ * credit's glyph and its dollars.  Blank while the plan pays. */
+function spendCell(st: Settings, fig: Dict,
+  row: "turn" | "main" | "session", cells: Cells): void {
+  const s = docSpending(fig);
+  const usd = s === null ? null : s[row];
+  if (s !== null && typeof usd === "number") {
+    cells.spend = CELLS.spend(st, PAYER_GLYPHS[s.kind], usd);
+  }
 }
 
 /** The main thread's ⛳, as today's ⌛ row draws it: its own last report,
@@ -383,6 +405,7 @@ function turnRow(st: Settings, fig: Dict, tr: Transcript, now: number,
       diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
     });
   }
+  spendCell(st, fig, "turn", cells);
   return { scope: "turn", label: turnLabel(), cells };
 }
 
@@ -473,6 +496,7 @@ function mainRow(st: Settings, fig: Dict, tr: Transcript, now: number,
   // 📨 only while it runs too: the receipt stamps this row once the turn
   // has ended, and a count frozen there would be gone by the next turn.
   const inbox = opts.phase === "running" ? tr.queued : 0;
+  spendCell(st, fig, "main", cells);
   return { scope: "main", label: mainLabel(inbox), cells };
 }
 
@@ -502,6 +526,7 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
       cells.clock = CELLS.clock(st, now - acc.start_s);
     }
   }
+  spendCell(st, fig, "session", cells);
   return { scope: "session", label: sessionLabel(), cells };
 }
 
@@ -560,6 +585,7 @@ function treeInput(fig: Dict, session: Row | null, main: Row | null,
       mainBackground: (doc.main_background ?? []) as BgTask[],
       mainEnded: (doc.main_background_ended ?? []) as BgTask[],
       linger: opts.linger ?? 0,
+      spending: docSpending(fig),
       home: typeof doc.home === "string" ? doc.home : "" } : null,
     cap: opts.cap ?? SUBAGENT_ROWS,
     folds: opts.folds,

@@ -659,11 +659,11 @@ export type PanelWidths = {
  * they reach the mod's columns; see the Python's SCOPE_CELLS. */
 export const SCOPE_CELLS: readonly (readonly [string, readonly string[]])[] = [
   ["account", ["five", "week"]],
-  ["turn", ["cost", "ctx", "tok", "cache", "clock", "eta", "split", "five",
-    "week", "diff"]],
+  ["turn", ["cost", "spend", "ctx", "tok", "cache", "clock", "eta", "split",
+    "five", "week", "diff"]],
   ["main", GRID_CELLS.map((c) => c.key)],
-  ["session", ["cost", "tok", "cache", "clock", "split", "five", "week",
-    "diff"]],
+  ["session", ["cost", "spend", "tok", "cache", "clock", "split", "five",
+    "week", "diff"]],
   ["agent", GRID_CELLS.map((c) => c.key)],
 ];
 

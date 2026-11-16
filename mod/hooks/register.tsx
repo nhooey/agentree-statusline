@@ -66,7 +66,7 @@ import {
   defaultsError, options, optionsFor, readConfig,
 } from './configuration.ts'
 import {
-  costDoc, lastFinishedMs, permissionModeOf, seen, statusDoc,
+  costDoc, lastFinishedMs, permissionModeOf, pruneSpending, seen, statusDoc,
   transcriptPath, turnsNow,
 } from './edges.ts'
 import { log } from './log.ts'
@@ -885,6 +885,9 @@ export const register: Register = on => {
     await start($, 'session.start')
     void reconfigure($).catch((err) => log($, 'config', err))
     void refresh($).catch((err) => log($, 'refresh', err))
+    // The spending kept for sessions that have ended goes.
+    void (async () => pruneSpending($, (await $.clock.now()) / 1000))()
+      .catch((err) => log($, 'spending not pruned', err))
     return result
   })
 

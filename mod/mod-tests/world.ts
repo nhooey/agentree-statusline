@@ -43,6 +43,8 @@ export type World = {
   stored: string[]
   // Each status document the mod filed in `$.state`, oldest first.
   docs: Dict[]
+  // Each `spending` value the mod wrote in `$.state`, oldest first.
+  spending: unknown[]
   // Whether `$.session.usage` is refused, and, while `hung` holds a list,
   // each ask held unanswered until its function is called; `rateLimits`
   // is what it answers for them, none by default.
@@ -110,10 +112,15 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     return { value: undefined }
   })
   on('store.keys', () => ({ value: [...store.keys()] }))
-  // The kit keeps `$.state`; this only watches the documents go by.
+  // The kit keeps `$.state`; this only watches the documents, and the
+  // spending kept for a reload, go by.
   const docs: Dict[] = []
+  const spending: unknown[] = []
   on('state.set', ($, e: any, next) => {
     if (e.plugin === 'usage-band' && e.key === 'status') docs.push(e.value)
+    if (e.plugin === 'usage-band' && e.key === 'spending') {
+      spending.push(e.value)
+    }
     return next(e)
   })
   mock.env(on, {
@@ -246,6 +253,6 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     ;(e.to === 'debug' ? debug : logged).push(e.text)
     return { value: undefined }
   })
-  return { files, store, stored, docs, usage, debug, logged, clock, session,
+  return { files, store, stored, docs, spending, usage, debug, logged, clock, session,
     oauth, reads, lists, runs, made, mtimes }
 }

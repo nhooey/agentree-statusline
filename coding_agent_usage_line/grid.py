@@ -23,8 +23,9 @@ from typing import Dict, List, NamedTuple, Optional, Sequence, Union
 from . import formatting as fmt
 from . import claude_subagent_render as sub
 from .spans import Span, cut, spans, width
-from .spec import (CHROME_DEPTH, DROP_ORDER, E_PCT, GRID_CELLS, GRID_SCOPES,
-                   LABEL_MIN, PANEL_CHROME, VAL2_W, VAL_W)
+from .spec import (CHROME_DEPTH, DROP_ORDER, E_CLOUD, E_EXTRA, E_PCT, E_PREPAID,
+                   E_PROMO, GRID_CELLS, GRID_SCOPES, LABEL_MIN, PANEL_CHROME,
+                   VAL2_W, VAL_W)
 
 
 class Piece(NamedTuple):
@@ -59,6 +60,8 @@ def cell_width(rule: Union[int, str]) -> int:
         return sub.A_RATE_W
     if rule == "COST_W":
         return fmt.vis_width(fmt.S_COST) + 4
+    if rule == "SPEND_W":
+        return max(fmt.vis_width(g) for g in (E_CLOUD, E_PROMO, E_PREPAID, E_EXTRA)) + 4
     if rule == "A_CTX_W":
         return fmt.vis_width(fmt.S_CTX) + 4 + 1 + sub.A_CTX_PCT_W
     if rule == "TOK_W":

@@ -61,7 +61,9 @@ import {
   renderAgentSplit, renderBackground, renderInbox, runningParents, treeShape,
 } from "./claude_subagent_render.ts";
 import type { Eta } from "./claude_subagent_render.ts";
-import { sessionNamePieces, workspacePieces } from "./cells.ts";
+import { CELLS, sessionNamePieces, workspacePieces } from "./cells.ts";
+import { PAYER_GLYPHS, partsSince } from "./spending.ts";
+import type { Payer } from "./spending.ts";
 import type { Workspace } from "./cells.ts";
 import { preparedOf } from "./subagent_tasks.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
@@ -96,6 +98,11 @@ export type TreeAgents = {
    * work, by id: the stamped tree owes each its row once it has ended
    * (stampedSplit). */
   readonly owed?: readonly string[];
+  /** The pool paying other than the plan, and since when (spending.ts):
+   * each agent's row bills its own parts from `since` on in the column
+   * after 💰.  None while the plan pays, and on the receipt. */
+  readonly spending?: { readonly kind: Payer; readonly since: number | null }
+    | null;
 };
 
 /** What the tree is drawn from.  The rows `session`, `main` and `turn` are
@@ -532,8 +539,8 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     return { scope: "agent",
       label: pressingAll([...label, ...progressPiece(t.progress)],
       { kind: "view", agent: id }),
-      cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
-        a.now, eta, waitingOn) };
+      cells: spendOn(st, a, [t], agentCells(st, t.task, t.usage, t.meta,
+        t.shares, a.limits, a.now, eta, waitingOn)) };
   };
   // `capped`: the rows count against the cap.  The rows an opened `… N
   // more` lists are past it, and drawn whole.
@@ -659,8 +666,9 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
       ? { ...p, spans: p.spans.map((s) => ({ ...s,
         text: s.text.replace(E_PHASE_END, E_PHASE_DONE) })) } : p);
     return { scope: "agent",
-      label: [...label, ...progressPiece(t.progress)], cells: agentCells(st, t.task, t.usage, t.meta, t.shares, a.limits,
-        a.now, eta, waitingOn) };
+      label: [...label, ...progressPiece(t.progress)],
+      cells: spendOn(st, a, [t], agentCells(st, t.task, t.usage, t.meta,
+        t.shares, a.limits, a.now, eta, waitingOn)) };
   };
   // Agents whose parents run in a cycle are left out, as no thread
   // started them.
@@ -670,11 +678,25 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
   });
 }
 
+/** `cells` with the column after 💰 for the billed `tasks`, summed: their
+ * parts from the paying pool's `since` on, under its glyph.  As they are
+ * while the plan pays, or where none of them billed. */
+function spendOn<C extends { readonly [key: string]: readonly Span[] }>(
+  st: Settings, a: TreeAgents, tasks: readonly TreeTask[], cells: C):
+  C | (C & { spend: Span[] }) {
+  const pay = a.spending;
+  const parts = tasks.flatMap((t) =>
+    t.usage.parts as [number | null, number][]);
+  if (!pay || !parts.length) return cells;
+  return { ...cells, spend: CELLS.spend(st, PAYER_GLYPHS[pay.kind],
+    partsSince(parts, pay.since)) };
+}
+
 /** A grouped row that sums `tasks`, kept under `fold`, folded or opened
  * over `kids`: `… N more` past the cap, or `✅ N done`.  Its 🛫 column says 🟢 and how many of them run, or ✅ and how
- * long since the last of them ended; 💰 🧩 💾 and the plan's shares are
- * their sums, 🎯 their cache rates weighed by their ▴, ⌛ their ages
- * summed and 🤖 🔧 🚦 their split of it, as proportions of themselves, as
+ * long since the last of them ended; 💰, the column after it, 🧩 💾 and
+ * the plan's shares are their sums, 🎯 their cache rates weighed by their
+ * ▴, ⌛ their ages summed and 🤖 🔧 🚦 their split of it, as proportions of themselves, as
  * 🎮's agent-seconds are.  No model, 🧠 or ⛳: they are each agent's
  * own. */
 function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
@@ -743,6 +765,7 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
     }
   }
   for (const k of Object.keys(cells)) if (!cells[k].length) delete cells[k];
+  if (billed.length) Object.assign(cells, spendOn(st, a, billed, {}));
   return { folded, kids, fold, row: { scope: "agent", cells,
     label: [{ path: "name.label", spans: spans(span(name, "F_BLU")),
       drop: 0 }] } };

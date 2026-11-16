@@ -186,13 +186,13 @@ render above with `--agents 01-mixed@220 --cap 3 --progress "Checking the
 binary, then the changelog" --cols 200`):
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                                                          💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main  Checking the binary, then the changelog              🧬O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤🟢 turn                                                    🧬O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-     ├─ 🎩🟢 Clover                                                  🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍🟢 Marigold  Running the suite                             🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥🟢 Willow                                                  🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                                                             🟢   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+  ⊟ 🎮 📦repo 🌿golden-clean                                               💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵🟢 main  Checking the binary, then the changelog   🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤🟢 turn  Why does the elapsed row report two …  🧬O⁵🏃  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+     ├─ 🎩🟢 Clover                                       🧬O⁵🏃  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍🟢 Marigold  Running the suite                  🧬O⁵🏃  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+     ├─ 👥🟢 Willow                                       🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ╰⊞ … 4 more                                                  🟢   3   💰 0.1                         🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
 
 - **The lines.** `├─` and `╰─` join a row to its parent, `│` carries a
@@ -322,7 +322,7 @@ Every row of the mod's rows, the receipt and the subagent rows draws the same
 columns, in this order:
 
 ```
-model  🛫  💰  🧠  🧩 ▴ ▾  🎯  ⌛ ⛳ 🤖 🔧 🚦  🔋  🪫  💾
+model  🛫  💰  💸  🧠  🧩 ▴ ▾  🎯  ⌛ ⛳ 🤖 🔧 🚦  🔋  🪫  💾
 ```
 
 A row with nothing for a column leaves it blank, so the columns hold. A
@@ -356,6 +356,22 @@ has no context and no ⛳ of its own.
 - **💰**, `💰 35`: dollars at API prices, each request priced at its own
   model's rates. The 🧵 row's includes its compactions, priced from an
   estimate of each summary, and is marked `~` when it has any.
+- **The credit paying**, `💸2.1`: which of the account's credits pays for
+  the row's work, by its glyph, and what it has paid, in 💰's dollars.
+  Blank while the plan pays, which 🔋 and 🪫 already show. A Claude Code on
+  the web session is paid for by ⛅ the cloud session credit; an API key
+  (`ANTHROPIC_API_KEY`) by 🎁 a promotional credit while one has a
+  balance, then 💵 the prepaid balance; a plan login, once a window is at
+  100% and extra usage is on, by 💸 extra usage. Each row bills its own
+  records from the moment that credit began paying, so a turn that crossed
+  into it shows the part after the crossing; extra usage, and the prepaid
+  balance after a promotional credit, are counted from the first reading
+  that found them paying, a start the mod keeps through a
+  `/reload-plugins`, a restart and a `--resume`, for 31 days after it
+  last changed. The 🎤, 🧵, 🎮 and agent rows draw it; the 🎮
+  row draws the fall in the credit's balance instead once a reading from
+  before the session began and a later one bracket it. The mod alone
+  draws it, and only for the pool paying now.
 - **🧠**: on the 🧵 row, `🧠115k  11٪`, the main thread's context size and
   its share of the model's window; agents are left out, since this is the
   number that decides when *this* window needs compacting. On the 🎤 row,
@@ -479,7 +495,7 @@ Past a label's 12 columns, whole columns drop, from every row at once, so
 the grid never breaks. Least important first:
 
 ```
-🛫  💾  🎯  🤖 🔧 🚦  model  🧩  ⛳  ⌛  🧠  🪫  🔋  💰
+💸  🛫  💾  🎯  🤖 🔧 🚦  model  🧩  ⛳  ⌛  🧠  🪫  🔋  💰
 ```
 
 At 100 columns, the rows above the prompt, then the footer line and the
@@ -664,12 +680,14 @@ case that had ended, with the ones still running owed to a later
 receipt:
 
 ```
-  🧵⚫ main  All four suites pass                                 🧬O⁵🏃           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
-  ├─ 🎤🏁 turn  And this one?                                                      💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
-  ├─ 🔍🏁 Daisy                                                   🧬O⁵🏃  ✅  42m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
-  ├─ 🔩🏁 Fern                                                    🧬O⁵🏃  ❌  32m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ├─ 🔩🏁 Kale                                                    🧬O⁵🏃  🛑  23m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ╰─ 🔍🏁 Elm                                                     🧬O⁵🏃  💥  18m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  🧵⚫ main  All four suites pass                         🧬O⁵🏃           💰 0.0           🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
+  ├─ 🎤🏁 turn  And this one?                                              💰 0.2           🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
+  ├─ 🔍🏁 Daisy                                           🧬O⁵🏃  ✅  42m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+  ├─ 🔩🏁 Fern                                            🧬O⁵🏃  ❌  32m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ├─ 🔩🏁 Kale                                            🧬O⁵🏃  🛑  23m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ╰─ 🔍🏁 Elm                                             🧬O⁵🏃  💥  18m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+
+🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```

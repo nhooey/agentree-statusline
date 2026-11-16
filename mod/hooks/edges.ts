@@ -28,6 +28,14 @@ import type {
 import { githubRepo } from '../src/github.ts'
 import { FABLE_WINDOW, WEEKLY_WINDOWS } from '../src/sources.ts'
 import { drawnCredits } from '../src/credits.ts'
+import {
+  SPENDING_PREFIX, keptFor, keptSpending, measuredFall, nextBracket,
+  nextSpell, payerOf, payingCredit, spendingKey, spendingOf, spendingStale,
+} from '../src/spending.ts'
+import { decodeTurn } from '../src/claude_cost.ts'
+import { decodeLimits } from '../src/figures.ts'
+import { pyFloat } from '../src/sources.ts'
+import { isDict } from '../src/py.ts'
 import { seedLimitsSnapshot } from '../src/claude_calib.ts'
 import {
   baseLimits, costFigures, detectGit, sessionRate, statusFigures, windowFor,
@@ -281,9 +289,81 @@ export async function statusDoc($: $, places: Places): Promise<Dict> {
   // option.
   const drawn = o === null ? [] : drawnCredits(credits.credits, o.credits,
     now)
+  const spending = await spendingVia($, payload.session_id, doc, tr, turns,
+    credits, now)
   return { ...doc, ...agents ? { agents } : {}, ...github ? { github } : {},
     ...drawn.length ? { credits: { drawn,
-      original: o!.credits.original } } : {} }
+      original: o!.credits.original } } : {},
+    ...spending ? { spending } : {} }
+}
+
+/** Drop from `$.store` each session's spending entry past keeping at `now`
+ * (spendingStale): the entries of sessions that have ended.  Run as a
+ * session starts. */
+export async function pruneSpending($: $, now: number): Promise<void> {
+  for (const key of await $.store.keys()) {
+    if (key.startsWith(SPENDING_PREFIX) &&
+        spendingStale(await $.store.get(key), now)) {
+      await $.store.delete(key)
+    }
+  }
+}
+
+/** The document's `spending`: the pool paying for the session other than
+ * the plan, by the session's credential, its plan windows and the kept
+ * credits, and what the open turn, the main thread and the session have
+ * spent of it (spending.ts); null while the plan pays.  The spell and the
+ * first reading of the paying credit are kept in `$.state`, where a reload
+ * of the mod finds them, and in `$.store` under the session's
+ * spendingKey, where a restart or a `--resume` does when `$.state` holds
+ * nothing of the session's; both are written only when they change. */
+async function spendingVia($: $, session: string, doc: Dict, tr: Transcript,
+  turns: readonly Turn[] | null, credits: Dict, now: number):
+  Promise<Dict | null> {
+  const on = (v: string | undefined): boolean =>
+    v !== undefined && v !== '' && v !== '0' && v.toLowerCase() !== 'false'
+  const elsewhere = on(await $.env.get('CLAUDE_CODE_USE_BEDROCK')) ||
+    on(await $.env.get('CLAUDE_CODE_USE_VERTEX'))
+  const cred = { remote: on(await $.env.get('CLAUDE_CODE_REMOTE')),
+    apiKey: !elsewhere && on(await $.env.get('ANTHROPIC_API_KEY')),
+    elsewhere }
+  const lim = decodeLimits(doc.limits)
+  const owned = credits.credits
+  const kind = payerOf(cred, [pyFloat(lim.session_pct),
+    pyFloat(lim.weekly_pct)], owned, now)
+  const held = keptSpending((await $.state.get(
+    { plugin: 'usage-band', key: 'spending' })).value)
+  const was = keptFor(held, session) ? held : keptSpending(
+    await $.store.get(spendingKey(session)).catch(() => undefined))
+  const asOf = typeof credits.as_of === 'number' ? credits.as_of : null
+  // With no credits read yet, as just after a load, the kept spell stands:
+  // the payer can't be told from the plan then.
+  const spell = asOf === null && was.spell?.session === session
+    ? was.spell : nextSpell(was.spell, session, kind, now)
+  const credit = spell.kind === null ? null
+    : payingCredit(spell.kind, owned, now)
+  const bracket = nextBracket(was.bracket, session, credit, asOf)
+  if (spell !== was.spell || bracket !== was.bracket) {
+    await $.state.set({ plugin: 'usage-band', key: 'spending' },
+      { spell, bracket })
+    await $.store.set(spendingKey(session), { spell, bracket,
+      saved_at: now }).catch((err) => log($, 'spending not kept', err))
+  } else if (was !== held) {
+    // Read back from the store: the in-session copy again.
+    await $.state.set({ plugin: 'usage-band', key: 'spending' },
+      { spell, bracket })
+  }
+  const acc = (doc.accounting as Dict | undefined)?.session
+  const start = isDict(acc) && typeof acc.start_s === 'number'
+    ? acc.start_s : null
+  let open = null
+  try {
+    open = isDict(doc.open_turn) ? decodeTurn(doc.open_turn) : null
+  } catch {
+    open = null
+  }
+  return spendingOf(spell, open, tr === EMPTY_TRANSCRIPT ? null
+    : tr.own_parts, turns, measuredFall(bracket, credit, asOf, start))
 }
 
 /** The session's turns as read_turns makes them from the transcript as it

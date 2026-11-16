@@ -779,6 +779,138 @@ test('the credits are asked of the usage endpoint once per 5 minutes, ' +
     expect(kept()[0]).toContain('"remaining":3')
   })
 
+test('a plan login under its windows bills its rows to nothing',
+  async ($, on) => {
+    const w = world(on)
+    await start($, w, 'terminal', STATUS)
+    expect(lastDoc(w).spending).toBeUndefined()
+  })
+
+test('a Claude Code on the web session bills its rows to the cloud credit',
+  async ($, on) => {
+    const w = world(on, undefined, false, true,
+      { CLAUDE_CODE_REMOTE: 'true' })
+    await start($, w, 'terminal', STATUS)
+    const doc = lastDoc(w)
+    const spending = doc.spending as Dict
+    expect(spending.kind).toBe('cloud')
+    expect(spending.since).toBe(null)
+    expect(spending.main).toBeGreaterThan(0)
+    const drawn = text(bandLines(BAND_ST, doc, COLS, HIDE,
+      { rate: null, phase: 'running', ...AGENTS }).flat())
+    expect(drawn).toContain(spec.E_CLOUD)
+  })
+
+/** A world whose plan login has its 5-hour window full and extra usage on,
+ * so 💸 pays. */
+function extraWorld(on: On): World {
+  const w = world(on)
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode('{"usage-source": "native"}'))
+  w.files.set('/claude/.claude.json', encoder.encode(
+    '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
+  w.oauth.body = JSON.stringify({ extra_usage: { is_enabled: true,
+    monthly_limit: 50, used_credits: 10, currency: 'USD' } })
+  w.usage.rateLimits = [
+    { kind: 'five_hour', percentUsed: 100,
+      resetsAt: '2026-08-16T05:00:00+00:00' },
+    { kind: 'seven_day', percentUsed: 40,
+      resetsAt: '2026-08-18T01:00:00+00:00' }]
+  return w
+}
+
+// Extra usage paying since well before any of the session's records, as
+// an earlier load kept it.
+const EXTRA_SINCE = NOW - 30 * 86400
+const EXTRA_SPELL = { session: SESSION, kind: 'extra', since: EXTRA_SINCE }
+
+/** The band's 💸 counted from EXTRA_SINCE: every record is in, so 💸 is
+ * the whole of 💰, where a load counting from itself would have none. */
+function countsFromKeptStart(w: World) {
+  const doc = lastDoc(w)
+  const spending = doc.spending as Dict
+  expect(spending.kind).toBe('extra')
+  expect(spending.since).toBe(EXTRA_SINCE)
+  const acc = doc.accounting as Dict
+  const own = (acc.own as Dict).cost_usd as number
+  expect(own).toBeGreaterThan(0)
+  expect(Math.abs((spending.main as number) - own)).toBeLessThan(1e-9)
+  expect(Math.abs((spending.session as number) -
+    ((acc.session as Dict).cost_usd as number))).toBeLessThan(1e-9)
+  expect(text(bandLines(BAND_ST, doc, COLS, HIDE,
+    { rate: null, phase: 'running', ...AGENTS }).flat()))
+    .toContain(spec.E_EXTRA)
+}
+
+test('when extra usage began paying survives a reload: the 💸 figure ' +
+  'counts on from the start an earlier load kept in $.state',
+  async ($, on) => {
+    const w = extraWorld(on)
+    const seed = { spell: EXTRA_SPELL, bracket: null }
+    // The seed stands where the mod reads it until the mod writes its own.
+    on('state.get', ($, e: any, next) =>
+      e.plugin === 'usage-band' && e.key === 'spending'
+        ? { value: { value: w.spending.at(-1) ?? seed,
+          version: w.spending.length + 1 } } : next(e))
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    countsFromKeptStart(w)
+    // And kept as it was, not restarted from the reload: what the mod
+    // wrote carries the same start, with the credit's first reading.
+    const kept = w.spending.at(-1) as Dict
+    expect(kept.spell).toEqual(EXTRA_SPELL)
+    expect((kept.bracket as Dict).id).toBe('extra_usage')
+  })
+
+test('and a restart: with nothing in $.state, the start is read from the ' +
+  'session\'s entry in the store, and kept there', async ($, on) => {
+    const w = extraWorld(on)
+    w.store.set('spending:' + SESSION, { spell: EXTRA_SPELL, bracket: null,
+      saved_at: NOW - 86400 })
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    countsFromKeptStart(w)
+    const kept = w.store.get('spending:' + SESSION) as Dict
+    expect(kept.spell).toEqual(EXTRA_SPELL)
+    expect((kept.bracket as Dict).id).toBe('extra_usage')
+    expect(kept.saved_at).toBeGreaterThan(NOW - 86400)
+  })
+
+test('another session\'s entry in the store is not this one\'s start',
+  async ($, on) => {
+    const w = extraWorld(on)
+    const other = { spell: { ...EXTRA_SPELL, session: 'another-session' },
+      bracket: null, saved_at: NOW - 86400 }
+    w.store.set('spending:another-session', other)
+    // Under this session's key, but of another session: not read either.
+    w.store.set('spending:' + SESSION, other)
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    const spending = lastDoc(w).spending as Dict
+    expect(spending.kind).toBe('extra')
+    expect(spending.since).toBeGreaterThanOrEqual(NOW)
+    expect(w.store.get('spending:another-session')).toEqual(other)
+  })
+
+test('a session start drops the store\'s spending entries saved over 31 ' +
+  'days ago, and keeps the rest', async ($, on) => {
+    const w = world(on)
+    const entry = (days: number) => ({ spell: { ...EXTRA_SPELL,
+      session: 'old-' + days }, bracket: null, saved_at: NOW - days * 86400 })
+    w.store.set('spending:old-40', entry(40))
+    w.store.set('spending:old-30', entry(30))
+    w.store.set('spending:no-time', { spell: EXTRA_SPELL, bracket: null })
+    w.store.set('not-spending', entry(40))
+    await start($, w, 'terminal', STATUS)
+    expect(w.store.has('spending:old-40')).toBe(false)
+    expect(w.store.has('spending:no-time')).toBe(false)
+    expect(w.store.get('spending:old-30')).toEqual(entry(30))
+    expect(w.store.has('not-spending')).toBe(true)
+  })
+
 test('a credits ask that never answers holds no document, and no second ' +
   'ask starts behind it', async ($, on) => {
     const w = world(on)
