@@ -149,10 +149,9 @@ them. `usage-dev selftest` and `usage-dev probe-advance` need a real terminal ta
 `tests/probe-advance.sh` in Ghostty and in iTerm2, with the result recorded
 in [Glyphs and terminals](glyphs-and-terminals.md).
 
-- The subagent-row type marks in `KIND_MARK` (`claude_subagent_render.py`):
-  🎩 🔍 📐 📚 📟 🍴 🐚 🔗 🌐 🎎. Unlike 🔧 and 👥, which are also `E_*`
-  constants, they are literals in that table, so the probe does not see them
-  until it is taught to read it. A wrong width here shifts one subagent row.
+- The subagent-row kind marks, `E_KIND_*`: 🔩 🎩 🔍 📐 📚 📟 🍴 👥 🐚 🔗 🌐
+  🎎. They are `E_*` constants, so the next probe run covers them. A wrong
+  width here shifts one subagent row.
 - The agent-row state marks and 👶🏻, `E_PHASE_*`, `E_MODE_*` and `E_KIDS`:
   🟢 🟡 ⚫, 💤 💻 📡 📋 🥚 ✅ ❌ 🛑 and 👶🏻. They are `E_*` constants, so the next
   probe run covers them. 🟢 and 🟡 are Unicode 12, newer than any other glyph

@@ -46,10 +46,12 @@ A_CTX_PCT_W = 4
 A_SILENT_S, A_SILENT_WARN_S = QUIET_S, QUIET_WARN_S
 # The blanks between the label's name, branch and activity.
 A_LABEL_GAP = 2
-KIND_MARK = {"general-purpose":"🔩", "claude":"🎩", "Explore":"🔍", "Plan":"📐",
-             "claude-code-guide":"📚", "statusline-setup":"📟", "fork":"🍴",
-             "local_agent":"👥", "local_bash":"🐚", "local_workflow":"🔗",
-             "remote_agent":"🌐", "in_process_teammate":"🎎"}
+KIND_MARK = {"general-purpose":E_KIND_GENERAL, "claude":E_KIND_CLAUDE,
+             "Explore":E_KIND_EXPLORE, "Plan":E_KIND_PLAN,
+             "claude-code-guide":E_KIND_GUIDE, "statusline-setup":E_KIND_SETUP,
+             "fork":E_KIND_FORK, "local_agent":E_KIND_OTHER,
+             "local_bash":E_KIND_SHELL, "local_workflow":E_KIND_WORKFLOW,
+             "remote_agent":E_KIND_REMOTE, "in_process_teammate":E_KIND_TEAMMATE}
 END_MARK = {"completed":E_MODE_DONE, "failed":E_MODE_FAILED, "killed":E_MODE_KILLED}
 PAUSE_MARK = {"bash":E_MODE_SHELL, "monitor":E_MODE_MONITOR}
 
@@ -77,7 +79,7 @@ def render_agent_limit(emoji, pct_s, share, colour, billed=True, dim=False, digi
         fig = paint(style, dec_align(limit_pct(share, digits), LIMIT_IP, fp, E_PCT))
     return [Span(emoji), fig]
 
-def render_kind(agent_type, task_kind): return KIND_MARK.get(agent_type or task_kind, E_ROW_AGENTS)
+def render_kind(agent_type, task_kind): return KIND_MARK.get(agent_type or task_kind, E_KIND_OTHER)
 def agent_state(status, usage=None, waiting_on=False):
     """The row's two state marks, `(phase, mode)`: see render_state.
 
@@ -122,7 +124,7 @@ def render_state(status, usage=None, waiting_on=False):
     Claude Code's status alone says completed both for an agent that has
     finished and for one that ended its turn to wait on work it started,
     so the circle is the phase read off everything the row knows — 🟢
-    running, 🟡 paused, ⚫ ended — and the mark after it says what the agent
+    running, 🟡 paused, ⚫ not running — and the mark after it says what the agent
     is doing in it.  A status never seen is two amber letters and no mark.
     """
     phase, mode = agent_state(status, usage, waiting_on)

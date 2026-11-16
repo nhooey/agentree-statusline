@@ -145,7 +145,7 @@ test("unfolded, the preamble and indent go and a harness note stays", () => {
   const framed = PREAMBLE + "\n  " + NOTE.slice(0, 20) + "]\n  \n  Body.";
   assert.deepEqual(messageBlock(st, "Task", framed, 40)
     .map((r) => spansText(r).trimEnd()),
-  ["› 🤖📨 Task", "  [harness: subagent o]", "", "  Body."]);
+  ["› 📨 Task", "  [harness: subagent o]", "", "  Body."]);
 });
 
 const MERGED = "Merged #177; master is now f0c40b5.";
@@ -161,9 +161,9 @@ test("a forwarded message: its envelope set aside, in either spelling", () => {
     assert.equal(unenvelope(text).split("\n")[0], MERGED, text);
     assert.deepEqual(messageBlock(st, "GitHub Config", text, 60)
       .map((r) => spansText(r).trimEnd()).slice(0, 2),
-    ["› 🤖📨 GitHub Config", "  " + MERGED]);
+    ["› 📨 GitHub Config", "  " + MERGED]);
     assert.equal(spansText(messageSpans(st, "GitHub Config", text, 80))
-      .trimEnd(), "› 🤖📨 GitHub Config: " + MERGED);
+      .trimEnd(), "› 📨 GitHub Config: " + MERGED);
   }
 });
 
@@ -297,27 +297,27 @@ test("the row is a faint bar out to the width, on B_MSG", () => {
   }
 });
 
-test("the row: `› 🤖📨 `, the label bold, the first line, none dim", () => {
+test("the row: `› 📨 `, the label bold, the first line, none dim", () => {
   const row = messageSpans(st, "Reclaim the right-edge columns",
     "The right edge is now a setting.\nDetails.", 200);
   assert.deepEqual(styles(row), [
-    ["› 🤖📨 ", false, false],
+    ["› 📨 ", false, false],
     ["Reclaim the right-edge columns", false, true],
     [": The right edge is now a setting.", false, false],
   ]);
   for (const s of row) assert.equal(s.colour, "F_MSG");
   assert.deepEqual(styles(messageSpans(st, "Explore", "", 80)),
-    [["› 🤖📨 ", false, false], ["Explore", false, true]]);
+    [["› 📨 ", false, false], ["Explore", false, true]]);
 });
 
-test("📨 is two columns in every profile, as 🤖 is", () => {
+test("📨 is two columns in every profile", () => {
   const envs = [{}, { TMUX: "1" }, { TERM_PROGRAM: "iTerm.app" }];
   assert.deepEqual(envs.map((env) => settings(env).profile),
     ["unknown", "tmux", "iterm"]);
   for (const env of envs) {
     const w = settings(env).widths;
     assert.equal(visWidth("📨", w), 2, JSON.stringify(env));
-    assert.equal(visWidth("› 🤖📨 ", w), 7, JSON.stringify(env));
+    assert.equal(visWidth("› 📨 ", w), 5, JSON.stringify(env));
   }
 });
 
@@ -333,17 +333,17 @@ test("a long row is cut to the width, by columns, with an ellipsis", () => {
   }
   // Cut in the label, the `…` is bold with it and nothing follows.
   const inLabel = messageSpans(st, "Reclaim the right-edge columns", text,
-    20);
+    18);
   assert.deepEqual(styles(inLabel),
-    [["› 🤖📨 ", false, false], ["Reclaim the …", false, true]]);
+    [["› 📨 ", false, false], ["Reclaim the …", false, true]]);
   // Cut in the message, the `…` is plain with it.
-  const inText = messageSpans(st, "Task", text, 24);
-  assert.deepEqual(styles(inText), [["› 🤖📨 ", false, false],
+  const inText = messageSpans(st, "Task", text, 22);
+  assert.deepEqual(styles(inText), [["› 📨 ", false, false],
     ["Task", false, true], [": The right …", false, false]]);
-  // 🤖 and 📨 take two columns each: a cut at five leaves `› 🤖` and the
-  // `…`, and no half glyph.
-  const five = spansText(messageSpans(st, "Label", text, 5));
-  assert.equal(five, "› 🤖…");
+  // 📨 takes two columns: a cut at four leaves `› ` and the `…`, a blank
+  // where half of it would stand.
+  const four = spansText(messageSpans(st, "Label", text, 4));
+  assert.equal(four, "› … ");
 });
 
 test("wrapCols breaks at spaces, cuts long words by columns, keeps blanks", () => {
@@ -357,6 +357,6 @@ test("wrapCols breaks at spaces, cuts long words by columns, keeps blanks", () =
 test("messageBlock: the label row, then the message two in, all to the width", () => {
   const rows = messageBlock(st, "Task", "First.\nSecond line here.", 12);
   assert.deepEqual(rows.map((r) => spansText(r)),
-    ["› 🤖📨 Task ", "  First.    ", "  Second    ", "  line here."]);
+    ["› 📨 Task   ", "  First.    ", "  Second    ", "  line here."]);
   for (const r of rows) for (const s of r) assert.equal(s.bg, "B_MSG");
 });

@@ -559,12 +559,12 @@ def run(tmp):
            for d in ("4m \u2014 two lanes left", "1h 5m - the e2e runs",
                      "several hours", "done")],
           [(240.0,), (3900.0,), (), ()])
-    check("the 🏁 the skill asked for before ⛳ is still read",
+    check("only ⛳ opens a report: a line that opens with 🏁 is not one",
           sl.eta_report([{"type": "assistant", "timestamp": ts(11),
                           "message": {"content": [{"type": "text", "text":
                               "\U0001F3C1 skills/coding-agent-usage-line-"
-                              "report-eta: ETA 4m"}]}}])[1:],
-          (240.0,))
+                              "report-eta: ETA 4m"}]}}]),
+          ())
     check("no report is (), and no transcript is None",
           (sl.read_agent_usage(sl.agent_file_for(et, "n")).eta,
            sl.read_agent_usage("").eta),

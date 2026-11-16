@@ -1138,6 +1138,24 @@ export const E_FOLD_OPEN = "⊟";        // ⊟  a row whose children are showin
 export const E_FOLD_SHUT = "⊞";        // ⊞  a row whose children are folded under it
 export const E_THREAD = "🧵";          // 🧵  the main thread, in the kind slot an agent's
                                        //    🔍 🔩 📐 fill
+// The kind slot: what an agent is, by its agent type or, for one Claude
+// Code started without a type, its task kind.  E_KIND_OTHER is every kind
+// not named here as well as `local_agent`.
+export const E_KIND_GENERAL = "🔩";    // 🔩  general-purpose
+export const E_KIND_CLAUDE = "🎩";     // 🎩  claude
+export const E_KIND_EXPLORE = "🔍";    // 🔍  Explore
+export const E_KIND_PLAN = "📐";       // 📐  Plan
+export const E_KIND_GUIDE = "📚";      // 📚  claude-code-guide
+export const E_KIND_SETUP = "📟";      // 📟  statusline-setup
+export const E_KIND_FORK = "🍴";       // 🍴  fork
+export const E_KIND_OTHER = "👥";      // 👥  local_agent, and any other kind.
+                                       //    Measured by tests/probe-advance.sh:
+                                       //    advance=2 in bare Ghostty, not under
+                                       //    tmux -- a reading, like the other three
+export const E_KIND_SHELL = "🐚";      // 🐚  local_bash
+export const E_KIND_WORKFLOW = "🔗";   // 🔗  local_workflow
+export const E_KIND_REMOTE = "🌐";     // 🌐  remote_agent
+export const E_KIND_TEAMMATE = "🎎";   // 🎎  in_process_teammate
 export const E_MORE = "…";             // …  the later siblings past the cap, summed
 // An agent row's state, in two marks: a circle for its phase and a mark for
 // what it is doing in it.  The status line's task list says completed for
@@ -1145,9 +1163,13 @@ export const E_MORE = "…";             // …  the later siblings past the cap
 // something, and the one question a person asks of a row is which; the
 // mod's `$.agent.list()` says waiting for the second.  Every mark here is
 // one codepoint, Emoji_Presentation=Yes, EAW W.
-export const E_PHASE_RUN = "🟢";       // 🟢  running: it has the floor
+export const E_PHASE_RUN = "🟢";       // 🟢  running: it has the floor.  On a
+                                       //    `… N more` row, with how many of its
+                                       //    agents run
 export const E_PHASE_PAUSE = "🟡";     // 🟡  paused: not started yet, or waiting to resume
-export const E_PHASE_END = "⚫";       // ⚫  ended, and waiting on nothing
+export const E_PHASE_END = "⚫";       // ⚫  not running: an agent that ended, with
+                                       //    ✅ ❌ 🛑 after it for how, or the main
+                                       //    thread between turns
 export const E_PHASE_DONE = "🏁";      // 🏁  finished, on the turn's receipt: a thread
                                        //    that ended by the time the turn's end
                                        //    stamped it
@@ -1172,7 +1194,7 @@ export const E_MODE_API_ERROR = "💥";          // 💥  its last answer died o
 export const E_INBOX = "📨";           // 📨  messages sent to it and not yet delivered:
                                        //    the panel's own "N queued".  On the status
                                        //    line, the ones waiting for the main thread.
-                                       //    After 🤖, the mod's folded row of a message
+                                       //    After ›, the mod's folded row of a message
                                        //    from another agent (agent_message.ts)
 export const E_KIDS = "👶🏻";                  // 👶🏻  how many agents hang under it on the
                                                //    panel.  The light tone, for its contrast on a
@@ -1192,9 +1214,6 @@ export const E_ETA = "⛳";             // ⛳  how long an agent says it has LE
                                        //    Emoji_Presentation=Yes, EAW W.
 export const E_ETA_REPORT = E_ETA;                 // ⛳  the flag the skill's report line opens with,
                                                    //    which ETA_LINE forgives the absence of
-export const E_ETA_REPORT_OLD = "🏁";          // 🏁  the flag older copies of the skill open
-                                               //    with, still read, so an agent that loaded
-                                               //    one keeps its row counting down
 export const E_MODE_ETA = E_ETA;                 // ⛳  paused on nothing it can name, but its last
                                                  //    message said how long it has left
 // The gauge after each of an agent row's 🤖 🔧 🚦: that mark's share of the
@@ -1209,12 +1228,10 @@ export const E_MODE_ETA = E_ETA;                 // ⛳  paused on nothing it ca
 // and U+2800, the empty cell, keeps the gauge's width at a zero share.
 export const E_GAUGE = "⠀⠄⠆⠦⠶";
 export const GAUGE_W = 2;
-export const E_ROW_AGENTS = "👥";           // 👥  agent spend the 🎤 row cannot carry.
-                                            // Emoji_Presentation=Yes and a single code
-                                            // point, chosen for that.  Measured by
-                                            // tests/probe-advance.sh: advance=2 in
-                                            // bare Ghostty, not under tmux -- a reading,
-                                            // like the other three.
+export const E_ROW_AGENTS = E_KIND_OTHER;                 // 👥  the status line's row of
+                                                          // agent spend the 🎤 row cannot carry.  The
+                                                          // panel and the band never draw it, so 👥
+                                                          // there is the kind alone.
 export const E_TURN_ID = "🔖";              // 🔖  the receipt's turn tag: which turn the
                                             // rows below it bill.  Wide, one code point,
                                             // Unicode 6.

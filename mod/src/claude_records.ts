@@ -32,7 +32,7 @@
 //     carries on with the field missing.  No shared case pins those inputs.
 
 import { sha256Hex } from "./sha256.ts";
-import { E_FOLD, E_ETA_REPORT, E_ETA_REPORT_OLD } from "./spec.ts";
+import { E_FOLD, E_ETA_REPORT } from "./spec.ts";
 import {
   daysIn, isDict, PY_SPACE, pyAsciiDigits, pyDig, pyFloatRepr, pyGet, pyHas,
   pyLen, pyOr, pyStrip, pyTruthy,
@@ -1169,10 +1169,10 @@ export function turnTimes(t: Turn): [number, number] {
 //
 //     ⛳ skills/coding-agent-usage-line-report-eta: ETA 4m
 //
-// The skill's path is the part matched; the flag may be missing, and the 🏁
-// the skill had it write before ⛳ is read as well.  Backticks and bold
-// around the line are forgiven.  A run of figure-and-unit pairs (`6h30m`)
-// is one figure, and a few words after a dash are not read.
+// The skill's path is the part matched, and the flag may be missing.
+// Backticks and bold around the line are forgiven.  A run of
+// figure-and-unit pairs (`6h30m`) is one figure, and a few words after a
+// dash are not read.
 //
 // The Python compiles this with re.MULTILINE, whose ^ and $ are at a "\n"
 // alone; JavaScript's m flag also breaks at "\r", U+2028 and U+2029, so the
@@ -1181,7 +1181,7 @@ export function turnTimes(t: Turn): [number, number] {
 export const ETA_SKILL = "coding-agent-usage-line-report-eta";
 export const ETA_PART = String.raw`\p{Nd}+(?:\.\p{Nd}+)? ?[smh]`;
 export const ETA_LINE = new RegExp(
-  String.raw`(?<![^\n])[ \t\x60*]*(?:[${E_ETA_REPORT}${E_ETA_REPORT_OLD}]` +
+  String.raw`(?<![^\n])[ \t\x60*]*(?:${E_ETA_REPORT}` +
   String.raw`[ \t]*)?skills/${ETA_SKILL}: ETA (${ETA_PART}` +
   String.raw`(?:[ \t]*${ETA_PART})*)(?:[ \t]+[—–\-][ \t]` +
   String.raw`[^\n]*?)?[ \t\x60*]*(?![^\n])`, "gu");

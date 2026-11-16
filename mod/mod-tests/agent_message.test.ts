@@ -184,7 +184,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     // Not dim as a whole: a dim around the row would dim the task too.
     expect(tree.props?.dimColor).toBe(undefined)
     expect(pieces(tree)).toEqual(expected(w, FROM))
-    expect(pieces(tree).slice(0, 2)).toEqual([['› 🤖📨 ', false, false],
+    expect(pieces(tree).slice(0, 2)).toEqual([['› 📨 ', false, false],
       ['Reclaim the right-edge columns', false, true]])
     const rest = pieces(tree)[2]
     expect(rest[1]).toBe(false)
@@ -203,8 +203,8 @@ test('two agents of the type, neither reply the message\'s: the sender ' +
       agent('a2', 'general-purpose', 'Two')]
     w.replies = { a1: 'Something else.' }
     const tree = await drawn($, FROM)
-    expect(textOf(tree)).toBe('› 🤖📨 general-purpose: The right edge is ' +
-      'now a settin…')
+    expect(textOf(tree)).toBe('› 📨 general-purpose: The right edge is ' +
+      'now a setting …')
     expect(pieces(tree)).toEqual(expected(w, FROM))
     expect(w.read.sort()).toEqual(['a1', 'a2'])
   })
@@ -262,7 +262,7 @@ test('draws of one message while its replies are read share the reads',
     w.replies = { a1: 'The right edge is now a setting in both ports, ' +
       'from one flag.', a2: 'No.' }
     const trees = await Promise.all([drawn($, FROM), drawn($, FROM)])
-    expect(textOf(trees[0])).toMatch(/^› 🤖📨 One: /)
+    expect(textOf(trees[0])).toMatch(/^› 📨 One: /)
     expect(textOf(trees[1])).toBe(textOf(trees[0]))
     expect(w.read.length).toBe(2)
   })
@@ -273,7 +273,7 @@ test('a named agent: its own task', async ($, on) => {
     agent('a2', 'general-purpose', 'Review the diff', 'running', 'reviewer')]
   const props = { ...FROM, text: 'Looks fine.', from: { name: 'reviewer' } }
   const tree = await drawn($, props)
-  expect(pieces(tree)).toEqual([['› 🤖📨 ', false, false],
+  expect(pieces(tree)).toEqual([['› 📨 ', false, false],
     ['Review the diff', false, true], [': Looks fine.', false, false]])
   expect(w.read).toEqual([])
 })
@@ -286,7 +286,7 @@ test('unfolded, the task over the whole message, wrapped, on the bar',
       text: 'First line.\n\n' + 'word '.repeat(80) })
     expect(tree.type).toBe('Box')
     const rows = (tree.children ?? []) as Drawn[]
-    expect(textOf(rows[0]).startsWith('› 🤖📨 Task')).toBe(true)
+    expect(textOf(rows[0]).startsWith('› 📨 Task')).toBe(true)
     expect(pieces(rows[0])[1]).toEqual(['Task', false, true])
     expect(textOf(rows[1])).toBe('  First line.')
     expect(textOf(rows[2])).toBe('')
