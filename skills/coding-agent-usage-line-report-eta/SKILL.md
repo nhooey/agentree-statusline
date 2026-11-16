@@ -5,10 +5,17 @@ description: Report a running ETA while working on any task expected to take mor
 
 # Report an ETA
 
-Say how long your task has left by writing this line on its own, outside any
-code block or quote:
+The `usage-band` plugin, which draws the line, gives every session and
+subagent the short form of this report as context, through its
+SessionStart and SubagentStart hooks; the text is the plugin's
+`mod/hooks/eta-instruction.md`. This skill holds the full rules and
+`recurse`, and states the line's format word for word as that file does.
 
-    ⛳ skills/coding-agent-usage-line-report-eta: ETA <number><s|m|h>
+Say how long your task has left by writing this line on its own, outside any
+code block or quote, with a number and a unit (s, m or h) in place of
+`<n><s|m|h>`:
+
+    ⛳ skills/coding-agent-usage-line-report-eta: ETA <n><s|m|h>
 
 For example, a task with about four minutes to go gets a line with `ETA 4m`.
 
