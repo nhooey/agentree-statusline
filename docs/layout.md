@@ -1069,25 +1069,74 @@ its colour on every row: 🔋 is always green, 🪫 always red and 🦊 always
 the model's purple, whatever their figures say; on 💳, 🎼 is teal, 🎭
 pink, 🍳 mint, 🔌 periwinkle and 🤝 cream. The one exception is 🎯 (below).
 
-**Brightness is magnitude.** A figure with no natural ceiling is dim under a
-fixed cut and full strength at or over it:
+**Brightness is the unit.** A figure written with a unit takes its shade
+from that unit, in levels of its own hue, so 841k and 8.4M, or 3h and 3d,
+do not look alike in the same four columns. Two tables in
+`spec/layout.jsonc` and one rule decide it, the same in both ports
+(`grade` in `formatting.py` and `formatting.ts`).
 
-| Kind | Cut | Where |
-|---|---|---|
-| tokens | 100k | 🧩 ▴ and ▾ each, 🧠's size |
-| rate | 1k/s | 🛫 |
-| cost | $1 | 💰 |
-| duration | 10 min | ⌛, 🛫's times, and each gauge's own seconds |
-| diff | 100 lines | 💾, each half |
+A *scale* lists a kind of figure's units in order of size, smallest
+first. Units in one step share a position. A figure's step is the one that
+holds its formatted suffix: the letters after its last digit, an empty
+suffix for a bare count, or the whole figure where it is a word (`now`). A
+*falling* scale runs the other way, with its smallest unit the most
+intense:
 
-The cuts are fixed rather than relative to the session, so the same
-brightness means the same thing on every row and in every frame.
+| Scale | Units, smallest first | Direction | Where |
+|---|---|---|---|
+| `duration` | `now` s · m · h · d M | rising | ⌛, ⛳, 🛫's times, and each gauge's own seconds |
+| `count` | bare · k · M G | rising | 🧩 ▴ and ▾ each, 🧠's size, 🛫's rate, 💾 each half |
+| `countdown` | `now` s m · h · d M | falling | the limit rows' 🔜 time until reset |
+
+The countdown falls because for a time-until it is the small figure that
+matters. Its minutes share the seconds' step: inside the hour is the one
+reading a person acts on.
+
+A *ramp* lists a hue's levels of intensity, faintest first. Each level
+names a palette colour and says whether it is drawn faint, so the levels
+are abstract. Each colour mode, the true set or the 256 set, resolves the
+names through its own values. Adjacent levels that draw the same in a mode
+collapse into the lower one, so the number of levels a hue has in a mode is
+worked out, not written down. Every ramp is the hue faint, the hue, and a
+lighter shade of the hue:
+
+| Hue | Where | Lighter shade, true | Lighter shade, 256 |
+|---|---|---|---|
+| green | 🔋's 🔜, 💾's + | `rgb(170, 240, 130)` | `rgb(0, 255, 0)` |
+| red | 🪫's 🔜, 💾's − | `rgb(255, 140, 135)` | `rgb(255, 215, 215)` |
+| teal | 🧩 ▴ | `rgb(170, 240, 255)` | `rgb(215, 255, 255)` |
+| mint | 🛫's rate | `rgb(160, 255, 220)` | `rgb(0, 255, 215)` |
+| pink | 🧩 ▾ | `rgb(250, 185, 235)` | `rgb(255, 215, 255)`, ⛳'s own |
+| pink | 🧠's size | `rgb(255, 170, 225)` | `rgb(255, 215, 255)`, ⛳'s own |
+| periwinkle | ⌛ and the times | `rgb(185, 190, 255)` | `rgb(215, 215, 255)` |
+| magenta | ⛳ | `rgb(255, 140, 255)` | the hue's own, so two levels |
+
+In the 256 set a lighter shade is one of the 80 round-trip entries (see
+[Under tmux](#under-tmux)) of the same hue. The pinks' one lighter entry
+is ⛳'s own colour, which ▾ and 🧠 take as their lighter shade, so ▴ and ▾
+shade alike at one unit; ⛳ has nothing lighter, so its ramp collapses to
+two levels there. `tools/gen-spec.py` refuses a ramp that names a colour
+the palette lacks, or whose levels, once collapsed, do not each draw
+lighter than the one below in every mode.
+
+**The rule.** The scale's most intense unit takes the ramp's top level.
+Each unit below it takes the next level down, and the units below the
+bottom level share it. With three levels a duration is faint in s and m,
+the hue in h and the lighter shade in d. With two, everything under d is
+faint. A figure whose suffix no step holds, such as `?`, is drawn in its
+hue. 🧠's percentage takes its size's shade.
+
+The scales and ramps are fixed rather than relative to the session, so
+the same shade means the same thing on every row and in every frame.
+
+**A figure with no unit letter takes a fixed cut**, dim under it and full
+strength at or over it: 💰 at $1. Its figures run bare up to a thousand
+dollars, so a scale would dim every session.
 
 **Shares have cuts of their own.** An agent row's 🔋 🪫 pair is dim while
 the agent is under 0.2٪ of the week, the two together, so two figures about
-one scope never disagree. The shares on the mod's rows and the receipt, and
-🧠's percentage, are never dimmed by magnitude; 100٪ is their ceiling and
-the reader knows it.
+one scope never disagree. The shares on the mod's rows and the receipt are
+never dimmed by magnitude; 100٪ is their ceiling and the reader knows it.
 
 **🎯 uses tiers**, because a low hit rate is the problem: red at or under
 50٪, amber at or under 80٪, and dim green above. A cache collapse means the

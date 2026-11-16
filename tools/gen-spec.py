@@ -241,6 +241,7 @@ def read(path):
     for key in sorted(DIMMED & colours.keys()):
         check_faint(key, colours[key], "256")
         check_faint(key, trues[key], "true")
+    check_ramps(root, colours, trues)
     root.trues = trues
     return root
 
@@ -349,7 +350,7 @@ def check_colour(key, node):
 
 # ── Faint on black ──────────────────────────────────────────────────────────
 #
-# A figure under its magnitude cut is drawn faint (SGR 2, mag_dim), and a
+# A figure dimmed by its cut or its unit is drawn faint (SGR 2), and a
 # terminal draws faint as about half the colour's intensity: xterm and tmux
 # halve it, iTerm2 and Ghostty blend it half-way to the background.  On a
 # black background that is each channel halved.  The colours a dim figure
@@ -358,9 +359,10 @@ def check_colour(key, node):
 # the three reported too dark under tmux (F_ETA 255,0,255: 2.21; F_PNK
 # 255,0,175: 2.04; F_RED 215,0,0: 1.63).
 
-# Every name a figure under a magnitude cut is drawn in, aliases included:
-# the mag_dim and reset_dim callers, cache_color's green tier, and the
+# Every name a dimmed figure is drawn in, aliases included: the ramps'
+# faint levels (grade), the mag_dim callers, cache_color's green tier, and the
 # share columns.  The chat rows' greys are dim by design, not by magnitude.
+# A ramp's bright level is never drawn faint, so none is here.
 DIMMED = {"F_GRN", "F_AMB", "F_RED", "F_TUP", "F_RATE", "F_TDN", "F_YEL",
           "F_PNK", "F_CRM", "F_PRW", "F_ETA", "F_LIM_SESS", "F_LIM_WEEK",
           "F_SHARE"}
@@ -389,9 +391,42 @@ def check_faint(key, rgb, which):
     c = contrast(faint(rgb), (0, 0, 0))
     if c < FAINT_FLOOR:
         raise SystemExit(
-            "%s: %s's %s value rgb%s is drawn faint under its magnitude cut, "
+            "%s: %s's %s value rgb%s is drawn faint when dimmed, "
             "and faint on black it is %.2f:1, under the %.1f:1 floor; pick a "
             "lighter one of its hue" % (NAME, key, which, rgb, c, FAINT_FLOOR))
+
+
+# The colour modes a ramp is resolved in: each one's value of every colour.
+COLOUR_MODES = ("256", "true")
+
+
+def check_ramps(root, colours, trues):
+    """Refuse a RAMPS entry the grading cannot draw: a level whose `ink` is
+    no colour, or a ramp that, resolved in a mode and its adjacent levels
+    that draw the same there collapsed, has a level no lighter than the one
+    below it.  A level drawn faint is drawn at half each channel (faint)."""
+    ramps = next((m for m in root.value if m.key == "RAMPS"), None)
+    if ramps is None:
+        return
+    values = {"256": colours, "true": trues}
+    for hue in plain(ramps):
+        levels = plain(ramps)[hue]
+        for lv in levels:
+            if lv.get("ink") not in colours:
+                raise SystemExit("%s: RAMPS %s names %r, which is not a "
+                                 "colour" % (NAME, hue, lv.get("ink")))
+        for mode in COLOUR_MODES:
+            drawn = []
+            for lv in levels:
+                rgb = values[mode][lv["ink"]]
+                d = faint(rgb) if lv.get("faint") else rgb
+                if not drawn or drawn[-1] != d:
+                    drawn.append(d)
+            for lo, hi in zip(drawn, drawn[1:]):
+                if lab(hi)[0] <= lab(lo)[0]:
+                    raise SystemExit(
+                        "%s: RAMPS %s in the %s set draws rgb%s over rgb%s, "
+                        "which is not lighter" % (NAME, hue, mode, hi, lo))
 
 
 def same_as(node):
@@ -593,7 +628,7 @@ def render(lang, root, source):
 
 # Constants written `as const` in TypeScript, so their records keep their
 # literal types.
-AS_CONST = {"OPTIONS"}
+AS_CONST = {"OPTIONS", "SCALES", "RAMPS"}
 TYPES = ("bool", "int", "string", "enum", "list", "table", "record")
 # A record's fields: the scalar types, and lists of condition maps
 # ({field, op, value, unit}), alone or keyed by name.

@@ -43,11 +43,11 @@ import {
   E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MODE_MONITOR, E_MODE_SHELL,
   E_MORE, E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN, E_SESS,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
-  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_EFF_HIGH, E_IDLE, MAG_DUR_S,
+  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_EFF_HIGH, E_IDLE,
 } from "./spec.ts";
-import { durFmt, magDim, padVal } from "./formatting.ts";
+import { durFmt, grade, padVal } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { pressed, span, spans } from "./spans.ts";
+import { paint, pressed, span, spans } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
 import { pyFormatF } from "./py.ts";
 import type { Dict } from "./py.ts";
@@ -216,8 +216,9 @@ function bgCounts(bg: readonly BgTask[]): Piece[] {
 
 /** The ⌛ cell of a row that has run `age` seconds. */
 function ageCell(st: Settings, age: number): Span[] {
-  return [span(E_IDLE), span(padVal(st, 4, durFmt(st, age)), "F_PRW",
-    magDim(age, MAG_DUR_S))];
+  const fig = durFmt(st, age);
+  return [span(E_IDLE),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
 /** How long background task `b` has run at `now`: to its end, for one
@@ -737,7 +738,7 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
     cells.clock = ageCell(st, age);
     const timed = tasks.filter((t) => t.usage.model_s !== null);
     if (timed.length) {
-      cells.split = renderAgentSplit(age, sum((t) => num(t.usage.model_s),
+      cells.split = renderAgentSplit(st, age, sum((t) => num(t.usage.model_s),
         timed), sum((t) => num(t.usage.tool_s), timed));
     }
   }

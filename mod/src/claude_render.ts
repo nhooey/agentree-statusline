@@ -17,16 +17,16 @@ import {
   E_MODE_MONITOR, E_MODE_SHELL, E_PCT, E_PROJ, E_ROW_COMPACT, E_SESSION,
   E_SUP_DIGITS, E_TOOL, E_TURN, E_UP, E_WAIT, E_WORK, LEFT_GAP, LIM_ACCT_W,
   LIM_FIG_W, LMIN_BRANCH, LMIN_PATH, LMIN_PROJ, LWT_BRANCH, LWT_PATH,
-  LWT_PROJ, MAG_COST, MAG_DIFF, MAG_DUR_S, MAG_RATE, MAG_TOK, MAX_ROW,
+  LWT_PROJ, MAG_COST, MAX_ROW,
   MIN_GAP, MODEL_FAMILIES, QUIET_S, QUIET_WARN_S, RIGHT_MARGIN, RST_W,
   SHARE_FIG_W, VAL_W, VAL2_W, W_STY,
 } from "./spec.ts";
 import {
   EOL_CLEAR, LINE_CLEAR, S_BOT, S_DATE, S_DIFF, S_HUMAN, S_IDLE, S_PR,
   S_READ, S_RESET, S_SESS, S_STY, S_TIME, S_WEEK, S_WRITE, cacheColor,
-  cacheDims, durFmt, fitCols, fitHead, fitPath, gridRow, humanize, limitPct,
-  magDim, moneyFig, padVal, pct, pct2, rateFig, resetDim, rulesOn, seg,
-  shareDims, shortDur, visWidth,
+  cacheDims, durFmt, fitCols, fitHead, fitPath, gridRow,
+  humanize, limitPct, magDim, moneyFig, padVal, pct, pct2, rateFig,
+  grade, rulesOn, seg, shareDims, shortDur, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import {
@@ -68,12 +68,12 @@ export function projectName(git: Git, projectDir: string): string {
 export function renderTokens(st: Settings, up: unknown, down: unknown,
   downW: number = VAL2_W): Span[] {
   if (up === null || up === undefined) return [];
-  const u = up as number, dn = down as number;
+  const u = humanize(st, up as number), dn = humanize(st, down as number);
   return [span(st.sTok),
-    span(padVal(st, VAL_W, E_UP + padVal(st, 4, humanize(st, u)), true),
-      "F_TUP", magDim(u, MAG_TOK)),
-    span(padVal(st, downW, E_DOWN + padVal(st, 4, humanize(st, dn))),
-      "F_TDN", magDim(dn, MAG_TOK))];
+    paint(grade("count", "F_TUP", u, st.colourMode),
+      padVal(st, VAL_W, E_UP + padVal(st, 4, u), true)),
+    paint(grade("count", "F_TDN", dn, st.colourMode),
+      padVal(st, downW, E_DOWN + padVal(st, 4, dn)))];
 }
 
 /** What the main thread is doing, as the Doing mark and the epoch it
@@ -94,14 +94,17 @@ export function renderRateCache(st: Settings, rate: number | null,
     (secs === null || secs < QUIET_S));
   let head: Span[];
   if (!showRate && secs !== null) {
+    const fig = durFmt(st, secs);
     const style = mark === E_WORK && secs >= QUIET_WARN_S ? ink("F_AMB")
-      : ink("F_PRW", magDim(secs, MAG_DUR_S));
+      : grade("duration", "F_PRW", fig, st.colourMode);
     head = [span(mark + st.doingPad),
-      paint(style, padVal(st, VAL_W - 1, durFmt(st, secs)) + " ")];
+      paint(style, padVal(st, VAL_W - 1, fig) + " ")];
   } else {
-    const fig = rate === null ? "" : rateFig(st, rate) + "/s";
+    const num = rate === null ? "" : rateFig(st, rate);
+    const fig = rate === null ? "" : num + "/s";
     head = [span(mark ? mark + st.doingPad : st.sRate),
-      span(padVal(st, VAL_W, fig), "F_RATE", magDim(rate, MAG_RATE))];
+      paint(grade("count", "F_RATE", num, st.colourMode),
+        padVal(st, VAL_W, fig))];
   }
   return [...head, ...padVal(st, st.col2Val2W, [
     span(st.sCache),
@@ -118,10 +121,11 @@ export function renderCtx(st: Settings, ctxPct: number | null,
     st.markSp.length + SHARE_FIG_W;
   const sizeW = turnEnd - visWidth(st.sCtx, st.widths);
   const pctW = st.rightGrid[2] - turnEnd;
-  const style = ink("F_PNK", magDim(ctxTokens, MAG_TOK));
+  const size = humanize(st, ctxTokens);
+  const style = grade("count", "F_PNK", size, st.colourMode);
   const tilde = est ? "~" : "";
   return [span(st.sCtx),
-    paint(style, padVal(st, sizeW, tilde + humanize(st, ctxTokens))),
+    paint(style, padVal(st, sizeW, tilde + size)),
     paint(style, padVal(st, pctW, tilde + pyIntStr(ctxPct) + E_PCT))];
 }
 
@@ -160,8 +164,8 @@ export function renderLimit(st: Settings, emoji: string, pctS: string,
   let rst: Span[];
   if (d) {
     rst = [span(S_RESET + st.markSp),
-      span(padVal(st, RST_W - visWidth(S_RESET, st.widths), d), colour,
-        resetDim(d))];
+      paint(grade("countdown", colour, d, st.colourMode),
+        padVal(st, RST_W - visWidth(S_RESET, st.widths), d))];
   } else {
     rst = [span(" ".repeat(RST_W + st.markSp.length))];
   }
@@ -229,7 +233,8 @@ export function renderDiff(st: Settings, added: string,
     // humanize's unit column kept, so 💾 stacks digit under digit down the
     // grid, " 30k" over "  6 ".
     const fig = v === null ? "? " : humanize(st, v);
-    return span(sign + padVal(st, 4, fig), col, magDim(v, MAG_DIFF));
+    return paint(grade("count", col, fig, st.colourMode),
+      sign + padVal(st, 4, fig));
   };
 
   return [span(S_DIFF), half("+", n(added), "F_GRN"), span(" "),
@@ -411,9 +416,9 @@ export function etaFig(st: Settings, reading: EtaReading, w: number,
       span(padVal(st, w, "+" + durFmt(st, -left, Math.min(digits, w - 2))),
         signedOff ? "F_OVER" : "F_AMB")];
   }
+  const fig = durFmt(st, left, digits);
   return [span(E_ETA + st.markSp),
-    span(padVal(st, w, durFmt(st, left, digits)), "F_ETA",
-      magDim(left, MAG_DUR_S))];
+    paint(grade("duration", "F_ETA", fig, st.colourMode), padVal(st, w, fig))];
 }
 
 /** The session's clock: ⛳ the turn's ETA, then 🤖 🔧 🚦, which partition
@@ -435,8 +440,8 @@ export function renderElapsed(st: Settings, busyS: number, startS: number,
   const fig = (mark: string, v: number, w: number = LIM_FIG_W,
     digits = 2): Span[] =>
     [span(mark + st.markSp),
-      span(padVal(st, w, durFmt(st, v, digits)), "F_PRW",
-        magDim(v, MAG_DUR_S))];
+      paint(grade("duration", "F_PRW", durFmt(st, v, digits), st.colourMode),
+        padVal(st, w, durFmt(st, v, digits)))];
 
   const shown = inheritEta(eta, agentEtas
     .filter(([, last]) => last !== null && t - last <= ETA_LIVE_S)

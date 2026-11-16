@@ -22,9 +22,11 @@ DIM = "\033[2m"                            # dim attribute.  Two jobs, one
                                            # per kind of figure: on the limit
                                            # rows it is scope and urgency (see
                                            # render_limit); on every unbounded
-                                           # figure it is MAGNITUDE — dim under
-                                           # a fixed cut, bright over it (see
-                                           # MAG_TOK).  Never a hue of its own.
+                                           # figure it is MAGNITUDE — the low
+                                           # level of its hue's ramp (see
+                                           # formatting.grade), or under a
+                                           # fixed cut (MAG_COST).  Never a hue
+                                           # of its own.
 BOLD, UNBOLD = "\033[1m", "\033[22m"       # UNBOLD is 22 (bold off) and not 0
                                            # (all attributes off), so it cannot
                                            # stomp colour set around it.
@@ -212,6 +214,22 @@ def colour_level(env: Optional[Mapping[str, str]] = None) -> int:
             and level > 2):
         level = 2
     return level
+
+
+def colour_mode(env: Optional[Mapping[str, str]] = None) -> str:
+    """The colour mode Claude Code draws in, by the name the spec's values
+    are kept under: "true" at its true-colour level, "256" at any other
+    (colour_level)."""
+    return "true" if colour_level(env) >= 3 else "256"
+
+
+def drawn(style: Span, mode: str) -> tuple:
+    """What `style` puts on the screen in colour mode `mode`: its colour's
+    value there and its attributes, so two styles that draw alike compare
+    equal (formatting.ramp collapses on it)."""
+    return (colour(style.colour, mode == "true") if style.colour else None,
+            style.dim, style.bold,
+            colour(style.bg, mode == "true") if style.bg else None)
 
 
 def colour(name: str, true: Optional[bool] = None) -> str:

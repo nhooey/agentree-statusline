@@ -7,8 +7,9 @@ a case sees the same second and the sampler takes one reading and reports no
 slope — the correct blank for a session's first tick — and the Doing figure
 they record is 🤖 and how long the corpus has been quiet.  The slope itself, the tick, the depth of the
 history and what a damaged file costs are pinned here, against a scratch
-TMPDIR, with the clock stepped by hand.  The brightness-as-magnitude rule
-(MAG_TOK and mag_dim) is pinned here too, as a rule rather than as escapes.
+TMPDIR, with the clock stepped by hand.  The brightness rules (the unit
+grading, grade, and the fixed cuts, mag_dim) are pinned here too, as rules
+rather than as escapes.
 
 Run:  python3 tests/rate.py
 """
@@ -318,16 +319,63 @@ def run(sl, sr, scratch):
           ("🧠  115k   11٪", 14, 8, 8))
     sl.set_mark_spacing(True)
 
-    print("brightness as magnitude")
+    print("brightness: grading by unit and the fixed cuts")
     # The goldens pin every escape on the status line; what is pinned here is
-    # the RULE — one fixed cut per kind, dim under it, nothing at or over it,
-    # and a dim first field reset before the second — so a re-bless cannot
-    # quietly bless a rate that dims the 🎯 beside it.
+    # the RULE — a figure's shade from its unit, in its own hue; a fixed cut
+    # where there is no unit letter; and a dim first field reset before the
+    # second — so a re-bless cannot quietly bless a rate that dims the 🎯
+    # beside it.
     D = sl.DIM
     check("mag_dim: dim under the cut, not at it, not over it, "
           "not for no reading",
           [sl.mag_dim(v, 100.0) for v in (99.9, 100.0, 1e9, None)],
           [True, False, False, False])
+
+    def rungs(x):
+        # each painted figure as (level, text): 0 faint, 1 the colour, 2 its
+        # bright _HI; the marks, drawn outside the colour, are left out
+        return [(0 if s_.dim else 2 if (s_.colour or "").endswith("_HI")
+                 else 1, s_.text.strip())
+                for s_ in sl.spans(x) if s_.styled() and s_.text.strip()]
+
+    def graded(scale, hue, figs, mode="256"):
+        return [rungs([sl.paint(sl.grade(scale, hue, f, mode), f)])[0][0]
+                if f.strip() else None for f in figs]
+    check("the duration scale: s and m share the faint level, h normal, "
+          "d and M bright; no unit is the colour",
+          graded("duration", "F_PRW", ("45s", "1.5m", "58m", "2.5h", "3d",
+                                       "1.4M", "1.₅h ", "?")),
+          [0, 0, 0, 1, 2, 2, 1, 1])
+    check("the count scale: a bare count faint, k normal, M and G bright",
+          graded("count", "F_TUP", ("632 ", "849", "1.2k", "1.₂k",
+                                    "841k", "8.4M", "1.2G", "? ")),
+          [0, 0, 1, 1, 1, 2, 2, 1])
+    check("the countdown scale falls: d faint, h normal, m, s and now bright",
+          graded("countdown", "F_LIM_SESS",
+                 ("3d", "1.4M", "2h", "58m", "5s", "now")),
+          [0, 0, 1, 2, 2, 2])
+    # A ramp is abstract: each mode resolves its names, and adjacent levels
+    # that draw the same collapse.  F_ETA's bright level is its own colour in
+    # the 256 set, so there it has two levels and the SMALLER units share
+    # the lower: M normal, k and a bare count faint.  F_TUP has three.
+    check("the 256 set: F_TUP keeps three levels, F_ETA collapses to two",
+          [[(st.colour, st.dim) for st in sl.ramp(h, "256")]
+           for h in ("F_TUP", "F_ETA")],
+          [[("F_TUP", True), ("F_TUP", False), ("F_TUP_HI", False)],
+           [("F_ETA", True), ("F_ETA", False)]])
+    check("the true set: both keep three",
+          [len(sl.ramp(h, "true")) for h in ("F_TUP", "F_ETA")], [3, 3])
+    check("and the rule reads the collapsed ramp: F_ETA's k is faint in the "
+          "256 set and normal in the true one",
+          [graded("count", "F_ETA", ("632", "841k", "8.4M"), m)
+           for m in ("256", "true")],
+          [[0, 0, 1], [0, 1, 2]])
+    os.environ["COLORTERM"] = "truecolor"
+    try:
+        check("with no mode given, the environment's",
+              graded("count", "F_ETA", ("841k",), None), [1])
+    finally:
+        os.environ.pop("COLORTERM")
     def dims(s):
         # which fields carry DIM, reading the escapes as a list of
         # (dim?, text) runs, stripped of colour
@@ -346,9 +394,11 @@ def run(sl, sr, scratch):
             else:
                 cur += tok
         return runs
-    check("🧩: each half against MAG_TOK on its own, arrow included",
-          dims(sl.render_tokens(sl.MAG_TOK, sl.MAG_TOK - 1000)),
-          [(False, "▴100k"), (True, "▾ 99k")])
+    check("🧩: each half on its own unit, arrow included: ▴ 8.4M bright, "
+          "841k normal, a bare count dim",
+          [rungs(sl.render_tokens(8.4e6, 841000)),
+           rungs(sl.render_tokens(841000, 632))],
+          [[(2, "▴8.4M"), (1, "▾841k")], [(1, "▴841k"), (0, "▾632")]])
     check("🛫: a trickle dims and the 🎯 beside it does not inherit the DIM",
           dims(sl.render_rate_cache(999.0, 70)),
           [(True, "999/s"), (False, "70٪")])
@@ -368,6 +418,11 @@ def run(sl, sr, scratch):
     check("the agent's cut is a fifth of the turn's",
           (sl.MAG_SHARE_AGENT, sl.MAG_SHARE_AGENT < sl.MAG_SHARE_TURN),
           (0.2, True))
+    check("🔜: the countdown is graded on its falling scale, in the row's hue",
+          [rungs(sl.render_limit(sl.S_SESS, "38", "", str(int(NOW) + d),
+                                 "", "F_LIM_SESS", False, NOW))[-1]
+           for d in (3 * 86400, 2 * 3600, 400)],
+          [(0, "3d"), (1, "2h"), (2, "6.7m")])
     check("🔋 row: 🎤 and 🎮 dim on the caller's word, 💳 as before",
           [d for d, _ in dims(sl.render_limit(
               sl.S_SESS, "38", "5", "", "0.4", "F_LIM_SESS", True, NOW,
@@ -393,22 +448,22 @@ def run(sl, sr, scratch):
             drawn(sr.render_agent_cache(p)).startswith(sl.E_CACHE))
            for p in (81, 80)],
           [(True, True), (False, True)])
-    check("🛫: 1k/s is full flight; no slope is no DIM either",
-          [dims(sl.render_rate_cache(1000.0, 70))[0][0],
+    check("🛫: 1k/s is normal, 1M/s bright; no slope is no DIM either",
+          [rungs(sl.render_rate_cache(1000.0, 70))[0],
+           rungs(sl.render_rate_cache(1.2e6, 70))[0],
            D in drawn(sl.render_rate_cache(None, 70))],
-          [False, False])
-    check("🧠: the size takes the token cut, and the percentage with it",
-          [dims(sl.render_ctx(45, sl.MAG_TOK - 1000)),
-           dims(sl.render_ctx(45, sl.MAG_TOK))],
-          [[(True, "99k"), (True, "45٪")], [(False, "100k"), (False, "45٪")]])
+          [(1, "1k/s"), (2, "1M/s"), False])
+    check("🧠: the size takes the count ladder, and the percentage with it "
+          "(k normal, M bright)",
+          [rungs(sl.render_ctx(45, 115000)), rungs(sl.render_ctx(45, 1.2e6))],
+          [[(1, "115k"), (1, "45٪")], [(2, "1.2M"), (2, "45٪")]])
     check("💰: a dollar is the line, on the status line and the agent rows",
           [dims(sl.render_cost(v))[0][0] for v in ("0.99", "1.0", "115")],
           [True, False, False])
-    check("⌛ row: ten minutes, each figure on its own; ⛳ with no ETA is a "
-          "dim ?",
-          [d for d, _ in dims(sl.render_elapsed(
-              5 * 3600, NOW - 9 * 3600, 599.0, NOW)) if _ != "Σ"],
-          [True, False, True, False])    # ⛳ ? 🤖 🔧 🚦: only 🔧 is under
+    check("⌛ row: each figure on its own unit; ⛳ with no ETA is a dim ?",
+          [r for r, t in rungs(sl.render_elapsed(
+              5 * 3600, NOW - 30 * 3600, 599.0, NOW)) if t != "Σ"],
+          [0, 1, 0, 2])    # ⛳ ? 🤖 4.8h 🔧 10m 🚦 1d
     # 🤖 🔧 🚦 partition the age, and a blocking prompt moves seconds from
     # 🤖 to 🚦 without touching 🔧 or the total.  Two hours, one busy,
     # a quarter of it inside a tool; then ten minutes of that busy hour
@@ -428,9 +483,10 @@ def run(sl, sr, scratch):
               NOW - 300))),
           "\u231B \u26F3 3m \U0001F916 45m "
           "\U0001F527 15m \U0001F6A6 1h")
-    check("💾: a hundred lines, each half on its own count",
-          dims(sl.render_diff("100", "99")),
-          [(False, "+100"), (True, "- 99")])
+    check("💾: each half on its own unit, a ? left normal",
+          [rungs(sl.render_diff("3400", "214")),
+           rungs(sl.render_diff("1200000", "x"))],
+          [[(1, "+3.4k"), (0, "-214")], [(2, "+1.2M"), (1, "-  ?")]])
     check("column 3: each scope's pair dims off its own 📖, under two thirds",
           [sl.cache_dims(t, s_) for t, s_ in
            ((66, 67), (67, 66), (None, 10), (90, None))],
@@ -442,21 +498,24 @@ def run(sl, sr, scratch):
     check("a ? is dim whatever the caller says; 💯 is bright",
           dims(sl.render_cache_share(sl.S_READ, None, 100, "F_SHARE", False, False)),
           [(True, "?"), (False, "💯٪")])
-    check("the agent row's ⌛ 🛫 🧠 take the same cuts",
-          [dims(sr.render_agent_elapsed(1000 * (NOW - 599), NOW))[0][0],
-           dims(sr.render_agent_elapsed(1000 * (NOW - 600), NOW))[0][0],
-           dims(sr.render_agent_rate(999.0))[0][0],
-           dims(sr.render_agent_rate(1000.0))[0][0],
-           dims(sr.render_agent_ctx(sl.MAG_TOK - 1))[0][0],
-           dims(sr.render_agent_ctx(sl.MAG_TOK))[0][0]],
-          [True, False, True, False, True, False])
-    check("and the agent row's 🧠 share dims with its size",
-          [[d for d, _ in dims(sr.render_agent_ctx(v, 1000000))]
-           for v in (sl.MAG_TOK - 1000, sl.MAG_TOK)],
-          [[True, True], [False, False]])
-    check("and each 🤖 🔧 🚦 gauge dims on its own seconds, not its share",
-          [d for d, _ in dims(sr.render_agent_split(1800.0, 599.0, 601.0))],
-          [True, False, False])
+    check("the agent row's ⌛ 🛫 🧠 climb the same ladders",
+          [rungs(sr.render_agent_elapsed(1000 * (NOW - 599), NOW))[0][0],
+           rungs(sr.render_agent_elapsed(1000 * (NOW - 7200), NOW))[0][0],
+           rungs(sr.render_agent_elapsed(1000 * (NOW - 2 * 86400), NOW))[0][0],
+           rungs(sr.render_agent_rate(999.0))[0][0],
+           rungs(sr.render_agent_rate(1000.0))[0][0],
+           rungs(sr.render_agent_rate(2e6))[0][0],
+           rungs(sr.render_agent_ctx(99999))[0][0],
+           rungs(sr.render_agent_ctx(2e6))[0][0]],
+          [0, 1, 2, 0, 1, 2, 1, 2])
+    check("and the agent row's 🧠 share takes its size's shade",
+          [[r for r, _ in rungs(sr.render_agent_ctx(v, 4000000))]
+           for v in (99999, 2e6)],
+          [[1, 1], [2, 2]])
+    check("and each 🤖 🔧 🚦 gauge climbs on its own seconds, not its share",
+          [r for r, _ in rungs(sr.render_agent_split(30 * 3600.0, 599.0,
+                                                      7200.0))],
+          [0, 1, 2])
 
 
 if __name__ == "__main__":

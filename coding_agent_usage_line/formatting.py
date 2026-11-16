@@ -1164,7 +1164,7 @@ def short_dur(target: str, now: Optional[float] = None) -> Optional[str]:
     never persists, so that segment renders as a bare percentage.
 
     "now" is returned rather than a negative duration when the moment has
-    passed; reset_dim reads that as imminent, which it is.
+    passed; the countdown scale grades that as imminent, which it is.
     """
     if not target:
         return None
@@ -1367,21 +1367,60 @@ def pct(p: float) -> str:
 # Colour tiers.
 # ════════════════════════════════════════════════════════════════════════════
 
-def reset_dim(d: str) -> bool:
-    """Whether a reset countdown dims: unless it is under an hour away.
+_DIGITS = "0123456789" + E_SUB_DIGITS
 
-    Reading the unit rather than re-deriving the seconds keeps this to one
-    branch and keeps dur_fmt the only place that knows the arithmetic.
 
-    Two levels, not a ladder of three shades, so one distinction a ladder
-    would draw goes.  Hours-against-days is the one dropped:
-    a window that resets tomorrow and one that resets this afternoon are the
-    same news — not yet — while one resetting inside the hour is the only
-    reading on the field a person acts on.  Bright means that and nothing
-    else.  short_dur returns "now" for a moment already passed, which has no
-    unit and so lands here as imminent, which it is.
+def _suffix(text: str) -> Optional[str]:
+    """A figure's unit as formatted: the letters after its last digit, ""
+    for a bare count, the whole figure where it is a word ("now"), and None
+    where it is neither ("?", or nothing)."""
+    t = text.rstrip()
+    unit = re.search(r"[A-Za-z]*$", t).group()
+    head = t[:len(t) - len(unit)]
+    if not head:
+        return unit or None
+    return unit if head[-1] in _DIGITS else None
+
+
+@functools.lru_cache(maxsize=None)
+def ramp(hue: str, mode: str) -> Tuple[_sp.Span, ...]:
+    """`hue`'s ramp (RAMPS) as colour mode `mode` draws it: each level a
+    style, faintest first, with the adjacent levels that draw the same in
+    that mode collapsed into the lower.  So the number of levels a hue has
+    is the mode's to say: the levels are written once, as palette names,
+    and each mode resolves the names through its own values."""
+    out: List[_sp.Span] = []
+    for level in RAMPS[hue]:
+        style = _sp.ink(level["ink"], level.get("faint", False))
+        if not out or _sp.drawn(out[-1], mode) != _sp.drawn(style, mode):
+            out.append(style)
+    return tuple(out)
+
+
+def grade(scale: str, hue: str, text: str,
+          mode: Optional[str] = None) -> _sp.Span:
+    """The style the figure `text` is drawn in: its unit's position on
+    `scale` (SCALES), as a level of `hue`'s ramp in colour mode `mode`
+    (spans.colour_mode, read from the environment where None).
+
+    One rule: the scale's most intense unit — its largest, or its smallest
+    where the scale is `falling` — takes the ramp's top level, each unit
+    below it the next level down, and the units below the bottom level
+    share it.  The unit is read off the figure as formatted, so the shade
+    and the letter beside it cannot disagree and dur_fmt and humanize stay
+    the only places that know the arithmetic.  A figure with no unit the
+    scale holds is drawn in the hue's own colour.  Like mag_dim's, the
+    style goes on the figure and not its mark.
     """
-    return d.endswith(("d", "h"))
+    sc = SCALES[scale]
+    unit = _suffix(text)
+    pos = next((i for i, step in enumerate(sc["units"]) if unit in step),
+               None) if unit is not None else None
+    if pos is None:
+        return _sp.ink(hue)
+    levels = ramp(hue, mode or _sp.colour_mode())
+    below_top = pos if sc["falling"] else len(sc["units"]) - 1 - pos
+    return levels[max(0, len(levels) - 1 - below_top)]
 
 
 def mag_dim(v: Optional[float], cut: float) -> bool:
@@ -1392,7 +1431,8 @@ def mag_dim(v: Optional[float], cut: float) -> bool:
     second: DIM reaches a pictograph where a foreground colour does not, and
     would take the 🎯 inside the rate cell's second field with it.  None —
     no reading — is left alone; the caller blanks or omits those itself.
-    The cuts and the reasoning are at MAG_TOK.
+    The cut and the reasoning are at MAG_COST: a figure with a unit
+    letter takes its shade from the unit instead (grade).
     """
     return not (v is None or v >= cut)
 
@@ -1455,10 +1495,10 @@ def cache_color(p: int) -> _sp.Span:
     high hit rate is the state nothing has to be done about, and the figure
     that asks for nothing should not be the one the eye lands on.  Amber and
     red are the tiers that mean something happened, and stay full strength.
-    The same reading as the magnitude cuts (MAG_TOK) from the other side:
+    The same reading as the grading (grade) from the other side:
     there the small figure is the quiet one, here the large one is.  Callers
     put the 🎯 ahead of this, outside it, so the DIM reaches the figure and
-    not the mark — as mag_dim's callers do.  The tier comes back as a style
+    not the mark — as grade's callers do.  The tier comes back as a style
     with no text, for spans.paint to put the figure in."""
     if p <= CACHE_CRIT:
         return _sp.ink("F_RED")

@@ -201,6 +201,7 @@ def settings():
                     "col2Val2W": fm.COL2_VAL2_W,
                     "rightEdge": fm.RIGHT_EDGE_COLS,
                     "truecolor": sp.colour_level() >= 3,
+                    "colourMode": sp.colour_mode(),
                 })
     constants = {k: enc(getattr(fm, k)) for k in (
         "LINE_CLEAR", "EOL_CLEAR", "SI_UNITS", "C_LABEL", "C_TOTALS_LABEL",
@@ -305,8 +306,6 @@ def values():
         cases.append(c)
 
     # Pure of the settings, run once.
-    for d in ["", "now", "5s", "1.5m", "58m", "2h", "3d", "1.4M", "h", "d "]:
-        add("reset_dim", None, [d], fm.reset_dim)
     for v in [None, 0, 99999, 100000, 100001, -1, NAN, INF, 0.5]:
         for cut in (100000, 1.0, 0):
             add("mag_dim", None, [v, cut], fm.mag_dim)
@@ -343,6 +342,30 @@ def values():
         cases.append({"fn": "widths_for", "cfg": None, "args": [prof],
                       "out": [enc(w.narrow), enc(w.icons), w.clusters,
                               enc(w.wide)]})
+
+    # Grading, in the 256 set and the true one: each scale, the falling
+    # one included, over every unit and the figures that have none, on a
+    # hue with three levels in both modes and on ones whose ramp collapses
+    # to two in the 256 set; and each ramp as each mode resolves it.
+    durations = ["", "now", "5s", "1.5m", "58m", "2h", "2.5h", "3d", "1.4M",
+                 "h", "d ", "1.\u2085h", " 45s ", "?", "+9.3h"]
+    counts = ["", "?", "? ", "632 ", "0 ", "1.2k", "1.\u2082k", "16k ",
+              "841k", "8.4M", "1.2G", "5", "849", "1k", "150k", "\u2085",
+              "+30k", "-214", "k"]
+    for cfg in (("unknown", True, False), ("true-colour", True, False)):
+        configure(*cfg)
+        for hue in ("F_PRW", "F_ETA"):
+            for d in durations:
+                add("grade", cfg, ["duration", hue, d], fm.grade)
+        for hue in ("F_LIM_SESS", "F_LIM_WEEK"):
+            for d in durations:
+                add("grade", cfg, ["countdown", hue, d], fm.grade)
+        for hue in ("F_TUP", "F_TDN", "F_PNK", "F_GRN"):
+            for f in counts:
+                add("grade", cfg, ["count", hue, f], fm.grade)
+    for hue in sorted(spec.RAMPS):
+        for mode in ("256", "true"):
+            add("ramp", None, [hue, mode], lambda h, m: list(fm.ramp(h, m)))
 
     for cfg in CFGS:
         configure(*cfg)
