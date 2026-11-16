@@ -136,7 +136,7 @@ export function renderCost(st: Settings, costUsd: string,
     span(padVal(st, 4, moneyFig(st, c)), "F_YEL", magDim(c, MAG_COST))];
 }
 
-/** The model and the cost side by side in one cell, "🤖 O⁵🚶  💰5.1k". */
+/** The model and the cost side by side in one cell, "🧬 O⁵🚶  💰5.1k". */
 export function renderModelCost(st: Settings, model: string, effort: string,
   costUsd: string): Span[] {
   const mod = renderModel(st, model, effort);
