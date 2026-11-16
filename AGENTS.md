@@ -13,7 +13,7 @@ project's skills into `.agents/skills/`. Then:
 
 - `tests`: every suite, or the ones named (`tests/all.sh`).
 - `typecheck`: type-check the mod's TypeScript.
-- `check`: `nix flake check`, which checks formatting only (treefmt);
-  it doesn't run the tests.
+- `check`: `nix flake check`: formatting (treefmt) and the suites a
+  build can run (`nix/check-tests.sh`).
 
 `menu` lists the dev shell's other commands.
