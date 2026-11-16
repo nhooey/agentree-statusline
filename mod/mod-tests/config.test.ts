@@ -34,12 +34,13 @@ const ENV: { [name: string]: string } = {
 type World = { files: Map<string, string>; asked: string[]; names: string[];
   logged: string[]; mtimes: Map<string, number> }
 
-/** The engine beneath the mod: a user file with a typo, a project file
- * with a source Claude cannot read, the project's `.git`, and the
- * defaults file where the mod looks for it, `defaults` its text. */
+/** The engine beneath the mod: a user file with a value of the wrong
+ * type, a project file with a source Claude cannot read, the project's
+ * `.git`, and the defaults file where the mod looks for it, `defaults` its
+ * text. */
 function world(on: On, defaults = DEFAULTS_TEXT): World {
   const files = new Map<string, string>([
-    [USER_FILE, '{"rwos": {}, "account": "u"}'],
+    [USER_FILE, '{"totals": "no", "account": "u"}'],
     [PROJECT_FILE, '{"hide": [], "usage-source": "codex-app-server"}'],
   ])
   const dirs = new Set([PROJECT + '/.git'])
@@ -140,7 +141,7 @@ test('a session start reads the config files and logs every warning once',
     expect(log).toContain(`config from ${PROJECT}: project ${PROJECT_FILE}` +
       ` (hide); user ${USER_FILE} (account)`)
     const warnings = [
-      `${USER_FILE}: "rwos" is no option (did you mean "rows"?); skipped`,
+      `${USER_FILE}: "totals" must be true or false; skipped`,
       `${PROJECT_FILE}: "usage-source" "codex-app-server" is no source ` +
         'claude reads; skipped',
     ]

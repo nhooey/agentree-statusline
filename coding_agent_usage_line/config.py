@@ -12,8 +12,10 @@ Three files, highest first:
 `load` finds and reads them and hands back each one's checked values, by
 option name, with a warning for whatever it skipped.  options.merge lays
 them between the flags and the defaults.  Nothing in those files stops a
-run: a file read by a hook never breaks a session, so what is wrong is
-skipped at the smallest unit it can be, and said.
+run: a file read by a hook never breaks a session.  A file with a key that
+names nothing a file may set, at any depth, is refused whole, since a
+misspelt key would otherwise do nothing unnoticed; any other fault is
+skipped at the smallest unit it can be.  Each is said.
 
 Under them is the defaults file, mod/defaults/config.jsonc, every option a
 file may set with its default, which `defaults` reads strictly: it governs,
@@ -417,9 +419,52 @@ def _known(name):
         return None, "%s is no option%s" % (json.dumps(name),
                                             _hint(name, list(OPTIONS)))
     if not option["file"]:
-        return None, ("%s describes one run, so no file sets it"
+        return None, ("%s is a per-run flag, which no file sets"
                       % json.dumps(name))
     return option, None
+
+
+def unknown_keys(data):
+    """Why each key of a file's object names nothing a file may set, at
+    any depth: an option, a table's row or a row's field, a record's field,
+    or a key of a record's conditions-by field, each with the nearest known
+    name.  The mod's unknownKeys gives the same words."""
+    why = []
+    for name, value in data.items():
+        if name == "version":
+            continue
+        option, bad = _known(name)
+        if option is None:
+            why.append(bad)
+            continue
+        if not isinstance(value, dict):
+            continue
+        fields = option.get("fields", {})
+        if option["type"] == "table":
+            rows = option["rows"]
+            for row, rec in value.items():
+                if row not in rows:
+                    why.append("%s is no row%s" % (
+                        json.dumps("%s.%s" % (name, row)), _hint(row, rows)))
+                    continue
+                if isinstance(rec, dict):
+                    why += ["%s is no field%s" % (
+                        json.dumps("%s.%s.%s" % (name, row, field)),
+                        _hint(field, list(fields)))
+                        for field in rec if field not in fields]
+        elif option["type"] == "record":
+            for field, v in value.items():
+                spec = fields.get(field)
+                if spec is None:
+                    why.append("%s is no field%s" % (
+                        json.dumps("%s.%s" % (name, field)),
+                        _hint(field, list(fields))))
+                elif spec["type"] == "conditions-by" and isinstance(v, dict):
+                    why += ["%s is no key%s" % (
+                        json.dumps("%s.%s.%s" % (name, field, key)),
+                        _hint(key, spec["keys"]))
+                        for key in v if key not in spec["keys"]]
+    return why
 
 
 def check(name, value, defaults=None):
@@ -486,6 +531,10 @@ def read(path, defaults=None):
     data, why = _object(text)
     if data is None:
         return {}, ["%s: %s, so the file is skipped" % (path, why)]
+    unknown = unknown_keys(data)
+    if unknown:
+        return {}, ["%s: %s, so the file is skipped" % (path, why)
+                    for why in unknown]
     values, warnings = {}, []
     for name, value in data.items():
         if name == "version":

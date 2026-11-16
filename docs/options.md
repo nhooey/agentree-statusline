@@ -339,10 +339,12 @@ Lists replace and tables merge per field: a project that sets
 
 Nothing in your own files stops a run. A key a file leaves out comes from
 the layer under it, and in the end from the defaults file. A file that is
-not valid JSONC or not an object is skipped whole; an unknown key, a key that describes one run
-(`mode`, `cols`, …) and a value of the wrong type or out of range are
-skipped alone, the layer under them supplying the value. Each is one line
-on stderr naming the file, and an unknown key's names the nearest known one.
+not valid JSONC or not an object is skipped whole, and so is a file with
+an unknown key at any depth (an option, a row of `rows`, a field) or a key
+that describes one run (`mode`, `cols`, …), so a misspelt key can't go
+unnoticed. A value of the wrong type or out of range is skipped alone, the
+layer under it supplying the value. Each is one line on stderr naming the
+file, and an unknown key's names the nearest known one.
 `--diagnose` counts them on its line. A flag that overrides a file's value
 for an option the mod reads too (`hide`, `right-edge`, `usage-source`, …) is
 said as well, since the band then draws the file's.
