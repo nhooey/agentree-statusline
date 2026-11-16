@@ -35,8 +35,8 @@ import {
 } from "./figures.ts";
 import {
   CELLS, ETA_LIVE_S, SIDE_MARKS, accountLabel, cacheRate, hms, inheritEta,
-  mainDoing, mainLabel, projectName, sessionLabel, turnLabel, untilReset,
-  workspacePieces, ymd,
+  mainDoing, mainLabel, projectName, sessionLabel, trimLast, turnLabel,
+  untilReset, workspacePieces, ymd,
 } from "./cells.ts";
 import type { SideWindow, Workspace } from "./cells.ts";
 import type { Limits } from "./claude_sources.ts";
@@ -689,6 +689,11 @@ function accountPieces(st: Settings, fig: Dict, hide: readonly string[],
     dropped = gone && p.path !== "plan.reset";
     if (!gone) shown.push(p);
   }
+  // The last window drawn ends without its blanks, as accountLabel ends
+  // the last of them all, which a hidden window may have been.
+  const last = shown.map((p) => p.path.startsWith("plan."))
+    .lastIndexOf(true);
+  if (last >= 0) shown[last] = trimLast([shown[last]])[0];
   return shown;
 }
 

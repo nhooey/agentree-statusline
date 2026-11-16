@@ -18,7 +18,7 @@ import { draw } from "../src/grid.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import { panelLayout } from "../src/claude_subagent_render.ts";
 import {
-  FOOTER_GAP, FOOTER_JOIN, MODE_PILLS, TAIL_CUT, accountLine, accountText, footerParts, modeOfHint, bandLines, bandRows, fixedKeys, footerTail,
+  FOOTER_GAP, FOOTER_JOIN, MODE_PILLS, TAIL_CUT, accountHide, accountLine, accountText, footerParts, modeOfHint, bandLines, bandRows, fixedKeys, footerTail,
   phaseRows,
   workspaceOf,
 } from "../src/band.ts";
@@ -531,6 +531,21 @@ test("the footer's tail ends on the 💳 account details where the band's rows e
   const no5h = inZone(fig, () => accountText(st, fig, ["*.plan.five_hour"]));
   assert.ok(!no5h.includes("🔋") && no5h.includes("🪫"), no5h);
   assert.equal(no5h.split("🔜").length, text.split("🔜").length - 1, no5h);
+});
+
+test("a weekly window left off takes its blanks with it on the 💳 row", () => {
+  const st = settings({});
+  const fig = document("status/weekly-windows");
+  const text = (hide: readonly string[]) =>
+    inZone(fig, () => accountText(st, fig, hide));
+  // The defaults' weekly-windows, every one off.
+  const off = accountHide([], { opus: false, sonnet: false, omelette: false,
+    oauth_apps: false, cowork: false });
+  // 🎼 and 🎭 left off: 🪫's 🔜 is the last window, FOOTER_GAP before 📅.
+  for (const hide of [off, ["account.plan.opus", "account.plan.sonnet"]]) {
+    const t = text(hide);
+    assert.ok(!t.includes("🎼") && t.includes("🔜 1.9d  📅"), t);
+  }
 });
 
 test("a hidden context.share leaves 🧠's size and drops its ٪", () => {
