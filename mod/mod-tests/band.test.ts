@@ -71,6 +71,7 @@ import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
 import type { Dict } from '../src/py.ts'
 import { backoffAfter, retryAfter } from '../hooks/plan_usage.ts'
+import { TRACKER_NO_PROFILES } from '../hooks/usage.ts'
 
 const COLS = 150
 // The options the mod draws with here: the user file over the defaults.
@@ -1196,6 +1197,18 @@ test('a turn started with no plan reading has no 💳 on its tag',
       text: text(tag) })
   })
 
+
+test('a tracker store with no profiles_v3 is logged once a load, and ' +
+  'gives no reading', async ($, on) => {
+    const w = world(on)
+    w.files.set('/tracker.plist', encoder.encode(
+      '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict>' +
+      '<key>activeProfileId</key><string>golden</string></dict></plist>\n'))
+    const { doc } = await promptTagged($, w)
+    expect((doc.limits as Dict).weekly_pct ?? null).toBe(null)
+    await promptTagged($, w)
+    expect(logOf(w).split(TRACKER_NO_PROFILES).length - 1).toBe(1)
+  })
 
 test('a transcript over 4 MiB is read in pieces through the shell',
   async ($, on) => {

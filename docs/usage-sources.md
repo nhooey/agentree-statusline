@@ -294,6 +294,11 @@ reset times, and when the app last updated them, with the record's `id` hashed (
 [Calibration cache](#calibration-cache)). The same record holds an OAuth
 account and a session key, and neither is read.
 
+The app keeps its profiles in the Keychain from version 3.3 on, which the mod
+does not read, so its preferences hold no `profiles_v3` and the source gives no
+reading. The mod writes that to `usage-band.log` once a load, as
+`tracker: Claude Usage.app's settings have no profiles_v3, …`.
+
 The Fable-weekly percentage becomes the weekly Fable window
 (`seven_day_overage_included`, 🦊 on the 💳 row). The app keeps no reset time
 of its own for it, so it takes the weekly window's; a store without the
