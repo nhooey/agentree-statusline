@@ -17,6 +17,8 @@ What the files hold:
                   _cached_reading out.
   native.json     a payload's rate_limits in, native_reading out.
   credits.json    OAuth usage answers in, credits_reading out.
+  oauth.json      OAuth usage answers in, oauth_limit_windows and
+                  claude_oauth_reading out.
   conditions.json credits and the credits option's conditions in,
                   credits.met, shown and colour out.
   tracker.json    tracker stores as plist text in, tracker_reading and
@@ -383,6 +385,92 @@ OAUTH_CREDITS = [
     ("no credits", {"five_hour": {"utilization": 3}}),
     ("not a dict", [CLOUD]),
 ]
+
+
+RESET = "2026-11-03T17:00:00.036349+00:00"
+
+
+def scoped(percent, ident=None, name=None, **extra):
+    """A `weekly_scoped` entry of the answer's `limits` list."""
+    return dict({"kind": "weekly_scoped", "group": "weekly",
+                 "percent": percent, "severity": "normal",
+                 "resets_at": RESET, "is_active": True,
+                 "scope": {"model": {"id": ident, "display_name": name},
+                           "surface": None}}, **extra)
+
+
+# The answer's own weeks and its `limits` list: the legacy keys alone, the
+# live shape (the per-model keys null, the weeks in the list), both, and
+# the ways a model's scope is told or not.
+OAUTH_WINDOWS = [
+    ("legacy keys only", {
+        "five_hour": {"utilization": 1, "resets_at": RESET},
+        "seven_day": {"utilization": 2, "resets_at": RESET},
+        "seven_day_overage_included": {"utilization": 3},
+        "seven_day_sonnet": {"utilization": 4}, "seven_day_opus": None,
+        "seven_day_zz": {"utilization": None}}),
+    ("limits only, the per-model keys null", {
+        "five_hour": None, "seven_day": {"utilization": 47, "resets_at": RESET},
+        "seven_day_opus": None, "seven_day_sonnet": None,
+        "seven_day_omelette": None,
+        "limits": [
+            {"kind": "session", "group": "session", "percent": 40,
+             "resets_at": RESET, "scope": None},
+            {"kind": "weekly_all", "group": "weekly", "percent": 47,
+             "resets_at": RESET, "scope": None, "is_active": True},
+            scoped(2, name="Fable", is_active=False),
+            scoped(11, name="Sonnet"), scoped(9.5, name="Design")]}),
+    ("limits over the legacy keys, a legacy reset kept", {
+        "seven_day": {"utilization": 20},
+        "seven_day_opus": {"utilization": 10, "resets_at": "2026-11-04T00:00:00Z"},
+        "seven_day_overage_included": {"utilization": 3, "resets_at": RESET},
+        "limits": [dict(scoped(30, name="Opus"), resets_at=None),
+                   scoped(6, name="Fable")]}),
+    ("matched by id, else by display name", {
+        "limits": [scoped(1, ident="claude-opus-5-20261101", name="Big one"),
+                   scoped(2, ident=None, name="sonnet"),
+                   scoped(3, ident="claude-haiku-5", name="Claude Haiku"),
+                   scoped(4, name="Fable 2")]}),
+    ("mythos is the Fable week", {
+        "limits": [scoped(5, name="Mythos")]}),
+    ("mythos by id", {
+        "limits": [scoped(7, ident="claude-mythos-1")]}),
+    ("an unknown model, by id or name", {
+        "limits": [scoped(8, ident="claude-haiku-4-5", name="Haiku"),
+                   scoped(9, name=" New Model! ")]}),
+    ("the last entry for a window wins", {
+        "limits": [scoped(1, name="Opus"), scoped(2, ident="opus-x")]}),
+    ("entries without a model scope or percent ignored", {
+        "seven_day": {"utilization": 2},
+        "limits": [
+            scoped(1, name="Opus", scope=None),
+            scoped(1, name="Opus", scope={"surface": "web"}),
+            scoped(1, name="Opus", scope={"model": "opus"}),
+            scoped(1, name="Opus", kind="weekly_all"),
+            scoped(None, name="Sonnet"),
+            scoped(1),
+            "Fable", None]}),
+    ("seven_day_fable is the Fable week", {
+        "seven_day": {"utilization": 2},
+        "seven_day_fable": {"utilization": 12, "resets_at": RESET}}),
+    ("the Fable window's own key over seven_day_fable", {
+        "seven_day_overage_included": {"utilization": 3},
+        "seven_day_fable": {"utilization": 12}}),
+    ("limits over seven_day_fable, its reset kept", {
+        "seven_day_fable": {"utilization": 12, "resets_at": RESET},
+        "limits": [dict(scoped(14, name="Fable"), resets_at=None)]}),
+    ("limits not a list", {
+        "seven_day": {"utilization": 2},
+        "limits": {"kind": "weekly_scoped", "percent": 1}}),
+    ("not a dict", [scoped(1, name="Fable")]),
+]
+
+
+def oauth_window_cases():
+    return [{"name": name, "raw": raw, "now": PIN_NOW,
+             "limits": [list(x[:2]) for x in sources.oauth_limit_windows(raw)],
+             "expected": sources.claude_oauth_reading(raw, PIN_NOW)}
+            for name, raw in OAUTH_WINDOWS]
 
 
 def oauth_credits_cases():
@@ -992,6 +1080,7 @@ def main():
         write("normalise.json", normalise_cases())
         write("native.json", native_cases())
         write("credits.json", oauth_credits_cases())
+        write("oauth.json", oauth_window_cases())
         write("conditions.json", condition_cases())
         write("tracker.json", tracker_cases(scratch))
         write("command.json", command_cases(scratch))

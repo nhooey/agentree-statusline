@@ -22,7 +22,9 @@
 // PLAN_USAGE_LOCK_STALE seconds is a session's that died holding it.
 import type { EngineInterface } from 'claude-code'
 
-import { claudeOauthReading, pyJsonLoads } from '../src/sources.ts'
+import {
+  claudeOauthReading, oauthLimitWindows, pyJsonLoads,
+} from '../src/sources.ts'
 import type { Reading } from '../src/sources.ts'
 import { isDict, pyGet } from '../src/py.ts'
 import { sha256Hex } from '../src/sha256.ts'
@@ -86,9 +88,12 @@ const plan = {
 
 /** The keys of the answer `raw` that hold a window's utilization, by
  * name, then those that are null or an object with none: which of them
- * carries Fable is the log's to show, read or not. */
-export function windowKeys(raw: unknown): { read: string[]; empty: string[] } {
-  if (!isDict(raw)) return { read: [], empty: [] }
+ * carries Fable is the log's to show, read or not.  `limits` names the
+ * per-model weeks read from the answer's `limits` list, by their keys, in
+ * the list's order. */
+export function windowKeys(raw: unknown):
+  { read: string[]; empty: string[]; limits: string[] } {
+  if (!isDict(raw)) return { read: [], empty: [], limits: [] }
   const keys = Object.keys(raw).sort()
   const read = keys.filter((k) => {
     const item = raw[k]
@@ -96,12 +101,15 @@ export function windowKeys(raw: unknown): { read: string[]; empty: string[] } {
   })
   const empty = keys.filter((k) => !read.includes(k) &&
     (raw[k] === null || isDict(raw[k])))
-  return { read, empty }
+  const limits = [...new Set(oauthLimitWindows(raw).map(([key]) => key))]
+  return { read, empty, limits }
 }
 
 /** The log line for windowKeys' answer `w`. */
-export function windowLine(w: { read: string[]; empty: string[] }): string {
+export function windowLine(
+  w: { read: string[]; empty: string[]; limits: string[] }): string {
   return 'plan usage: ' + (w.read.join(' ') || 'none') +
+    (w.limits.length ? ' · limits: ' + w.limits.join(' ') : '') +
     (w.empty.length ? ' · no reading: ' + w.empty.join(' ') : '')
 }
 

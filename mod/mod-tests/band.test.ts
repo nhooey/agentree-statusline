@@ -535,6 +535,44 @@ test('under plan-usage, the plan\'s windows are asked of the usage ' +
       'seven_day_opus seven_day_sonnet\n')
   })
 
+// The live answer: the per-model keys null, the weeks in `limits`.
+const LIMITS_ANSWER: Dict = {
+  five_hour: null,
+  seven_day: { utilization: 24.0, resets_at: '2026-08-18T01:00:00+00:00' },
+  seven_day_opus: null,
+  seven_day_sonnet: null,
+  limits: [
+    { kind: 'weekly_all', group: 'weekly', percent: 24,
+      resets_at: '2026-08-18T01:00:00+00:00', scope: null },
+    { kind: 'weekly_scoped', group: 'weekly', percent: 6,
+      resets_at: '2026-08-19T01:00:00+00:00',
+      scope: { model: { id: null, display_name: 'Fable' }, surface: null } },
+    { kind: 'weekly_scoped', group: 'weekly', percent: 11,
+      resets_at: '2026-08-19T01:00:00+00:00',
+      scope: { model: { id: 'claude-opus-5', display_name: null } } },
+  ],
+}
+
+test('under plan-usage, the Fable week of the answer\'s limits list is ' +
+  'drawn as the seven_day_overage_included one is, and the log names the ' +
+  'list\'s weeks', async ($, on) => {
+    const w = planWorld(on, LIMITS_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(31_000)
+    await settle()
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^24/)
+    expect(String(limits.fable_pct)).toMatch(/^6/)
+    expect(String(limits.opus_pct)).toMatch(/^11/)
+    const kept = w.store.get('plan-usage:default') as Dict
+    const ids = (((kept.reading as Dict).buckets as Dict[])[0]
+      .windows as Dict[]).map((x) => x.id)
+    expect(ids).toEqual(['seven_day', 'seven_day_overage_included',
+      'seven_day_opus'])
+    expect(logOf(w)).toContain('plan usage: seven_day · limits: fable opus' +
+      ' · no reading: five_hour seven_day_opus seven_day_sonnet\n')
+  })
+
 for (const kind of ['none', 'api-key'] as const) {
   test(`plan-usage asks nothing of a session with ${kind === 'none'
     ? 'no first-party credential' : 'an API key'}`, async ($, on) => {

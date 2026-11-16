@@ -534,7 +534,85 @@ def oauth_window_names(raw):
     which are as long."""
     first=["five_hour", "seven_day", FABLE_WINDOW]
     if not isinstance(raw, dict): return []
-    return first + sorted(k for k in raw if isinstance(k, str) and k.startswith("seven_day_") and k not in first)
+    return first + sorted(k for k in raw if isinstance(k, str) and k.startswith("seven_day_") and k not in first and k != FABLE_KEY)
+
+# The answer's key that also holds the Fable week, read where
+# FABLE_WINDOW's own key has no utilization.
+FABLE_KEY = "seven_day_fable"
+
+def legacy_window(raw, name):
+    """The window `name` of the answer `raw` as its keys give it, where it
+    has a utilization, else None: the Fable window from FABLE_WINDOW's
+    key, else from FABLE_KEY."""
+    for key in ((FABLE_WINDOW, FABLE_KEY) if name == FABLE_WINDOW else (name,)):
+        item=raw.get(key)
+        if isinstance(item, dict) and item.get("utilization") is not None: return item
+    return None
+
+# The per-model weeks of the answer's `limits` list, by the words a
+# model's scope is told by, as Claude Usage.app tells them: a display name
+# equal to one, or a model id holding one.  The first that matches wins.
+OAUTH_LIMIT_MODELS = (("fable", FABLE_WINDOW, ("fable", "mythos")),
+                      ("opus", "seven_day_opus", ("opus",)),
+                      ("sonnet", "seven_day_sonnet", ("sonnet",)),
+                      ("omelette", "seven_day_omelette", ("design", "omelette")))
+
+
+def _lower_text(value):
+    return value.lower() if isinstance(value, str) else ""
+
+def oauth_limit_windows(raw):
+    """The per-model weeks in the `limits` list of /api/oauth/usage's
+    answer `raw`, as (key, window id, entry), in the list's order.  Each
+    is a `weekly_scoped` entry with a model scope and a percent: the Fable
+    one is FABLE_WINDOW, the Opus, Sonnet and Design ones their seven_day_*
+    windows, and another model `seven_day_<its id, else its name>`,
+    lowercased with every run of other characters an underscore.  An entry
+    of any other kind, the session's and the plan's week among them, is
+    not read here."""
+    limits=raw.get("limits") if isinstance(raw, dict) else None
+    out=[]
+    for entry in limits if isinstance(limits, list) else []:
+        if not isinstance(entry, dict) or entry.get("kind") != "weekly_scoped" or entry.get("percent") is None:
+            continue
+        scope=entry.get("scope")
+        model=scope.get("model") if isinstance(scope, dict) else None
+        if not isinstance(model, dict):
+            continue
+        ident, name=_lower_text(model.get("id")), _lower_text(model.get("display_name"))
+        known=next((m for m in OAUTH_LIMIT_MODELS if any(name == w or w in ident for w in m[2])), None)
+        if known:
+            out.append((known[0], known[1], entry))
+            continue
+        key=re.sub(r"[^a-z0-9]+", "_", ident or name).strip("_")
+        if key:
+            out.append((key, "seven_day_" + key, entry))
+    return out
+
+def claude_oauth_reading(raw, now):
+    """experimental_claude_oauth's reading of /api/oauth/usage's answer
+    `raw`, taken at `now`: each window oauth_window_names names that has a
+    utilization, and each per-model week of its `limits` list, which
+    stands over the window of the same id, keeping that window's reset
+    where it gives none.  The answer nulls the per-model seven_day_*
+    windows where the list holds them."""
+    if not isinstance(raw, dict): return {}
+    scoped={ident: entry for _, ident, entry in oauth_limit_windows(raw)}
+    names=oauth_window_names(raw)
+    first=names[:3]
+    rest=sorted(k for k in set(names[3:]) | set(scoped) if k not in first)
+    windows=[]
+    for name in first + rest:
+        legacy=legacy_window(raw, name)
+        duration=18000 if name == "five_hour" else 604800
+        entry=scoped.get(name)
+        if entry is not None:
+            reset=entry.get("resets_at")
+            if reset is None and legacy is not None: reset=legacy.get("resets_at")
+            windows.append({"id":name, "duration_seconds":duration, "used_percent":entry.get("percent"), "resets_at":reset})
+        elif legacy is not None:
+            windows.append({"id":name, "duration_seconds":duration, "used_percent":legacy.get("utilization"), "resets_at":legacy.get("resets_at")})
+    return normalise({"schema_version":1, "as_of":now, "windows":windows}, "experimental-claude-oauth")
 
 def experimental_claude_oauth(opener=None, failure=None):
     token=os.environ.get("CLAUDE_OAUTH_ACCESS_TOKEN")
@@ -542,13 +620,7 @@ def experimental_claude_oauth(opener=None, failure=None):
     raw=request_json("https://api.anthropic.com/api/oauth/usage",
                      {"Authorization":"Bearer " + token, "anthropic-beta":"oauth-2025-04-20"}, opener=opener, failure=failure)
     if not raw: return {}
-    windows=[]
-    for name in oauth_window_names(raw):
-        item=raw.get(name, {})
-        if isinstance(item, dict) and item.get("utilization") is not None:
-            duration=18000 if name == "five_hour" else 604800
-            windows.append({"id":name, "duration_seconds":duration, "used_percent":item.get("utilization"), "resets_at":item.get("resets_at")})
-    return normalise({"schema_version":1, "as_of":time.time(), "windows":windows}, "experimental-claude-oauth")
+    return claude_oauth_reading(raw, time.time())
 
 def experimental_codex_api(opener=None, failure=None):
     token=os.environ.get("CODEX_USAGE_ACCESS_TOKEN")

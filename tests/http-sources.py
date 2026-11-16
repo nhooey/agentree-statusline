@@ -77,6 +77,11 @@ check('[(x["id"], x["duration_seconds"]) for b in c["buckets"] for x in b[...', 
 # rest by name; mod/test/sources.test.ts holds the TypeScript to the same.
 c=sources.experimental_claude_oauth(opener_for({"/api/oauth/usage?":{"seven_day_sonnet":{"utilization":4},"seven_day_omelette":{"utilization":5},"seven_day_opus":None,"seven_day_zz":{"utilization":None},"extra_usage":{"utilization":9},"seven_day":{"utilization":2},"five_hour":{"utilization":1}}}))
 check('[(x["id"], x["used_percent"]) for b in c["buckets"] for x in b[...', [(x["id"], x["used_percent"]) for b in c["buckets"] for x in b["windows"]], [("five_hour", 1.0), ("seven_day", 2.0), ("seven_day_omelette", 5.0), ("seven_day_sonnet", 4.0)])
+# The live answer: the per-model keys null and the weeks in `limits`, the
+# Fable one drawn as Claude Code's own; a list entry stands over its key.
+# tests/fixtures/sources/oauth.json holds both ports to the rest.
+c=sources.experimental_claude_oauth(opener_for({"/api/oauth/usage?":{"five_hour":None,"seven_day":{"utilization":47},"seven_day_opus":{"utilization":10},"seven_day_sonnet":None,"limits":[{"kind":"session","group":"session","percent":40,"scope":None},{"kind":"weekly_scoped","group":"weekly","percent":2,"scope":{"model":{"id":None,"display_name":"Fable"}}},{"kind":"weekly_scoped","percent":30,"scope":{"model":{"id":"claude-opus-5","display_name":None}}},{"kind":"weekly_scoped","percent":5,"scope":{"model":{"id":None,"display_name":"Mythos"}}},{"kind":"weekly_scoped","percent":1,"scope":{"surface":"web"}}]}}))
+check('limits[] read over the legacy keys', [(x["id"], x["used_percent"], x["duration_seconds"]) for b in c["buckets"] for x in b["windows"]], [("seven_day", 47.0, 604800.0), ("seven_day_overage_included", 5.0, 604800.0), ("seven_day_opus", 30.0, 604800.0)])
 line, status = tally()
 print(line)
 sys.exit(status)

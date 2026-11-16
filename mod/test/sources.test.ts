@@ -10,7 +10,7 @@ import * as path from "node:path";
 import {
   accountHigh, cachedReading, claudeOauthReading, creditsReading, cacheName, claudeUsageTracker, commandReading, epoch,
   hasReading, isCacheName, nativeReading, normalise, number, periodBounds,
-  HIGHS_PERIOD, HIGHS_SOURCE, pyJsonLoads,
+  HIGHS_PERIOD, HIGHS_SOURCE, oauthLimitWindows, pyJsonLoads,
 } from "../src/sources_node.ts";
 import type { Dict } from "../src/sources_node.ts";
 import { colour, met, shown } from "../src/credits.ts";
@@ -148,6 +148,15 @@ test("claude_oauth_reading: every seven_day_* window, the plan's first",
     assert.deepEqual(windows.map((w) => w.duration_seconds),
       [18000, 604800, 604800, 604800]);
   });
+
+test("claude_oauth_reading: the legacy keys and the limits list", () => {
+  for (const c of load("oauth.json")) {
+    same(oauthLimitWindows(c.raw).map(([key, id]) => [key, id]), c.limits,
+         c.name);
+    same(claudeOauthReading(c.raw, c.now), c.expected, c.name);
+    count("oauth");
+  }
+});
 
 test("credits: met, shown and colour", () => {
   const d = load("conditions.json") as unknown as Dict;

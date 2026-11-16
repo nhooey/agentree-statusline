@@ -216,7 +216,8 @@ browser cookies, and doesn't refresh tokens.
 
 `experimental-claude-oauth` reads the five-hour window and every seven-day
 one the answer holds with a utilization: `seven_day`, the weekly Fable
-window `seven_day_overage_included`, then every other `seven_day_*` key by
+window `seven_day_overage_included` (or `seven_day_fable` where that key
+has none), then every other `seven_day_*` key by
 name (`seven_day_opus`, `seven_day_sonnet`, …), so a per-model week under a
 new name is kept too.
 
@@ -258,6 +259,16 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   atomically: the session that makes it asks, and the others take its answer
   from the store. A lock left for over 30 seconds, by a session that died
   holding it, is taken over.
+- **The per-model weeks from the answer's `limits` list too.** The answer
+  nulls its per-model `seven_day_*` keys and lists those weeks as
+  `weekly_scoped` entries with a model scope instead. Each is read as the
+  window for its model, over the key of the same name: Fable (or Mythos) as
+  `seven_day_overage_included`, which 🦊 draws, Opus as `seven_day_opus`,
+  Sonnet as `seven_day_sonnet`, Design as `seven_day_omelette`, and another
+  model as `seven_day_<its id, else its name>`, drawn nowhere. A model is
+  told by a display name equal to the word or a model id holding it, as
+  Claude Usage.app tells it. The list's other entries, the session's and
+  the plan's week, are left to the keys.
 - **Drawn under `auto` over Claude Code's own reading** while it is at most
   seven minutes old; past that, `auto` goes on as above.
 - **A failed ask** keeps the last reading, is written to `usage-band.log`
@@ -267,9 +278,10 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   long as the answer's `Retry-After` says where that is longer. An answer
   ends the run. An ask with no answer in 20 seconds counts as failed.
 - **The window keys are logged** once per load, and again when they change:
-  `plan usage: five_hour seven_day · no reading: seven_day_opus`. The keys
-  with a utilization come first, then those that are null or hold none. Key
-  names only, never a figure or a header. The line says which key carries a
+  `plan usage: seven_day · limits: fable opus · no reading: five_hour
+  seven_day_opus`. The keys with a utilization come first, then the weeks
+  read from the `limits` list, by model, then the keys that are null or
+  hold none. Key names only, never a figure or a header. The line says which key carries a
   window when one is in doubt, read or not.
 
 Turn it off with `"plan-usage": false` in a configuration file. The
