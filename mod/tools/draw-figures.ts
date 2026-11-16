@@ -46,7 +46,11 @@
 // standing for its latest progress update; --progress is the main
 // thread's.  The corpus's clock is the figures documents'.  --cap is
 // subagent-rows.  With --part receipt they go in the --status document,
-// and the receipt stamps the turn's agents under 🧵.
+// and the receipt stamps the turn's agents under 🧵.  --background gives
+// the threads open shells and Monitors, as the rows' cases do
+// (withBackground).  --session-name is the session's name, as /rename
+// sets it, and after a colon Claude Code's colour for it, such as
+// "agents-tree:purple".
 //
 // The clock is drawn in the document's `clock.tz`, as the edge would set
 // it, and the terminal's profile is read from the environment.
@@ -68,7 +72,7 @@ import { RIGHT_EDGE } from "../src/spec.ts";
 import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
 import type { Rows } from "../src/config.ts";
 import { OPTIONS } from "../src/options_spec.ts";
-import { corpusAgents } from "./gen-row-cases.ts";
+import { corpusAgents, withBackground } from "./gen-row-cases.ts";
 import { full } from "../test/figures_doc.ts";
 
 const USAGE = "usage: draw-figures.ts FILE [--cols N] " +
@@ -76,7 +80,8 @@ const USAGE = "usage: draw-figures.ts FILE [--cols N] " +
   "[--phase {running,done}] " +
   "[--hide PATH] [--rate N] [--home DIR] [--status STATUS_FILE] " +
   "[--rows JSON] [--right-edge N] [--inset N] " +
-  "[--hint TEXT] [--agents CASE] [--progress TEXT] [--cap N] [--plain]";
+  "[--hint TEXT] [--agents CASE] [--progress TEXT] [--cap N] " +
+  "[--background] [--session-name NAME[:COLOUR]] [--plain]";
 
 function fail(msg: string): never {
   process.stderr.write(USAGE + "\ndraw-figures.ts: error: " + msg + "\n");
@@ -94,6 +99,7 @@ let file = "", cols = 160, part = "", phase: Phase = "running";
 let rate: number | null = null, home = "${HOME}", statusFile = "", plain = false;
 let rowsArg = "", agentsCase = "", progress = "";
 let cap: number | undefined;
+let background = false, sessionName = "";
 let rightEdge = RIGHT_EDGE, inset = 0;
 let hint = "-- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)";
 const hide: string[] = [];
@@ -119,6 +125,8 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === "--agents") agentsCase = next();
   else if (a === "--progress") progress = next();
   else if (a === "--cap") cap = Number(next());
+  else if (a === "--background") background = true;
+  else if (a === "--session-name") sessionName = next();
   else if (a.startsWith("--")) fail("unrecognized arguments: " + a);
   else file = a;
 }
@@ -170,6 +178,15 @@ if (agentsCase || progress) {
   } catch {
     fail("--agents: no case " + JSON.stringify(agentsCase));
   }
+  if (background) {
+    fig.agents = withBackground(fig.agents as Dict,
+      (fig.clock as Dict).now as number);
+  }
+}
+if (sessionName) {
+  const [name, color = ""] = sessionName.split(":");
+  fig.transcript = { ...fig.transcript as Dict, session_name: name,
+    session_color: color };
 }
 const mode = fig.mode as string;
 part ||= mode === "cost" ? "receipt" : "band";

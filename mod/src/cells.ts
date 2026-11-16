@@ -20,7 +20,7 @@ import {
   E_ACCT, E_CACHE, E_COST, E_COWORK, E_DATE, E_DIFF, E_DIR, E_DIRTY, E_DOWN,
   E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX, E_EFF_MED, E_EFF_XHIGH, E_ETA, E_FABLE,
   E_GAUGE, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_IDLE, E_INBOX, E_KIDS, E_MOD,
-  E_NAME, E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR, E_PROJ, E_RATE,
+  E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR, E_PROJ, E_RATE,
   E_KIND_CLAUDE, E_KIND_EXPLORE, E_KIND_FORK, E_KIND_GENERAL, E_KIND_GUIDE,
   E_KIND_OTHER, E_KIND_PLAN, E_KIND_REMOTE, E_KIND_SETUP, E_KIND_SHELL,
   E_KIND_TEAMMATE, E_KIND_WORKFLOW,
@@ -715,14 +715,16 @@ export const SESSION_COLOURS: { readonly [name: string]: string } = {
  * SESSION_COLOURS does not name. */
 export const SESSION_COLOUR_NONE = "F_CRM";
 
-/** 📛 and the session's name, under the path `workspace.name`, in its
- * colour (SESSION_COLOURS); none for no name.  It leaves 🎮's label after
- * 🔀 and before 📦, which never leaves whole. */
+/** The session's name, under the path `workspace.name`, in its colour
+ * (SESSION_COLOURS), then two blanks; none for no name.  It stands in
+ * the names' column of the band's tree, where the other rows' names
+ * stand, so it needs no mark of its own.  It leaves 🎮's label after 🔀
+ * and before 📦, which never leaves whole. */
 export function sessionNamePieces(name: string, colour: string): Piece[] {
   if (!name) return [];
-  return [piece("workspace.name", E_NAME + name + " ",
+  return [{ path: "workspace.name", drop: 4, spans: [span(name,
     Object.hasOwn(SESSION_COLOURS, colour) ? SESSION_COLOURS[colour]
-      : SESSION_COLOUR_NONE, 4)];
+      : SESSION_COLOUR_NONE), span("  ")] }];
 }
 
 /** Where the session works, under the path `workspace`: 📦 the project,

@@ -36,11 +36,6 @@ export const E_GIT_OK = "🌿";        // branch, clean tree
 export const E_GIT_BAD = "🍂";       // branch, dirty tree
 export const E_DIRTY = "✱";          // dirty marker, after a dirty branch name
 export const E_PR = "🔀";            // PR number
-export const E_NAME = "📛";          // the session's name (/rename), on 🎮's label.  A
-                                     // name badge: what the session is called, not
-                                     // where it works.  U+1F4DB, Unicode 6.0, single
-                                     // codepoint, Emoji_Presentation=Yes, inside
-                                     // EAW_WIDE.
 export const E_MOD = "🧬";           // model
 export const E_TOK = "🧩";           // ▴/▾ tokens
 export const E_UP = "▴";             // input tokens, inside the 🧩 segment.  U+25B4 BLACK
@@ -1145,6 +1140,10 @@ export const E_TREE_END = "└";         // └  the last child
 export const E_TREE_BAR = "│";         // │  an ancestor whose siblings go on below
 // The band's tree of threads above the prompt, which the mod draws in each
 // row's label (band_tree.ts).  Ambiguous too, and drawn one column wide.
+// Only these lines and a row's kind glyph move with its depth: the state
+// circles stand in one column, a blank past the deepest kind glyph drawn,
+// and the names three columns after it, 🎮's session name and a grouped
+// row's `N more` or `N done` with them.
 export const E_TREE_LAST = "╰";        // ╰  the band's last child
 export const E_TREE_DASH = "─";        // ─  a branch to a row with no children
 export const E_FOLD_OPEN = "⊟";        // ⊟  a row whose children are showing
@@ -1169,7 +1168,8 @@ export const E_KIND_SHELL = "🐚";      // 🐚  local_bash
 export const E_KIND_WORKFLOW = "🔗";   // 🔗  local_workflow
 export const E_KIND_REMOTE = "🌐";     // 🌐  remote_agent
 export const E_KIND_TEAMMATE = "🎎";   // 🎎  in_process_teammate
-export const E_MORE = "…";             // …  the later siblings past the cap, summed
+export const E_MORE = "…";             // …  the later siblings past the cap, summed,
+                                       //    in the kind slot
 // An agent row's state, in two marks: a circle for its phase and a mark for
 // what it is doing in it.  The status line's task list says completed for
 // an agent that has finished and for one that ended its turn to wait on
@@ -1517,7 +1517,8 @@ export const HIDE_GROUPS = {
                                                         //  latest progress
                                                         //  update
   "workspace": ["project", "branch", "dir", "pr", "style", "name"],  // 📦 🌿 📁 🔀 🎨, and
-                                                                     //  🎮's 📛
+                                                                     //  🎮's session
+                                                                     //  name
   "clock": ["date", "time"],                            // 📅 🕐
   "name": ["label", "kind", "receipt", "tag"],          // the row's name, an
                                                         //  agent's kind, the

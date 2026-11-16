@@ -11,7 +11,7 @@
 // down at the turn it opens, from the status document.  The rows are drawn
 // on the band's fixed grid (band.ts), so the receipt's columns are the
 // band's and the panel's.  Each row is drawn as the band's tree
-// (band_tree.ts) draws it, stamped: 🎤🏁 `turn` and the prompt it
+// (band_tree.ts) draws it, stamped: 🎤 🏁 `turn` and the prompt it
 // answered.  A turn that ran subagents stamps them too: 🧵 the parent, 🎤
 // under it first, then every agent the turn ran, 🏁 on each that ended.
 //

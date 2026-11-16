@@ -144,13 +144,13 @@ test("the rows under the footer line draw the tree's labels, from the left",
       { rate: null, phase: "running", place: "footer" })).map((l) =>
       stripAnsi(join(l)));
     const plain = lines(base);
-    assert.match(plain[0], /^🎤🟢 turn  \S/u);
-    assert.match(plain[1], /^🧵🟢 main /u);
+    assert.match(plain[0], /^🎤 +🟢 turn  \S/u);
+    assert.match(plain[1], /^🧵 +🟢 main /u);
     assert.match(plain[2], /^🎮 /u);
     // No tree's lines: each row stands alone.
     assert.ok(!plain.some((l) => /[├╰│]/u.test(l)));
     // 🧵's 📨 between its circle and its name, as the tree draws it.
-    assert.match(lines(queued)[1], /^🧵🟢 📨3 main /u);
+    assert.match(lines(queued)[1], /^🧵 +🟢 📨3 main /u);
   });
 
 test("each row's live and transcript pick the band's rows and the receipt's",
@@ -219,7 +219,7 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
   assert.deepEqual(flat.map((l) => l.scope), ["turn", "blank", "tag"]);
   // The tree's 🎤 row, from the left, with no tree's lines over it.
   assert.match(plain(flat)[0],
-    /^🎤🏁 turn  Now have a subagent read the strategy\. /u);
+    /^🎤 +🏁 turn  Now have a subagent read the strategy\. /u);
   // No agents in the document, or none the turn ran: the same.
   assert.deepEqual(receipt(status), flat);
   // Bluebell and Thistle ended in the turn; the rest it ran still run.
@@ -234,8 +234,8 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
   const lines = plain(tree);
   assert.deepEqual(tree.map((l) => l.scope), ["main", "turn", "agent",
     "agent", "blank", "tag"]);
-  assert.match(lines[0], /^🧵⚫ main  All four suites pass/u);
-  assert.match(lines[1], /^├─ 🎤🏁 turn  /u);
+  assert.match(lines[0], /^🧵 +⚫ main  All four suites pass/u);
+  assert.match(lines[1], /^├─ 🎤 +🏁 turn  /u);
   // The agents the turn opened at 1786846520 ran and that ended, in the
   // order they started, none pressing; Quince, still waiting, is not.
   for (const [i, name] of [[2, "Bluebell"], [3, "Thistle"]] as
@@ -249,7 +249,7 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
   // 🎮 stamped is the tree's root; the agents hidden, 🎤 alone.
   const rooted = plain(receipt(ran, ["turn", "session"]));
   assert.match(rooted[0], /^🎮 /u);
-  assert.match(rooted[1], /^╰─ 🧵⚫ main/u);
+  assert.match(rooted[1], /^╰─ 🧵 +⚫ main/u);
   assert.deepEqual(receipt(ran, ["turn"], ["agent"]), flat);
 });
 

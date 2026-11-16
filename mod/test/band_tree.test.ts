@@ -243,21 +243,75 @@ test("the tree draws 🎮 with the workspace, then 🧵 main, and under it " +
   assert.deepEqual(heads(lines), ["⊟ ", "╰⊟ ", "   ├─ ", "   ├⊟ ",
     "   │  ├─ ", "   │  ╰⊟ ", "   │     ╰⊟ ", "   │        ╰─ ",
     "   ╰─ "]);
-  assert.match(lines[0], /^⊟ 🎮 📦repo 🌿main  🔀#38/u);
-  assert.match(lines[1], /^╰⊟ 🧵🟢 main  Checking the binary/u);
-  assert.match(lines[2], /^   ├─ 🎤🟢 turn$/u);
+  assert.match(lines[0], /^⊟ 🎮 +📦repo 🌿main  🔀#38/u);
+  assert.match(lines[1], /^╰⊟ 🧵 +🟢 main  Checking the binary/u);
+  assert.match(lines[2], /^   ├─ 🎤 +🟢 turn$/u);
 });
 
-test("🎮 draws 📛 and the session's name before 📦, in its colour, with " +
-  "no press; none without a name, and workspace.name hides it", () => {
+/** The column `text` starts at on `line`, or -1 where it is not on it. */
+function colOf(line: string, text: string): number {
+  const i = line.indexOf(text);
+  return i < 0 ? -1 : visWidth(line.slice(0, i), ST.widths);
+}
+
+/** The column of each line's state circle, -1 for a line with none. */
+function lights(lines: readonly string[]): number[] {
+  return lines.map((l) => {
+    const m = /[🟢🟡⚫🏁]/u.exec(l);
+    return m ? visWidth(l.slice(0, m.index), ST.widths) : -1;
+  });
+}
+
+test("the state circles stand in one column, a blank past the deepest " +
+  "kind glyph drawn, and every name three columns after it", () => {
+  // 🎤 the deepest: its glyph ends at 8, so the circles stand at 9.
+  const shallow = tree("03-tree@220", { agents: null });
+  assert.deepEqual(shallow, [
+    "⊟ 🎮        📦repo 🌿main  🔀#38",
+    "╰⊟ 🧵    🟢 main  Checking the binary",
+    "   ╰─ 🎤 🟢 turn"]);
+  assert.deepEqual(lights(shallow), [-1, 9, 9]);
+  // Four levels down, Moss's glyph ends at 17: every circle moves to 18.
+  const deep = tree("03-tree@220");
+  assert.deepEqual(lights(deep), [-1, 18, 18, 18, 18, 18, 18, 18, 18]);
+  assert.match(deep[1], /^╰⊟ 🧵 {13}🟢 main/u);
+  assert.match(deep[7], /^   │        ╰─ 🔍 🟢 /u);
+  assert.equal(colOf(deep[0], "📦"), 21);
+  assert.equal(colOf(deep[1], "main"), 21);
+  assert.equal(colOf(deep[2], "turn"), 21);
+  // A name after counts moves on past them, as before.
+  assert.equal(colOf(deep.find((l) => l.includes("Trunk"))!, "🤏"), 21);
+});
+
+test("a grouped row draws its glyph where a kind glyph stands and its " +
+  "name in the names' column", () => {
+  const lines = tree("03-tree@220", { cap: 2 });
+  const more = lines.filter((l) => l.includes("more"));
+  // Twig's glyph, three levels down, ends at 11: the names stand at 15.
+  assert.match(more[0], /^   │  ╰⊞ … {5}3 more/u);
+  assert.match(more[1], /^   ╰⊞ … {8}1 more/u);
+  for (const l of more) {
+    assert.equal(colOf(l, "…"), colOf(l, "⊞") + 2);
+    assert.equal(colOf(l, "more") - 2, colOf(lines[1], "main"));
+  }
+  const done = tree("01-mixed@220", {}, [], NOW - 3600)
+    .find((l) => l.includes("done"))!;
+  assert.match(done, /^   ╰⊞ ✅ {4}4 done/u);
+});
+
+test("🎮 draws the session's name in the names' column, before 📦, in " +
+  "its colour, with no press; 📦 there without a name, and " +
+  "workspace.name hides it", () => {
   const named = { agents: null, sessionName: "Statusline",
     sessionColour: "purple" };
-  assert.match(tree("03-tree@220", named)[0],
-    /^⊟ 🎮 📛Statusline 📦repo 🌿main  🔀#38/u);
-  assert.match(tree("03-tree@220", { agents: null })[0],
-    /^⊟ 🎮 📦repo 🌿main  🔀#38/u);
+  const lines = tree("03-tree@220", named);
+  assert.match(lines[0], /^⊟ 🎮 {8}Statusline  📦repo 🌿main  🔀#38/u);
+  assert.equal(colOf(lines[0], "Statusline"), colOf(lines[1], "main"));
+  const bare = tree("03-tree@220", { agents: null });
+  assert.match(bare[0], /^⊟ 🎮 {8}📦repo 🌿main  🔀#38/u);
+  assert.equal(colOf(bare[0], "📦"), colOf(bare[1], "main"));
   assert.match(tree("03-tree@220", named, ["session.workspace.name"])[0],
-    /^⊟ 🎮 📦repo 🌿main  🔀#38/u);
+    /^⊟ 🎮 {8}📦repo 🌿main  🔀#38/u);
   const root = (colour: string) => treeRows(ST, { session: { scope: "session",
     label: [], cells: {} }, main: null, turn: null, workspace: null,
     mainPhase: "🟢", mainInbox: 0, mainProgress: "", turnPhase: "🟢",
@@ -270,8 +324,8 @@ test("🎮 draws 📛 and the session's name before 📦, in its colour, with " 
   }
   assert.equal(badge("").spans[0].colour, SESSION_COLOUR_NONE);
   assert.equal(badge("teal").spans[0].colour, SESSION_COLOUR_NONE);
-  assert.deepEqual(badge("purple").spans.map((s) => s.press), [undefined]);
-  assert.equal(visWidth(spec.E_NAME, ST.widths), 2);
+  assert.deepEqual(badge("purple").spans.map((s) => s.press),
+    [undefined, undefined]);
 });
 
 test("on a narrow 🎮 label the name gives way after 🔀 and before 📦",
@@ -284,16 +338,35 @@ test("on a narrow 🎮 label the name gives way after 🔀 and before 📦",
     sessionColour: "purple" }, [])[0];
     const at = (room: number) => stripAnsi(join(labelText(ST, row, [],
       room)));
-    assert.equal(at(60), "🎮 📛Statusline 📦repo 🌿main  🔀#38  ");
-    assert.equal(at(36), "🎮 📛Statusline 📦repo 🌿main  ");
-    assert.equal(at(22), "🎮 📦repo 🌿main  ");
-    assert.equal(at(12), "🎮 📦repo …");
+    assert.equal(at(60), "🎮    Statusline  📦repo 🌿main  🔀#38  ");
+    assert.equal(at(36), "🎮    Statusline  📦repo 🌿main  ");
+    assert.equal(at(22), "🎮    📦repo 🌿main  ");
+    assert.equal(at(12), "🎮    📦rep…");
   });
+
+test("on a narrow label the blanks before the circle stay, and the name " +
+  "after it is cut with …", () => {
+  const rows = treeRows(ST, { session: null, main: null, turn: null,
+    workspace: null, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
+    turnPhase: "🟢", agents: { tasks: corpusAgents("03-tree@220", "")
+      .tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart: null },
+    cap: 20 }, []);
+  const at = (name: string, room: number) => stripAnsi(join(labelText(ST,
+    rows.find((r) => r.label.some((p) => p.spans.some((s) =>
+      s.text === name)))!, [], room)));
+  // Tip, three levels down, sets the column; Trunk, at the top, takes
+  // the blanks out of its name's room.
+  assert.equal(at("Tip", 22), "      ╰─ 🔍 🟢 Tip");
+  assert.equal(at("Trunk", 30), "⊟ 🎩        🟢 🤏2 Trunk");
+  assert.equal(at("Trunk", 22), "⊟ 🎩        🟢 🤏2 Tr…");
+  assert.equal(at("Trunk", 16), "⊟ 🎩        🟢 …");
+  assert.equal(at("Trunk", 8), "⊟ 🎩   …");
+});
 
 test("🎤 alone under 🧵 main gives 🧵 a fold mark", () => {
   const lines = tree("03-tree@220", { agents: null });
   assert.deepEqual(heads(lines), ["⊟ ", "╰⊟ ", "   ╰─ "]);
-  assert.match(lines[2], /^   ╰─ 🎤🟢 turn$/u);
+  assert.match(lines[2], /^   ╰─ 🎤 +🟢 turn$/u);
 });
 
 test("🧵 main folded hides 🎤 with its agents", () => {
@@ -301,7 +374,7 @@ test("🧵 main folded hides 🎤 with its agents", () => {
     const lines = tree("03-tree@220", { folds: { main: true },
       ...(agents === null ? { agents } : {}) });
     assert.equal(lines.length, 2);
-    assert.match(lines[1], /^╰⊞ 🧵🟢 main  Checking the binary$/u);
+    assert.match(lines[1], /^╰⊞ 🧵 +🟢 main  Checking the binary$/u);
     assert.ok(!lines.some((l) => l.includes("🎤")));
   }
 });
@@ -319,13 +392,13 @@ test("without 🧵 main, 🎤 is the root's child, before the agents", () => {
   assert.deepEqual(heads(lines), ["⊟ ", "╰─ "]);
   const agents = tree("03-tree@220", { main: null });
   assert.deepEqual(heads(agents).slice(0, 3), ["⊟ ", "├─ ", "├⊟ "]);
-  assert.match(agents[1], /^├─ 🎤🟢 turn$/u);
+  assert.match(agents[1], /^├─ 🎤 +🟢 turn$/u);
 });
 
 test("without 🎮, 🧵 main stands at the top with 🎤 under it", () => {
   const lines = tree("03-tree@220", { session: null, agents: null });
   assert.deepEqual(heads(lines), ["⊟ ", "╰─ "]);
-  assert.match(lines[0], /^⊟ 🧵🟢 main/u);
+  assert.match(lines[0], /^⊟ 🧵 +🟢 main/u);
   const bare = tree("03-tree@220", { session: null, main: null,
     agents: null });
   assert.deepEqual(bare.map((l) => l.slice(0, 2)), ["🎤"]);
@@ -342,26 +415,26 @@ test("an agent's label packs its own counts before its name, with no " +
   "blank slots for the counts other rows have", () => {
   const lines = tree("03-tree@220");
   const label = (name: string) => lines.find((l) => l.includes(name))!;
-  assert.match(label("Trunk"), /🎩🟢 🤏2 Trunk/u);
-  assert.match(label("Twig"), /🔍🟢 📨1 Twig/u);
-  assert.match(label("Tendril"), /🔩🟢 Tendril/u);
-  assert.match(label("Moss"), /🔍🟢 Moss/u);
+  assert.match(label("Trunk"), /🎩 +🟢 🤏2 Trunk/u);
+  assert.match(label("Twig"), /🔍 +🟢 📨1 Twig/u);
+  assert.match(label("Tendril"), /🔩 +🟢 Tendril/u);
+  assert.match(label("Moss"), /🔍 +🟢 Moss/u);
 });
 
 test("past the cap the later siblings fold into their parent's … N more, " +
   "and every shown row's parents stay", () => {
   const lines = tree("03-tree@220", { cap: 2 });
   assert.equal(lines.length, 7);
-  assert.match(lines[3], /^   ├⊟ 🎩🟢 🤏2 Trunk/u);
-  assert.match(lines[4], /^   │  ├─ 🔍🟢 📨1 Twig/u);
-  assert.match(lines[5], /^   │  ╰⊞ … 3 more/u);
-  assert.match(lines[6], /^   ╰⊞ … 1 more/u);
+  assert.match(lines[3], /^   ├⊟ 🎩 +🟢 🤏2 Trunk/u);
+  assert.match(lines[4], /^   │  ├─ 🔍 +🟢 📨1 Twig/u);
+  assert.match(lines[5], /^   │  ╰⊞ … +3 more/u);
+  assert.match(lines[6], /^   ╰⊞ … +1 more/u);
 });
 
 test("a folded agent draws ⊞ and counts every agent hidden under it", () => {
   const lines = tree("03-tree@220", { folds: { t1: true } });
   const trunk = lines.find((l) => l.includes("Trunk"))!;
-  assert.match(trunk, /├⊞ 🎩🟢 👶🏻4 🤏2 Trunk/u);
+  assert.match(trunk, /├⊞ 🎩 +🟢 👶🏻4 🤏2 Trunk/u);
   assert.ok(!lines.some((l) => l.includes("Twig")));
 });
 
@@ -369,10 +442,10 @@ test("✅ N done sums the agents that ended since the turn opened, under " +
   "🧵 main", () => {
   const lines = tree("01-mixed@220", {}, [], NOW - 3600);
   const done = lines.find((l) => l.includes("done"))!;
-  assert.match(done, /^   ╰⊞ ✅ 4 done +✅  18m/u);
+  assert.match(done, /^   ╰⊞ ✅ +4 done +✅  18m/u);
   // Only those since the turn opened.
   assert.match(tree("01-mixed@220", {}, [], 1786845500).find((l) =>
-    l.includes("done"))!, /✅ 2 done/u);
+    l.includes("done"))!, /✅ +2 done/u);
   assert.ok(!lines.some((l) => l.includes("Daisy")));
   assert.ok(!tree("01-mixed@220").some((l) => l.includes("done")));
 });
@@ -384,16 +457,16 @@ test("each thread's latest text follows its name, working or ended, and " +
   assert.ok(!tree("01-mixed@220", {}, ["*.chat.progress"]).some((l) =>
     l.includes("Running the suite") || l.includes("Checking the binary")));
   assert.ok(tree("01-mixed@220", { mainPhase: "⚫" }).some((l) =>
-    /🧵⚫ main  Checking the binary/u.test(l)));
+    /🧵 +⚫ main  Checking the binary/u.test(l)));
 });
 
 test("🎤 draws the prompt typed last after its name, and chat.prompt " +
   "hides it", () => {
   const over = { agents: null, turnPrompt: "Draw the\n  prompt" };
   assert.match(tree("03-tree@220", over)[2],
-    /^   ╰─ 🎤🟢 turn  Draw the¶ prompt$/u);
+    /^   ╰─ 🎤 +🟢 turn  Draw the¶ prompt$/u);
   assert.match(tree("03-tree@220", over, ["*.chat.prompt"])[2],
-    /^   ╰─ 🎤🟢 turn$/u);
+    /^   ╰─ 🎤 +🟢 turn$/u);
 });
 
 test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +
@@ -404,15 +477,15 @@ test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +
   const lines = tree("02-parked@220", { cap: 10 }, [], turn, waiting);
   const row = (name: string) => lines.find((l) => l.includes(name))!;
   // Pine waits on its background shell, 980s after its last record.
-  assert.match(row("Pine"), /🔩🟡 💻1 Pine .*💻  16m/u);
+  assert.match(row("Pine"), /🔩 +🟡 💻1 Pine .*💻  16m/u);
   // Yarrow waits on nothing its transcript names.
-  assert.match(row("Yarrow"), /🔍🟡 Yarrow .*📋  13m/u);
+  assert.match(row("Yarrow"), /🔍 +🟡 Yarrow .*📋  13m/u);
   assert.match(tree("02-parked@220", {}, [], turn).find((l) =>
-    l.includes("done"))!, /✅ 1 done/u);
+    l.includes("done"))!, /✅ +1 done/u);
   assert.ok(!lines.some((l) => l.includes("done")));
   // Each takes a row under the cap like any other live agent.
   const capped = tree("02-parked@220", { cap: 7 }, [], turn, waiting);
-  assert.ok(capped.some((l) => /… 1 more/u.test(l)));
+  assert.ok(capped.some((l) => /… +1 more/u.test(l)));
   assert.ok(!tree("02-parked@220", { cap: 7 }, [], turn).some((l) =>
     l.includes("more")));
 });
@@ -427,7 +500,7 @@ test("a waiting agent's progress update stays drawn", () => {
       turnStart: null }, cap: 10 }, []);
   const keys = fixedKeys(ST, 200, []);
   const lines = rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
-  assert.ok(lines.some((l) => /🔍🟡 Yarrow  Held/u.test(l)));
+  assert.ok(lines.some((l) => /🔍 +🟡 Yarrow  Held/u.test(l)));
 });
 
 /** The tree under 🧵 main over corpus case `id`'s agents with open
@@ -458,18 +531,18 @@ test("each open shell and Monitor is a leaf under the thread that " +
   const lines = bgTree("02-parked@220");
   const at = (text: string) => lines.findIndex((l) => l.includes(text));
   // Under 🧵 main: 🎤 first, its agents, then its shell and its Monitor.
-  assert.match(lines[1], /^├─ 🎤🟢 turn/u);
-  assert.match(lines.at(-2)!, /^├─ 💻🟢 Run the plugin tests +⌛6\.2m$/u);
-  assert.match(lines.at(-1)!, /^╰─ 📡🟢 Watch PR #38 for comments +⌛ 25m$/u);
+  assert.match(lines[1], /^├─ 🎤 +🟢 turn/u);
+  assert.match(lines.at(-2)!, /^├─ 💻 +🟢 Run the plugin tests +⌛6\.2m$/u);
+  assert.match(lines.at(-1)!, /^╰─ 📡 +🟢 Watch PR #38 for comments +⌛ 25m$/u);
   assert.ok(at("Peony") < at("Run the plugin tests"));
   // Under Poppy, its Monitor and its shell, in the order they opened.
   const poppy = at("Poppy");
-  assert.match(lines[poppy + 1], /^│  ├─ 📡🟢 Watch the CI checks +⌛2\.1m$/u);
-  assert.match(lines[poppy + 2], /^│  ╰─ 💻🟢 Build the docs site +⌛2\.1m$/u);
+  assert.match(lines[poppy + 1], /^│  ├─ 📡 +🟢 Watch the CI checks +⌛2\.1m$/u);
+  assert.match(lines[poppy + 2], /^│  ╰─ 💻 +🟢 Build the docs site +⌛2\.1m$/u);
   // Before ✅ N done, which stays last under 🧵.
   const done = bgTree("01-mixed@220", {}, [], NOW - 3600);
-  assert.match(done.at(-2)!, /📡🟢 Watch PR #38/u);
-  assert.match(done.at(-1)!, /✅ 4 done/u);
+  assert.match(done.at(-2)!, /📡 +🟢 Watch PR #38/u);
+  assert.match(done.at(-1)!, /✅ +4 done/u);
 });
 
 /** The tree over 01-mixed's agents, Elm's last record `ago` seconds
@@ -493,19 +566,19 @@ function lingerTree(ago: number, linger: number, cap = 10): string[] {
 test("an agent that ended under finished-linger ago keeps its own row, " +
   "ended, and goes into ✅ N done once it has lingered", () => {
   const kept = lingerTree(2, 5);
-  assert.ok(kept.some((l) => /^├─ \S+⚫ Elm/u.test(l)), kept.join("\n"));
-  assert.match(kept.at(-1)!, /✅ 3 done/u);
+  assert.ok(kept.some((l) => /^├─ \S+ +⚫ Elm/u.test(l)), kept.join("\n"));
+  assert.match(kept.at(-1)!, /✅ +3 done/u);
   // Past it, Elm is in ✅ N done, as with no linger at all.
   for (const lines of [lingerTree(6, 5), lingerTree(2, 0)]) {
     assert.ok(!lines.some((l) => l.includes("Elm")), lines.join("\n"));
-    assert.match(lines.at(-1)!, /✅ 4 done/u);
+    assert.match(lines.at(-1)!, /✅ +4 done/u);
   }
 });
 
 test("a lingering agent row counts toward subagent-rows as a live one " +
   "does", () => {
   const more = (lines: string[]): number => Number(lines.find((l) =>
-    l.includes("more"))?.match(/… (\d+) more/u)?.[1] ?? 0);
+    l.includes("more"))?.match(/… +(\d+) more/u)?.[1] ?? 0);
   assert.equal(more(lingerTree(2, 5, 4)), more(lingerTree(2, 0, 4)) + 1);
 });
 
@@ -517,12 +590,12 @@ test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
       end: NOW - ago }] });
   const kept = bgTree("02-parked@220", {}, [], null, gone(2), 5);
   // In the order they opened: the Monitor 25m ago, the shell 6.2m ago.
-  assert.match(kept.at(-2)!, /^├─ 📡🟢 Watch PR #38 for comments/u);
-  assert.match(kept.at(-1)!, /^╰─ 💻⚫ Run the plugin tests +⌛6\.2m$/u);
+  assert.match(kept.at(-2)!, /^├─ 📡 +🟢 Watch PR #38 for comments/u);
+  assert.match(kept.at(-1)!, /^╰─ 💻 +⚫ Run the plugin tests +⌛6\.2m$/u);
   for (const lines of [bgTree("02-parked@220", {}, [], null, gone(6), 5),
     bgTree("02-parked@220", {}, [], null, gone(2), 0)]) {
     assert.ok(!lines.some((l) => l.includes("Run the plugin tests")));
-    assert.match(lines.at(-1)!, /^╰─ 📡🟢 Watch PR #38/u);
+    assert.match(lines.at(-1)!, /^╰─ 📡 +🟢 Watch PR #38/u);
   }
   // An agent's own closed shell lingers under it the same way.
   const poppy = bgTree("02-parked@220", {}, [], null, (d) => ({ ...d,
@@ -530,7 +603,7 @@ test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
       ? { ...t, bgTasks: [t.bgTasks[0]],
         bgEnded: [{ ...t.bgTasks[1], end: NOW - 1 }] } : t) }), 5);
   const at = poppy.findIndex((l) => l.includes("Poppy"));
-  assert.match(poppy[at + 2], /^│  ╰─ 💻⚫ Build the docs site/u);
+  assert.match(poppy[at + 2], /^│  ╰─ 💻 +⚫ Build the docs site/u);
   const shown = bgText(ST, { id: "x", kind: "bash", label: "x",
     start: NOW - 60, end: NOW - 1 }, "Build", NOW);
   assert.equal(shown, "💻 shell · ⚫ ended · ⌛ 59s · Build");
@@ -541,17 +614,17 @@ test("a shell with no label draws its kind, and one with no start no ⌛",
   const lines = bgTree("02-parked@220", {}, [], null, (d) => ({ ...d,
     main_background: [{ id: "a", kind: "bash", label: " ", start: null },
       { id: "b", kind: "monitor", label: "", start: NOW - 5 }] }));
-  assert.match(lines.at(-2)!, /^├─ 💻🟢 shell$/u);
-  assert.match(lines.at(-1)!, /^╰─ 📡🟢 monitor +⌛  5s$/u);
+  assert.match(lines.at(-2)!, /^├─ 💻 +🟢 shell$/u);
+  assert.match(lines.at(-1)!, /^╰─ 📡 +🟢 monitor +⌛  5s$/u);
 });
 
 test("shells and Monitors count against no cap", () => {
   const capped = bgTree("02-parked@220", { cap: 2 });
-  assert.ok(capped.some((l) => /… \d+ more/u.test(l)));
+  assert.ok(capped.some((l) => /… +\d+ more/u.test(l)));
   assert.ok(capped.some((l) => l.includes("Run the plugin tests")));
   assert.ok(capped.some((l) => l.includes("Watch PR #38")));
   const none = bgTree("02-parked@220", { cap: 0 });
-  assert.equal(none.filter((l) => /[💻📡]🟢/u.test(l)).length, 2);
+  assert.equal(none.filter((l) => /[💻📡] +🟢/u.test(l)).length, 2);
 });
 
 test("an opened thread leaves its 💻 📡 counts to its rows, and a folded " +
@@ -559,22 +632,22 @@ test("an opened thread leaves its 💻 📡 counts to its rows, and a folded " +
   const opened = bgTree("02-parked@220");
   const row = (lines: string[], name: string) =>
     lines.find((l) => l.includes(name))!;
-  assert.match(row(opened, "Pine"), /├⊟ 🔩🟡 Pine/u);
-  assert.match(row(opened, "Poppy"), /├⊟ 🔩🟡 Poppy/u);
-  assert.match(row(opened, "main"), /^⊟ 🧵🟢 main/u);
+  assert.match(row(opened, "Pine"), /├⊟ 🔩 +🟡 Pine/u);
+  assert.match(row(opened, "Poppy"), /├⊟ 🔩 +🟡 Poppy/u);
+  assert.match(row(opened, "main"), /^⊟ 🧵 +🟢 main/u);
   const folded = bgTree("02-parked@220", { folds: { p1: true, p2: true } });
-  assert.match(row(folded, "Pine"), /├⊞ 🔩🟡 💻1 Pine/u);
-  assert.match(row(folded, "Poppy"), /├⊞ 🔩🟡 💻1 📡1 Poppy/u);
+  assert.match(row(folded, "Pine"), /├⊞ 🔩 +🟡 💻1 Pine/u);
+  assert.match(row(folded, "Poppy"), /├⊞ 🔩 +🟡 💻1 📡1 Poppy/u);
   assert.ok(!folded.some((l) => l.includes("Build the docs site")));
   const main = bgTree("02-parked@220", { folds: { main: true } });
   assert.deepEqual(main, [main[0]]);
-  assert.match(main[0], /^⊞ 🧵🟢 💻1 📡1 main/u);
+  assert.match(main[0], /^⊞ 🧵 +🟢 💻1 📡1 main/u);
 });
 
 test("the agent hide path hides the shells and Monitors with the agents",
 () => {
   const lines = bgTree("02-parked@220", {}, ["agent"]);
-  assert.ok(!lines.some((l) => /[💻📡]🟢/u.test(l)));
+  assert.ok(!lines.some((l) => /[💻📡] +🟢/u.test(l)));
 });
 
 /** The band's tree over the baseline status document, its turn opened an
@@ -597,10 +670,10 @@ function bandTree(phase: Phase, agents: Live): string[] {
 test("between turns live \"always\" keeps the running agents under 🧵 " +
   "and draws no ✅ N done, which the running turn draws", () => {
   const running = bandTree("running", "always");
-  assert.ok(running.some((l) => /✅ 4 done/u.test(l)));
+  assert.ok(running.some((l) => /✅ +4 done/u.test(l)));
   const done = bandTree("done", "always");
-  assert.match(done[1], /^╰⊟ 🧵⚫ main/u);
-  assert.ok(done.some((l) => /🔍🟢 Marigold/u.test(l)));
+  assert.match(done[1], /^╰⊟ 🧵 +⚫ main/u);
+  assert.ok(done.some((l) => /🔍 +🟢 Marigold/u.test(l)));
   assert.ok(!done.some((l) => l.includes("done")));
   assert.ok(!done.some((l) => l.includes("Daisy")));
 });
@@ -610,7 +683,7 @@ test("between turns live \"running\" draws no agents", () => {
     l.includes("Marigold")));
   const done = bandTree("done", "running");
   assert.equal(done.length, 2);
-  assert.match(done[1], /^╰─ 🧵⚫ main/u);
+  assert.match(done[1], /^╰─ 🧵 +⚫ main/u);
 });
 
 /** The tree's rows over a corpus case, as `tree` lays them out, before
@@ -666,6 +739,14 @@ test("every row with children presses its fold, under its key, with its " +
   // The press is on the mark alone, not the line's bars before it.
   assert.deepEqual(rows[5].label[0].spans.map((s) => pressedText(s)),
     ["⊞"]);
+  // The blanks that set a circle in its column press what the glyph
+  // does, so the head presses as one run; 🎮's press nothing.
+  const head = rows[3].label.find((p) => p.path === "name.kind")!;
+  assert.deepEqual(head.spans.map((s) => s.text.trim() ? s.text : "_"),
+    ["🎩", "_", "🟢", "_", "_"]);
+  assert.ok(head.spans.every((s) => s.press?.kind === "view"));
+  assert.deepEqual(rows[0].label[1].spans.map((s) => s.press),
+    [undefined, undefined]);
   const done = treeOfCase("01-mixed@220", {}, NOW - 3600);
   assert.deepEqual(pressesOf(done.at(-1)!), ["fold:main/done:true"]);
 });
@@ -752,19 +833,19 @@ test("🎮 and 🧵 fold everything under them", () => {
   assert.match(root[0], /^⊞ 🎮/u);
   const main = tree("03-tree@220", { folds: { main: true } });
   assert.equal(main.length, 2);
-  assert.match(main[1], /^╰⊞ 🧵🟢 main/u);
+  assert.match(main[1], /^╰⊞ 🧵 +🟢 main/u);
 });
 
 test("an opened … N more lists its agents under it, and an opened ✅ N " +
   "done the agents that ended", () => {
   const more = tree("03-tree@220", { cap: 2, folds: { "main/more": false } });
-  const at = more.findIndex((l) => l.includes("… 1 more"));
-  assert.match(more[at], /^   ╰⊟ … 1 more/u);
-  assert.match(more[at + 1], /^      ╰─ 🔍🟢 Moss/u);
+  const at = more.findIndex((l) => /… +1 more/u.test(l));
+  assert.match(more[at], /^   ╰⊟ … +1 more/u);
+  assert.match(more[at + 1], /^      ╰─ 🔍 +🟢 Moss/u);
   const done = tree("01-mixed@220", { folds: { "main/done": false } }, [],
     NOW - 3600);
   const d = done.findIndex((l) => l.includes("4 done"));
-  assert.match(done[d], /^   ╰⊟ ✅ 4 done/u);
+  assert.match(done[d], /^   ╰⊟ ✅ +4 done/u);
   assert.equal(done.length, d + 5);
   for (const name of ["Daisy", "Fern", "Kale", "Elm"]) {
     assert.ok(done.slice(d + 1).some((l) => l.includes(name)), name);
@@ -843,8 +924,8 @@ test("stamped, the tree lists every agent opened, each under the agent " +
   const drawn = stamped("03-tree@220", null, {}, TREE_DONE);
   assert.deepEqual(lines(drawn), ["", "├─ ", "├─ ", "│  ╰─ ", "├─ ",
     "│  ├─ ", "│  ╰─ ", "│     ╰─ ", "│        ╰─ ", "╰─ "]);
-  assert.match(drawn[0], /^🧵⚫ main  Checking the binary/u);
-  assert.match(drawn[1], /^├─ 🎤🏁 turn$/u);
+  assert.match(drawn[0], /^🧵 +⚫ main  Checking the binary/u);
+  assert.match(drawn[1], /^├─ 🎤 +🏁 turn$/u);
   // An ended agent keeps the agents it started, and draws 🏁.
   assert.match(drawn[2], /🏁 Gourd/u);
   assert.match(drawn[3], /🏁 Garlic/u);
@@ -924,7 +1005,7 @@ test("stamped, no row presses anything", () => {
     repo: "https://github.com/o/r" });
   assert.deepEqual(rows.flatMap(pressesOf), []);
   assert.match(stripAnsi(join(rows[0].label.flatMap((p) => p.spans))),
-    /^🎮 📦repo/u);
+    /^🎮 +📦repo/u);
 });
 
 /** The tree over 02-parked@220's agents at `now`, with Sage (s1) ended

@@ -978,10 +978,10 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
     { ...opts, place: 'footer', inset: INSET })
   // 🎮, then 🧵, and under it 🎤 and the fixture's fork, ended this turn.
   expect([above.length, below.length]).toEqual([4, 0])
-  expect(text(above[0])).toMatch(/^ *⊟ 🎮 📦/u)
+  expect(text(above[0])).toMatch(/^ *⊟ 🎮 +📦/u)
   expect(text(above[1])).toMatch(/^ *╰⊟ 🧵/u)
   expect(text(above[2])).toMatch(/^ *   ├─ 🎤/u)
-  expect(text(above[3])).toMatch(/^ *   ╰⊞ ✅ 1 done/u)
+  expect(text(above[3])).toMatch(/^ *   ╰⊞ ✅ +1 done/u)
   expect(await drawnRows(ui.above)).toEqual(expected(above))
   // The 💳 row alone under the footer line, a row of its own by default,
   // without the 📦 🌿 🔀 the tree's root draws.
@@ -1064,7 +1064,7 @@ test('the main thread\'s open background shell is in the document and ' +
       output: SHELL_OUTPUT }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
   const rows = (await drawnRows(ui.above)).map((r) => r.text)
-  expect(rows.some((r) => /^ *   [├╰]─ 💻🟢 Build the docs /u.test(r)))
+  expect(rows.some((r) => /^ *   [├╰]─ 💻 +🟢 Build the docs /u.test(r)))
     .toBe(true)
 })
 
@@ -1092,7 +1092,7 @@ test('a shell that closed stays drawn, ended, for finished-linger, and ' +
     end: NOW - 2 }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
   const shell = async () => (await drawnRows(ui.above))
-    .some((r) => /💻⚫ Build the docs/u.test(r.text))
+    .some((r) => /💻 +⚫ Build the docs/u.test(r.text))
   expect(await shell()).toBe(true)
   // The clock alone moves it on: no document is read before it goes.
   const docs = w.docs.length
@@ -1329,8 +1329,8 @@ test('🎮 draws the session\'s name off its transcript in its colour, the ' +
   const tree = () => bandLines(BAND_ST, lastDoc(w), COLS, HIDE,
     { rate: null, phase: 'running', live: LIVE, places: PLACES, ...AGENTS,
       place: 'above', indent: INSET })
-  // No name written yet: no 📛.
-  expect(text(tree()[0])).not.toContain(spec.E_NAME)
+  // No name written yet: 📦 follows 🎮.
+  expect(text(tree()[0])).toMatch(/^ *⊟ 🎮 +📦/u)
   append(w, path, [
     { type: 'agent-name', agentName: 'Worker', sessionId: SESSION },
     { type: 'custom-title', customTitle: 'Statusline', sessionId: SESSION },
@@ -1340,18 +1340,18 @@ test('🎮 draws the session\'s name off its transcript in its colour, the ' +
   expect(lastDoc(w).transcript).toMatchObject({ session_name: 'Statusline',
     session_color: 'purple' })
   const root = tree()[0]
-  expect(text(root)).toMatch(/^ *⊟ 🎮 📛Statusline 📦/u)
+  expect(text(root)).toMatch(/^ *⊟ 🎮 +Statusline  📦/u)
   expect(root.find((s) => s.text.includes('Statusline'))!.colour)
     .toBe('F_PUR')
   append(w, path, [
     { type: 'custom-title', customTitle: 'Renamed', sessionId: SESSION }])
   await w.clock.advance(CONFIG.tickMs)
   await settle()
-  expect(text(tree()[0])).toMatch(/^ *⊟ 🎮 📛Renamed 📦/u)
+  expect(text(tree()[0])).toMatch(/^ *⊟ 🎮 +Renamed  📦/u)
   expect(text(bandLines(BAND_ST, lastDoc(w), COLS,
     [...HIDE, 'session.workspace.name'], { rate: null, phase: 'running',
       live: LIVE, places: PLACES, ...AGENTS, place: 'above',
-      indent: INSET })[0])).not.toContain(spec.E_NAME)
+      indent: INSET })[0])).not.toContain('Renamed')
 })
 
 test('a turn started with no plan reading has no 💳 on its tag',
@@ -2011,7 +2011,7 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     await askLive($, w, true)
     await until(w, 5_000)
     const want = await receiptOf(w, w.clock.now() / 1000)
-    // 🎮, 🧵 and 🎤 as the band's tree stacks them, 🎤's row `🎤🏁 turn`
+    // 🎮, 🧵 and 🎤 as the band's tree stacks them, 🎤's row `🎤 🏁 turn`
     // and the prompt, a blank row, then the 🔺🔖 tag line, drawn as the
     // start line is.
     expect(want.length).toBe(5)
@@ -2019,7 +2019,7 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     expect(text(want[1]).trimStart()).toMatch(
       new RegExp('^' + spec.E_TREE_LAST + spec.E_TREE_DASH + ' ' +
         spec.E_THREAD, 'u'))
-    expect(text(want[2]).trimStart()).toContain(spec.E_TURN +
+    expect(text(want[2]).trimStart()).toContain(spec.E_TURN + ' ' +
       spec.E_PHASE_DONE + ' turn  ' + ASKED.slice(0, 8))
     expect(text(want[3])).toBe(' ')
     expect(text(want[4])).toContain('p-resume'.slice(0, 8))
@@ -2073,11 +2073,13 @@ async ($, on) => {
   const pad = ' '.repeat(3 * root)
   expect(rows.length).toBe(5 + root)
   if (root) expect(rows[0].startsWith(spec.E_SESSION)).toBe(true)
+  // The circles stand a blank past the deepest kind glyph, 🎤's and the
+  // kid's, so 🧵's stands four columns further out from its own.
   expect(rows[root].startsWith((root ? '╰─ ' : '') + spec.E_THREAD +
-    spec.E_PHASE_END + ' main  Done.')).toBe(true)
-  expect(rows[root + 1].startsWith(pad + '├─ ' + spec.E_TURN +
+    '    ' + spec.E_PHASE_END + ' main  Done.')).toBe(true)
+  expect(rows[root + 1].startsWith(pad + '├─ ' + spec.E_TURN + ' ' +
     spec.E_PHASE_DONE + ' turn  ' + ASKED)).toBe(true)
-  expect(rows[root + 2].startsWith(pad + '╰─ 🔍' + spec.E_PHASE_DONE +
+  expect(rows[root + 2].startsWith(pad + '╰─ 🔍 ' + spec.E_PHASE_DONE +
     ' Kid')).toBe(true)
   expect(rows[root + 3]).toBe('')
   // The parent, still at work, is owed a row on a later receipt.
@@ -2344,7 +2346,7 @@ test('a turn the context was compacted in gets its receipt and tag',
     expect(stamped(w)).toBe(true)
     const want = await receiptOf(w, w.clock.now() / 1000)
     // 🎤 is the turn, by its tag, the compaction billed in it.
-    expect(text(want.find((l) => text(l).includes('🎤🏁'))!)).toContain(
+    expect(text(want.find((l) => /🎤 *🏁/u.test(text(l)))!)).toContain(
       ' turn  ' + ASKED.slice(0, 8))
     expect(text(want.at(-1)!)).toContain('p-resume'.slice(0, 8))
     expect(await closing($, ASKED_MS)).toEqual(expected(want))
@@ -2775,14 +2777,14 @@ test('a press on a fold mark folds its row and opens it again, and the ' +
   const { band, want } = await clickBand($, w)
   const opened = await drawnRows(band)
   expect(opened).toEqual(want({}))
-  expect(opened.some((r) => /⊟ 🔍🟢 Parent/u.test(r.text))).toBe(true)
+  expect(opened.some((r) => /⊟ 🔍 +🟢 Parent/u.test(r.text))).toBe(true)
   expect(opened.some((r) => r.text.includes('Kid'))).toBe(true)
   // Folded: 👶🏻 counts the agent hidden under it, and the band is drawn
   // again at once.
   await band.press({ key: 'fold:p1' })
   const folded = await drawnRows(band)
   expect(folded).toEqual(want({ p1: true }))
-  expect(folded.some((r) => /⊞ 🔍🟢 👶🏻1 Parent/u.test(r.text))).toBe(true)
+  expect(folded.some((r) => /⊞ 🔍 +🟢 👶🏻1 Parent/u.test(r.text))).toBe(true)
   expect(folded.some((r) => r.text.includes('Kid'))).toBe(false)
   await band.press({ key: 'fold:p1' })
   expect(await drawnRows(band)).toEqual(want({ p1: false }))
@@ -2877,7 +2879,7 @@ test('an agent that ends takes its fold with it, and 🧵\'s grouped row ' +
   expect(after.length).toBe(want({ 'main/done': false }).length)
   expect(after.some((r) => /├⊟ 🔍.* Parent/u.test(r.text))).toBe(true)
   expect(after.some((r) => r.text.includes('Kid'))).toBe(true)
-  expect(after.some((r) => /⊟ ✅ 1 done/u.test(r.text))).toBe(true)
+  expect(after.some((r) => /⊟ ✅ +1 done/u.test(r.text))).toBe(true)
 })
 
 /** A transcript line holding SendMessage's answer that its message waits
@@ -2926,7 +2928,7 @@ test('an agent with messages waiting draws 📨N, and one whose messages ' +
   await start($, w, 'terminal', path)
   const { band } = await clickBand($, w)
   const rows = await drawnRows(band)
-  expect(rows.some((r) => /🔍🟢 📨2 Parent/u.test(r.text))).toBe(true)
+  expect(rows.some((r) => /🔍 +🟢 📨2 Parent/u.test(r.text))).toBe(true)
   const kid = rows.find((r) => r.text.includes('Kid'))
   expect(kid?.text.includes('📨')).toBe(false)
   // Saved as inbox_fold writes it, so a reload reads on from the save.
