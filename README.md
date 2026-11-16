@@ -26,7 +26,7 @@ Here the two places are drawn together, the prompt between them left out:
      ├─ 🎩🟢 Clover          🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍🟢 Marigold  Run…  🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥🟢 Willow          🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                     🏃   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+     ╰⊞ … 4 more                     🟢   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -269,7 +269,7 @@ the 🛫 column, with how long it has been doing it.
 |---|---|---|
 | 🟢 | Running | the agent is working |
 | 🟡 | Paused | it ended its turn, but work it started is still going |
-| ⚫ | Ended | it has finished, for good |
+| ⚫ | Not running | an agent that has ended, or the main thread between turns; the mark after it says how an agent ended |
 | 🏁 | Finished | on the receipt, a thread that had ended when the turn's end stamped it |
 
 | Phase | Glyph | Name | Meaning |
@@ -305,7 +305,7 @@ the second, and the row is paused whatever the transcript holds.
 |---|---|---|
 | 🔻🔖 | Start | under a prompt, the turn it opens: the first 8 characters of its `promptId`, then Claude Code's turn index, the account's 💳 🔋 and 🪫 as it started, and when it started |
 | 🔺🔖 | End | under the receipt, the turn it bills, already answered, the account's 💳 🔋 and 🪫 as it was stamped, and when it was stamped |
-| `› 🤖📨` | Message | a message from another agent, folded: the sender's task in bold, then the message's first line, dim; where several agents share the sender's name, the one whose last reply holds that line |
+| `› 📨` | Message | a message from another agent, folded: the sender's task in bold, then the message's first line, dim; where several agents share the sender's name, the one whose last reply holds that line |
 
 ## Three rules the display follows
 

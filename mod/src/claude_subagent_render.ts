@@ -23,7 +23,10 @@ import {
   E_ETA, E_GAUGE, E_GIT_OK, E_HUNDRED, E_IDLE, E_INBOX, E_KIDS, E_MOD,
   E_MODE_AGENTS, E_MODE_API_ERROR, E_MODE_DONE, E_MODE_ETA, E_MODE_FAILED,
   E_MODE_HELD, E_MODE_KILLED, E_MODE_MONITOR, E_MODE_QUEUED, E_MODE_SHELL,
-  E_PCT, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN, E_RATE, E_ROW_AGENTS,
+  E_PCT, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN, E_RATE,
+  E_KIND_CLAUDE, E_KIND_EXPLORE, E_KIND_FORK, E_KIND_GENERAL, E_KIND_GUIDE,
+  E_KIND_OTHER, E_KIND_PLAN, E_KIND_REMOTE, E_KIND_SETUP, E_KIND_SHELL,
+  E_KIND_TEAMMATE, E_KIND_WORKFLOW,
   E_ROW_COMPACT, E_SESS, E_TOOL, E_WAIT, E_WEEK, E_WORK, GAUGE_W,
   MAG_SHARE_AGENT, QUIET_S, QUIET_WARN_S,
   E_CACHE, E_DIFF, CHROME_DEPTH, GRID_CELLS, LABEL_MIN,
@@ -95,11 +98,12 @@ export function aCtxW(st: Settings): number {
 }
 
 export const KIND_MARK: ReadonlyMap<string, string> = new Map([
-  ["general-purpose", "🔩"], ["claude", "🎩"], ["Explore", "🔍"],
-  ["Plan", "📐"], ["claude-code-guide", "📚"], ["statusline-setup", "📟"],
-  ["fork", "🍴"], ["local_agent", "👥"], ["local_bash", "🐚"],
-  ["local_workflow", "🔗"], ["remote_agent", "🌐"],
-  ["in_process_teammate", "🎎"]]);
+  ["general-purpose", E_KIND_GENERAL], ["claude", E_KIND_CLAUDE],
+  ["Explore", E_KIND_EXPLORE], ["Plan", E_KIND_PLAN],
+  ["claude-code-guide", E_KIND_GUIDE], ["statusline-setup", E_KIND_SETUP],
+  ["fork", E_KIND_FORK], ["local_agent", E_KIND_OTHER],
+  ["local_bash", E_KIND_SHELL], ["local_workflow", E_KIND_WORKFLOW],
+  ["remote_agent", E_KIND_REMOTE], ["in_process_teammate", E_KIND_TEAMMATE]]);
 export const END_MARK: ReadonlyMap<string, string> = new Map([
   ["completed", E_MODE_DONE], ["failed", E_MODE_FAILED],
   ["killed", E_MODE_KILLED]]);
@@ -209,7 +213,7 @@ export function renderAgentLimit(st: Settings, emoji: string, pctS: string,
 }
 
 export function renderKind(agentType: string, taskKind: string): string {
-  return KIND_MARK.get(agentType || taskKind) ?? E_ROW_AGENTS;
+  return KIND_MARK.get(agentType || taskKind) ?? E_KIND_OTHER;
 }
 
 /** The row's two state marks, (phase, mode); see the Python's agent_state

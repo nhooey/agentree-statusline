@@ -487,7 +487,7 @@ export const OPTIONS = {
     "file": true,
     "flag": null,
     "doc-table": null,
-    "doc": "Draw the folded row of a message another agent sent as the sending agent's task and the message's first line, `› 🤖📨 <task>: <line>…`, instead of Claude Code's own row.",
+    "doc": "Draw the folded row of a message another agent sent as the sending agent's task and the message's first line, `› 📨 <task>: <line>…`, instead of Claude Code's own row.",
   },
   "slow-toast": {
     "type": "bool",

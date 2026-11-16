@@ -192,7 +192,7 @@ binary, then the changelog" --cols 200`):
      ├─ 🎩🟢 Clover                                                  🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍🟢 Marigold  Running the suite                             🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥🟢 Willow                                                  🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                                                             🏃   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+     ╰⊞ … 4 more                                                             🟢   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
 
 - **The lines.** `├─` and `╰─` join a row to its parent, `│` carries a
@@ -302,7 +302,7 @@ binary, then the changelog" --cols 200`):
   after its last record (5 as the mod ships), and only then goes into
   `✅ N done`. Past `subagent-rows` live subagent rows, running, paused or
   lingering (6 as the mod ships), the later siblings fold into their parent's `… N more`,
-  which sums them and their subagents, 🏃 and how many of them run in its
+  which sums them and their subagents, 🟢 and how many of them run in its
   🛫 column; every row drawn keeps its parents. A grouped row's 🎯 is
   weighted by each agent's ▴, its ⌛ is the agents' ⌛ summed.
 
@@ -539,7 +539,7 @@ no `✅ N done`. With subagents running between turns (`--phase done
      ├─ 🎩🟢 Clover          🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍🟢 Marigold  Run…  🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥🟢 Willow          🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                     🏃   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+     ╰⊞ … 4 more                     🟢   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
 
 🎤 stays a second after the stamp lands (`CONFIG.receiptHoldMs`), so the
@@ -798,7 +798,7 @@ The label, left to right:
 | Cell | Meaning |
 |---|---|
 | kind | the agent type, as a glyph (the [README legend](../README.md#agent-kind)) |
-| state | the phase: 🟢 running, 🟡 paused or ⚫ ended. See [State](#state) |
+| state | the phase: 🟢 running, 🟡 paused or ⚫ not running. See [State](#state) |
 | 👶🏻 | how many rows hang directly under it, finished or not |
 | 🤏 | how often its window has been compacted |
 | 💻 | how many background shells it started and has not heard the end of, while it runs or is paused; not once it has failed or been killed. In the tree, only on a folded row: an opened one draws each shell as a row under it |
@@ -856,7 +856,8 @@ how long it has been doing it:
 - 🔧 and 🚦: since the oldest call of that kind still waiting on its result.
 - 🟡 paused: since its last record, the end of the turn it ended to wait.
 - 🥚: since the task's `startTime`.
-- ⚫ ended: since its last record, how long ago it finished.
+- ⚫ not running, on an agent: since its last record, how long ago it
+  finished.
 
 | Phase | Mark | When |
 |---|---|---|
@@ -870,7 +871,7 @@ how long it has been doing it:
 | | 📋 | `waiting`, on nothing it can name: its plan's approval, or an Agent call whose agent the list does not have |
 | | ⛳ | completed, with nothing it can name but a live ETA in its last message |
 | | 🥚 | Claude Code's `pending`: not started |
-| ⚫ ended | ✅ ❌ 🛑 | completed and waiting on nothing, failed, killed |
+| ⚫ not running | ✅ ❌ 🛑 | completed and waiting on nothing, failed, killed |
 | 🟡 or ⚫ | 💥 | completed or failed, and its last answer died on an API error: Claude Code writes one only once its retries are spent, and still calls the agent completed |
 
 A paused agent shows the first of its reasons in that order. A background
@@ -956,9 +957,8 @@ repository, tells it when: once it has a plan, after each milestone, and
 whenever the estimate moves by a quarter or more. The row reads the last such
 line from the text of the agent's own messages, so a tool result that quotes
 one isn't counted. The skill's path is the part matched; the ⛳ is there so
-a person scrolling the transcript notices the line, and may be left off. The
-🏁 the skill asked for before ⛳ is read as well. The readout draws the time
-left under the same ⛳.
+a person scrolling the transcript notices the line, and may be left off. No
+other flag opens a report. The readout draws the time left under the same ⛳.
 
 A report is an estimate of the whole run: the time already gone when it was
 written, plus the time it said was left. The row counts it down between
@@ -1022,15 +1022,15 @@ are blank without a plan reading, and `?` without a calibration.
 Claude Code folds a message another agent sent into one dim row naming its
 sender, `› Message from @general-purpose (ctrl+o to expand)`: for a subagent
 with no name of its own that is only its type, so two agents of one type
-read alike. The mod draws the row as 🤖📨, the sending agent's task, as its
+read alike. The mod draws the row as 📨, the sending agent's task, as its
 Agent call described it, and the message's first line, cut with `…` to end
 where the mod's rows end, `right-edge` short of the edge
 (`messageSpans` in `mod/src/agent_message.ts`, at 100 columns and
 `right-edge` 5):
 
 ```
-› 🤖📨 Reclaim the right-edge columns: The right edge is now a setting in both ports, and the …
-› 🤖📨 general-purpose: Done.
+› 📨 Reclaim the right-edge columns: The right edge is now a setting in both ports, and the …
+› 📨 general-purpose: Done.
 ```
 
 The task is bold at full strength and the rest of the row dim, so the task

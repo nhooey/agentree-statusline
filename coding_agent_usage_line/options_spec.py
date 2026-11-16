@@ -487,7 +487,7 @@ OPTIONS = {
         "file": True,
         "flag": None,
         "doc-table": None,
-        "doc": "Draw the folded row of a message another agent sent as the sending agent's task and the message's first line, `› 🤖📨 <task>: <line>…`, instead of Claude Code's own row.",
+        "doc": "Draw the folded row of a message another agent sent as the sending agent's task and the message's first line, `› 📨 <task>: <line>…`, instead of Claude Code's own row.",
     },
     "slow-toast": {
         "type": "bool",

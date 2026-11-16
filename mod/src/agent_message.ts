@@ -6,7 +6,7 @@
 // sender's name, which for a subagent with no name of its own is only its
 // type, so two agents of one type read alike and none says what it was
 // asked.  The mod draws the row instead as the agent's task, as its Agent
-// call described it, and the message's first line, `› 🤖📨 Reclaim the
+// call described it, and the message's first line, `› 📨 Reclaim the
 // right-edge columns: The right edge is now a setting in both ports…`, cut
 // to the terminal's width.  The task is bold and the rest at normal
 // strength, so the task is what the eye finds and the rest stays readable
@@ -32,7 +32,7 @@
 //
 // Pure: the caller lists the agents, reads their replies and measures the
 // row.
-import { E_BOT, E_INBOX } from "./spec.ts";
+import { E_INBOX } from "./spec.ts";
 import { cut, span, width } from "./spans.ts";
 import type { Span } from "./spans.ts";
 import { visWidth } from "./formatting.ts";
@@ -276,7 +276,7 @@ export function saidBy(head: string,
 }
 
 /** The message unfolded (ctrl+o), as rows of spans: the folded row's
- * `› 🤖📨 ` and the sender's label, bold, then every line of the message
+ * `› 📨 ` and the sender's label, bold, then every line of the message
  * two columns in, less the hand-back preamble and its indent (reportOf; a
  * `[harness: …]` note stays, the reader's to see) and out of any envelope
  * (unenvelope), wrapped at word breaks
@@ -292,7 +292,7 @@ export function messageBlock(st: Settings, label: string, text: string,
     if (pad > 0) out.push(span(" ".repeat(pad), "F_MSG", false, false, "B_MSG"));
     return out;
   };
-  const rows = [bar([span("› " + E_BOT + E_INBOX + " ", "F_MSG", false, false,
+  const rows = [bar([span("› " + E_INBOX + " ", "F_MSG", false, false,
     "B_MSG"), span(label, "F_MSG", false, true, "B_MSG")])];
   for (const line of wrapCols(st, unenvelope(reportOf(text))
     .replace(/\t/g, "  "),
@@ -332,7 +332,7 @@ export function wrapCols(st: Settings, text: string, cols: number): string[] {
   return out;
 }
 
-/** The row as spans: `› 🤖📨 `, the sender's label bold, and after a
+/** The row as spans: `› 📨 `, the sender's label bold, and after a
  * colon the message's first line, all at normal strength, since dim is
  * hard to read on the bar; cut to `cols` columns
  * with an ellipsis, counted as the terminal counts them
@@ -342,7 +342,7 @@ export function wrapCols(st: Settings, text: string, cols: number): string[] {
 export function messageSpans(st: Settings, label: string, text: string,
   cols: number): Span[] {
   const head = firstLine(text);
-  const row = [span("› " + E_BOT + E_INBOX + " ", "F_MSG", false, false, "B_MSG"),
+  const row = [span("› " + E_INBOX + " ", "F_MSG", false, false, "B_MSG"),
     span(label, "F_MSG", false, true, "B_MSG")];
   if (head) row.push(span(": " + head, "F_MSG", false, false, "B_MSG"));
   const out = cut(row, Math.max(1, cols), st.widths);

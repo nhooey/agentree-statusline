@@ -1138,6 +1138,24 @@ E_FOLD_OPEN = "⊟"        # ⊟  a row whose children are showing
 E_FOLD_SHUT = "⊞"        # ⊞  a row whose children are folded under it
 E_THREAD = "🧵"          # 🧵  the main thread, in the kind slot an agent's
                          #    🔍 🔩 📐 fill
+# The kind slot: what an agent is, by its agent type or, for one Claude
+# Code started without a type, its task kind.  E_KIND_OTHER is every kind
+# not named here as well as `local_agent`.
+E_KIND_GENERAL = "🔩"    # 🔩  general-purpose
+E_KIND_CLAUDE = "🎩"     # 🎩  claude
+E_KIND_EXPLORE = "🔍"    # 🔍  Explore
+E_KIND_PLAN = "📐"       # 📐  Plan
+E_KIND_GUIDE = "📚"      # 📚  claude-code-guide
+E_KIND_SETUP = "📟"      # 📟  statusline-setup
+E_KIND_FORK = "🍴"       # 🍴  fork
+E_KIND_OTHER = "👥"      # 👥  local_agent, and any other kind.
+                         #    Measured by tests/probe-advance.sh:
+                         #    advance=2 in bare Ghostty, not under
+                         #    tmux -- a reading, like the other three
+E_KIND_SHELL = "🐚"      # 🐚  local_bash
+E_KIND_WORKFLOW = "🔗"   # 🔗  local_workflow
+E_KIND_REMOTE = "🌐"     # 🌐  remote_agent
+E_KIND_TEAMMATE = "🎎"   # 🎎  in_process_teammate
 E_MORE = "…"             # …  the later siblings past the cap, summed
 # An agent row's state, in two marks: a circle for its phase and a mark for
 # what it is doing in it.  The status line's task list says completed for
@@ -1145,9 +1163,13 @@ E_MORE = "…"             # …  the later siblings past the cap, summed
 # something, and the one question a person asks of a row is which; the
 # mod's `$.agent.list()` says waiting for the second.  Every mark here is
 # one codepoint, Emoji_Presentation=Yes, EAW W.
-E_PHASE_RUN = "🟢"       # 🟢  running: it has the floor
+E_PHASE_RUN = "🟢"       # 🟢  running: it has the floor.  On a
+                         #    `… N more` row, with how many of its
+                         #    agents run
 E_PHASE_PAUSE = "🟡"     # 🟡  paused: not started yet, or waiting to resume
-E_PHASE_END = "⚫"       # ⚫  ended, and waiting on nothing
+E_PHASE_END = "⚫"       # ⚫  not running: an agent that ended, with
+                         #    ✅ ❌ 🛑 after it for how, or the main
+                         #    thread between turns
 E_PHASE_DONE = "🏁"      # 🏁  finished, on the turn's receipt: a thread
                          #    that ended by the time the turn's end
                          #    stamped it
@@ -1172,7 +1194,7 @@ E_MODE_API_ERROR = "💥"          # 💥  its last answer died on an API
 E_INBOX = "📨"           # 📨  messages sent to it and not yet delivered:
                          #    the panel's own "N queued".  On the status
                          #    line, the ones waiting for the main thread.
-                         #    After 🤖, the mod's folded row of a message
+                         #    After ›, the mod's folded row of a message
                          #    from another agent (agent_message.ts)
 E_KIDS = "👶🏻"                  # 👶🏻  how many agents hang under it on the
                                  #    panel.  The light tone, for its contrast on a
@@ -1192,9 +1214,6 @@ E_ETA = "⛳"             # ⛳  how long an agent says it has LEFT, off the
                          #    Emoji_Presentation=Yes, EAW W.
 E_ETA_REPORT = E_ETA                 # ⛳  the flag the skill's report line opens with,
                                      #    which ETA_LINE forgives the absence of
-E_ETA_REPORT_OLD = "🏁"          # 🏁  the flag older copies of the skill open
-                                 #    with, still read, so an agent that loaded
-                                 #    one keeps its row counting down
 E_MODE_ETA = E_ETA                 # ⛳  paused on nothing it can name, but its last
                                    #    message said how long it has left
 # The gauge after each of an agent row's 🤖 🔧 🚦: that mark's share of the
@@ -1209,12 +1228,10 @@ E_MODE_ETA = E_ETA                 # ⛳  paused on nothing it can name, but its
 # and U+2800, the empty cell, keeps the gauge's width at a zero share.
 E_GAUGE = "⠀⠄⠆⠦⠶"
 GAUGE_W = 2
-E_ROW_AGENTS = "👥"           # 👥  agent spend the 🎤 row cannot carry.
-                              # Emoji_Presentation=Yes and a single code
-                              # point, chosen for that.  Measured by
-                              # tests/probe-advance.sh: advance=2 in
-                              # bare Ghostty, not under tmux -- a reading,
-                              # like the other three.
+E_ROW_AGENTS = E_KIND_OTHER                 # 👥  the status line's row of
+                                            # agent spend the 🎤 row cannot carry.  The
+                                            # panel and the band never draw it, so 👥
+                                            # there is the kind alone.
 E_TURN_ID = "🔖"              # 🔖  the receipt's turn tag: which turn the
                               # rows below it bill.  Wide, one code point,
                               # Unicode 6.

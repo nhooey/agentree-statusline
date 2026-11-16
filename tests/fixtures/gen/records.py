@@ -346,7 +346,7 @@ def handmade():
     put("eta.jsonl", [
         prompt(0, "go"),
         asst(10, "m1", "Plan.\n" + FLAG + ETA + "4m"),
-        asst(20, "m2", "`\U0001F3C1 " + ETA + "6h30m`"),
+        asst(20, "m2", "`" + FLAG + ETA + "6h30m`"),
         asst(30, "m3", "**" + ETA + "1.5 h — 3 lanes left**"),
         asst(40, "m4", ETA + "<number><s|m|h>"),
         asst(50, "m5", "one\r\n" + FLAG + ETA + "5m\r\nmore"),

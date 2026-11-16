@@ -43,7 +43,7 @@ import {
   E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MODE_MONITOR, E_MODE_SHELL,
   E_MORE, E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN, E_SESS,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
-  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_EFF_HIGH, E_IDLE,
+  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_IDLE,
 } from "./spec.ts";
 import { durFmt, grade, padVal } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
@@ -671,7 +671,7 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
 }
 
 /** A grouped row that sums `tasks`, kept under `fold`, folded or opened
- * over `kids`: `… N more` past the cap, or `✅ N done`.  Its 🛫 column says 🏃 and how many of them run, or ✅ and how
+ * over `kids`: `… N more` past the cap, or `✅ N done`.  Its 🛫 column says 🟢 and how many of them run, or ✅ and how
  * long since the last of them ended; 💰 🧩 💾 and the plan's shares are
  * their sums, 🎯 their cache rates weighed by their ▴, ⌛ their ages
  * summed and 🤖 🔧 🚦 their split of it, as proportions of themselves, as
@@ -687,7 +687,7 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
   const cells: { [key: string]: Span[] } = {};
   if (kind === "more") {
     cells.rate = renderAgentRate(st, tasks.filter((t) =>
-      t.task.status === "running").length, E_EFF_HIGH);
+      t.task.status === "running").length, E_PHASE_RUN);
   } else {
     const ends = tasks.map((t) => num(t.usage.last_seen ?? t.usage.last_epoch))
       .filter((e) => e);
