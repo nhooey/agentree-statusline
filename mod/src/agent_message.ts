@@ -150,10 +150,44 @@ export function unframe(text: string): string {
   return noted ? lines.slice(i).join("\n").replace(/<\\/g, "<") : report;
 }
 
-/** The first line with words on it of what the agent wrote (unframe), its
- * whitespace collapsed; "" for a message of none. */
+// A message one session forwards to another as it was sent to it: its
+// whole text one `<agent-message from="…">…</agent-message>`, or the same
+// with the tags neutralized, `<\agent-message from="…">…<\/agent-message>`.
+// Drawn as it came, the row would read the tags and the inner sender's id
+// in place of what was said.
+const ENVELOPE_OPEN = /^<\\?agent-message\s+from="[^"]*"[^>]*>/;
+const ENVELOPE_TAG = /<\\?(\/?)agent-message(?=[\s>])[^>]*>/g;
+
+/** `text` out of its `<agent-message from="…">` envelopes, as many as are
+ * nested, where the trimmed text is wholly one: it opens with the tag and
+ * the close that matches that tag is its end.  Text with words outside
+ * the envelope, or the tag only partway through, comes back as it was. */
+export function unenvelope(text: string): string {
+  let out = text;
+  for (;;) {
+    const t = out.trim();
+    if (!ENVELOPE_OPEN.test(t)) return out;
+    let depth = 0;
+    let inner: string | null = null;
+    for (const m of t.matchAll(ENVELOPE_TAG)) {
+      depth += m[1] ? -1 : 1;
+      if (depth > 0) continue;
+      const end = m.index! + m[0].length;
+      if (end === t.length) {
+        inner = t.slice(t.match(ENVELOPE_OPEN)![0].length, m.index);
+      }
+      break;
+    }
+    if (inner === null) return out;
+    out = inner.replace(/^[ \t]*\r?\n/, "").replace(/\r?\n[ \t]*$/, "");
+  }
+}
+
+/** The first line with words on it of what the agent wrote (unframe), out
+ * of any envelope (unenvelope), its whitespace collapsed; "" for a message
+ * of none. */
 export function firstLine(text: string): string {
-  for (const line of unframe(text).split(/\r?\n/)) {
+  for (const line of unenvelope(unframe(text)).split(/\r?\n/)) {
     const words = line.replace(/\s+/g, " ").trim();
     if (words) return words;
   }
@@ -244,7 +278,8 @@ export function saidBy(head: string,
 /** The message unfolded (ctrl+o), as rows of spans: the folded row's
  * `› 🤖📨 ` and the sender's label, bold, then every line of the message
  * two columns in, less the hand-back preamble and its indent (reportOf; a
- * `[harness: …]` note stays, the reader's to see), wrapped at word breaks
+ * `[harness: …]` note stays, the reader's to see) and out of any envelope
+ * (unenvelope), wrapped at word breaks
  * to `cols` (a word wider than the room is cut by columns), all on B_MSG and padded to `cols`, so it reads
  * as the folded row does, named by its task, not Claude Code's
  * `@general-purpose` on its own colour. */
@@ -259,7 +294,8 @@ export function messageBlock(st: Settings, label: string, text: string,
   };
   const rows = [bar([span("› " + E_BOT + E_INBOX + " ", "F_MSG", false, false,
     "B_MSG"), span(label, "F_MSG", false, true, "B_MSG")])];
-  for (const line of wrapCols(st, reportOf(text).replace(/\t/g, "  "),
+  for (const line of wrapCols(st, unenvelope(reportOf(text))
+    .replace(/\t/g, "  "),
     w - 2)) {
     rows.push(bar([span("  " + line, "F_MSG", false, false, "B_MSG")]));
   }

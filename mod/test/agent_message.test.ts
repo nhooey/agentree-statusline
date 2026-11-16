@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { settings, visWidth } from "../src/formatting.ts";
 import {
   agentOfMeta, candidates, firstLine, lastReply, messageBlock, messageSpans,
-  repliesOfLines, reportOf, saidBy, senderLabel, unframe, wrapCols,
+  repliesOfLines, reportOf, saidBy, senderLabel, unenvelope, unframe,
+  wrapCols,
 } from "../src/agent_message.ts";
 import type { AgentLike, MessageLike } from "../src/agent_message.ts";
 import { text as spansText } from "../src/spans.ts";
@@ -146,6 +147,49 @@ test("unfolded, the preamble and indent go and a harness note stays", () => {
     .map((r) => spansText(r).trimEnd()),
   ["› 🤖📨 Task", "  [harness: subagent o]", "", "  Body."]);
 });
+
+const MERGED = "Merged #177; master is now f0c40b5.";
+
+test("a forwarded message: its envelope set aside, in either spelling", () => {
+  for (const text of [
+    '<agent-message from="a3c9cd1f041f9d77f">\n' + MERGED +
+      "\n</agent-message>",
+    '\n  <\\agent-message from="a3c9cd1f041f9d77f">\n' + MERGED +
+      "\nMore.\n<\\/agent-message>\n",
+  ]) {
+    assert.equal(firstLine(text), MERGED, text);
+    assert.equal(unenvelope(text).split("\n")[0], MERGED, text);
+    assert.deepEqual(messageBlock(st, "GitHub Config", text, 60)
+      .map((r) => spansText(r).trimEnd()).slice(0, 2),
+    ["› 🤖📨 GitHub Config", "  " + MERGED]);
+    assert.equal(spansText(messageSpans(st, "GitHub Config", text, 80))
+      .trimEnd(), "› 🤖📨 GitHub Config: " + MERGED);
+  }
+});
+
+test("nested envelopes are all set aside", () => {
+  const text = '<agent-message from="outer">\n' +
+    '<\\agent-message from="inner">\n' + MERGED +
+    "\n<\\/agent-message>\n</agent-message>";
+  assert.equal(unenvelope(text), MERGED);
+  assert.equal(firstLine(text), MERGED);
+});
+
+test("an envelope with text outside it, or a mention of the tag, is kept",
+  () => {
+    for (const text of [
+      '<agent-message from="a">\n' + MERGED + "\n</agent-message>\nAfter.",
+      'Before.\n<agent-message from="a">\n' + MERGED + "\n</agent-message>",
+      '<agent-message from="a">one</agent-message>\n' +
+        '<agent-message from="b">two</agent-message>',
+      'The row reads <agent-message from="…"> tags as they came.',
+      "Strip the </agent-message> close tag too.",
+    ]) {
+      assert.equal(unenvelope(text), text, text);
+    }
+    assert.equal(firstLine('Before.\n<agent-message from="a">x' +
+      "</agent-message>"), "Before.");
+  });
 
 const said = (role: string, text: string,
   ...inputs: Record<string, unknown>[]): MessageLike =>
