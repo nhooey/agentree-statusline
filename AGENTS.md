@@ -13,7 +13,7 @@ project's skills into `.agents/skills/`. Then:
 
 - `tests`: every suite, or the ones named (`usage-dev test`).
 - `typecheck`: type-check the mod's TypeScript (`usage-dev typecheck`).
-- `usage-dev`: every other command: regenerating the spec, fixtures,
+- `usage-dev`: every other command: regenerating the option docs, fixtures,
   goldens and cases, drawing figures, the manual checks; `usage-dev
   --list` names them.
 - `check`: `nix flake check`: formatting (treefmt) and the suites a
