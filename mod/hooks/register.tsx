@@ -70,6 +70,7 @@ import {
   transcriptPath, turnsNow,
 } from './edges.ts'
 import { log } from './log.ts'
+import { instructEta } from './eta_instruction.ts'
 
 type $ = EngineInterface
 
@@ -862,6 +863,8 @@ async function home($: $): Promise<string> {
 }
 
 export const register: Register = on => {
+  instructEta(on)
+
   // The main thread's effort, which the payload carries and `$.session`
   // does not: off each of its model requests.
   on('turn.step', async function* ($, e, next) {
