@@ -2,7 +2,8 @@
 //
 // hooks/eta-instruction.md tells every session how to write the ⛳ line;
 // its format line, with a figure in place of `<n><s|m|h>`, must be what
-// etaReport reads back, or the instruction and the band have drifted apart.
+// etaReport reads back, or the instruction and the band have drifted apart,
+// and the skill's own statement of it must be the same line.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -46,4 +47,17 @@ test("the format line, with a figure, parses to that figure", () => {
 
 test("the format line left as written is not a report", () => {
   assert.deepEqual(report(formatLine()), []);
+});
+
+// The skill coding-agent-usage-line-report-eta holds the full rules and
+// states the format too, as an indented block; its line must be the
+// instruction's, word for word, or the two sources say different things.
+const SKILL = fs.readFileSync(path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../skills/coding-agent-usage-line-report-eta/SKILL.md"), "utf8");
+
+test("the skill states the format line as the instruction does", () => {
+  const lines = SKILL.split("\n").map((l) => l.trim())
+    .filter((l) => l.startsWith("⛳ "));
+  assert.deepEqual(lines, [formatLine()]);
 });
