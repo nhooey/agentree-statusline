@@ -51,7 +51,7 @@ import { paint, pressed, span, spans } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
 import { pyFormatF } from "./py.ts";
 import type { Dict } from "./py.ts";
-import { squash } from "./claude_records.ts";
+import { BG_LABEL_MAX, BG_NEWLINE, squash } from "./claude_records.ts";
 import type { BgTask } from "./claude_records.ts";
 import { renderCost, renderTokens } from "./claude_render.ts";
 import type { Limits } from "./claude_sources.ts";
@@ -259,8 +259,8 @@ export function bgPath(path: string, home = ""): string {
 /** What a press on a background task's row shows, one line: its glyph
  * and kind, 🟢 running or ⚫ ended, ⌛ how long it has run, or ran, where
  * its start is known; `label`, its call's description, else its
- * command's first line (backgroundLabel), left out where the command
- * starts with it; `$` and its command on one line (backgroundCommand),
+ * command's first line (backgroundLabel), left out where it is that
+ * first line, cut as backgroundLabel cuts it; `$` and its command on one line (backgroundCommand),
  * where known; and ⤷ the file its output is written to (bgPath), where
  * known. */
 export function bgText(st: Settings, b: BgTask, label: string,
@@ -272,7 +272,8 @@ export function bgText(st: Settings, b: BgTask, label: string,
   return [shell ? E_MODE_SHELL + " shell" : E_MODE_MONITOR + " Monitor",
     b.end === undefined ? E_PHASE_RUN + " running" : E_PHASE_END + " ended",
     ...(age === null ? [] : [E_IDLE + " " + durFmt(st, age).trim()]),
-    ...(cmd && b.label && cmd.startsWith(b.label) ? [] : [label]),
+    ...(cmd && b.label && Array.from(cmd.split(BG_NEWLINE)[0])
+      .slice(0, BG_LABEL_MAX).join("") === b.label ? [] : [label]),
     ...(cmd ? ["$ " + cmd] : []),
     ...(out ? [TOAST_OUTPUT + " " + bgPath(out, home)] : [])].join(" · ");
 }

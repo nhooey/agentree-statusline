@@ -718,6 +718,13 @@ test("a task's toast gives its command once: the label is left out where " +
   assert.equal(bgText(ST, { ...b, label: "Build", end: NOW - 1 }, "Build",
     NOW, "/Users/u"),
   "💻 shell · ⚫ ended · ⌛ 4s · Build · $ make docs ⏎ open site");
+  // A description the command only starts with is the call's own: kept.
+  assert.equal(bgText(ST, { ...b, label: "make", command: "make docs" },
+    "make", NOW), "💻 shell · 🟢 running · ⌛ 5s · make · $ make docs");
+  // A first line past BG_LABEL_MAX is the label cut short: left out.
+  const long = "x".repeat(150);
+  assert.equal(bgText(ST, { ...b, label: "x".repeat(120), command: long },
+    "x".repeat(120), NOW), "💻 shell · 🟢 running · ⌛ 5s · $ " + long);
 });
 
 test("a task's output file is drawn with ~ for home, and a long one as its " +
