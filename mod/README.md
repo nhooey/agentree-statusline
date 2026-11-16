@@ -139,9 +139,9 @@ As a turn ends the mod stamps its receipt as the turn's closing line, in
 place of Claude Code's `✻ <word> for <duration>`: the rows whose
 `transcript` is set in `rows`, frozen and dim, in their colours. As the
 mod ships that is 🎤 alone, since 🧵 and 🎮 stay live on screen
-(`node tools/draw-figures.ts
-../tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part
-receipt --inset 2 --right-edge 5 --plain`, run from `mod/`):
+(`usage-dev figures
+tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part
+receipt --inset 2 --right-edge 5 --plain`):
 
 ```
                          🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
@@ -259,13 +259,13 @@ reads, and `foldPieces` the 8 MiB pieces folded.
 `mod-tests/` runs in Claude Code's own test runner, which loads the mod as
 a session would and stands in for the engine beneath it:
 
-    cd mod && npm run test:plugin
+    usage-dev plugin-test
 
 It validates the mod and runs the harness tests from a scratch copy, since
 the runner collects every `*.test.ts` under the folder it is given and
 `test/` holds Node's. Each test answers `$.fs` from the fixture
 transcripts (`mod-tests/fixtures.gen.ts`, written by
-`node tools/gen-mod-fixtures.ts`; `test/mod-fixtures.test.ts` fails when it
+`usage-dev mod-fixtures`; `test/mod-fixtures.test.ts` fails when it
 is stale) and checks what the mod drew, the receipt's closing line among
 them, against the `src/` functions over the same bytes. It needs the
 `claude` command, which CI does not have.

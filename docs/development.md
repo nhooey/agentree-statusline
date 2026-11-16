@@ -99,11 +99,11 @@ without consuming claims. See [Codex](codex.md).
 
 | change | where | then |
 |---|---|---|
-| A cell on the mod's rows or its receipt | `mod/src/cells.ts`, and the row builders in `mod/src/band.ts` and `mod/src/receipt.ts` | Regenerate the row cases (`node mod/tools/gen-row-cases.ts`) and read the diff; `node mod/tools/draw-figures.ts` draws a figures document to look at; update [Layout](layout.md). |
+| A cell on the mod's rows or its receipt | `mod/src/cells.ts`, and the row builders in `mod/src/band.ts` and `mod/src/receipt.ts` | Regenerate the row cases (`usage-dev row-cases`) and read the diff; `usage-dev figures` draws a figures document to look at; update [Layout](layout.md). |
 | A status-line cell (the retired `--mode status`) | `claude_render.py`; its width in `RIGHT_GRID` in `formatting.py`, or `LINE3_RESERVED` / `RULE_MIN` in `spec/layout.jsonc` | Regenerate the status goldens and read the diff. |
 | A cost-line cell (the retired `--mode cost`) | `claude_cost_render.py`, and the group builders in `claude.py` | Regenerate the cost goldens. |
-| A subagent-row cell | `claude_subagent_render.py` and `mod/src/claude_subagent_render.ts` | Update the row shape asserted in `tests/subagent.py`, run `python3 tests/fixtures/gen/all.py` and read `git diff tests/fixtures/panel/`. |
-| A glyph, colour, width or cut | Its constant in `spec/layout.jsonc` | Run `python3 tools/gen-spec.py`. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `tests/probe-advance.sh` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
+| A subagent-row cell | `claude_subagent_render.py` and `mod/src/claude_subagent_render.ts` | Update the row shape asserted in `tests/subagent.py`, run `usage-dev fixtures` and read `git diff tests/fixtures/panel/`. |
+| A glyph, colour, width or cut | Its constant in `spec/layout.jsonc` | Run `usage-dev spec`. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
 | A flag | `_CLAUDE_FLAGS` / `_COMMON_FLAGS` and `USAGE` in `cli.py`; read it in `claude.main` or `codex_main` | Update [Options](options.md); add a case to `tests/port-cli.py`, the public-CLI suite. |
 | Claude accounting (prices, turns, agents) | `claude_records.py`; window shares and calibration in `claude.py` | `tests/agents.py`, the cost goldens; update [Accounting](accounting.md). |
 | A usage source | `sources.py`, and `validate_source` for its spec | `tests/sources-v1.py` and friends; update [Usage sources](usage-sources.md). |
@@ -114,23 +114,22 @@ without consuming claims. See [Codex](codex.md).
 [Tests](tests.md) lists every suite and what it covers. The short version:
 
 ```sh
-bash tests/golden.sh           # status line, byte for byte
-bash tests/golden-cost.sh      # Stop-hook cost line
-python3 tests/agents.py        # agent spend and tool time
-python3 tests/subagent.py      # subagent rows
-python3 tests/rate.py          # 🛫 and the brightness cuts
+tests status cost agents subagent rate
 ```
+
+Those are the status line byte for byte, the Stop-hook cost line, agent
+spend and tool time, the subagent rows, and 🛫 and the brightness cuts.
 
 CI runs these plus the source, Codex, CLI and Python 3.9 floor suites.
 
 A layout change is supposed to fail the goldens. Rerun the suite with
 `--regen`, read the diff of `tests/golden/`, and commit the new files only if
 every changed byte is one you meant to change. The grid fixtures are too long
-for that; after `node mod/tools/gen-grid-cases.ts`, `python3
-tools/diff-grid-fixtures.py` counts the changed cases and prints the first few.
+for that; after `usage-dev grid-cases`, `usage-dev
+diff-grid` counts the changed cases and prints the first few.
 
 Glyph widths cannot be checked in CI: they depend on the terminal drawing
-them. `--selftest` and `tests/probe-advance.sh` need a real terminal tab.
+them. `usage-dev selftest` and `usage-dev probe-advance` need a real terminal tab.
 
 ## Style
 
@@ -208,7 +207,7 @@ the mod's `statePath` (`mod/src/state.ts`) give the same name. Bump a kind's
 format when what is written in it changes.
 
 `mod/tools/layout-mockup.ts` draws the [redesign](../agents/plans/closed/redesign.md)'s proposal inside a
-mocked Claude Code screen: `node mod/tools/layout-mockup.ts --cols 150`. It
+mocked Claude Code screen: `usage-dev mockup --cols 150`. It
 uses the mod's ported cell renderers on made-up figures and lays them out
 with the grid, `mod/src/grid.ts`; it reads nothing but the terminal. Its
 options, `--cols`, `--hide`, `--receipt`, `--phase`, `--labels`, `--grid`,
