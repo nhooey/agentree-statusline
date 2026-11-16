@@ -85,7 +85,7 @@ On an agent row:
 | `agent.name.label` | the agent's name |
 | `agent.workspace.branch` | 🌿 and a worktree's branch |
 | `agent.chat.doing` | what it is doing, the activity text |
-| `agent.chat.progress`, `main.chat.progress` | the latest progress update after the name, in the band's tree |
+| `agent.chat.progress`, `main.chat.progress` | the first line of the last text the thread wrote, its progress update or, once it has ended, its answer, after the name in the band's tree |
 | `turn.chat.prompt` | the prompt typed last, after 🎤's name in the band's tree |
 | `agent.state.kids`, `.compact`, `.shells`, `.monitors`, `.inbox` | 👶🏻, 🤏, 💻, 📡, 📨 |
 | `agent.state.model`, `.rate`, `agent.cost`, `agent.cost.spend`, `agent.context`, `agent.tokens.io`, `.cache`, `agent.time.elapsed`, `.eta`, `.split`, `agent.plan.five_hour`, `.week`, `agent.work` | the columns |
