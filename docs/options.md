@@ -133,26 +133,23 @@ default and a line on what it does.
 
 That file is the defaults: the mod reads it at every load, and no default
 is written anywhere else. To change settings,
-copy it to your user file, or to a project's, and edit the copy:
+write only the keys you change in your user file, or in a project's; a
+table such as `rows` takes just the fields you set:
 
-```sh
-mkdir -p ~/.config/coding-agent-usage-line
-cp mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
-# or, for one project:
-cp mod/defaults/config.jsonc <root>/.config/coding-agent-usage-line/config.jsonc
+```jsonc
+// ~/.config/coding-agent-usage-line/config.jsonc
+{
+  "mark-spacing": false,
+  "rows": {"turn": {"live": "always"}}
+}
 ```
 
-A diff of the two is then exactly what you changed from the defaults:
-
-```sh
-diff mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
-```
-
-A full copy sets every option, so a later change to a default in the
-repository does not reach it; delete the lines you have not changed to
-follow the defaults instead. `right-edge` is `null` in the defaults file,
-which means "follow `rows.*.place`"; `null` in your copy means the same, and
-is not a setting.
+Every key the file leaves out keeps the default, so a later change to a
+default in the repository reaches you. A full copy of the defaults file
+works too, but sets every option, so it keeps the defaults of the day you
+copied it. `right-edge` is `null` in the defaults file, which means
+"follow `rows.*.place`"; `null` in your file means the same, and is not a
+setting.
 
 The defaults file is read strictly. A key missing from it, a key that is no
 option, or a value of the wrong type is an error naming the file and the
@@ -197,10 +194,11 @@ Lists replace and tables merge per field: a project that sets
 
 Nothing in your own files stops a run. A key a file leaves out comes from
 the layer under it, and in the end from the defaults file. A file that is
-not valid JSONC or not an object is skipped whole; an unknown key and a
-value of the wrong type or out of range are skipped alone, the layer under
-them supplying the value. Each is a warning naming the file, and an unknown
-key's names the nearest known one.
+not valid JSONC or not an object is skipped whole, and so is a file with
+an unknown key at any depth (an option, a row of `rows`, a field), so a
+misspelt key can't go unnoticed. A value of the wrong type or out of range
+is skipped alone, the layer under it supplying the value. Each is a warning
+naming the file, and an unknown key's names the nearest known one.
 
 The mod reads the files at each
 load (a session's start or a `/reload-plugins`), again on `session.start`,
