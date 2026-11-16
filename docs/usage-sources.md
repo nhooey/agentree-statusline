@@ -291,7 +291,10 @@ from a file instead, for example one copied from another machine.
 
 Between refreshes the cached reading is used. A failed refresh keeps the last
 good reading and backs off exponentially, up to five minutes, and longer if
-the server sent `Retry-After` (also capped at five minutes). A reading older
+the server sent `Retry-After` (also capped at five minutes); the mod's
+`plan-usage` backs off up to an hour instead, as
+[The plan's windows under the mod](#the-plans-windows-under-the-mod)
+says. A reading older
 than its refresh interval is marked **stale** — freshness comes from the
 source's `as_of`, not from when it was fetched.
 
