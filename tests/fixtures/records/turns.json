@@ -527,6 +527,156 @@
   },
   {
    "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "read_transcript",
+   "kw": {
+    "now": null
+   },
+   "out": {
+    "agent_etas": [],
+    "asst_text": "<26F3> skills/coding-agent-usage-line-report-eta: ETA 5m",
+    "asst_ts": "2026-08-17T20:54:30.000Z",
+    "blocked_s": 0.0,
+    "busy_s": 70.0,
+    "cache_pct": -1,
+    "compactions": 0,
+    "ctx_est": false,
+    "ctx_tokens": 0,
+    "eta": [
+     1787000070.0,
+     300.0
+    ],
+    "idle_at": 0.0,
+    "last_seen": 0.0,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "monitors": 0,
+    "own_cache_pct": -1,
+    "own_est": false,
+    "own_parts": [],
+    "own_tok_down": 0,
+    "own_tok_up": 0,
+    "own_usd": 0.0,
+    "prompt_id": "",
+    "queued": 0,
+    "session_color": "",
+    "session_name": "",
+    "shells": 0,
+    "start_s": 1787000000.0,
+    "tok_down": 0,
+    "tok_up": 0,
+    "tool_at": 0.0,
+    "tool_s": 11.0,
+    "turn_index": null,
+    "turn_s": 1787000000.0,
+    "user_text": "go",
+    "user_ts": "2026-08-17T20:53:20.000Z",
+    "wait_at": 0.0
+   }
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "read_transcript",
+   "kw": {
+    "now": 1787001000.0
+   },
+   "out": {
+    "agent_etas": [],
+    "asst_text": "<26F3> skills/coding-agent-usage-line-report-eta: ETA 5m",
+    "asst_ts": "2026-08-17T20:54:30.000Z",
+    "blocked_s": 0.0,
+    "busy_s": 70.0,
+    "cache_pct": -1,
+    "compactions": 0,
+    "ctx_est": false,
+    "ctx_tokens": 0,
+    "eta": [
+     1787000070.0,
+     300.0
+    ],
+    "idle_at": 0.0,
+    "last_seen": 1787000070.0,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "monitors": 0,
+    "own_cache_pct": -1,
+    "own_est": false,
+    "own_parts": [],
+    "own_tok_down": 0,
+    "own_tok_up": 0,
+    "own_usd": 0.0,
+    "prompt_id": "",
+    "queued": 0,
+    "session_color": "",
+    "session_name": "",
+    "shells": 0,
+    "start_s": 1787000000.0,
+    "tok_down": 0,
+    "tok_up": 0,
+    "tool_at": 0.0,
+    "tool_s": 11.0,
+    "turn_index": null,
+    "turn_s": 1787000000.0,
+    "user_text": "go",
+    "user_ts": "2026-08-17T20:53:20.000Z",
+    "wait_at": 0.0
+   }
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl"
+   ],
+   "fn": "read_transcript",
+   "kw": {
+    "now": 1787000116.5
+   },
+   "out": {
+    "agent_etas": [],
+    "asst_text": "<26F3> skills/coding-agent-usage-line-report-eta: ETA 5m",
+    "asst_ts": "2026-08-17T20:54:30.000Z",
+    "blocked_s": 0.0,
+    "busy_s": 70.0,
+    "cache_pct": -1,
+    "compactions": 0,
+    "ctx_est": false,
+    "ctx_tokens": 0,
+    "eta": [
+     1787000070.0,
+     300.0
+    ],
+    "idle_at": 0.0,
+    "last_seen": 1787000070.0,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "monitors": 0,
+    "own_cache_pct": -1,
+    "own_est": false,
+    "own_parts": [],
+    "own_tok_down": 0,
+    "own_tok_up": 0,
+    "own_usd": 0.0,
+    "prompt_id": "",
+    "queued": 0,
+    "session_color": "",
+    "session_name": "",
+    "shells": 0,
+    "start_s": 1787000000.0,
+    "tok_down": 0,
+    "tok_up": 0,
+    "tool_at": 0.0,
+    "tool_s": 11.0,
+    "turn_index": null,
+    "turn_s": 1787000000.0,
+    "user_text": "go",
+    "user_ts": "2026-08-17T20:53:20.000Z",
+    "wait_at": 0.0
+   }
+  },
+  {
+   "args": [
     "tests/fixtures/records/inputs/eta.jsonl"
    ],
    "fn": "read_transcript",
@@ -13561,6 +13711,315 @@
      "usd_cw": 0.0,
      "usd_in": 5e-06,
      "usd_out": 2.5e-05
+    }
+   ]
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl",
+    null
+   ],
+   "fn": "read_turns",
+   "kw": {},
+   "out": [
+    [
+     {
+      "agent": false,
+      "agent_calls": 0,
+      "agent_id": "",
+      "agent_ids": [],
+      "agent_model_s": 0.0,
+      "agent_name": "",
+      "agent_tool_s": 0.0,
+      "blocked_s": 0.0,
+      "cache_read": 0,
+      "cache_write": 0,
+      "calls": 0,
+      "compact": false,
+      "ctx": 0,
+      "dctx": null,
+      "dur_s": 70.0,
+      "eta": [
+       1787000070.0,
+       300.0
+      ],
+      "fresh": 0,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "out": 0,
+      "parts": [],
+      "prompt_id": "",
+      "reported": false,
+      "text": "go",
+      "tool_s": 11.0,
+      "ts": "2026-08-17T20:53:20.000Z",
+      "turn_index": null,
+      "usd_cr": 0.0,
+      "usd_cw": 0.0,
+      "usd_in": 0.0,
+      "usd_out": 0.0
+     }
+    ],
+    {}
+   ]
+  },
+  {
+   "args": [
+    {
+     "agent": false,
+     "agent_calls": 0,
+     "agent_id": "",
+     "agent_ids": [],
+     "agent_model_s": 0.0,
+     "agent_name": "",
+     "agent_tool_s": 0.0,
+     "blocked_s": 0.0,
+     "cache_read": 0,
+     "cache_write": 0,
+     "calls": 0,
+     "compact": false,
+     "ctx": 0,
+     "dctx": null,
+     "dur_s": 70.0,
+     "eta": [
+      1787000070.0,
+      300.0
+     ],
+     "fresh": 0,
+     "lines_added": 0,
+     "lines_removed": 0,
+     "out": 0,
+     "parts": [],
+     "prompt_id": "",
+     "reported": false,
+     "text": "go",
+     "tool_s": 11.0,
+     "ts": "2026-08-17T20:53:20.000Z",
+     "turn_index": null,
+     "usd_cr": 0.0,
+     "usd_cw": 0.0,
+     "usd_in": 0.0,
+     "usd_out": 0.0
+    }
+   ],
+   "fn": "turn_model_s",
+   "kw": {},
+   "out": 59.0
+  },
+  {
+   "args": [
+    {
+     "agent": false,
+     "agent_calls": 0,
+     "agent_id": "",
+     "agent_ids": [],
+     "agent_model_s": 0.0,
+     "agent_name": "",
+     "agent_tool_s": 0.0,
+     "blocked_s": 0.0,
+     "cache_read": 0,
+     "cache_write": 0,
+     "calls": 0,
+     "compact": false,
+     "ctx": 0,
+     "dctx": null,
+     "dur_s": 70.0,
+     "eta": [
+      1787000070.0,
+      300.0
+     ],
+     "fresh": 0,
+     "lines_added": 0,
+     "lines_removed": 0,
+     "out": 0,
+     "parts": [],
+     "prompt_id": "",
+     "reported": false,
+     "text": "go",
+     "tool_s": 11.0,
+     "ts": "2026-08-17T20:53:20.000Z",
+     "turn_index": null,
+     "usd_cr": 0.0,
+     "usd_cw": 0.0,
+     "usd_in": 0.0,
+     "usd_out": 0.0
+    }
+   ],
+   "fn": "turn_times",
+   "kw": {},
+   "out": [
+    59.0,
+    11.0
+   ]
+  },
+  {
+   "args": [
+    [
+     {
+      "agent": false,
+      "agent_calls": 0,
+      "agent_id": "",
+      "agent_ids": [],
+      "agent_model_s": 0.0,
+      "agent_name": "",
+      "agent_tool_s": 0.0,
+      "blocked_s": 0.0,
+      "cache_read": 0,
+      "cache_write": 0,
+      "calls": 0,
+      "compact": false,
+      "ctx": 0,
+      "dctx": null,
+      "dur_s": 70.0,
+      "eta": [
+       1787000070.0,
+       300.0
+      ],
+      "fresh": 0,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "out": 0,
+      "parts": [],
+      "prompt_id": "",
+      "reported": false,
+      "text": "go",
+      "tool_s": 11.0,
+      "ts": "2026-08-17T20:53:20.000Z",
+      "turn_index": null,
+      "usd_cr": 0.0,
+      "usd_cw": 0.0,
+      "usd_in": 0.0,
+      "usd_out": 0.0
+     }
+    ]
+   ],
+   "fn": "_settled",
+   "kw": {},
+   "out": false
+  },
+  {
+   "args": [
+    [
+     {
+      "agent": false,
+      "agent_calls": 0,
+      "agent_id": "",
+      "agent_ids": [],
+      "agent_model_s": 0.0,
+      "agent_name": "",
+      "agent_tool_s": 0.0,
+      "blocked_s": 0.0,
+      "cache_read": 0,
+      "cache_write": 0,
+      "calls": 0,
+      "compact": false,
+      "ctx": 0,
+      "dctx": null,
+      "dur_s": 70.0,
+      "eta": [
+       1787000070.0,
+       300.0
+      ],
+      "fresh": 0,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "out": 0,
+      "parts": [],
+      "prompt_id": "",
+      "reported": false,
+      "text": "go",
+      "tool_s": 11.0,
+      "ts": "2026-08-17T20:53:20.000Z",
+      "turn_index": null,
+      "usd_cr": 0.0,
+      "usd_cw": 0.0,
+      "usd_in": 0.0,
+      "usd_out": 0.0
+     }
+    ]
+   ],
+   "fn": "open_turn",
+   "kw": {},
+   "out": {
+    "agent": false,
+    "agent_calls": 0,
+    "agent_id": "",
+    "agent_ids": [],
+    "agent_model_s": 0.0,
+    "agent_name": "",
+    "agent_tool_s": 0.0,
+    "blocked_s": 0.0,
+    "cache_read": 0,
+    "cache_write": 0,
+    "calls": 0,
+    "compact": false,
+    "ctx": 0,
+    "dctx": null,
+    "dur_s": 70.0,
+    "eta": [
+     1787000070.0,
+     300.0
+    ],
+    "fresh": 0,
+    "lines_added": 0,
+    "lines_removed": 0,
+    "out": 0,
+    "parts": [],
+    "prompt_id": "",
+    "reported": false,
+    "text": "go",
+    "tool_s": 11.0,
+    "ts": "2026-08-17T20:53:20.000Z",
+    "turn_index": null,
+    "usd_cr": 0.0,
+    "usd_cw": 0.0,
+    "usd_in": 0.0,
+    "usd_out": 0.0
+   }
+  },
+  {
+   "args": [
+    "tests/fixtures/records/inputs/eta-handback.jsonl",
+    null
+   ],
+   "fn": "read_turns_settled",
+   "kw": {},
+   "out": [
+    {
+     "agent": false,
+     "agent_calls": 0,
+     "agent_id": "",
+     "agent_ids": [],
+     "agent_model_s": 0.0,
+     "agent_name": "",
+     "agent_tool_s": 0.0,
+     "blocked_s": 0.0,
+     "cache_read": 0,
+     "cache_write": 0,
+     "calls": 0,
+     "compact": false,
+     "ctx": 0,
+     "dctx": null,
+     "dur_s": 70.0,
+     "eta": [
+      1787000070.0,
+      300.0
+     ],
+     "fresh": 0,
+     "lines_added": 0,
+     "lines_removed": 0,
+     "out": 0,
+     "parts": [],
+     "prompt_id": "",
+     "reported": false,
+     "text": "go",
+     "tool_s": 11.0,
+     "ts": "2026-08-17T20:53:20.000Z",
+     "turn_index": null,
+     "usd_cr": 0.0,
+     "usd_cw": 0.0,
+     "usd_in": 0.0,
+     "usd_out": 0.0
     }
    ]
   },

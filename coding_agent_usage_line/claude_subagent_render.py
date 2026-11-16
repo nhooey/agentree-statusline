@@ -275,8 +275,9 @@ def parked(status, eta, waiting_on=False, background=()):
     running or not started, a background shell or Monitor it started and
     has not heard the end of (scan_background), or an ETA still live in its
     last message (live_eta) with time left on it: a report of 0s is the
-    skill's sign-off, and an agent that hands back after it, with no answer
-    ending its turn, has finished.
+    skill's sign-off, and live_eta reads a SubagentHandback call as one, so
+    an agent that has handed back, and has not been resumed since, has
+    finished.
     """
     return status == "waiting" or (
         status == "completed" and (bool(eta) and eta[1] > 0 or waiting_on

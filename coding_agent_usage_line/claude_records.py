@@ -1616,6 +1616,21 @@ def eta_finish(eta: Tuple[float, ...]) -> Optional[float]:
     return eta[0] + eta[1]
 
 
+# The tool a subagent hands its final report back with.  The call ends the
+# agent's run: Claude Code lists it completed once it is made.
+HANDBACK_TOOL = "SubagentHandback"
+
+
+def hands_back(r: dict) -> bool:
+    """True for an assistant record that calls HANDBACK_TOOL."""
+    if r.get("type") != "assistant":
+        return False
+    content = (r.get("message") or {}).get("content")
+    return isinstance(content, list) and any(
+        isinstance(b, dict) and b.get("type") == "tool_use" and
+        b.get("name") == HANDBACK_TOOL for b in content)
+
+
 def ends_turn(r: dict) -> bool:
     """True for an assistant record that ends its answer."""
     return (r.get("type") == "assistant" and
@@ -1647,8 +1662,11 @@ def live_eta(r: dict, state: list, opens: Optional[bool] = None) -> None:
     the message that ends the turn is finishing, not parking; and one that
     ends without a line in its last message reads as finished too.  A 0s
     written mid-answer stays live, so work after it reads as late.  A
-    message is split over several records, one per block, so the test is on
-    the message id and not on the record.
+    hand-back (hands_back) is a 0s at its stamp: the line is read from the
+    agent's own text only, so a sign-off written into the report it hands
+    back is never seen, and the call ends the run whatever its last line
+    said.  A message is split over several records, one per block, so the
+    test is on the message id and not on the record.
     """
     if opens is None:
         opens = turn_start_text(r) is not None
@@ -1656,6 +1674,9 @@ def live_eta(r: dict, state: list, opens: Optional[bool] = None) -> None:
         state[0], state[1], state[3] = (), False, None
     elif is_work(r):
         report = eta_report([r])
+        at = ts_epoch(r.get("timestamp") or "")
+        if at is not None and hands_back(r):
+            report = (at, 0.0)
         mid = (r.get("message") or {}).get("id")
         if report:
             state[0], state[3] = report, mid
