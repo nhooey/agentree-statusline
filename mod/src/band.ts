@@ -40,7 +40,7 @@ import {
 import { decodeTurn } from "./claude_cost.ts";
 import {
   CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, mainLabel, sessionLabel,
-  turnLabel, untilReset, workspacePieces, ymd,
+  trimLast, turnLabel, untilReset, workspacePieces, ymd,
 } from "./cells.ts";
 import type { SideWindow, Workspace } from "./cells.ts";
 import type { Limits } from "./claude_sources.ts";
@@ -692,6 +692,11 @@ function accountPieces(st: Settings, fig: Dict, hide: readonly string[],
     dropped = gone && p.path !== "plan.reset";
     if (!gone) shown.push(p);
   }
+  // The last window drawn ends without its blanks, as accountLabel ends
+  // the last of them all, which a hidden window may have been.
+  const last = shown.map((p) => p.path.startsWith("plan."))
+    .lastIndexOf(true);
+  if (last >= 0) shown[last] = trimLast([shown[last]])[0];
   return shown;
 }
 
