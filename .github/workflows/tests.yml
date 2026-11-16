@@ -62,8 +62,8 @@ jobs:
         run: python3 tests/sources-v1.py && python3 tests/source-cache.py && python3 tests/http-sources.py && python3 tests/app-server.py && python3 tests/claude-sources.py
       - name: Codex rollout accounting
         run: python3 tests/codex.py
-      - name: shared formatting and public port CLI
-        run: python3 tests/formatting.py && python3 tests/port-cli.py && python3 tests/config.py
+      - name: shared formatting, public port CLI and usage-dev
+        run: python3 tests/formatting.py && python3 tests/port-cli.py && python3 tests/config.py && python3 tests/usage-dev.py
       - name: agent spend
         run: python3 tests/agents.py
       - name: subagent rows

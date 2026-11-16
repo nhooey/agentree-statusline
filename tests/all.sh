@@ -77,6 +77,7 @@ codex|.|python3 tests/codex.py
 formatting|.|python3 tests/formatting.py
 port-cli|.|python3 tests/port-cli.py
 config|.|python3 tests/config.py
+usage-dev|.|python3 tests/usage-dev.py
 agents|.|python3 tests/agents.py
 fold|.|python3 tests/fold.py
 subagent|.|python3 tests/subagent.py

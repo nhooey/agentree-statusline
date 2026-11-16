@@ -81,53 +81,29 @@
               }
             ];
             devshell.startup.link-node-modules.text = builtins.readFile ./nix/link-node-modules.sh;
+            # One tool, tools/usage-dev.py, holds the repository's commands
+            # (`usage-dev --list`); the menu adds the two run most.
             commands = [
               # dev
               {
                 category = "dev";
-                name = "diff-grid-fixtures";
-                help = "say how tests/fixtures/grid changed since a commit (HEAD)";
-                command = ''python3 "$PRJ_ROOT/tools/diff-grid-fixtures.py" "$@"'';
-              }
-              {
-                category = "dev";
-                name = "regen-spec";
-                help = "regenerate spec.py and spec.ts from spec/layout.jsonc";
-                command = ''python3 "$PRJ_ROOT/tools/gen-spec.py" "$@"'';
+                name = "usage-dev";
+                help = "test, generate, draw and update: usage-dev --list names each command";
+                command = ''python3 "$PRJ_ROOT/tools/usage-dev.py" "$@"'';
               }
 
               # test
               {
                 category = "test";
-                name = "check-folds";
-                help = "break the transcript folds over ~/.claude/projects in both ports; [--largest N] [--seed S] [FILE...]";
-                command = ''python3 "$PRJ_ROOT/tests/fold_real.py" "$@" && node "$PRJ_ROOT/mod/tools/check-fold.ts" "$@"'';
-              }
-              {
-                category = "test";
                 name = "tests";
-                help = "run every suite, or the ones named; --repeat N to catch a flake (tests/all.sh)";
-                command = ''bash "$PRJ_ROOT/tests/all.sh" "$@"'';
-              }
-              {
-                category = "test";
-                name = "time-window-costs";
-                help = "time the window-cost scan over ~/.claude/projects, cold and cached, in both ports; [--runs N]";
-                command = ''python3 "$PRJ_ROOT/tools/time-window-costs.py" "$@" && node "$PRJ_ROOT/mod/tools/time-window-costs.ts" "$@"'';
+                help = "run every suite, or the ones named; --repeat N to catch a flake (usage-dev test)";
+                command = ''python3 "$PRJ_ROOT/tools/usage-dev.py" test "$@"'';
               }
               {
                 category = "test";
                 name = "typecheck";
-                help = "type-check the TypeScript port and the mod";
-                command = ''cd "$PRJ_ROOT/mod" && npm run -s typecheck'';
-              }
-
-              # update
-              {
-                category = "update";
-                name = "update-npm-lock";
-                help = "re-resolve mod/package-lock.json from mod/package.json";
-                command = ''cd "$PRJ_ROOT/mod" && npm install --package-lock-only --ignore-scripts "$@"'';
+                help = "type-check the TypeScript port and the mod (usage-dev typecheck)";
+                command = ''python3 "$PRJ_ROOT/tools/usage-dev.py" typecheck "$@"'';
               }
             ];
           };
