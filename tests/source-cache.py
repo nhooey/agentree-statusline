@@ -2,7 +2,7 @@
 """Deterministic source selection, freshness and cache-isolation contracts."""
 import os, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from _checks import check, holds, tally  # noqa: E402
+from _checks import check, holds, tally, write_executable  # noqa: E402
 from coding_agent_usage_line import sources, state
 
 def reading(pct, as_of):
@@ -18,15 +18,18 @@ with tempfile.TemporaryDirectory() as tmp:
     check('state.unreported_requests("s", "t", ["a"]) == ["a"]', state.unreported_requests("s", "t", ["a"]), ["a"])
     with open(state._report_path("s2"), "w") as fh: json.dump({"request_ids":None, "turn_ids":1}, fh)
     check('state.claim_reportable_requests("s2", "t", [("a", "t")]) == ["a"]', state.claim_reportable_requests("s2", "t", [("a", "t")]), ["a"])
-    calls=[]
-    old_command, old_app = sources.command_reading, sources.codex_app_server
-    sources.command_reading=lambda path, context: calls.append(path) or {}
+    # A usage command that gives no reading, and notes each run of itself.
+    runs=os.path.join(tmp, "runs"); failing=os.path.join(tmp, "no-reading")
+    write_executable(failing, "#!/bin/sh\necho run >> %s\nexit 1\n" % runs)
+    os.remove(runs)
+    old_app = sources.codex_app_server
     sources.codex_app_server=lambda: (_ for _ in ()).throw(AssertionError("external fallback"))
     try:
-        # Failure backoff works even where no reading exists to normalize.
-        check('sources.collect("codex", "cmd:/fixture", context={"session":"backof...', sources.collect("codex", "cmd:/fixture", context={"session":"backoff"}, now=1000), {})
-        check('sources.collect("codex", "cmd:/fixture", context={"session":"backof...', sources.collect("codex", "cmd:/fixture", context={"session":"backoff"}, now=1001), {})
-        check('calls == ["/fixture"]', calls, ["/fixture"])
+        # Failure backoff works even where no reading exists to normalize:
+        # the second render, a second later, does not run the command again.
+        check("a command with no reading gives none", sources.collect("codex", "cmd:" + failing, context={"session":"backoff"}, now=1000), {})
+        check("and, backing off, none a second later", sources.collect("codex", "cmd:" + failing, context={"session":"backoff"}, now=1001), {})
+        check("the failed command ran once, not on every render", len(open(runs).read().splitlines()), 1)
         # Credential identity outranks a coincidental session identifier.
         os.environ["OPENAI_ADMIN_KEY"]="one"; a=sources._cache_namespace("openai-admin", "default", {"session":"same"})
         os.environ["OPENAI_ADMIN_KEY"]="two"; b=sources._cache_namespace("openai-admin", "default", {"session":"same"})
@@ -64,7 +67,7 @@ with tempfile.TemporaryDirectory() as tmp:
         check('sources.collect("claude", "native", context=stale, now=1001)["bucke...', sources.collect("claude", "native", context=stale, now=1001)["buckets"][0]["windows"][0]["used_percent"], 1)
         check('sources.collect("claude", "native", context={"session":"bridge"}, n...', sources.collect("claude", "native", context={"session":"bridge"}, now=1001)["buckets"][0]["windows"][0]["used_percent"], 44)
     finally:
-        sources.command_reading, sources.codex_app_server = old_command, old_app
+        sources.codex_app_server = old_app
 with tempfile.TemporaryDirectory() as tmp:
     os.environ["CODING_AGENT_USAGE_LINE_STATE_DIR"] = tmp
     # A window's use only rises until it resets, so each window reads at the
