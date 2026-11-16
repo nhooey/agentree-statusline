@@ -198,7 +198,7 @@ binary, then the changelog" --cols 200`):
 - **The lines.** `├─` and `╰─` join a row to its parent, `│` carries a
   parent's line past its children, three columns a level. The lines are
   the start of each row's label, so every figure keeps its column at
-  every depth. The tree's labels start at the left, not flush right.
+  every depth. The labels start at the left, as every row's do.
 - **The fold marks.** A row with children has `⊟` (opened) or `⊞`
   (folded) in place of its `─`, 🎮's before its label; a click on the mark
   folds or opens its row. A folded agent keeps its own figures and draws
@@ -402,25 +402,22 @@ has no context and no ⛳ of its own.
 
 ### Labels
 
-In [the tree](#the-tree) every label is drawn from the left, after the
-tree's lines. Elsewhere (under the footer line and on the receipt), 🎤, 🧵
-and 🎮 draw their label flush right, ending where the first column
-starts, so each mark sits beside the model it names, at one column on
-every row, and 🧵's 📨 stands to its left. An agent row's label is drawn
-flush left.
+Every label is drawn from the left, and each row draws the same label
+wherever it is: in [the tree](#the-tree) and on
+[the receipt](#the-receipt) after the tree's lines, and under the footer
+line with none, each row standing alone.
 
-- **🎤**, the turn, its mark alone, and in the tree its circle, `turn`
-  and the prompt typed last. The turn tags tie it to the prompt (🔻🔖) and the receipt
-  (🔺🔖).
-- **🧵**, the main thread, and in the tree its circle, `main` and the
-  first line of the last text it wrote. While messages wait for its next turn (typed
-  while it works, an agent's SendMessage, a task notification), 📨 and
-  how many before the mark, `📨3 🧵`, and in the tree after its circle,
-  as an agent row's [📨](#inbox) counts its own. The receipt's 🧵 row
-  leaves the 📨 out.
-- **🎮**, the session, its mark alone, and in the tree 📛 and the
-  session's name, then 📦 🌿 🔀. The name is the one /rename gives the
-  session, read off the main transcript: its latest `custom-title`
+- **🎤**, the turn: its mark, its circle, `turn` and the prompt typed
+  last. On the receipt its circle is 🏁. The turn tags tie it to the
+  prompt (🔻🔖) and the receipt (🔺🔖).
+- **🧵**, the main thread: its mark, its circle, `main` and the first
+  line of the last text it wrote. While messages wait for its next turn
+  (typed while it works, an agent's SendMessage, a task notification), 📨
+  and how many after its circle, `🧵🟢 📨3 main`, as an agent row's
+  [📨](#inbox) counts its own. The receipt's 🧵 row leaves the 📨 out.
+- **🎮**, the session: its mark, 📛 and the session's name, then, above
+  the prompt, 📦 🌿 🔀, which the 💳 row keeps elsewhere. The name is
+  the one /rename gives the session, read off the main transcript: its latest `custom-title`
   record, else its latest `agent-name`. It is drawn in the session's
   colour, its latest `agent-color` (/color), as the palette's nearest
   colour, and cream (`F_CRM`) with none (or `default`); with no name
@@ -605,27 +602,31 @@ the footer line:
 As a turn ends, the mod stamps its receipt as the turn's closing line, in
 place of Claude Code's `✻ <word> for <duration>`: the rows whose
 `transcript` is set in `rows`, as they stood when it ended, frozen and dim,
-in their colours, then the turn's tag. As the mod ships that is 🎤 alone,
-since 🧵 and 🎮 stay live on screen. At 160 columns, from a cost document
+in their colours, then the turn's tag. Every receipt has one shape: its
+rows as the band's tree draws them, each with its tree label (see
+[Labels](#labels)), 🎤's being `🎤🏁 turn` and the first words of the
+prompt the turn answered. As the mod ships that is 🎤 alone, since 🧵 and
+🎮 stay live on screen. At 160 columns, from a cost document
 (`usage-dev figures
 tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part receipt
 --inset 2 --right-edge 5 --plain`):
 
 ```
-                         🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
+  🎤🏁 turn  And this one?                    💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
 
 With `"rows": {"agent": {"transcript": true}, "session": {"transcript":
-true}}` it stamps 🧵 and 🎮 too, under 🎤, 🧵 from a status document
+true}}` it stamps 🧵 and 🎮 too, as the tree above the prompt stacks
+them: 🎮 the root, 🧵 under it and 🎤 under 🧵, 🧵 from a status document
 (the same with `--rows` set so and `--status
 tests/fixtures/figures/status/18-agents.json`):
 
 ```
-                         🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
-                         🧵  🧬O⁵🏃           💰0.0   🧠 41k   4٪  🧩▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
-                         🎮                   💰0.2                🧩▴ 27k ▾4.4k  🎯96٪  ⌛1.2h         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .04٪  🪫  .059٪
+  🎮                                       💰 0.2                 🧩 ▴ 27k ▾4.4k  🎯96٪  ⌛1.2h         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .04٪  🪫  .059٪
+  ╰─ 🧵⚫ main            🧬O⁵🏃           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
+     ╰─ 🎤🏁 turn  And this one?           💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
@@ -657,7 +658,7 @@ marks 🎤 and each agent, and 🧵 keeps its ⚫. 🎤 is followed by
 the prompt the turn answered, 🧵 and each agent by the first line of the
 last text it wrote. With 🎮 stamped, the tree hangs from it; a turn that
 ran no subagent, or one whose agents are hidden (`--hide agent`), stamps
-its rows as above. At 200 columns, the same with `--agents 01-mixed@220
+its rows as above, 🧵 among them only where `rows` stamps it. At 200 columns, the same with `--agents 01-mixed@220
 --progress "All four suites pass"` and `--cols 200`: the agents of the
 case that had ended, with the ones still running owed to a later
 receipt:
@@ -682,8 +683,8 @@ is under theirs, and every turn's receipt stays in the transcript to
 scroll back to. A blank row stands above the receipt, one before its tag
 line and one after it.
 
-- **🎤** is the turn just answered: what it cost, its
-  context's growth, its tokens, how long it ran, the last ETA it reported
+- **🎤** is the turn just answered, `🎤🏁 turn` and its prompt: what it
+  cost, its context's growth, its tokens, how long it ran, the last ETA it reported
   (kept after the turn ends, to compare with when it did end) and its share
   of each window. The model and 🛫 are not drawn: they were the turn's
   state.
@@ -1206,7 +1207,7 @@ Each row's `place` in `rows` is `"above"` or `"footer"`, and a file may set
 one row's alone, since tables merge per field. Giving every row the same
 place draws them all there. Above the prompt they are the tree; under
 the footer line they stand in the one order, 💳, 🎤, 🧵, 🎮, flat, with
-no tree lines and the labels flush right, and 💳 keeps 📦 🌿 🔀. The
+no tree lines and each with the tree's label, and 💳 keeps 📦 🌿 🔀. The
 subagents are drawn in the tree alone. The 🔖 tag lines have no live row,
 and their place stays `"footer"`.
 
@@ -1219,9 +1220,9 @@ so `right-edge` follows to 2, the edge of Claude Code's footer container
 ```
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📦repo 🌿golden-clean  📁~/src/statusline-fixture/deep/tree                                💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
-                            🎤  🧬O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-                            🧵  🧬O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-                            🎮                   💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  🎤🟢 turn  Why does the …  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  🧵🟢 main                  🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  🎮                                          💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
 ```
 
 Every row above the prompt, with `"rows": {"account": {"place":

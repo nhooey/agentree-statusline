@@ -1879,12 +1879,16 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     await askLive($, w, true)
     await until(w, 5_000)
     const want = await receiptOf(w, w.clock.now() / 1000)
-    // 🎤, 🧵 and 🎮 at no indent, a blank row, then the 🔺🔖 tag line,
-    // drawn as the start line is.
+    // 🎮, 🧵 and 🎤 as the band's tree stacks them, 🎤's row `🎤🏁 turn`
+    // and the prompt, a blank row, then the 🔺🔖 tag line, drawn as the
+    // start line is.
     expect(want.length).toBe(5)
-    expect(text(want[0]).trimStart().startsWith(spec.E_TURN)).toBe(true)
-    expect(text(want[1]).trimStart().startsWith(spec.E_THREAD)).toBe(true)
-    expect(text(want[2]).trimStart().startsWith(spec.E_SESSION)).toBe(true)
+    expect(text(want[0]).trimStart().startsWith(spec.E_SESSION)).toBe(true)
+    expect(text(want[1]).trimStart()).toMatch(
+      new RegExp('^' + spec.E_TREE_LAST + spec.E_TREE_DASH + ' ' +
+        spec.E_THREAD, 'u'))
+    expect(text(want[2]).trimStart()).toContain(spec.E_TURN +
+      spec.E_PHASE_DONE + ' turn  ' + ASKED.slice(0, 8))
     expect(text(want[3])).toBe(' ')
     expect(text(want[4])).toContain('p-resume'.slice(0, 8))
     expect(text(want[4]).startsWith(spec.E_TURN_PAST)).toBe(true)
@@ -2208,7 +2212,8 @@ test('a turn the context was compacted in gets its receipt and tag',
     expect(stamped(w)).toBe(true)
     const want = await receiptOf(w, w.clock.now() / 1000)
     // 🎤 is the turn, by its tag, the compaction billed in it.
-    expect(text(want[0]).trimStart()).toMatch(/^🎤/)
+    expect(text(want.find((l) => text(l).includes('🎤🏁'))!)).toContain(
+      ' turn  ' + ASKED.slice(0, 8))
     expect(text(want.at(-1)!)).toContain('p-resume'.slice(0, 8))
     expect(await closing($, ASKED_MS)).toEqual(expected(want))
     await w.clock.advance(5_000)

@@ -48,7 +48,7 @@ import { WEEKLY_WINDOWS } from "./sources.ts";
 import type { WeeklyKey } from "./sources.ts";
 import { creditCell } from "./credits.ts";
 import { treeRows } from "./band_tree.ts";
-import type { Folds } from "./band_tree.ts";
+import type { Folds, TreeInput } from "./band_tree.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
 import { draw, hidden, layout } from "./grid.ts";
 import type { Piece, Row } from "./grid.ts";
@@ -515,20 +515,37 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
  * has one; its 📛 is the transcript's session name, in its colour. */
 export function treeOf(st: Settings, fig: Dict, rows: BandRows,
   opts: BandOpts, hide: readonly string[]): Row[] {
-  const tr = decodeTranscript(fig.transcript);
-  const running = opts.phase === "running";
   const above = phaseRows(rows, opts.phase, opts.live, "above", opts.places);
   const drawn = (name: RowName, row: Row): Row | null =>
     above.includes(row) && !hidden(hide, scopeOf(name)) ? row : null;
+  return treeRows(st, treeInput(fig, drawn("session", rows.session),
+    drawn("agent", rows.main), drawn("turn", rows.turn), opts), hide);
+}
+
+/** A row of `rows` drawn under the footer line, its label as the band's
+ * tree draws it, alone: no tree's lines, no subagents, and on 🎮 no
+ * workspace, which the footer's 💳 line has. */
+function alone(st: Settings, fig: Dict, rows: BandRows, row: Row,
+  opts: BandOpts, hide: readonly string[]): Row {
+  const only = (r: Row): Row | null => r === row ? r : null;
+  return treeRows(st, { ...treeInput(fig, only(rows.session),
+    only(rows.main), only(rows.turn), opts), workspace: null,
+  agents: null }, hide)[0] ?? row;
+}
+
+/** What the band's tree is drawn from (treeRows), with the rows
+ * `session`, `main` and `turn`, each null where it is not drawn. */
+function treeInput(fig: Dict, session: Row | null, main: Row | null,
+  turn: Row | null, opts: BandOpts): TreeInput {
+  const tr = decodeTranscript(fig.transcript);
+  const running = opts.phase === "running";
   const doc = fig.agents as Dict | undefined;
   const when = opts.agents ?? "running";
   const shown = doc !== undefined &&
     (running ? when !== "never" : when === "always");
   const now = (fig.clock as Dict).now as number;
-  return treeRows(st, {
-    session: drawn("session", rows.session),
-    main: drawn("agent", rows.main),
-    turn: drawn("turn", rows.turn),
+  return {
+    session, main, turn,
     workspace: workspaceOf(fig, ""),
     mainPhase: !running ? E_PHASE_END : tr.wait_at ? E_PHASE_PAUSE
       : E_PHASE_RUN,
@@ -549,7 +566,7 @@ export function treeOf(st: Settings, fig: Dict, rows: BandRows,
     repo: typeof fig.github === "string" ? fig.github : null,
     sessionName: tr.session_name,
     sessionColour: tr.session_color,
-  }, hide);
+  };
 }
 
 /** Whether the band's tree draws its root, 🎮, now: `rows.session`'s
@@ -845,7 +862,8 @@ export function bandLines(st: Settings, fig: Dict, cols: number,
 /** bandLines, each row with its scope (`turn` for 🎤, `main` for 🧵,
  * `session` for 🎮, `agent` for a subagent's), so a caller can tell the
  * rows apart: the rows of `opts.place` alone where it is given, above the
- * prompt as the band's tree (treeOf). */
+ * prompt as the band's tree (treeOf), and under the footer line each with
+ * the tree's label (alone). */
 export function bandScoped(st: Settings, fig: Dict, cols: number,
   hide: readonly string[], opts: BandOpts):
   { scope: string; spans: Span[] }[] {
@@ -854,7 +872,8 @@ export function bandScoped(st: Settings, fig: Dict, cols: number,
   const rows = bandRows(st, fig, opts);
   return (opts.place === "above" ? treeOf(st, fig, rows, opts, hide)
     : phaseRows(rows, opts.phase, opts.live, opts.place, opts.places)
-      .filter((r) => !hidden(hide, r.scope)))
+      .filter((r) => !hidden(hide, r.scope))
+      .map((r) => alone(st, fig, rows, r, opts, hide)))
     .map((r) => ({ scope: r.scope,
       spans: draw(st, indented(r, opts.indent ?? 0), keys, drawn, hide) }));
 }

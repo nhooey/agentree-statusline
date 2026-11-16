@@ -135,27 +135,24 @@ test("the band's columns do not move with the phase or the figures", () => {
   }
 });
 
-test("🧵's 📨 stands left of its mark, so the marks keep one column", () => {
-  const st = settings({});
-  const base = document("status/01-baseline");
-  const queued = { ...base,
-    transcript: { ...(base.transcript as Dict), queued: 3 } };
-  const markAt = (fig: Dict, mark: string) => {
-    const lines = inZone(fig, () => bandLines(st, fig, 160, [],
-      { rate: null, phase: "running" }));
-    const row = lines.map((l) => stripAnsi(join(l))).find((t) =>
-      t.includes(mark + "  "));
-    assert.ok(row, mark);
-    return visWidth(row!.slice(0, row!.indexOf(mark + "  ")), st.widths);
-  };
-  const turn = markAt(base, "🎤");
-  assert.equal(markAt(base, "🧵"), turn);
-  assert.equal(markAt(queued, "🧵"), turn);
-  const lines = inZone(queued, () => bandLines(st, queued, 160, [],
-    { rate: null, phase: "running" }));
-  assert.ok(lines.map((l) => stripAnsi(join(l))).some((t) =>
-    t.includes("📨3 🧵  ")));
-});
+test("the rows under the footer line draw the tree's labels, from the left",
+  () => {
+    const st = settings({});
+    const base = document("status/01-baseline");
+    const queued = { ...base,
+      transcript: { ...(base.transcript as Dict), queued: 3 } };
+    const lines = (fig: Dict) => inZone(fig, () => bandLines(st, fig, 160, [],
+      { rate: null, phase: "running", place: "footer" })).map((l) =>
+      stripAnsi(join(l)));
+    const plain = lines(base);
+    assert.match(plain[0], /^🎤🟢 turn  \S/u);
+    assert.match(plain[1], /^🧵🟢 main /u);
+    assert.match(plain[2], /^🎮 /u);
+    // No tree's lines: each row stands alone.
+    assert.ok(!plain.some((l) => /[├╰│]/u.test(l)));
+    // 🧵's 📨 between its circle and its name, as the tree draws it.
+    assert.match(lines(queued)[1], /^🧵🟢 📨3 main /u);
+  });
 
 test("each row's live and transcript pick the band's rows and the receipt's",
   () => {
@@ -164,25 +161,26 @@ test("each row's live and transcript pick the band's rows and the receipt's",
     const cost = document("cost/09-agents");
     const opts = { rate: null, phase: "done" as const };
     const main = inZone(status, () => bandRows(st, status, opts).main);
-    // Each row's mark, its label being flush right; a blank row's " ".
+    // Each row's mark, after the tree's lines; a blank row's " ".
     const marks = (lines: Span[][]) => lines.map((l) =>
-      Array.from(stripAnsi(join(l)).trimStart())[0] ?? " ");
-    // live by row, the rows stamped, then what the receipt, the band
-    // while a turn runs and the band once it ends draw.
+      Array.from(stripAnsi(join(l)).replace(/^[\s├╰│─]+/u, ""))[0] ?? " ");
+    // live by row, the rows stamped, then what the receipt, as the band's
+    // tree from 🎮 down, the band while a turn runs and the band once it
+    // ends draw.
     for (const [live, stamped, stamp, running, done] of [
-      [{}, ["turn", "agent", "session"], ["🎤", "🧵", "🎮"],
+      [{}, ["turn", "agent", "session"], ["🎮", "🧵", "🎤"],
         ["🎤", "🧵", "🎮"], []],
       // The options' defaults.
       [{ agent: "always", session: "always" }, ["turn"], ["🎤"],
         ["🎤", "🧵", "🎮"], ["🧵", "🎮"]],
       // Kept live and stamped too.
       [{ turn: "always", agent: "always", session: "always" },
-        ["turn", "agent", "session"], ["🎤", "🧵", "🎮"],
+        ["turn", "agent", "session"], ["🎮", "🧵", "🎤"],
         ["🎤", "🧵", "🎮"], ["🎤", "🧵", "🎮"]],
       // Live while running only, and stamped nowhere.
       [{ session: "running" }, ["turn"], ["🎤"], ["🎤", "🧵", "🎮"], []],
       // In the transcript only.
-      [{ turn: "never", agent: "never" }, ["turn", "agent"], ["🎤", "🧵"],
+      [{ turn: "never", agent: "never" }, ["turn", "agent"], ["🧵", "🎤"],
         ["🎮"], []],
       [{ turn: "always", session: "always" }, ["agent"], ["🧵"],
         ["🎤", "🧵", "🎮"], ["🎤", "🎮"]],
@@ -207,7 +205,7 @@ test("each row's live and transcript pick the band's rows and the receipt's",
   });
 
 test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " +
-  "and one that ran none stamps its rows as before", () => {
+  "and one that ran none stamps 🎤's row of the tree alone", () => {
   const st = settings({});
   const status = document("status/01-baseline");
   const cost = document("cost/09-agents");
@@ -220,7 +218,10 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
     hide, false, main, stamped, 0, true, stampedOf(fig)));
   const flat = receipt(null);
   assert.deepEqual(flat.map((l) => l.scope), ["turn", "blank", "tag"]);
-  // No agents in the document, or none the turn ran: as before.
+  // The tree's 🎤 row, from the left, with no tree's lines over it.
+  assert.match(plain(flat)[0],
+    /^🎤🏁 turn  Now have a subagent read the strategy\. /u);
+  // No agents in the document, or none the turn ran: the same.
   assert.deepEqual(receipt(status), flat);
   // Bluebell and Thistle ended in the turn; the rest it ran still run.
   const doc = corpusAgents("01-mixed@220", "All four suites pass");
@@ -246,18 +247,23 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
   // The rows keep the receipt's columns: 💰 where the flat 🎤 has it.
   const col = (l: string) => visWidth(l.slice(0, l.indexOf("💰")), st.widths);
   assert.equal(col(lines[1]), col(plain(flat)[0]));
-  // 🎮 stamped is the tree's root; the agents hidden, the rows as before.
+  // 🎮 stamped is the tree's root; the agents hidden, 🎤 alone.
   const rooted = plain(receipt(ran, ["turn", "session"]));
   assert.match(rooted[0], /^🎮 /u);
   assert.match(rooted[1], /^╰─ 🧵⚫ main/u);
   assert.deepEqual(receipt(ran, ["turn"], ["agent"]), flat);
 });
 
+/** The marks a receipt row's label draws: 🎮, 🧵 ⚫, 🎤 🏁. */
+const LABEL_MARKS: ReadonlySet<string> = new Set(["🎮", "🧵", "⚫", "🎤",
+  "🏁"]);
+
 test("the receipt's rows inset keep the columns of the rows at none", () => {
   // The band's rows are laid out at the full width wherever they start,
   // so the receipt's, inset to stack on them, keep its columns too: no
   // column drops at a width two columns short of where the band drops it.
-  // Each row's first mark is its label's, which the inset's room can cut.
+  // The marks of each row's label, which the inset's room can cut, are
+  // left out.
   const st = settings({});
   const cost = document("cost/09-agents");
   const marks = (line: string): [string, number][] => {
@@ -272,7 +278,8 @@ test("the receipt's rows inset keep the columns of the rows at none", () => {
   for (let cols = 60; cols <= 200; cols++) {
     const at = (inset: number) => inZone(cost, () => receiptLines(st, cost,
       cols, ["name.tag"], false, null, undefined, inset))
-      .map((l) => marks(stripAnsi(join(l))).slice(1));
+      .map((l) => marks(stripAnsi(join(l))).filter(([m]) =>
+        !LABEL_MARKS.has(m)));
     assert.deepEqual(at(2), at(0), String(cols));
   }
 });
