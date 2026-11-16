@@ -11,8 +11,11 @@ draws the rows above the prompt and under the footer line. See `README.md`.
 Enter the dev shell with `nix develop` (or direnv); it installs the
 project's skills into `.agents/skills/`. Then:
 
-- `tests`: every suite, or the ones named (`tests/all.sh`).
-- `typecheck`: type-check the mod's TypeScript.
+- `tests`: every suite, or the ones named (`usage-dev test`).
+- `typecheck`: type-check the mod's TypeScript (`usage-dev typecheck`).
+- `usage-dev`: every other command: regenerating the spec, fixtures,
+  goldens and cases, drawing figures, the manual checks; `usage-dev
+  --list` names them.
 - `check`: `nix flake check`: formatting (treefmt) and the suites a
   build can run (`nix/check-tests.sh`).
 
