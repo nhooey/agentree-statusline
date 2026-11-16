@@ -36,9 +36,8 @@ A new mark must be:
    `coding_agent_usage_line/spec.py`; a literal is a glyph
    nobody measures.
 
-Then measure it. Run `bash tests/probe-advance.sh` in a real terminal tab and
-check it advances two columns, and run `./coding-agent-usage-line.py
---selftest` and look at the drawn rows. A glyph can measure correctly and still
+Then measure it. Run `usage-dev probe-advance` in a real terminal tab and
+check it advances two columns, and run `usage-dev selftest` and look at the drawn rows. A glyph can measure correctly and still
 paint wrong.
 
 One glyph in use breaks rule 3: 🤏 `E_ROW_COMPACT` (U+1F90F) is Unicode 12. It
