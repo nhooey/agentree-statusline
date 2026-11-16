@@ -1,9 +1,9 @@
-// claude_records.ts against claude_records.py, case by case.
+// claude_records.ts, case by case.
 //
-// tests/fixtures/gen/records.py runs the Python's functions and writes each
-// call's arguments and result under tests/fixtures/records/; this runs the
-// same call through the TypeScript and compares the two with deepEqual.
-// Records keep the Python's field names, so they compare as they are.
+// tests/fixtures/records/ holds each call's arguments and result as
+// committed data; this runs the same call through the TypeScript and
+// compares the two with deepEqual.  Records keep the fixtures' snake_case
+// field names, so they compare as they are.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -19,12 +19,12 @@ import { agentFoldOf, agentFoldText } from "../src/agent_fold.ts";
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
 const DIR = path.join(REPO, "tests/fixtures/records");
-// The cases spell paths from the repository root, as the generator ran.
+// The cases spell paths from the repository root.
 process.chdir(REPO);
 
 type Case = { fn: string; args: any[]; kw: Record<string, any>; out: any };
 
-/** The generator's JSON back to values: {"$float": ...} is what JSON
+/** The fixtures' JSON back to values: {"$float": ...} is what JSON
  * cannot spell. */
 function revive(v: any): any {
   if (Array.isArray(v)) return v.map(revive);
@@ -39,7 +39,7 @@ function revive(v: any): any {
   return v;
 }
 
-/** A Map as the dict the Python returns. */
+/** A Map as the plain object the cases hold. */
 function dict(m: ReadonlyMap<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(m);
 }
@@ -50,7 +50,7 @@ function indicesKept(p: string): number[] {
   return recs.flatMap((r, i) => kept.has(r) ? [i] : []);
 }
 
-// Each Python function, as the TypeScript is called for it.
+// Each case's function, as the TypeScript is called for it.
 const RUN: Record<string, (c: Case) => unknown> = {
   _num: (c) => cr._num(c.args[0]),
   _first: (c) => cr._first(c.args[0], c.args.slice(1), c.kw.default),
@@ -187,7 +187,7 @@ const RUN: Record<string, (c: Case) => unknown> = {
   open_turn: (c) => cr.openTurn(c.args[0]),
 };
 
-/** readTurns' core over the file at `p`, with the offsets the Python read
+/** readTurns' core over the file at `p`, with the offsets the case reads
  * from its state directory handed in. */
 function turnsWith(p: string, offsets: Record<string, number> | null,
   held: Map<string, number> | null): cr.Turn[] {
@@ -222,7 +222,7 @@ for (const file of fs.readdirSync(DIR).filter((f) => f.endsWith(".json"))
   }
 }
 
-// Session 36be113b on 2026-10-21 (records.py's handback.jsonl): a peer's
+// Session 36be113b on 2026-10-21 (inputs/handback.jsonl): a peer's
 // hand-back delivered into a running turn stays in it, the prompt sent
 // again from a dequeue with no content opens its own turn, and 🎤 reads an
 // agent's message out of Claude Code's frame.
@@ -239,7 +239,7 @@ test("a hand-back stays in its turn, and a queued prompt opens one", () => {
   assert.deepEqual([tr.prompt_id, tr.turn_index], ["H5", 28]);
 });
 
-// records.py's commands.jsonl and unnumbered.jsonl: a slash command the
+// inputs/commands.jsonl and unnumbered.jsonl: a slash command the
 // model answers opens a turn and reads as it was typed; one Claude Code
 // runs itself opens none, and /compact stays its compaction; a wake with
 // no turnPosition opens none once the transcript has shown one, and opens
@@ -263,7 +263,7 @@ test("a typed slash command opens a turn, an unnumbered wake does not", () => {
   assert.equal(cr.commandLabel("<command-message>x</command-message>"), "/x");
 });
 
-// records.py's midturn.jsonl: prompts typed while M1's answer runs, handed
+// inputs/midturn.jsonl: prompts typed while M1's answer runs, handed
 // over between its requests as "queued" records with promptIds and
 // turnIndexes of their own, stay in M1: its text, its promptId, its clock
 // and every call after them.  The queued prompt after the answer ended
@@ -299,7 +299,7 @@ test("a prompt delivered mid-turn stays in the turn running", () => {
     "also check the docs");
 });
 
-// records.py's names.jsonl: the session's name is the latest custom-title,
+// inputs/names.jsonl: the session's name is the latest custom-title,
 // else the latest agent-name, and its colour the latest agent-color,
 // "default" none; a /rename's later record wins.
 test("the session's name and colour are the latest records' own", () => {
@@ -317,7 +317,7 @@ test("the session's name and colour are the latest records' own", () => {
   assert.deepEqual(at(records.length), ["Status¶ line two", "cyan"]);
 });
 
-// records.py's background.jsonl: a shell with a description keeps its whole
+// inputs/background.jsonl: a shell with a description keeps its whole
 // command on one line and the output file its call's result names, a
 // Monitor the first its notifications name, and the mod's own BgEnded
 // keeps both for a task once it has closed.
@@ -351,7 +351,7 @@ test("a background task keeps its command and output file, open and " +
 
 // The mod reads an agent's file as it grows, folding only what was appended
 // since its last read: cut anywhere, mid-line included, the file folded
-// piece by piece reads as the Python reads it whole.
+// piece by piece reads as it does read whole.
 test("an agent file folded as it grows reads as it does whole", () => {
   let files = 0;
   for (const file of fs.readdirSync(DIR).filter((f) => f.endsWith(".json"))) {
@@ -375,8 +375,8 @@ test("an agent file folded as it grows reads as it does whole", () => {
   assert.ok(files > 0, "no _read_agent_file cases");
 });
 
-/** Each `_read_agent_file` case with a reading: its file, and the reading
- * the Python made of it whole. */
+/** Each `_readAgentFile` case with a reading: its file, and the reading
+ * the case pins for it read whole. */
 function agentCases(): Case[] {
   return fs.readdirSync(DIR).filter((f) => f.endsWith(".json")).flatMap((f) =>
     (revive(JSON.parse(fs.readFileSync(path.join(DIR, f), "utf-8")))

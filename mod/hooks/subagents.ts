@@ -105,9 +105,8 @@ async function progressAt($: $, path: string): Promise<string> {
 }
 
 /** The branch an agent working in `cwd` is on, where that is another
- * checkout than the session's, whose root is `sessionRoot`: claude.py's
- * worktree_branch.  "" where the two share a checkout, or either is in
- * none. */
+ * checkout than the session's, whose root is `sessionRoot`.  "" where the
+ * two share a checkout, or either is in none. */
 async function branchApart($: $, cwd: string, sessionRoot: string):
   Promise<string> {
   const [root, branch] = await gitHead($, cwd)
@@ -115,7 +114,7 @@ async function branchApart($: $, cwd: string, sessionRoot: string):
 }
 
 /** `[root, branch]` of the git checkout holding `path`, off its files
- * alone, as claude.py's git_head reads them: a `.git` directory, or a
+ * alone: a `.git` directory, or a
  * `gitdir:` file in a linked worktree, and HEAD beside it; a detached HEAD
  * is its commit's first seven digits.  `['', '']` outside a checkout. */
 export async function gitHead($: $, path: string): Promise<[string, string]> {

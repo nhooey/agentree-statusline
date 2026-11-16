@@ -1,10 +1,10 @@
-// claude_subagent_render.ts against claude_subagent_render.py, case by case.
+// claude_subagent_render.ts, case by case.
 //
-// tests/fixtures/gen/panel.py writes tests/fixtures/panel/: one file per
+// tests/fixtures/panel/, committed data, holds one file per
 // settings group (the terminal's environment, mark spacing and subscript
 // decimals), each case the prepared (task, usage, meta, shares) records,
 // the plan Limits, the terminal's width, the clock and any --hide paths
-// render_task_rows was handed, and the rows it drew, each as the joined
+// renderTaskRows was handed, and the rows it drew, each as the joined
 // string and as the spans it was joined from.  Both have to match: the spans are what a mod draws, and
 // the string is what the goldens pin.
 import { test } from "node:test";
@@ -24,8 +24,8 @@ const DIR = path.join(import.meta.dirname, "..", "..", "tests", "fixtures",
   "panel");
 const FILES = fs.readdirSync(DIR).filter((f) => f.endsWith(".json")).sort();
 
-/** A span as panel.py's span_json writes it: the fields at their defaults
- * left out. */
+/** A span as the fixtures write it: the fields at their defaults left
+ * out. */
 function spanJson(s: Span): { [k: string]: unknown } {
   const out: { [k: string]: unknown } = { text: s.text };
   if (s.colour) out.colour = s.colour;

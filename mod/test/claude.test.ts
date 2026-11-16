@@ -1,15 +1,14 @@
 // claude.ts, the glue that builds the figures documents, against the
-// documents the Python built.
+// committed documents.
 //
 // For each status and cost case in tests/fixtures/cases.json this reads
-// the case's inputs as run-cases.py hands them to the Python, builds the
-// document with statusFigures or costFigures, and compares it with the
+// the case's inputs, builds the document with statusFigures or costFigures, and compares it with the
 // committed document the case names, tests/fixtures/figures/<suite>/
 // <figures>.json filled out (figures_doc.ts), field for field, so a case
 // at any width and flags must come to it; and checks the records of the
 // document built have exactly their fields, which the sparse committed
 // text cannot show.
-// What the Python read outside the transcript comes from the committed
+// What a run reads outside the transcript comes from the committed
 // document itself: the usage source's reading (sources.test.ts pins the
 // reader), the git context (claude.test.ts pins detectGit's reading of
 // git's answers below) and the token rate (the status line's own state
@@ -18,7 +17,6 @@
 // window, is the TypeScript's.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -57,8 +55,8 @@ function fill(text: string): string {
     .replaceAll("${SCRATCH}", SCRATCH);
 }
 
-/** A document as JSON holds it, so deepEqual compares values: the
- * Python's -0.0 and 0 are one figure in canonical JSON. */
+/** A document as JSON holds it, so deepEqual compares values: -0 and 0
+ * are one figure in canonical JSON. */
 function plain(v: unknown): unknown {
   return JSON.parse(JSON.stringify(v, (_k, x) => Object.is(x, -0) ? 0 : x));
 }
@@ -83,8 +81,8 @@ function envOf(c: Case): any {
     path.join(FIXTURES, "env", c.env + ".json"), "utf-8"));
 }
 
-/** The committed document the case names, read as the Python reads
- * JSON. */
+/** The committed document the case names, read as Python's json.loads does
+ * (NaN and the infinities as numbers). */
 function committed(c: Case): any {
   return readFigures(c.suite, c.figures, fill, pyJsonLoads);
 }
@@ -96,7 +94,7 @@ function same(got: unknown, want: unknown): void {
 }
 
 /** The calibration the case's planted cache gives under this snapshot, as
- * _read_calib_cache and calibration read it: a fixture of units as it
+ * _readCalibCache and calibration read it: a fixture of units as it
  * is, and the live shape only for the windows it was measured over.  No
  * case runs the scan. */
 function calibOf(env: any, snap: Snapshot): Calib {
@@ -113,14 +111,6 @@ const cost = cases.filter((c) => c.suite === "cost");
 test("every status and cost case is here", () => {
   assert.equal(status.length, 145);
   assert.equal(cost.length, 88);
-});
-
-// The committed documents leave the schema out, so each port's own is put
-// back: the two must be one number.
-test("both ports name the same figures schema", () => {
-  const py = execFileSync("python3", ["-c", "from coding_agent_usage_line" +
-    ".claude import FIGURES_SCHEMA; print(FIGURES_SCHEMA)"], { cwd: REPO });
-  assert.equal(Number(py.toString()), FIGURES_SCHEMA);
 });
 
 for (const c of status) {
@@ -168,12 +158,12 @@ for (const c of cost) {
   });
 }
 
-// tests/fixtures/gen/claude.py's cases: the small pure parts, each case
-// one call of the Python's.
+// tests/fixtures/claude/glue.json's cases, committed data: the small pure
+// parts, each case one call.
 const glue = JSON.parse(fs.readFileSync(
   path.join(FIXTURES, "claude/glue.json"), "utf-8"));
 
-/** gen/calib.py's float encoding back. */
+/** The fixtures' float encoding back: {"$float": "nan"} and the like. */
 function float(v: any): number | null {
   if (v === null || typeof v === "number") return v;
   return { nan: NaN, inf: Infinity, "-inf": -Infinity, "-0": -0 }[

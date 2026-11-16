@@ -1,10 +1,10 @@
 // The fixtures' encoding, shared by formatting.test.ts and spans.test.ts:
-// tests/fixtures/gen/formatting.py writes a Span as {"span": [text, colour,
-// dim, bold, bg]} and a float JSON cannot carry as {"$float": ...}.
+// the committed fixtures hold a Span as {"span": [text, colour, dim,
+// bold, bg]} and a float JSON cannot carry as {"$float": ...}.
 import * as sp from "../src/spans.ts";
 import type { Span } from "../src/spans.ts";
 
-/** The generator's JSON back to values: {"$float": ...} is what JSON
+/** The fixtures' JSON back to values: {"$float": ...} is what JSON
  * cannot spell, and {"span": [...]} a Span. */
 export function revive(v: any): any {
   if (Array.isArray(v)) return v.map(revive);
@@ -23,7 +23,7 @@ export function revive(v: any): any {
   return v;
 }
 
-/** A TypeScript result as the generator writes the Python's: a Span as
+/** A TypeScript result as the fixtures write one: a Span as
  * {"span": [...]}, a set as its sorted list, a non-finite float marked. */
 export function enc(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(enc);

@@ -189,13 +189,13 @@ export function fixedKeys(st: Settings, cols: number,
 // Shared by the rows.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** A turn's ▴, weighed as cost_group weighs it, and its ▾. */
+/** A turn's ▴, weighed as costGroup weighs it, and its ▾. */
 export function turnTokens(t: Turn): [number, number] {
   return [t.fresh + W_CACHE_WRITE * t.cache_write +
     W_CACHE_READ * t.cache_read, t.out];
 }
 
-/** A turn's 🎯, as cost_group works it out. */
+/** A turn's 🎯, as costGroup works it out. */
 export function turnCache(t: Turn): number {
   return cacheRate(t.cache_read, t.fresh + t.cache_write + t.cache_read);
 }
@@ -238,7 +238,7 @@ function spendCell(st: Settings, fig: Dict,
 }
 
 /** The main thread's ⛳, as today's ⌛ row draws it: its own last report,
- * pushed out by a live agent's (inherit_eta), counted from the turn's
+ * pushed out by a live agent's (inheritEta), counted from the turn's
  * prompt; nothing with no transcript. */
 function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
   if (!tr.start_s) return [];
@@ -273,7 +273,7 @@ function etaNow(tr: Transcript, now: number): number {
   return tr.idle_at ? Math.min(now, tr.idle_at) : now;
 }
 
-/** The working directory under `home` as "~", as render_status shows it. */
+/** The working directory under `home` as "~", as renderStatus shows it. */
 function homeDir(dir: string, home: string): string {
   if (dir === home) return "~";
   if (home && dir.startsWith(home + "/")) {

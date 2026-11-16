@@ -1,12 +1,9 @@
 // Python's semantics, where JavaScript's differ: one copy for every module.
 //
-// The ports read JSON the Python reads, and the Python reads it through
-// dict.get, `or` and truthiness, none of which JavaScript spells the same
-// way.  Each helper here is the Python expression in its doc comment, and
-// a port writes the helper wherever the Python writes the expression, so
-// the two read alike line by line.  sources.ts and claude_records.ts each
-// grew a copy of these before this module; they are folded in here so a
-// fix to one is a fix to both.
+// The JSON the modules read is read by the rules of dict.get, `or` and
+// truthiness, none of which JavaScript spells the same way.  Each helper
+// here is the Python expression in its doc comment, and a module writes
+// the helper wherever that expression is what it means.
 
 /** UTF-8 to a string, as bytes.decode("utf-8") with `fatal` "strict" or
  * else "replace": a leading byte-order mark kept with `keepBom`, as

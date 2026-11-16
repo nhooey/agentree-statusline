@@ -79,8 +79,8 @@ show what the turn took from each plan window.
 
 ## Install
 
-You need Python 3.9 or newer. The program uses only the standard library, so
-there is nothing to install beyond a clone:
+The readouts are a Claude Code mod, which needs only Claude Code: there is
+nothing to install beyond a clone.
 
 ```sh
 git clone https://github.com/nhooey/claude-code-usage-statusline.git ~/src/claude-code-usage-statusline
@@ -101,14 +101,14 @@ Its settings, such as the usage source and what it hides, are in the
 [`mod/README.md`](mod/README.md) has the rest.
 
 Every setting's default is in one file,
-[`mod/defaults/config.jsonc`](mod/defaults/config.jsonc), which both the
-Python program and the mod read at every run. To change a setting, write
-only that key in your own file; every key it leaves out keeps the default,
-and follows the defaults file as it changes:
+[`mod/defaults/config.jsonc`](mod/defaults/config.jsonc), which the mod
+reads at every load. To change a setting, write only that key in your own
+file; every key it leaves out keeps the default, and follows the defaults
+file as it changes:
 
 ```sh
 mkdir -p ~/.config/coding-agent-usage-line
-echo '{"totals": false}' > ~/.config/coding-agent-usage-line/config.jsonc
+echo '{"mark-spacing": false}' > ~/.config/coding-agent-usage-line/config.jsonc
 ```
 
 A project's settings go in its own `.config/coding-agent-usage-line/`
@@ -336,12 +336,11 @@ in detail.
 same path on every readout. The defaults hide nothing, as in the renders
 above. See [Hiding](docs/layout.md#hiding).
 
-[Options](docs/options.md) lists every flag.
+[Options](docs/options.md) lists every option.
 
 The 💳 row's figures come from the usage source the mod is configured with
-(`usage-source`, `auto` by default), and the Python program's from
-`--usage-source`. Besides the rate limits Claude Code reports, either can
-take them from:
+(`usage-source`, `auto` by default). Besides the rate limits Claude Code
+reports, it can take them from:
 
 * the Claude Usage Tracker app
 * an organization API
@@ -349,23 +348,14 @@ take them from:
 
 See [Usage sources](docs/usage-sources.md).
 
-## Codex
-
-The program also reports on Codex sessions with `--agent codex`. It prints a
-prompt receipt from a Codex `Stop` hook, and a one-shot session status line
-for a saved rollout. For the live footer, use Codex's own `/statusline`. Codex does not report per-agent
-quota shares, so those fields are left blank rather than estimated. See
-[Codex](docs/codex.md) for setup.
-
 ## Documentation
 
 | | |
 |---|---|
 | [Layout](docs/layout.md) | every cell on the three readouts in detail, and the colour rules |
-| [Accounting](docs/accounting.md) | how the program derives costs, plan shares and time |
-| [Options](docs/options.md) | every flag and environment variable |
+| [Accounting](docs/accounting.md) | how the mod derives costs, plan shares and time |
+| [Options](docs/options.md) | every option and environment variable |
 | [Usage sources](docs/usage-sources.md) | where plan figures come from, and how to write your own source |
-| [Codex](docs/codex.md) | setup and differences for Codex |
 | [Glyphs and terminals](docs/glyphs-and-terminals.md) | how to choose a glyph that keeps the columns aligned |
 | [Tests](docs/tests.md) | the test suites and what CI runs |
 | [Development](docs/development.md) | how the code is organized, and the style rules |

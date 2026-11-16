@@ -1,14 +1,13 @@
 // Prepared shared usage readings for Claude orchestration.
 //
-// A port of coding_agent_usage_line/claude_sources.py: collect once, and
-// project the reading into the two plan windows the band draws.  It also
-// holds what that needs from claude.py, which is not otherwise ported: the
-// tracker's store (ClaudeUsageTrackerSource, trackerReading and the plist
-// it is read from) and the context main_status hands the collector.
+// Collect once, and project the reading into the two plan windows the
+// band draws.  It also holds what that needs: the tracker's store
+// (ClaudeUsageTrackerSource, trackerReading and the plist it is read
+// from) and the context the status line hands the collector.
 //
-// NOT PORTED: account_summary, the account line under the status line,
-// which is a renderer and goes with the cells (build step 4).  So
-// PreparedClaudeReading has no accountText yet.
+// Not here: the account line under the status line, which is a renderer
+// and goes with the cells (build step 4).  So PreparedClaudeReading has
+// no accountText yet.
 //
 // Pure, so the mod can import it: reading the tracker's store, through its
 // plist or `defaults export`, is claude_sources_node.ts's in Node and the
@@ -28,7 +27,7 @@ import type {
 // windows, as
 // claude_records.Limits holds them.  Percentages
 // are strings because a missing figure is the empty string throughout.
-// The fields keep Python's names, as the reading's do, so the shared cases
+// The fields keep snake_case names, as the reading's do, so the cases
 // compare them as they are.  When claude_records.ts lands with its own
 // Limits, this one should become an import of it.
 export type Limits = {
@@ -81,7 +80,7 @@ export function limitsEqual(a: Limits, b: Limits): boolean {
     .every((k) => a[k] === b[k]);
 }
 
-/** no_plan: whether `lim` holds neither plan window.  The Fable window and
+/** noPlan: whether `lim` holds neither plan window.  The Fable window and
  * the other weekly windows alone are not a plan reading: the accounting
  * divides by the two plan windows, and the status line's grid draws only
  * them. */
@@ -211,11 +210,11 @@ export async function prepareClaudeReading(
   return { reading, limits: legacyLimits(reading) };
 }
 
-// What main_status hands the collector: the session's scope, the time the
-// payload was observed (so native data without its own as_of is not marked
-// stale for lacking one), and the payload's own rate_limits, but only for
-// the sources that may read them.  An explicit external command receives
-// no quota envelope.  Inline in claude.py; a function here.
+// What the status line hands the collector: the session's scope, the time
+// the payload was observed (so native data without its own as_of is not
+// marked stale for lacking one), and the payload's own rate_limits, but
+// only for the sources that may read them.  An explicit external command
+// receives no quota envelope.
 export function statusSourceContext(spec: string, session: string,
                                     model: string, asOf: number,
                                     payload: unknown): Dict {
@@ -229,7 +228,7 @@ export function statusSourceContext(spec: string, session: string,
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// The Claude Usage Tracker's store, from claude.py.
+// The Claude Usage Tracker's store.
 // ════════════════════════════════════════════════════════════════════════════
 
 export const APPLE_EPOCH = 978307200;  // 2001-01-01 UTC, in Unix seconds.
@@ -331,7 +330,7 @@ export function trackerReading(store: unknown): Dict {
 
 // Claude Code's global config (~/.claude.json) read down to its signed-in
 // account, hashed: `oauthAccount.accountUuid`, and nothing else.  The read
-// is the edge's; claude.config_account_id does both.
+// is the edge's; configAccountId does both.
 export function configAccountOf(text: string): string {
   let data: unknown;
   try { data = JSON.parse(text); } catch { return ""; }

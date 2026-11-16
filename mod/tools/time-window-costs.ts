@@ -1,11 +1,13 @@
-// What the window-cost scan costs here in the Node port, cold and off its
-// cache: the TypeScript's side of tools/time-window-costs.py, which has the
-// whole story.
+// What the window-cost scan costs here, cold and off its cache.
 //
 //   node mod/tools/time-window-costs.ts [--runs N]
 //
-// Not in CI: it reads ~/.claude/projects, which is private, against a
-// scratch state directory, never the real one.
+// Not in CI: it reads ~/.claude/projects, which is private.  It scans the
+// real transcripts with the windows a plan has now (the 5-hour one from
+// five hours ago, the week from seven days ago), against a scratch state
+// directory, never the real one: first with nothing cached, then N times
+// more off the cache the first left.  `time-window-costs` in the dev shell
+// runs it.
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -19,7 +21,7 @@ const projectsDir = process.env.CODING_AGENT_USAGE_LINE_CLAUDE_PROJECTS_DIR ||
   path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude"),
     "projects");
 const now = Date.now() / 1000;
-// Naive local datetimes, as the Python's datetime.now() less the windows.
+// Naive local datetimes: the local clock less the windows.
 const local = now - new Date().getTimezoneOffset() * 60;
 const ss = local - 5 * 3600, ws = local - 7 * 86400;
 const env: CalibEnv = { projectsDir, stateDir: scratch, now };

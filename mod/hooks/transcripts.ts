@@ -470,7 +470,7 @@ async function agentTail($: $, path: string, pos: number, size: number):
 }
 
 /** The fold saved in `dir` for agent file `path`, `size` long, and its
- * sequence number, as agent_fold.fold_file reads it: from the newer slot
+ * sequence number, as agentFoldFile reads it: from the newer slot
  * whose offset is within the file and whose check digest still matches,
  * else the other; else a new fold, and the highest sequence number either
  * slot holds. */
@@ -551,7 +551,7 @@ export async function sidecarOf($: $, path: string): Promise<Dict | null> {
   return got
 }
 
-/** agent_label's reading of a file's sidecar, as agentReadings read it. */
+/** agentLabel's reading of a file's sidecar, as agentReadings read it. */
 function labelOf(path: string): [string, string] {
   return agentLabels.get(path) ?? agentLabelOf(path, null)
 }
@@ -569,7 +569,7 @@ export async function agentOffsets($: $, transcript: string,
   }
 }
 
-/** read_turns' finish over the turns' fold, with the agents' readings and
+/** readTurns' finish over the turns' fold, with the agents' readings and
  * the published offsets. */
 export async function turnsVia($: $, places: Places, path: string, fold: TurnsFold,
   readings: [string, AgentReading][]): Promise<Turn[]> {

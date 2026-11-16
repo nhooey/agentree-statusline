@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
 # Every deterministic suite, side by side, and one line each on how it went.
 #
-#   bash tests/all.sh              # every suite
-#   bash tests/all.sh status node  # the ones named
-#   bash tests/all.sh --repeat 20 node grid  # until one fails, 20 at most
-#   bash tests/all.sh --skip py39-floor,generated  # every suite but those
+#   bash tests/all.sh                  # every suite
+#   bash tests/all.sh spec node        # the ones named
+#   bash tests/all.sh --repeat 20 node # until one fails, 20 at most
+#   bash tests/all.sh --skip generated # every suite but those
 #
-# The suites share no state, so they run at once; the longest, the status
-# goldens' chain of cases, is about the wall time of the whole.  Each line
+# The suites share no state, so they run at once; the longest, the node
+# suite, is about the wall time of the whole.  Each line
 # is the suite's name, its seconds, ok or FAIL, and the result line it
 # printed.  A failing suite's output follows the table, and the exit status
 # is the number of suites that failed.  The manual checks of docs/tests.md
 # are not here.
 #
-# Last, once the suites are done, `generated` reruns the fixture
-# generators and fails if `git status` then shows any changed or untracked
-# file: a generator's output left uncommitted, which GitHub's run would
-# miss.  It runs alone because it rewrites the suites' inputs, and it
-# fails on uncommitted work too, so it is the check to run before a push.
+# Last, once the suites are done, `generated` reruns every generator of
+# committed files (tools/gen-spec.py and the mod's under mod/tools/) and
+# fails if `git status` then shows any changed or untracked file: a
+# generator's output left uncommitted, which GitHub's run would miss.  It
+# runs alone because it rewrites the suites' inputs, and it fails on
+# uncommitted work too, so it is the check to run before a push.
 #
 # --repeat N, first, runs the whole selection again, round after round, and
 # stops at the first round with a failure, whose status is the exit status:
@@ -52,38 +53,9 @@ fi
 work="$(mktemp -d "${TMPDIR:-/tmp}/all-suites.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 
-# No suite may start this machine's Codex: a `codex` first on PATH that
-# notes each call and fails, so a run that would reach the real one shows
-# under `hermetic` below instead.
-mkdir "$work/bin"
-printf '#!/bin/sh\necho "codex $*" >>"%s/codex-calls"\nexit 1\n' "$work" \
-  >"$work/bin/codex"
-chmod u+x "$work/bin/codex"
-export PATH="$work/bin:$PATH"
-
 # name | directory under ROOT | command.  In the order the table prints.
 SUITES='
-status|.|bash tests/golden.sh
-cost|.|bash tests/golden-cost.sh
-panel|.|python3 tests/run-cases.py --suite panel
-py39-floor|.|bash tests/py39-floor.sh
-usage-source|.|python3 tests/usage-source.py
-sources-v1|.|python3 tests/sources-v1.py
-source-cache|.|python3 tests/source-cache.py
-http-sources|.|python3 tests/http-sources.py
-app-server|.|python3 tests/app-server.py
-claude-sources|.|python3 tests/claude-sources.py
-codex|.|python3 tests/codex.py
-formatting|.|python3 tests/formatting.py
-port-cli|.|python3 tests/port-cli.py
-config|.|python3 tests/config.py
 usage-dev|.|python3 tests/usage-dev.py
-agents|.|python3 tests/agents.py
-fold|.|python3 tests/fold.py
-subagent|.|python3 tests/subagent.py
-claude-subagent-render|.|python3 tests/claude-subagent-render.py
-rate|.|python3 tests/rate.py
-grid|.|python3 tests/grid.py
 spec|.|python3 tools/gen-spec.py --check
 node|mod|node --test test/*.test.ts
 typecheck|mod|npm run -s typecheck
@@ -94,8 +66,11 @@ plugin-validate|mod|claude plugin validate .
 
 now() {
   if [ -n "${EPOCHREALTIME:-}" ]; then echo "$EPOCHREALTIME"
-  else python3 -c 'import time; print(time.time())'; fi
+  else date +%s; fi
 }
+
+# secs START END: the seconds between, to a tenth.
+secs() { awk -v a="$1" -v b="$2" 'BEGIN { printf "%.1f", b - a }'; }
 
 # wanted NAME [ASKED...]: NAME is not skipped, and is one of those asked
 # for, or none were.
@@ -134,7 +109,12 @@ if wanted generated "$@"; then
     cd "$ROOT" || exit 1
     start=$(now)
     {
-      python3 tests/fixtures/gen/all.py >/dev/null &&
+      python3 tools/gen-spec.py &&
+        node mod/tools/gen-config-cases.ts >/dev/null &&
+        node mod/tools/gen-fold-saves.ts >/dev/null &&
+        node mod/tools/gen-grid-cases.ts >/dev/null &&
+        node mod/tools/gen-row-cases.ts >/dev/null &&
+        node mod/tools/gen-mod-fixtures.ts >/dev/null &&
         dirty="$(git status --porcelain --untracked-files=all)" &&
         if [ -n "$dirty" ]; then
           echo "$dirty"
@@ -148,21 +128,9 @@ if wanted generated "$@"; then
     echo "$rc $start $(now)" >"$work/generated.rc"
   )
 fi
-if [ ${#names[@]} -gt 0 ]; then
-  names+=(hermetic)
-  start=$(now)
-  if [ -s "$work/codex-calls" ]; then
-    { cat "$work/codex-calls"
-      echo "FAIL: a suite ran codex off PATH"; } >"$work/hermetic.out"
-    echo "1 $start $(now)" >"$work/hermetic.rc"
-  else
-    echo "ok no suite ran codex" >"$work/hermetic.out"
-    echo "0 $start $(now)" >"$work/hermetic.rc"
-  fi
-fi
 t1=$(now)
 if [ ${#names[@]} -eq 0 ]; then
-  echo "no suite named $*; the names are the first column of SUITES, generated and hermetic" >&2
+  echo "no suite named $*; the names are the first column of SUITES, and generated" >&2
   exit 2
 fi
 
@@ -175,13 +143,13 @@ result() {
 failed=0
 for name in "${names[@]}"; do
   read -r rc start end <"$work/$name.rc"
-  secs=$(python3 -c "print('%.1f' % ($end - $start))")
+  took=$(secs "$start" "$end")
   if [ "$rc" -eq 0 ]; then mark=ok; else mark=FAIL; failed=$((failed + 1)); fi
-  printf '%-24s %6ss  %-4s  %s\n' "$name" "$secs" "$mark" \
+  printf '%-24s %6ss  %-4s  %s\n' "$name" "$took" "$mark" \
     "$(result "$work/$name.out")"
 done
 printf '%-24s %6ss  %d of %d failed\n' "wall" \
-  "$(python3 -c "print('%.1f' % ($t1 - $t0))")" "$failed" "${#names[@]}"
+  "$(secs "$t0" "$t1")" "$failed" "${#names[@]}"
 
 for name in "${names[@]}"; do
   read -r rc _ <"$work/$name.rc"

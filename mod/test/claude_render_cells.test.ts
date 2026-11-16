@@ -1,11 +1,11 @@
-// claude_render.ts against claude_render.py, cell by cell.
+// claude_render.ts, cell by cell.
 //
 // The status goldens (claude_render.test.ts) draw under one terminal
-// profile and one zone.  tests/fixtures/gen/render.py runs each cell, and
-// render_status over hand-made records, under every profile, both mark
-// spacings and the subscripts, and writes each call's inputs and result
-// under tests/fixtures/render/; this builds the same Settings, runs the
-// same call through the TypeScript and compares.
+// profile and one zone.  tests/fixtures/render/ holds, as committed data,
+// each cell and renderStatus over hand-made records, under every
+// profile, both mark spacings and the subscripts: each call's inputs and
+// result.  This builds the same Settings, runs the same call through the
+// TypeScript and compares.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -66,8 +66,8 @@ function keepingTz(body: () => void): void {
   }
 }
 
-// Each Python function by name, called with the case's arguments as the
-// Python was: settings first where the port takes them.
+// Each case's function by name, called with the case's arguments:
+// settings first where the function takes them.
 const FNS: { [fn: string]: (st: Settings, a: any[]) => unknown } = {
   render_tokens: (st, a) => cr.renderTokens(st, a[0], a[1], a[2]),
   main_doing: (_st, a) => cr.mainDoing(a[0]),
@@ -106,7 +106,7 @@ const FNS: { [fn: string]: (st: Settings, a: any[]) => unknown } = {
   drawn_line: (_st, a) => cr.drawnLine(a[0], a[1]),
 };
 
-/** fn's result as the generator writes it, or the mark of a throw. */
+/** fn's result as the fixtures write it, or the mark of a throw. */
 function attempt(fn: () => unknown): unknown {
   try {
     return enc(fn());

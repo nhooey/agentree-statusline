@@ -269,7 +269,7 @@ binary, then the changelog" --cols 200`):
   `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
   has run. It counts against no cap and does not fold; a click on it
   shows it as a toast, with its whole command and its output file (see
-  the clicks above), which both ports' folds keep with its label. Once the thread hears its
+  the clicks above), which the folds keep with its label. Once the thread hears its
   end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at
   how long it ran, for `finished-linger` seconds after the record that
   closed it (5 as the mod ships), and then leaves. An opened thread leaves its 💻
@@ -1091,8 +1091,8 @@ pink, 🍳 mint, 🔌 periwinkle and 🤝 cream. The one exception is 🎯 (belo
 **Brightness is the unit.** A figure written with a unit takes its shade
 from that unit, in levels of its own hue, so 841k and 8.4M, or 3h and 3d,
 do not look alike in the same four columns. Two tables in
-`spec/layout.jsonc` and one rule decide it, the same in both ports
-(`grade` in `formatting.py` and `formatting.ts`).
+`spec/layout.jsonc` and one rule decide it (`grade` in
+`mod/src/formatting.ts`).
 
 A *scale* lists a kind of figure's units in order of size, smallest
 first. Units in one step share a position. A figure's step is the one that
@@ -1274,10 +1274,10 @@ column digits in its place to check it.
 
 ### The status line and the Stop hook
 
-Without the mod, a `statusLine` command, `--mode status`, draws the session's
-figures on three rows under the prompt, a grid of its own with 👤💬, 📖 and
-📝 cells, and a `Stop` hook, `--mode cost`, prints the prompt receipt behind
-Claude Code's `Stop says:` (see [Options](options.md#modes)). Their goldens
-in `tests/golden/` pin both, but with the mod loaded leave both out of
-`settings.json`: the mod's rows replace the status line, and its receipt
-the Stop hook's, which would otherwise print a second one each turn.
+The mod's `mod/src/claude_render.ts` draws the session's figures as a
+status line of three rows, a grid of its own with 👤💬, 📖 and 📝 cells,
+and `mod/src/claude_cost_render.ts` the prompt receipt in the same shape;
+the goldens in `tests/golden/` pin both. Leave any `statusLine` command or
+`Stop` hook that drew them out of `settings.json`: the mod's rows replace
+the status line, and its receipt the Stop hook's, which would otherwise
+print a second one each turn.

@@ -264,7 +264,7 @@ type Options = {
   plain: boolean;
 };
 
-/** The command line, as the Python's argparse took it. */
+/** The command line. */
 function parse(argv: readonly string[]): Options {
   const o: Options = { cols: null, hide: [], receipt: "mod", phase: "done",
     labels: "spill", grid: "fixed", agents: 2, part: "screen", plain: false };
@@ -314,8 +314,8 @@ function parse(argv: readonly string[]): Options {
   return o;
 }
 
-/** The terminal's width, walked up from this process's parent as
- * formatting.py's term_cols does, the device asked through stty. */
+/** The terminal's width, walked up from this process's parent, the
+ * device asked through stty. */
 function terminalCols(): number | null {
   const ps = (pid: number): string | null => {
     const got = spawnSync("ps", ["-o", "tty=,ppid=", "-p", String(pid)],

@@ -1,35 +1,34 @@
 // Claude payload records and transcript/accounting parser.
 //
-// The port of claude_records.py, function for function under the same names
-// in camelCase; a record's fields keep the Python's snake_case names, as
-// claude_sources.ts's do, so a record reads the same in both and the shared
-// cases compare it as it is.  It owns Claude-specific JSONL interpretation and price
-// accounting, and has no terminal rendering.
+// A record's fields keep snake_case names, as claude_sources.ts's do, so
+// the shared cases compare a record as it is.  It owns Claude-specific
+// JSONL interpretation and price accounting, and has no terminal
+// rendering.
 //
-// The Python reads files inside its functions; here every reader that takes
-// a path is a thin edge over a pure core that takes the bytes or the parsed
-// records (`_recordsOf`, `transcriptOf`, `turnsOf`, ...), so the mod can
-// feed it what its own handlers read.  The state directory, the clock and
+// Every reader that takes a path is a thin edge over a pure core that
+// takes the bytes or the parsed records (`_recordsOf`, `transcriptOf`,
+// `turnsOf`, ...), so the mod can feed it what its own handlers read.
+// The state directory, the clock and
 // the cache version are arguments, never read from the environment here.
 //
-// What does not carry over from Python by itself, decided once:
+// Python's rules this follows, decided once:
 //
 //   - Truthiness.  `r.get("x") or y` treats 0, "", [], {} and None alike;
 //     JavaScript does not, so every such test goes through py.ts's
 //     `pyTruthy` and `pyOr`.
 //   - Missing is null, never undefined and never zero.  `pyGet` returns
 //     null for an absent key, as `d.get("k")` does, and `pyHas` is `"k" in
-//     d` where the Python tells the two apart.
-//   - Numbers.  JSON.parse cannot tell 5 from 5.0, so the two places the
-//     Python asks `isinstance(v, int)` accept an integral float here; and an
+//     d` where the two must be told apart.
+//   - Numbers.  JSON.parse cannot tell 5 from 5.0, so the two places that
+//     ask `isinstance(v, int)` accept an integral float here; and an
 //     integer past 2**53 loses precision.
 //   - Strings.  Python counts and iterates code points, and its regexes'
-//     \d and \s are Unicode classes; the port does the same explicitly.
+//     \d and \s are Unicode classes; this does the same explicitly.
 //   - Bytes.  Agent files are read as bytes and their offsets are byte
 //     offsets; lines are found in a Uint8Array, never in a decoded string.
-//   - Crashes.  Where a malformed field makes the Python raise (a record
-//     that is not an object, a usage count that is not a number), the port
-//     carries on with the field missing.  No shared case pins those inputs.
+//   - Crashes.  Where a field is malformed (a record that is not an
+//     object, a usage count that is not a number), this carries on with
+//     the field missing.  No shared case pins those inputs.
 
 import { sha256Hex } from "./sha256.ts";
 import { E_FOLD, E_ETA_REPORT } from "./spec.ts";
@@ -51,8 +50,8 @@ function num0(v: unknown): number {
   return typeof v === "number" && pyTruthy(v) ? v : 0;
 }
 
-/** A number field read `u.get(k, 0)`: present and null is the Python's
- * TypeError, read here as 0. */
+/** A number field read `u.get(k, 0)`: present and null, a TypeError in
+ * Python, is read here as 0. */
 function numGet(d: unknown, k: string): number {
   const v = pyGet(d, k);
   return typeof v === "number" ? v : 0;
@@ -116,7 +115,7 @@ export function pyStr(v: unknown): string {
 }
 
 /** os.path.join for two parts, which unlike path.join normalises nothing,
- * so a path built here is spelt as the Python spells it. */
+ * so a path built here is spelt as os.path.join spells it. */
 export function pyJoin(a: string, b: string): string {
   if (b.startsWith("/")) return b;
   return a === "" || a.endsWith("/") ? a + b : a + "/" + b;
@@ -181,7 +180,7 @@ export const P_IN = 5e-6, P_OUT = 25e-6, P_CR = 0.5e-6, P_CW = 10e-6;
 export type Prices = readonly [number, number, number, number];
 
 // Per-model prices.  For the calibration scan, which sees other sessions'
-// turns and so cannot assume one model; and for every record read_turns
+// turns and so cannot assume one model; and for every record readTurns
 // prices, because an agent can run a model its session does not.
 // $/token: fresh, output, cache-read, cache-write at the 2x TTL.
 //
@@ -252,8 +251,7 @@ export interface Payload {
  * is a different state from a transcript that exists and is empty: the
  * first suppresses the token segment, the second renders it as zeros.  Two
  * empty states, two renderings, and conflating them was how a fresh session
- * grew a "▴0 ▾0" that looked like a stall.  The fields are documented on
- * the Python's Transcript, field for field. */
+ * grew a "▴0 ▾0" that looked like a stall. */
 export interface Transcript {
   readonly tok_up: number | null;
   readonly tok_down: number;
@@ -263,7 +261,7 @@ export interface Transcript {
   readonly user_text: string;
   readonly asst_ts: string;
   readonly asst_text: string;
-  readonly busy_s: number;          // this thread's answering; thread_clock
+  readonly busy_s: number;          // this thread's answering; threadClock
   readonly start_s: number;         // epoch of the first STAMPED record
   readonly tool_s: number;          // inside a tool, less the waiting spans
   readonly blocked_s: number;       // inside a WAITING_TOOLS call
@@ -357,8 +355,7 @@ export function cacheShares(c: Partial<CacheShares> = {}): CacheShares {
 export const NO_CACHE_SHARES: CacheShares = cacheShares();
 
 /** One prompt the user typed, and everything billed while answering it,
- * its agents' requests included.  Field by field as the Python's Turn,
- * which says what each one means. */
+ * its agents' requests included. */
 export interface Turn {
   readonly ts: string;
   readonly text: string;
@@ -512,9 +509,9 @@ const DECODE_STRICT = { decode: (b: Uint8Array) => utf8(b, true) };
 
 /** Every line of `data` that parses, in order, as `_records` yields them.
  *
- * The Python opens the file in text mode, whose universal newlines split on
- * "\r\n", "\r" and "\n" alike.  A record that is not an object is dropped:
- * the Python yields it and its first reader raises on it. */
+ * Lines split as Python's text mode's universal newlines split them, on
+ * "\r\n", "\r" and "\n" alike.  A record that is not an object is
+ * dropped. */
 export function _recordsOf(data: Uint8Array): Rec[] {
   const out: Rec[] = [];
   for (const line of DECODE_REPLACE.decode(data).split(/\r\n|\r|\n/)) {
@@ -612,8 +609,7 @@ export function _textPres(cp: number): boolean {
  * ASCII: <27F3> in place of a reset arrow, exact in width and saying what
  * was there.  Three families qualify: U+2190-U+2BFF (arrows, misc
  * technical, misc symbols, dingbats), the variation selectors, and the
- * text-presentation pictographs of EAW_TEXT_PRES.  The Python's docstring
- * has the history. */
+ * text-presentation pictographs of EAW_TEXT_PRES. */
 export function squash(s: string, fold: string = E_FOLD): string {
   let out = "";
   for (const ch of s) {
@@ -649,8 +645,7 @@ function utcEpoch(y: number, mo: number, d: number, h: number, mi: number,
 /** A transcript timestamp as a Unix epoch, or null if it is not one.
  *
  * Transcript stamps are UTC with a trailing "Z"; the fraction is dropped
- * and the Z's stripped, as the Python's strptime dance does.  Not cached:
- * the Python's lru_cache is there for strptime's cost. */
+ * and the Z's stripped.  Not cached. */
 export function tsEpoch(ts: unknown): number | null {
   if (!pyTruthy(ts) || typeof ts !== "string") return null;
   const s = ts.split(".")[0].replace(/Z+$/, "");
@@ -837,8 +832,7 @@ export type BgTask = {
 /** The background tasks a thread has heard the end of, by task id, each
  * with its `end`, the latest BG_ENDED_KEEP of them, for the band's tree
  * to keep a closed task's row drawn a while (`finished-linger`).  The
- * mod's alone: the Python keeps none, and no save writes them, so a fold
- * read back has none. */
+ * mod's alone: no save writes them, so a fold read back has none. */
 export type BgEnded = Map<string, BgTask>;
 
 /** How many closed background tasks a thread's BgEnded keeps. */
@@ -1174,10 +1168,9 @@ export function turnTimes(t: Turn): [number, number] {
 // figure-and-unit pairs (`6h30m`) is one figure, and a few words after a
 // dash are not read.
 //
-// The Python compiles this with re.MULTILINE, whose ^ and $ are at a "\n"
-// alone; JavaScript's m flag also breaks at "\r", U+2028 and U+2029, so the
-// line ends are spelt out as lookarounds instead.  \d is Unicode's, as the
-// Python's is.
+// Its ^ and $ are at a "\n" alone, as re.MULTILINE's are; JavaScript's m
+// flag also breaks at "\r", U+2028 and U+2029, so the line ends are spelt
+// out as lookarounds instead.  \d is Unicode's, as Python's is.
 export const ETA_SKILL = "coding-agent-usage-line-report-eta";
 export const ETA_PART = String.raw`\p{Nd}+(?:\.\p{Nd}+)? ?[smh]`;
 export const ETA_LINE = new RegExp(
@@ -1356,8 +1349,7 @@ export function closeAgentSpan(state: SpanState, spans: Span[]): void {
  * segment, and the typed branch takes every source a person's prompt comes
  * from (PROMPT_SOURCES), the SDK's and an accepted suggestion's among them.
  * A prompt with an image pasted in is a list of blocks; promptText reads
- * it.  Whether the turn is already open is turnOpens's to say.  The
- * Python's docstring has the measurements. */
+ * it.  Whether the turn is already open is turnOpens's to say. */
 export function opensTurn(r: Rec): boolean {
   if (pyGet(r, "type") !== "user" || pyGet(r, "userType") !== "external" ||
     pyTruthy(pyGet(r, "isCompactSummary"))) {
@@ -1429,8 +1421,7 @@ export function queuedText(r: Rec): string | null {
   // Text pulled back into the editor was never answered; read as a
   // delivery, it would open a turn holding the old text.
   if (!QUEUE_HANDED.includes(pyGet(r, "operation"))) return null;
-  // A message handed over while the answer runs is the same turn; the
-  // Python's comment has why.
+  // A message handed over while the answer runs is the same turn.
   if (pyGet(r, "reason") === "absorbed_mid_turn") return null;
   const c = pyGet(r, "content");
   return typeof c === "string" && c.length > 0 && !c.startsWith("<")
@@ -1542,7 +1533,7 @@ export function inFlightAfter(r: Rec): boolean | null {
  * records after it stay the turn's.  A run of them handed over together
  * leaves the answer in flight for the next.  Only "queued" is read so: a
  * prompt typed while the session is idle opens its turn whatever came
- * before it.  The Python's docstring has the measurements. */
+ * before it. */
 export function turnOpens(r: Rec, gate: TurnGate): string | null {
   const seen = gate[2];
   const flight = gate[3];
@@ -1788,10 +1779,9 @@ export function _readAgentBytes(data: Uint8Array): AgentReading {
 
 /** _readAgentBytes's fold, kept between reads of a growing file so each
  * reads only what was appended: `pos` is how far into the file it has
- * folded, at a line's end.  AgentFold in claude_records.py is the same
- * fold, and agent_fold.ts saves it as the same text.  Besides what
- * agentRecordsOf reads, it keeps what the Python's agent panel reads
- * (agent_usage_of): the compactions, the last stamp, the API-error flag,
+ * folded, at a line's end.  agent_fold.ts saves it as text.  Besides what
+ * agentRecordsOf reads, it keeps what the agent panel reads
+ * (agentUsageOf): the compactions, the last stamp, the API-error flag,
  * the cwd, the block count, the background tasks and the effort of the
  * last request it bills; and what the band's tree reads, the background
  * tasks' labels, starts, commands and output files (`bgInfo`).  `keys`
@@ -1910,7 +1900,7 @@ export function foldAgentRecord(fold: AgentFold, length: number,
     fold.removed];
   fold.recs.push(rec);
   fold.added = fold.removed = 0;
-  // _dedupe_usage's choice, first wins, of what the panel bills.
+  // _dedupeUsage's choice, first wins, of what the panel bills.
   if (!fold.keys.has(k)) {
     fold.keys.add(k);
     if (rec[3] || rec[4] || rec[5] || rec[6]) {
@@ -1936,8 +1926,7 @@ export function agentReadingOf(fold: AgentFold): AgentReading {
 /** Where the Stop hook records how far into each agent file it reported.
  *
  * Per session, in private application state.  A one-way digest keeps a raw
- * transcript/session id out of the path.  The same file the Python's Stop
- * hook writes, so the two report each record once between them. */
+ * transcript/session id out of the path. */
 export function _agentStatePath(transcript: string, stateDir: string): string {
   let sid = pyBasename(transcript);
   if (sid.endsWith(".jsonl")) sid = sid.slice(0, -".jsonl".length);
@@ -2142,8 +2131,7 @@ export function inboxTally(sent: ReadonlyMap<string, number[]>,
 export type AgentEta = readonly [number | null, number | null, string?];
 
 /** The agents' ETAs as (finish, last record), less each agent the main
- * transcript says ended after its last record; the Python's
- * live_agent_etas has why. */
+ * transcript says ended after its last record. */
 export function liveAgentEtas(records: readonly Rec[],
   etas: readonly AgentEta[]): AgentEta[] {
   const ends = new Map<string, number>();
@@ -2186,7 +2174,7 @@ export function diffLines(r: Rec, seen: Set<string>): [number, number] {
   if (Array.isArray(patch) && patch.length) {
     for (const hunk of patch) {
       const lines = pyOr(pyGet(pyOr(hunk, {}), "lines"), []);
-      // A str is iterated by character, as the Python iterates it.
+      // A str is iterated by character, as Python iterates it.
       const each = typeof lines === "string" ? Array.from(lines)
         : Array.isArray(lines) ? lines : [];
       for (const line of each) {
@@ -2466,7 +2454,7 @@ function foldContext(f: TranscriptFold, r: Rec, kept: boolean): void {
     // compacted conversation alone; what it leaves out is the system
     // prompt, the tools and the files re-attached after it, which the
     // session's first reading carries too, or COMPACT_OVERHEAD without
-    // one.  The Python's comment has the measurements.
+    // one.
     const post = num0(pyDig(r, "compactMetadata", "postTokens"));
     if (post) {
       f.ctx = post + (f.firstCtx || COMPACT_OVERHEAD);
@@ -2732,8 +2720,8 @@ export function _addUsd(cur: TurnBuild, epoch: number | null, model: unknown,
  * returned here by path for readTurns to freeze — once the agent has
  * FINISHED, by `ends`; until then they stay on their spawning turn and go
  * into `held`.  "New" is exact with `offsets`, the byte counts the last
- * Stop stored; without them, a record stamped after the last Stop record.
- * The Python's docstring has the measurements. */
+ * Stop stored; without them, a record stamped after the last Stop
+ * record. */
 export function _foldAgents(turns: TurnBuild[],
   byPid: ReadonlyMap<unknown, TurnBuild>, agents: readonly AgentRec[],
   lastStop: number | null = null,
@@ -2743,8 +2731,8 @@ export function _foldAgents(turns: TurnBuild[],
   const late = new Map<string, TurnBuild>();
   if (agents.length === 0 || turns.length === 0) return late;
   const stamped = turns.filter((t) => t.t0 !== null && !pyTruthy(t.compact));
-  // The turn the 🎤 row will be about: the same selection render_cost_line
-  // and _with_shares make.  `n` is main-thread calls, so folding agents in
+  // The turn the 🎤 row will be about: the same selection renderCostLine
+  // and _withShares make.  `n` is main-thread calls, so folding agents in
   // cannot move it.
   let prompt: TurnBuild | null = null;
   for (const t of turns) if (t.n && !pyTruthy(t.compact)) prompt = t;
@@ -2934,7 +2922,7 @@ export function foldTurns(f: TurnsFold, r: Rec): void {
     // cache-read rate, and its durationMs how long it took.  An AUTO
     // compaction lands inside whatever turn was running, so it gets a
     // turn of its own unless the one open is the /compact that asked for
-    // it.  The Python's comment has the measurements.
+    // it.
     const md = pyOr(pyGet(r, "compactMetadata"), {});
     if (cur === null || cur.n || pyStrip(cur.text) !== "/compact") {
       cur = _newTurn(pyStr(pyOr(pyGet(r, "timestamp"), "")),

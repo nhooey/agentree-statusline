@@ -1,20 +1,16 @@
 // Shared terminal display, measurement, geometry and formatting.
 //
-// A port of coding_agent_usage_line/formatting.py, function for function.
 // The glyphs, colours, widths and cuts are spec.ts's, generated from
-// spec/layout.jsonc; what is here is computed from them.  The Python's
-// docstrings carry each format's history and argument, and are not copied:
-// the comments here say what the port has to do to match it.
+// spec/layout.jsonc; what is here is computed from them.
 //
-// WHERE THE PYTHON HAS MODULE STATE, THIS HAS A VALUE.  formatting.py reads
-// the terminal profile from the environment at import, fixes the S_* forms
-// and the width table from it, and lets set_mark_spacing and
-// set_subscript_decimals rebind MARK_SP, RIGHT_GRID, LINE3_RESERVED, the C_*
-// widths and SUB_DEC afterwards, and set_right_edge RIGHT_EDGE_COLS.  Here
-// all of that is one immutable `Settings`, built once at the edge by
+// THE TERMINAL AND ITS SWITCHES ARE ONE VALUE.  The terminal profile, read
+// from the environment, fixes the S_* forms and the width table; the mark
+// spacing and subscript switches set MARK_SP, RIGHT_GRID, LINE3_RESERVED,
+// the C_* widths and SUB_DEC, and the right edge RIGHT_EDGE_COLS.  All of
+// that is one immutable `Settings`, built once at the edge by
 // `settings(env, markSpacing, subscriptDecimals, rightEdge)` and passed
 // first to every function that reads any of it.  Every function that reads
-// the clock takes `now`, and term_cols takes its process walk and its ioctl
+// the clock takes `now`, and termCols takes its process walk and its ioctl
 // as arguments.
 import {
   C_CACHE_TIGHT, C_LIM_TOT_TIGHT, C_TOK_TIGHT, CACHE_CRIT, CACHE_WARN,
@@ -42,8 +38,8 @@ import type { Span, SpanLike } from "./spans.ts";
 // Constants that do not depend on the terminal or the switches.
 // ════════════════════════════════════════════════════════════════════════════
 
-// Erase the line before painting it and past its end after: see the Python
-// for the "1sm" a shrinking value left standing without it.
+// Erase the line before painting it and past its end after: without it a
+// shrinking value leaves a "1sm" standing.
 export const LINE_CLEAR = "\x1b[0m\x1b[2K";
 export const EOL_CLEAR = "\x1b[K";
 
@@ -65,8 +61,8 @@ export const C_COMPACT_LABEL = lab(E_ROW_COMPACT, 2);
 export const C_AGENTS_LABEL = lab(E_ROW_AGENTS, 3);
 
 // The status-mode glyph forms that carry a hard space in every profile, or
-// none: see formatting.py for each.  The six that carry the profile's paint
-// pad are Settings fields (sTok and the rest).
+// none.  The six that carry the profile's paint pad are Settings fields
+// (sTok and the rest).
 export const S_HUMAN = E_HUMAN + " ";
 export const S_BOT = E_BOT + " ";
 export const S_TIME = E_TIME + " ";
@@ -100,7 +96,7 @@ export type Env = { readonly [name: string]: string | undefined };
 
 /** Which terminal is drawing this, as a profile name: the first of
  * PROFILE_RULES whose variable is set (to its value, where it names one).
- * TMUX goes first; formatting.py says what that rests on. */
+ * TMUX goes first. */
 export function termProfile(env: Env): string {
   for (const [name, value, profile] of PROFILE_RULES) {
     const v = env[name as string];
@@ -126,8 +122,8 @@ export function widthsFor(profile: string): Widths {
   });
 }
 
-/** What formatting.py holds as module globals, fixed at import or rebound
- * by its two setters, as one value.  Built by `settings`; never edited. */
+/** The terminal profile and the switches, as one value.  Built by
+ * `settings`; never edited. */
 export type Settings = {
   readonly profile: string;          // PROFILE
   readonly widths: Widths;           // WIDTHS
@@ -155,8 +151,8 @@ export type Settings = {
                                      // grid row ends short of the
                                      // terminal's edge
   readonly truecolor: boolean;       // Claude Code draws true colour, so
-                                     // the true set is drawn (spans.py
-                                     // colour_level)
+                                     // the true set is drawn (spans.ts
+                                     // colourLevel)
   readonly colourMode: sp.ColourMode; // the same as the mode's name, which
                                      // a ramp is resolved in (grade)
 };
@@ -169,8 +165,8 @@ export type Settings = {
  * columns every grid row ends short of the terminal's edge (--right-edge,
  * RIGHT_EDGE by default).
  *
- * The Python's set_mark_spacing says which constants move together; they
- * are all computed here, so none can be left behind. */
+ * The constants that move together are all computed here, so none can be
+ * left behind. */
 export function settings(env: Env, markSpacing = true,
   subscriptDecimals = false, rightEdge: number = RIGHT_EDGE): Settings {
   const profile = termProfile(env);
@@ -221,9 +217,9 @@ export function stripAnsi(s: string): string {
 
 /** Columns a string occupies, as THIS terminal counts them: every code
  * point advances on its own, with no grapheme clustering unless the
- * profile says the terminal folds clusters.  formatting.py has the
- * measurements behind it; "fixing" it to handle clusters everywhere
- * reintroduces the four-column error it was written to remove. */
+ * profile says the terminal folds clusters.  "Fixing" it to handle
+ * clusters everywhere reintroduces the four-column error it was written
+ * to remove. */
 export function visWidth(s: string, w: Widths): number {
   let total = 0;
   let skip = false;
@@ -373,8 +369,7 @@ export function fitPath(p: string, maxChars: number): string {
   return p;
 }
 
-/** Trim to `maxCols` COLUMNS, ellipsis included, by the binary search the
- * Python inherited from the bash. */
+/** Trim to `maxCols` COLUMNS, ellipsis included, by binary search. */
 export function fitCols(st: Settings, txt: string, maxCols: number): string {
   if (visWidth(txt, st.widths) <= maxCols) return txt;
   const budget = maxCols - 1;              // a column for the ellipsis
@@ -544,8 +539,8 @@ export function durFmt(st: Settings, d: number, digits = 3): string {
   return subDec(st, dropPointZero(pyFormatF(v, 1)) + u);
 }
 
-/** int(now): the clock in whole seconds, as the Python takes it so a
- * fraction cannot tip a rounding.  An infinity or a NaN raises there. */
+/** int(now): the clock in whole seconds, so a fraction cannot tip a
+ * rounding.  An infinity or a NaN throws, as int() raises. */
 function wholeSeconds(now: number): number {
   if (!Number.isFinite(now)) throw new RangeError("cannot convert " + now);
   return Math.trunc(now);
@@ -565,8 +560,8 @@ export function shortDur(st: Settings, target: string | null,
   }
   const n = _strptimeStamp(target);
   if (n === null) return null;
-  // A stamp at the calendar's edge whose local reading falls off it: the
-  // Python's timestamp() raises ValueError there, which it catches.
+  // A stamp at the calendar's edge whose local reading falls off it, where
+  // datetime.timestamp() raises ValueError, is no duration.
   let stamp: number;
   try {
     stamp = _naiveTimestamp(n);
@@ -628,7 +623,7 @@ export function decAlign(st: Settings, v: string, ip: number, fp: number,
 }
 
 /** moneyFmt decimal-aligned in the six columns both cost rows reserve, its
- * unit dec_align's suffix and a blank where there is none. */
+ * unit decAlign's suffix and a blank where there is none. */
 export function moneyCell(st: Settings, c: number): string {
   const s = moneyFmt(st, c);
   const cps = Array.from(s);
@@ -729,7 +724,7 @@ export function magDim(v: number | null, cut: number): boolean {
   return !(v === null || v >= cut);
 }
 
-/** float(value), or null where Python raises: formatting.py's _pct_num. */
+/** float(value), or null where float() raises. */
 function pctNum(value: unknown): number | null {
   return pyFloat(value);
 }
@@ -772,7 +767,7 @@ export type Winsize = (path: string) => number | null;
 /** Columns in the terminal Claude Code is drawing into, or null: the walk
  * up from `ppid`, at most six hops, to the first ancestor with a tty that
  * reports a size.  The process table and the ioctl are the edge's, passed
- * in; formatting.py says why neither stdio nor /dev/tty can answer. */
+ * in. */
 export function termCols(ppid: number, ps: PsRun,
   winsize: Winsize): number | null {
   let p = ppid;

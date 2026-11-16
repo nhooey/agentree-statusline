@@ -12,7 +12,7 @@
 // span's colour must match.  That proves the edges (that `$.fs` was read
 // as the bytes are), the filing (the start line's trip through `$.store`)
 // and the drawing (spans to Text); the documents themselves are proven
-// against the Python's by test/claude.test.ts.  The receipt, which the mod
+// against the goldens by test/claude.test.ts.  The receipt, which the mod
 // writes rather than draws, is checked as the `$.ui.log` lines it sends,
 // against receiptLines over the same bytes.
 import { expect } from 'claude-code/testing'
@@ -1413,8 +1413,8 @@ test('a transcript over 4 MiB is read in pieces through the shell',
   })
 
 // With no calibration yet, a document starts the scan behind it, which
-// writes the window-cost cache the Python shares, in window_costs_text's
-// bytes, through the shell: a temporary file renamed over it, never
+// writes the shared window-cost cache, in _windowCostsText's bytes,
+// through the shell: a temporary file renamed over it, never
 // `$.fs.write`, which a reader can see torn.
 test('a scan writes the shared window-cost cache through a rename',
   async ($, on) => {

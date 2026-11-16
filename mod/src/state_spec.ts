@@ -6,9 +6,9 @@ export const STATE_KINDS = {
   // taken with them and the windows they were measured over.  One file
   // per scope, which a reset overwrites: the source, the account's
   // hashed id (or, where the source names none, the reading caches'
-  // namespace) and the period, joined by NULs (seed_limits_snapshot), so
+  // namespace) and the period, joined by NULs (seedLimitsSnapshot), so
   // every session of one account shares it.  A file untouched for eight
-  // days is swept (_sweep_calibrations, sweepCalibrationsVia).
+  // days is swept (sweepCalibrationsVia).
   "calibration": {
     "prefix": "claude-calibration-",
     "key": ["scope"],
@@ -18,9 +18,9 @@ export const STATE_KINDS = {
   // The window costs: every transcript's priced records, each file's
   // offset and the sha256 of the 4 KiB before it, kept from one scan to
   // the next so a scan reads only what was appended since
-  // (_window_costs, _windowCosts, scanWindows).  One file for the
+  // (_windowCosts, scanWindows).  One file for the
   // machine, written whole by whichever port scans, through a temporary
-  // file renamed over it (window_costs_text, _windowCostsText).  Bump the
+  // file renamed over it (_windowCostsText).  Bump the
   // format whenever the prices, what is billed or the text change:
   // tests/fixtures/calib/scan.json pins the text for each step.
   "window-costs": {
@@ -31,7 +31,7 @@ export const STATE_KINDS = {
   },
   // The main transcript's two folds, the status line's and the turns',
   // saved as running totals so a reload reads on from where they stopped
-  // (main_fold.py and main_fold.ts).  One directory per transcript path:
+  // (main_fold.ts).  One directory per transcript path:
   // a log of what never changes once written, in part-N.cache files of
   // at most part_bytes of UTF-8 each, and the rest in a head, written
   // last, to head-a.cache and head-b.cache in turn, since $.fs.write
@@ -48,12 +48,12 @@ export const STATE_KINDS = {
     "part_bytes": 1000000,
     "check_bytes": 4096,
   },
-  // Each agent transcript's fold, the AgentFold both ports keep (the
-  // mod's agent readings, agent_records and the agent panel), saved so a
-  // read goes on from where the last stopped (agent_fold.py and
-  // agent_fold.ts).  One directory per session's transcript path, and in
-  // it one fold per agent file, named by the sha256 of its path, written
-  // whole to <digest>-a.cache and <digest>-b.cache in turn, each with a
+  // Each agent transcript's fold, the AgentFold (the mod's agent
+  // readings, agentRecords and the agent panel), saved so a read goes on
+  // from where the last stopped (agent_fold.ts).  One directory per
+  // session's transcript path, and in it one fold per agent file, named
+  // by the sha256 of its path, written whole to <digest>-a.cache and
+  // <digest>-b.cache in turn, each with a
   // seq, since $.fs.write truncates and then writes and a reader can see
   // the file torn.  A fold names the byte offset folded to and the sha256
   // of the check_bytes before it.  A directory none of whose files was
@@ -71,8 +71,8 @@ export const STATE_KINDS = {
   // (the main transcript and each agent's), the SendMessage sends it
   // queued for an agent and the deliveries taken off its own inbox, each
   // as an epoch, folded to a byte offset so a panel tick reads only what
-  // was appended since (inbox_fold.py and inbox_fold.ts).  One directory
-  // per session's transcript path, holding the whole session's fold,
+  // was appended since (inbox_fold.ts).  One directory per session's
+  // transcript path, holding the whole session's fold,
   // written to inbox-a.cache and inbox-b.cache in turn, each with a seq.
   // Each file's entry names the offset folded to, the file's mtime in
   // nanoseconds when it was (an entry at the file's size with that mtime

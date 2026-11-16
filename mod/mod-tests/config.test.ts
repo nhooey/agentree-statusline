@@ -1,14 +1,13 @@
 // The mod's read of the configuration files, in the engine's test harness:
 // what a session's start reads through `$.fs` and says in the mod's log.
-// test/config.test.ts holds the reading itself to the Python's over the
-// shared cases; this holds the edges (hooks/configuration.ts, readConfig) to it.
+// test/config.test.ts holds the reading itself to the shared cases; this
+// holds the edges (hooks/configuration.ts, readConfig) to it.
 //
-// Hermetic, as tests/config.py's GoldensAreHermetic is for the Python: the
-// harness has nothing beneath the mod, and this world answers `$.fs`,
-// `$.env` and `$.session` from memory.  Every path the mod asks for, the
-// configuration's and the figures' alike, must lie under the world's own
-// directories, so no developer's config file, state directory or
-// ~/.claude.json can reach a result.
+// Hermetic: the harness has nothing beneath the mod, and this world
+// answers `$.fs`, `$.env` and `$.session` from memory.  Every path the
+// mod asks for, the configuration's and the figures' alike, must lie
+// under the world's own directories, so no developer's config file, state
+// directory or ~/.claude.json can reach a result.
 import { expect, mock } from 'claude-code/testing'
 import { test } from './budget.ts'
 import type { On, RenderElement } from 'claude-code'
@@ -35,13 +34,13 @@ type World = { files: Map<string, string>; asked: string[]; names: string[];
   logged: string[]; mtimes: Map<string, number> }
 
 /** The engine beneath the mod: a user file with a value of the wrong
- * type, a project file with a source Claude cannot read, the project's
+ * type, a project file with a source the mod does not know, the project's
  * `.git`, and the defaults file where the mod looks for it, `defaults` its
  * text. */
 function world(on: On, defaults = DEFAULTS_TEXT): World {
   const files = new Map<string, string>([
-    [USER_FILE, '{"totals": "no", "account": "u"}'],
-    [PROJECT_FILE, '{"hide": [], "usage-source": "codex-app-server"}'],
+    [USER_FILE, '{"mark-spacing": "no", "account": "u"}'],
+    [PROJECT_FILE, '{"hide": [], "usage-source": "bogus"}'],
   ])
   const dirs = new Set([PROJECT + '/.git'])
   const asked: string[] = []
@@ -141,9 +140,9 @@ test('a session start reads the config files and logs every warning once',
     expect(log).toContain(`config from ${PROJECT}: project ${PROJECT_FILE}` +
       ` (hide); user ${USER_FILE} (account)`)
     const warnings = [
-      `${USER_FILE}: "totals" must be true or false; skipped`,
-      `${PROJECT_FILE}: "usage-source" "codex-app-server" is no source ` +
-        'claude reads; skipped',
+      `${USER_FILE}: "mark-spacing" must be true or false; skipped`,
+      `${PROJECT_FILE}: "usage-source" "bogus" is no usage source; ` +
+        'skipped',
     ]
     for (const w of warnings) {
       expect(log.split('config: ' + w).length - 1).toBe(1)

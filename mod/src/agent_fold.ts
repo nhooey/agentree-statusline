@@ -1,8 +1,7 @@
 // Each agent transcript's fold saved as text, so a read goes on from where
-// the last one stopped: agent_fold.py's port, written byte for byte as it
-// writes them.  spec/state.jsonc's "agent-fold" row names the files and the
-// format; agents/plans/closed/saved-running-totals.md has the
-// design.
+// the last one stopped.  spec/state.jsonc's "agent-fold" row names the
+// files and the format; agents/plans/closed/saved-running-totals.md
+// has the design.
 //
 // A fold is claude_records.ts's AgentFold, saved whole as one JSON object
 // to one of two slots in turn, each with a sequence number, since
@@ -45,7 +44,7 @@ export function tailDigest(data: Uint8Array): string {
 }
 
 /** `f` as the text a save writes, with its sequence number and check
- * digest, byte for byte as agent_fold.fold_text writes it. */
+ * digest, byte for byte as agentFoldText writes it. */
 export function agentFoldText(f: AgentFold, seq: number, tail: string):
   string {
   const e = f.etaState;

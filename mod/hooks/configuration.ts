@@ -1,6 +1,6 @@
-// The configuration files: found, read and merged over the defaults the way
-// the Python merges them, looked at again on the tick, and a fault in one
-// noticed once in the transcript.
+// The configuration files: found, read and merged over the defaults,
+// looked at again on the tick, and a fault in one noticed once in the
+// transcript.
 import type { EngineInterface } from 'claude-code'
 
 import { utf8 } from '../src/py.ts'
@@ -23,8 +23,8 @@ type $ = EngineInterface
 
 /** `$.fs` as src/config.ts's walk reaches it: a stat or a read that fails
  * is null, and a file is read as bytes and decoded strictly with its
- * byte-order mark kept, as the Python's open(…, encoding="utf-8") reads
- * it, so a file the panel finds unreadable or not JSON the band does too. */
+ * byte-order mark kept, as Python's open(…, encoding="utf-8") reads it,
+ * so a file the panel finds unreadable or not JSON the band does too. */
 function configFs($: $): ConfigFs {
   return {
     stat: async (path) => {
@@ -55,7 +55,7 @@ function configFs($: $): ConfigFs {
  * file names is checked as Claude's panel checks it. */
 export async function configVia($: $): Promise<Found> {
   const [start, env] = await configWhere($)
-  return loadConfig(start, env, configFs($), await defaultsVia($), 'claude')
+  return loadConfig(start, env, configFs($), await defaultsVia($))
 }
 
 /** The defaults file in the mod's folder, where the plugin carries it. */
@@ -223,7 +223,7 @@ async function reread($: $): Promise<boolean> {
     current = null
     return changed
   }
-  const found = await loadConfig(start, env, configFs($), defaults, 'claude')
+  const found = await loadConfig(start, env, configFs($), defaults)
   const was = defaultsFault
   defaultsFault = null
   configStamp = stamp
@@ -244,16 +244,15 @@ async function reread($: $): Promise<boolean> {
   return changed
 }
 
-/** Each option the mod reads, and each table field, that a layer above
- * the defaults gave, `name value (layer)`, "; " between them, in the
- * spec's order; "defaults" for none. */
+/** Each option, and each table field, that a layer above the defaults
+ * gave, `name value (layer)`, "; " between them, in the spec's order;
+ * "defaults" for none. */
 export function optionsTable(m: Merged): string {
   const out: string[] = []
-  for (const [name, option] of Object.entries(OPTIONS)) {
+  for (const name of Object.keys(OPTIONS)) {
     const layer = m.layers[name]
     const value = m.values[name]
-    if (layer === 'default' ||
-        !(option.ports as readonly string[]).includes('mod')) continue
+    if (layer === 'default') continue
     if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
       for (const [row, rec] of Object.entries(value as Rows)) {
         for (const [field, v] of Object.entries(rec)) {

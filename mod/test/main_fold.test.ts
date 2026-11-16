@@ -1,8 +1,7 @@
 // The main transcript's folds, broken anywhere: a fold finished at any
 // record, or with a half-written last line, reads on to what the whole
-// fold reads; and saved as text, the same bytes main_fold.py writes, read
-// back by either port and read on.  tests/fold.py holds the Python's side
-// of the same cases.
+// fold reads; and saved as text, read back and read on, with each
+// fixture's save the one tests/fixtures/fold-saves.json holds.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -92,8 +91,6 @@ test("a half-written last line reads now, and once completed", () => {
 // The folds saved as text.
 // ════════════════════════════════════════════════════════════════════════════
 
-const MAIN_FOLD = ["-m", "coding_agent_usage_line.main_fold"];
-
 type Texts = { parts: string[]; head: string };
 
 /** A first save's texts of `f`, folded to `end` of `data`. */
@@ -112,7 +109,7 @@ function foldMain(f: mf.MainFold, records: readonly cr.Rec[]): mf.MainFold {
 const WHOLE = new Map<string, Texts>();
 
 /** A first save of `p`'s whole fold, to its last newline: the texts whose
- * digest tests/fixtures/fold-saves.json holds, so the Python's too. */
+ * digest tests/fixtures/fold-saves.json holds. */
 function fixtureOf(p: string): Texts {
   let got = WHOLE.get(p);
   if (!got) {
@@ -140,36 +137,16 @@ function tmp(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "main-fold-"));
 }
 
-// The Python writes a float as this does: shortest digits, JavaScript's
-// layout.  Seeded, over every magnitude a double has.
-test("a float is written as JSON.stringify writes it", () => {
-  let a = 7;
-  const rand = () => (a = (a * 1103515245 + 12345) % 2147483648) / 2147483648;
-  const xs = Array.from({ length: 3000 }, (_, i) =>
-    (rand() - 0.5) * 10 ** Math.floor(rand() * 600 - 320) * (i % 7 ? 1 : 3));
-  xs.push(0.1, 1e21, 1e-7, 2 ** 53 + 2, 1700000000.123, 5e-324);
-  const dir = tmp();
-  const file = path.join(dir, "floats.json");
-  fs.writeFileSync(file, JSON.stringify(xs));
-  const out = execFileSync("python3", ["-c",
-    "import sys, json\nfrom coding_agent_usage_line.main_fold import " +
-    "js_num\nprint(json.dumps([js_num(x) for x in " +
-    "json.load(open(sys.argv[1]))]))", file]).toString();
-  fs.rmSync(dir, { recursive: true });
-  assert.deepEqual(JSON.parse(out), xs.map((x) => JSON.stringify(x)));
-});
-
 // The format honest: a change to either fold, or to what is saved of it,
 // changes the text, and the digests fail until the format is bumped and
-// tests/fixtures/gen/state.py run.  The Python's digest is of the texts it
-// wrote, so the two ports write each byte for byte.
+// mod/tools/gen-fold-saves.ts run.
 test("each fixture's fold saves as tests/fixtures/fold-saves.json holds it",
   () => {
     const want = foldSaves("main-fold");
     assert.equal(want.format, mf.MAIN_FOLD_FORMAT,
-      "run tests/fixtures/gen/state.py");
+      "run node mod/tools/gen-fold-saves.ts");
     assert.deepEqual(Object.keys(want.saves).sort(), [...FILES].sort(),
-      "run tests/fixtures/gen/state.py");
+      "run node mod/tools/gen-fold-saves.ts");
     for (const p of FILES) {
       const got = fixtureOf(p);
       assert.equal(digest([...got.parts, got.head]), want.saves[p],
@@ -177,67 +154,33 @@ test("each fixture's fold saves as tests/fixtures/fold-saves.json holds it",
     }
   });
 
-// The Python's state at every line end, in parts of 300 bytes, is what
-// this writes there, byte for byte, and read here goes on to the fixture.
-test("the Python's saved fold reads on here", () => {
+// Saved at every line end, in parts of 300 bytes, and read back from
+// the files, each reads on to the fixture's save.
+test("a fold saved at any line end reads on to the whole", () => {
   for (const p of FILES) {
     const want = fixtureOf(p);
     const data = fs.readFileSync(p);
     const end = data.lastIndexOf(10) + 1;
     const dir = tmp();
-    execFileSync("python3", [...MAIN_FOLD, "every", p, dir, "--part-bytes",
-      "300"]);
     const f = mf.newMainFold();
     let done = 0;
     for (const k of lineEnds(data)) {
       foldMain(f, cr._recordsOf(data.subarray(done, k)));
       done = k;
-      const at = path.join(dir, String(k));
-      const mine = saved(f, data, k, 300);
-      const seq = mf.foldHeadOf(mine.head)!.seq;
-      assert.deepEqual({ parts: mine.parts.map((_, i) =>
-        fs.readFileSync(path.join(at, mf.partName(i)), "utf-8")),
-      head: fs.readFileSync(path.join(at, mf.HEAD_SLOTS[seq % 2]), "utf-8") },
-      mine, `${p} at ${k}`);
-      const back = loadDir(at);
-      assert.ok(back, `${p} at ${k}`);
-      assert.equal(back.meta.offset, k);
-      foldMain(back.fold, cr._recordsOf(data.subarray(k, end)));
-      assert.deepEqual(saved(back.fold, data, end),
-        { parts: want.parts, head: want.head }, `${p} read on from ${k}`);
-    }
-    fs.rmSync(dir, { recursive: true });
-  }
-});
-
-// And the other way: this one's state at every line end, read on by the
-// Python, saves as the fixture.
-test("a fold saved here reads on in the Python", () => {
-  for (const p of FILES) {
-    const want = fixtureOf(p);
-    const data = fs.readFileSync(p);
-    const dir = tmp();
-    const f = mf.newMainFold();
-    let done = 0;
-    const ends = lineEnds(data);
-    for (const k of ends) {
-      foldMain(f, cr._recordsOf(data.subarray(done, k)));
-      done = k;
-      const got = mf.foldSave(f, mf.foldMeta(data, k))!;
+      const got = mf.foldSave(f, mf.foldMeta(data, k), mf.newSaveMark(),
+        300)!;
       const at = path.join(dir, String(k));
       fs.mkdirSync(at);
       for (const [i, t] of got.parts) {
         fs.writeFileSync(path.join(at, mf.partName(i)), t);
       }
       fs.writeFileSync(path.join(at, got.slot), got.head);
-    }
-    const out = execFileSync("python3", [...MAIN_FOLD, "readon", p, dir],
-      { maxBuffer: 1 << 28 })
-      .toString().split("\n").filter(Boolean).map((l) => JSON.parse(l));
-    assert.equal(out.length, ends.length, p);
-    for (const o of out) {
-      assert.deepEqual({ parts: o.parts, head: o.head },
-        { parts: want.parts, head: want.head }, `${p} read on from ${o.at}`);
+      const back = loadDir(at);
+      assert.ok(back, `${p} at ${k}`);
+      assert.equal(back.meta.offset, k);
+      foldMain(back.fold, cr._recordsOf(data.subarray(k, end)));
+      assert.deepEqual(saved(back.fold, data, end),
+        { parts: want.parts, head: want.head }, `${p} read on from ${k}`);
     }
     fs.rmSync(dir, { recursive: true });
   }

@@ -29,8 +29,8 @@ export function expandUser(path: string): string {
   return path;
 }
 
-// state.py's directory.  The same files Python writes, under the same
-// names, so the band and the status line share one cache and one cadence:
+// The state directory.  The same files under the same names, so the band
+// and the status line share one cache and one cadence:
 // the tracker is read once a minute between them, not once each.
 export function stateDir(env: Env): string {
   let path = env.CODING_AGENT_USAGE_LINE_STATE_DIR ?? "";

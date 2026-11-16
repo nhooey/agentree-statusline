@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate both languages' constants from the JSONC files under spec/.
+"""Generate the mod's constants from the JSONC files under spec/.
 
     python3 tools/gen-spec.py           # rewrite them all
     python3 tools/gen-spec.py --check   # exit 1 if any is out of date
@@ -7,25 +7,21 @@
 spec/layout.jsonc is the one place the glyphs, the colours, the widths and
 cuts, the wide-character table and the terminal-profile rules are written,
 each beside the comment that explains it.  This writes them out as
-coding_agent_usage_line/spec.py, which formatting.py star-imports, and as
-mod/src/spec.ts for the mod, comments and all, so either language's copy can
-be read on its own.  spec/state.jsonc, the files both ports keep in the state
-directory, goes the same way, to state_spec.py and state_spec.ts, and so
-does spec/options.jsonc, every option either port takes, to options_spec.py
-and options_spec.ts, with an Options type for the mod's and the option
-tables of docs/options.md, between their markers.  The options' defaults
-are not in it: they are mod/defaults/config.jsonc's, which both ports read
-at run time, and which this refuses unless it holds every option a file
-may set, each with a value of its type, and takes the docs' Default cells
-from.  tests/formatting.py runs --check.
+mod/src/spec.ts, comments and all, so it can be read on its own.
+spec/state.jsonc, the files the mod keeps in the state directory, goes the
+same way, to mod/src/state_spec.ts, and so does spec/options.jsonc, every
+option the mod takes, to mod/src/options_spec.ts, with an Options type and
+the option table of docs/options.md, between its markers.  The options'
+defaults are not in it: they are mod/defaults/config.jsonc's, which the
+mod reads at run time, and which this refuses unless it holds every
+option, each with a value of its type, and takes the docs' Default cells
+from.  The `spec` suite of tests/all.sh runs --check.
 
 Each JSONC is one object of NAME: value, in the order the values are written
 out.  Three forms are read specially:
 
     "F_BLU": "rgb(0, 175, 255)"     an F_ or B_ name: a foreground or
-                                    background colour, written out as an
-                                    escape code in Python and as hex in
-                                    TypeScript
+                                    background colour, written out as hex
     "F_BLU": {"256": "rgb(0, 175, 255)", "true": "rgb(100, 170, 255)"}
                                     a colour with a 256 value, which the
                                     name holds, and a true-colour one,
@@ -33,7 +29,6 @@ out.  Three forms are read specially:
                                     written once is the same in both
     "F_SHARE": {"same_as": "F_AMB"} another name's value, which must come
                                     earlier
-    [1, 2]                          an array: a tuple in Python
 
 A comment above a member is written above it, and one after it on its line,
 with the lines under it that start further right, is written after it.
@@ -45,9 +40,8 @@ import sys
 import unicodedata
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Each source, and the Python and the TypeScript written from it.
+# Each source, and the TypeScript written from it.
 SPECS = [(os.path.join("spec", src),
-          os.path.join("coding_agent_usage_line", out + ".py"),
           os.path.join("mod", "src", out + ".ts"))
          for src, out in (("layout.jsonc", "spec"),
                           ("state.jsonc", "state_spec"),
@@ -438,14 +432,14 @@ def same_as(node):
 
 # ── Writing ─────────────────────────────────────────────────────────────────
 
-def escape(ch, lang):
+def escape(ch):
     cp = ord(ch)
     if cp < 0x10000:
         return "\\u%04x" % cp
-    return "\\U%08x" % cp if lang == "py" else "\\u{%x}" % cp
+    return "\\u{%x}" % cp
 
 
-def string(s, lang):
+def string(s):
     out = []
     for ch in s:
         if ch in "\\\"":
@@ -455,37 +449,29 @@ def string(s, lang):
         # 3.9), and it has to come out the same under every Python.
         elif ch != " " and unicodedata.category(ch) in (
                 "Cc", "Cf", "Zs", "Zl", "Zp"):
-            out.append(escape(ch, lang))
+            out.append(escape(ch))
         else:
             out.append(ch)
     return '"%s"' % "".join(out)
 
 
 class Lang:
-    """What differs between the two outputs."""
+    """How the TypeScript is written."""
 
-    def __init__(self, name, comment, indent, open_, close):
-        self.name, self.comment, self.indent = name, comment, indent
-        self.open, self.close = open_, close
+    comment, indent, open, close = "//", 2, "[", "]"
 
     def scalar(self, node, key=None):
         if node.kind == "num":
             return node.raw
         if node.kind == "word":
-            if self.name == "py":
-                return {"true": "True", "false": "False",
-                        "null": "None"}[node.value]
             return node.value
         m = RGB.match(node.value) if key and key[:2] in ("F_", "B_") else None
         if m:
             return self.colour(key, [int(x) for x in m.groups()])
-        return string(node.value, self.name)
+        return string(node.value)
 
     def colour(self, key, rgb):
-        """A colour as this language holds it: an escape, or hex."""
-        if self.name == "py":
-            return '"\\033[%d;2;%d;%d;%dm"' % (
-                38 if key.startswith("F_") else 48, *rgb)
+        """A colour as hex."""
         return '"#%02x%02x%02x"' % tuple(rgb)
 
     def flat(self, node, key=None):
@@ -499,8 +485,6 @@ class Lang:
                 if p is None:
                     return None
                 parts.append(p)
-            if self.name == "py" and len(parts) == 1:
-                return "(%s,)" % parts[0]
             return self.open + ", ".join(parts) + self.close
         if node.kind == "obj":
             alias = same_as(node)
@@ -518,7 +502,7 @@ class Lang:
                 p = self.flat(c)
                 if p is None:
                     return None
-                parts.append("%s: %s" % (string(c.key, self.name), p))
+                parts.append("%s: %s" % (string(c.key), p))
             return "{" + ", ".join(parts) + "}"
         return self.scalar(node, key)
 
@@ -569,7 +553,7 @@ class Lang:
             for c in kids:
                 lines += self.comments(c.lead, inner)
                 key = ("" if node.kind == "arr"
-                       else string(c.key, self.name) + ": ")
+                       else string(c.key) + ": ")
                 lines += self.block(key, c, ",", depth + 1,
                                     len(inner) + c.col)
         lines += self.comments(getattr(node, "end_lead", []), inner)
@@ -585,22 +569,17 @@ def true_colours(lang, trues):
              " what is drawn",
              c + " in place of the name's own (256) value when Claude Code"
              " draws true colour.",
-             c + " See colour_level in spans."]
-    if lang.name == "py":
-        lines.append("TRUE_COLOURS = {")
-    else:
-        lines.append("export const TRUE_COLOURS: "
-                     "{ readonly [name: string]: string } = {")
+             c + " See colourLevel in spans."]
+    lines.append("export const TRUE_COLOURS: "
+                 "{ readonly [name: string]: string } = {")
     pad = " " * lang.indent
     for key, rgb in trues.items():
-        lines.append("%s%s: %s," % (pad, string(key, lang.name),
-                                    lang.colour(key, rgb)))
-    lines.append("}" if lang.name == "py" else "};")
+        lines.append("%s%s: %s," % (pad, string(key), lang.colour(key, rgb)))
+    lines.append("};")
     return lines
 
 
-PY = Lang("py", "#", 4, "(", ")")
-TS = Lang("ts", "//", 2, "[", "]")
+TS = Lang()
 HEAD = ("Generated by tools/gen-spec.py from %s.  Do not edit:",
         "change the JSONC and run `python3 tools/gen-spec.py`.")
 
@@ -611,15 +590,12 @@ def render(lang, root, source):
     lines = [c + " " + (h % source if "%" in h else h) for h in HEAD] + [""]
     for m in root.value:
         lines += lang.comments(m.lead, "")
-        if lang.name == "py":
-            prefix, suffix, col = m.key + " = ", "", m.col - 2
-        else:
-            prefix, col = "export const " + m.key + " = ", m.col + 12
-            suffix = " as const;" if m.key in AS_CONST else ";"
+        prefix, col = "export const " + m.key + " = ", m.col + 12
+        suffix = " as const;" if m.key in AS_CONST else ";"
         lines += lang.block(prefix, m, suffix, 0, col)
     if getattr(root, "trues", None):
         lines += [""] + true_colours(lang, root.trues)
-    if lang.name == "ts" and root.value and root.value[0].key == "OPTIONS":
+    if root.value and root.value[0].key == "OPTIONS":
         lines += [""] + options_type(plain(root.value[0]))
     return "\n".join(l.rstrip() for l in lines) + "\n"
 
@@ -633,19 +609,15 @@ TYPES = ("bool", "int", "string", "enum", "list", "table", "record")
 # A record's fields: the scalar types, and lists of condition maps
 # ({field, op, value, unit}), alone or keyed by name.
 RECORD_FIELDS = ("bool", "string", "enum", "conditions", "conditions-by")
-FIELDS = ("type", "items", "fields", "rows", "metavar", "default", "derived",
-          "minimum", "ports", "agents", "file", "flag", "aliases",
-          "negatable", "modes", "doc-table", "doc-default", "usage", "doc")
-REQUIRED = ("type", "ports", "file", "flag", "doc-table", "doc")
-MODES = ["status", "cost"]
+FIELDS = ("type", "items", "fields", "rows", "derived", "minimum",
+          "doc-table", "doc-default", "doc")
+REQUIRED = ("type", "doc-table", "doc")
 DOC = os.path.join("docs", "options.md")
-# The defaults of every option a file may set, which both ports read at
-# run time; this holds it to the spec, and writes the docs' Default cells
-# from it.
+# The defaults of every option, which the mod reads at run time; this holds
+# it to the spec, and writes the docs' Default cells from it.
 DEFAULTS = os.path.join("mod", "defaults", "config.jsonc")
-# The tables of docs/options.md, by the name their markers give, and the
-# column between the option and its effect.
-DOC_TABLES = {"shared": "Default", "display": "Modes"}
+# The tables of docs/options.md, by the name their markers give.
+DOC_TABLES = ("settings",)
 
 
 def plain(node):
@@ -662,11 +634,10 @@ def plain(node):
 
 
 def join_docs(root):
-    """Each option's doc and usage, written as lines, made the one string
-    each is."""
+    """Each option's doc, written as lines, made the one string it is."""
     for opt in root.value[0].value:
         for f in opt.value:
-            if f.key in ("doc", "usage") and f.kind == "arr":
+            if f.key == "doc" and f.kind == "arr":
                 f.kind, f.value = "str", " ".join(c.value for c in f.value)
 
 
@@ -715,7 +686,7 @@ def fits_field(ft, v):
 
 
 def check_derived(name, o, opts, bad):
-    """Refuse a `derived` the ports could not work out.  Two forms:
+    """Refuse a `derived` the mod could not work out.  Two forms:
 
       {"from": OPTION, "map": {...}}
           the value the map gives for OPTION's merged value;
@@ -763,12 +734,12 @@ def check_derived(name, o, opts, bad):
 
 
 def check_options(opts):
-    """Refuse a record the ports could not read the same way."""
+    """Refuse a record the mod could not read."""
     def bad(name, why):
         raise SystemExit("options.jsonc: %s: %s" % (name, why))
     for name, o in opts.items():
         if not re.fullmatch(r"[a-z][a-z0-9]*(-[a-z0-9]+)*", name):
-            bad(name, "not a flag's name")
+            bad(name, "not an option's name")
         for k in o:
             if k not in FIELDS:
                 bad(name, "unknown field %r" % k)
@@ -787,9 +758,6 @@ def check_options(opts):
                 t == "table") != ("rows" in o):
             bad(name, "fields go with a table or a record, and rows with a "
                 "table only")
-        if o["file"] == ("default" in o):
-            bad(name, "a default goes with an option no file sets; a file's "
-                "option has its default in %s" % DEFAULTS)
         if t == "table":
             if (not isinstance(o["rows"], list) or not o["rows"]
                     or len(set(o["rows"])) != len(o["rows"])):
@@ -801,8 +769,6 @@ def check_options(opts):
                 if set(ft.get("fixed", ())) - set(o["rows"]):
                     bad(name, "field %r fixes a row the table has not" % k)
         elif t == "record":
-            if o["file"] is not True or o["flag"] is not None:
-                bad(name, "a record is set by a file, and has no flag")
             for k, ft in o["fields"].items():
                 if ft.get("type") not in RECORD_FIELDS:
                     bad(name, "field %r is not one of %s" % (k, RECORD_FIELDS))
@@ -815,34 +781,12 @@ def check_options(opts):
                     bad(name, "field %r: keys go with conditions-by" % k)
                 if ft.get("nullable") and ft["type"] != "string":
                     bad(name, "field %r: only a string is nullable" % k)
-        elif "default" in o and not fits(t, o["default"], o.get("items")):
-            bad(name, "default %r is not a %s" % (o["default"], t))
-        if not o["ports"] or set(o["ports"]) - {"py", "mod"}:
-            bad(name, "ports are \"py\", \"mod\" or both")
-        flag = o["flag"]
-        if flag is not None and flag != "--" + name:
-            bad(name, "its flag is --%s" % name)
-        if flag is None and "py" in o["ports"] and o["file"] is False:
-            bad(name, "the Python could not be given it")
-        if (flag is not None) != ("usage" in o):
-            bad(name, "a usage line goes with a flag, and only with one")
-        if "usage" in o and not o["usage"].isascii():
-            bad(name, "the usage text is plain ASCII, for any terminal")
-        if o.get("negatable") and t != "bool":
-            bad(name, "only a bool is negatable")
         if "minimum" in o and t != "int":
             bad(name, "only an int has a minimum")
         if "derived" in o:
             check_derived(name, o, opts, bad)
-        if o["doc-table"] is not None:
-            if o["doc-table"] not in DOC_TABLES:
-                bad(name, "no doc table %r" % o["doc-table"])
-            if flag is None:
-                bad(name, "the doc tables are of flags")
-        if o["doc-table"] == "display" and "modes" not in o:
-            bad(name, "a display option says its modes")
-        if set(o.get("modes", [])) - set(MODES):
-            bad(name, "modes are %s" % ", ".join(MODES))
+        if o["doc-table"] is not None and o["doc-table"] not in DOC_TABLES:
+            bad(name, "no doc table %r" % o["doc-table"])
 
 
 def read_defaults(path):
@@ -859,17 +803,17 @@ def read_defaults(path):
 
 
 def check_defaults(opts, defaults):
-    """Refuse a defaults file that is not every option a file may set, in
-    the spec's order, each with a value of its type: the same holding the
-    ports do at run time, at the time the spec is written."""
+    """Refuse a defaults file that is not every option, in the spec's
+    order, each with a value of its type: the same holding the mod does at
+    run time, at the time the spec is written."""
     def bad(why):
         raise SystemExit("%s: %s" % (DEFAULTS, why))
-    want = [n for n, o in opts.items() if o["file"]]
+    want = list(opts)
     if list(defaults) != want:
         missing = [n for n in want if n not in defaults]
         extra = [n for n in defaults if n not in want]
-        bad("the keys are not every option a file may set, in the spec's "
-            "order (missing %s; not file options %s)" % (missing, extra))
+        bad("the keys are not every option, in the spec's order "
+            "(missing %s; no options %s)" % (missing, extra))
     for name, value in defaults.items():
         o = opts[name]
         if "derived" in o:
@@ -906,12 +850,6 @@ def check_defaults(opts, defaults):
             bad("%r's default is under its minimum, %d" % (name, o["minimum"]))
 
 
-def default_of(o, name, defaults):
-    """An option's default: the spec's for one no file sets, else the
-    defaults file's."""
-    return defaults[name] if o["file"] else o["default"]
-
-
 def camel(name):
     head, *rest = name.split("-")
     return head + "".join(w.capitalize() for w in rest)
@@ -940,13 +878,11 @@ def record_field_ts(ft):
 
 
 def options_type(opts):
-    """Options: the mod's merged value of each option it reads."""
-    lines = ["// The merged value of each option the mod reads, by the camel",
-             "// case of its name.",
+    """Options: the mod's merged value of each option."""
+    lines = ["// The merged value of each option, by the camel case of its",
+             "// name.",
              "export type Options = {"]
     for name, o in opts.items():
-        if "mod" not in o["ports"]:
-            continue
         if o["type"] == "record":
             lines.append("  readonly %s: {" % camel(name))
             lines += ["    readonly %s: %s;" % (camel(k), record_field_ts(f))
@@ -963,11 +899,9 @@ def options_type(opts):
                 lines.append("    };")
             lines.append("  };")
             continue
+        # Every option has a value: the defaults file's is null only where
+        # it is derived.
         t = ts_type(o["type"], o.get("items"))
-        # A file's option always has a value: the defaults file's is null
-        # only where it is derived.
-        if not o["file"] and o["default"] is None:
-            t += " | null"
         lines.append("  readonly %s: %s;" % (camel(name), t))
     lines.append("};")
     return lines
@@ -979,31 +913,19 @@ def cell(text):
 
 def doc_table(opts, which, defaults):
     """One table of docs/options.md, a row per option it lists, each
-    default from the defaults file or, for an option no file sets, the
-    spec."""
-    second = DOC_TABLES[which]
-    rows = ["| Option | %s | Effect |" % second, "|---|---|---|"]
+    default from the defaults file."""
+    rows = ["| Key | Default | Effect |", "|---|---|---|"]
     for name, o in opts.items():
         if o["doc-table"] != which:
             continue
-        default = default_of(o, name, defaults)
-        flag = o["flag"]
-        if o.get("negatable") and default is True:
-            flag = "--no-" + flag[2:]
-        if o["type"] != "bool":
-            flag += " " + (o.get("metavar") or "|".join(o["items"]))
-        if second == "Modes":
-            modes = o["modes"]
-            mid = "all" if sorted(modes) == sorted(MODES) else ", ".join(modes)
-        elif "doc-default" in o:
+        default = defaults[name]
+        if "doc-default" in o:
             mid = o["doc-default"]
-        elif default in (None, []):
+        elif default == []:
             mid = "none"
-        elif default is False:
-            mid = "off"
         else:
-            mid = "`%s`" % default
-        rows.append("| %s | %s | %s |" % (cell("`%s`" % flag), cell(mid),
+            mid = "`%s`" % json.dumps(default, ensure_ascii=False)
+        rows.append("| %s | %s | %s |" % (cell("`%s`" % name), cell(mid),
                                           cell(o["doc"])))
     return rows
 
@@ -1024,7 +946,7 @@ def with_doc_tables(text, opts, defaults):
 
 def main():
     outs = {}
-    for source, py_out, ts_out in SPECS:
+    for source, ts_out in SPECS:
         root = read(os.path.join(REPO, source))
         src = source.replace(os.sep, "/")
         if source.endswith("options.jsonc"):
@@ -1036,7 +958,6 @@ def main():
             doc = os.path.join(REPO, DOC)
             with open(doc, encoding="utf-8") as fh:
                 outs[doc] = with_doc_tables(fh.read(), opts, defaults)
-        outs[os.path.join(REPO, py_out)] = render(PY, root, src)
         outs[os.path.join(REPO, ts_out)] = render(TS, root, src)
     if sys.argv[1:] == ["--check"]:
         stale = []

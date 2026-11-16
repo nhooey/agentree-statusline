@@ -86,18 +86,18 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `AR5` | Docs, and the acceptance check, live | `AR3`, `AR4` | none | `docs/layout.md`, `docs/options.md` |
 | `CB1` | **Done.** The trial: what the session's credential reaches of the dollar credits, logged | none | none | `mod/hooks/register.tsx` |
 | `CB1b` | **Done.** The second trial: `extra_usage`'s figures and the cloud credit's `used` per turn, logged | `CB1` | none | `mod/hooks/register.tsx` |
-| `CB2` | **Built.** The `credits[]` reading, parsed in both ports | `CB1b` | none | `mod/src/sources.ts`, `coding_agent_usage_line/sources.py`, `docs/usage-sources.md` |
+| `CB2` | **Built.** The `credits[]` reading, parsed | `CB1b` | none | `mod/src/sources.ts`, `docs/usage-sources.md` |
 | `CB3` | **Built.** The sources: the OAuth answer's credits, asked every 5 minutes, and the shared cache | `CB2` | none | `mod/hooks/edges.ts`, `mod/src/sources.ts` |
-| `CB4` | **Built.** The conditions in both ports, the glyphs, and each credit's cell | `CB2` | none | `coding_agent_usage_line/credits.py`, `mod/src/credits.ts`, `spec/layout.jsonc` |
+| `CB4` | **Built.** The conditions, the glyphs, and each credit's cell | `CB2` | none | `mod/src/credits.ts`, `spec/layout.jsonc` |
 | `CB4b` | **Built.** The credits drawn: the `credits` option, its condition lists in both configuration readers, the 💳 row, and the Console's credits from `credits.command` | `CB3`, `CB4` | `AR3` | `spec/options.jsonc`, `mod/defaults/config.jsonc`, `mod/src/band.ts` |
-| `CB6` | **Built.** The spending column on the turn, agent, session and subagent rows | `CB3`, `CB4b` | none | `mod/src/band.ts`, `mod/src/cells.ts`, `coding_agent_usage_line/claude.py` |
+| `CB6` | **Built.** The spending column on the turn, agent, session and subagent rows | `CB3`, `CB4b` | none | `mod/src/band.ts`, `mod/src/cells.ts` |
 | `CB5` | Docs, and the acceptance check, live | `CB3`, `CB6` | none | `docs/layout.md`, `docs/options.md`, `docs/usage-sources.md` |
 | `OP1` | **Done.** Which entries reach each Python module: the panel, Codex, the fold worker, the tests | none | none | `tools/python-module-reach.py`, `one-panel-port.md` |
 | `OP2` | **Done.** Remove the agent panel command: `--mode subagent`, its suite, goldens, tools and docs | `OP1` | none | `cli.py`, `claude.py`, `tests/`, `tools/`, `examples/claude/settings.json`, `README.md`, `docs/` |
 | `OP3` | **Done.** The band's tree: 🎮 the root, 🧵 main, 🎤 the turn and the subagents under them, with `✅ N done`, the cap and progress updates | `OP1` | `OP2` (`docs/layout.md`) | `spec/options.jsonc`, `mod/defaults/config.jsonc`, `mod/hooks/`, `mod/src/`, `docs/layout.md` |
 | `OP4` | **Done.** The mod's fold worker in TypeScript: the mod folds big transcripts and agent files in pieces itself, and spawns no Python | `OP1` | none | `mod/hooks/transcripts.ts`, `mod/scripts/` |
-| `OP5` | The Python's Claude twins removed, `--mode status` and `--mode cost` for Claude among them | `OP2`, `OP3`, `OP4` | none | `coding_agent_usage_line/`, `tests/` |
-| `OP6` | **Done.** 🧬 for the model cell, so 🤖 keeps one job, in both ports | none | none | `spec/layout.jsonc`, `README.md`, `docs/layout.md` |
+| `OP5` | **Done.** The Python removed, Codex and the CLI with it; the mod is the project | `OP2`, `OP3`, `OP4` | none | `coding_agent_usage_line/`, `tests/`, `spec/options.jsonc`, `tools/gen-spec.py`, `tools/usage-dev.py`, `docs/` |
+| `OP6` | **Done.** 🧬 for the model cell, so 🤖 keeps one job | none | none | `spec/layout.jsonc`, `README.md`, `docs/layout.md` |
 | `OP7` | **Done.** The band's clicks: a label switches to its thread, a row with children folds, 📦 🌿 🔀 link | `OP3` | none | `mod/hooks/`, `mod/mod-tests/` |
 | `OP8` | **Done.** Each open background shell and Monitor a row under the thread that started it | `OP3` | none | `mod/src/`, `mod/hooks/edges.ts`, `coding_agent_usage_line/` (the folds), `spec/state.jsonc` |
 | `TF1` | **Done.** The saved folds as one file of digests, `fold-saves.json` | the plan's approval | none | `tests/fixtures/gen/state.py`, `tests/fold.py`, `mod/test/*_fold.test.ts`, `tests/fixtures/fold-saves.json` |

@@ -1,10 +1,8 @@
-// src/config.ts against the shared cases, tests/fixtures/config/cases.json,
-// written by tests/fixtures/gen/config.py from what the Python makes of
-// each: the walk run over a fake file system built from the case's tree,
-// and the root, the paths, the merged options that are not default with
-// their layers, each table field a file set, and the warnings, all as the
-// Python found them.  The mod has no command line, so a case with flags is
-// the Python's alone.
+// src/config.ts against the configuration cases,
+// tests/fixtures/config/cases.json, which tools/gen-config-cases.ts writes:
+// the walk run over a fake file system built from the case's tree, and the
+// root, the paths, the merged options that are not default with their
+// layers, each table field a file set, and the warnings.
 //
 // Hermetic: the fake is the only file system the walk is given, the
 // environment is the case's, and every path the walk asks for must lie
@@ -16,151 +14,50 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import {
-  CONFIG_ENV, DEFAULTS_REL, DefaultsError, dumpsUnicode, jsonLoads, load,
+  CONFIG_ENV, DEFAULTS_REL, DefaultsError, dumpsUnicode, jsonLoads,
   merge, nearest, parseDefaults, readDefaults, readFile, stripJsonc,
 } from "../src/config.ts";
-import type {
-  ConfigEnv, ConfigFs, FileStat, RecordValue, Rows,
-} from "../src/config.ts";
-import { OPTIONS } from "../src/options_spec.ts";
+import type { ConfigFs } from "../src/config.ts";
 import { accountHide } from "../src/band.ts";
 import { WEEKLY_WINDOWS } from "../src/sources.ts";
 import type { WeeklyKey } from "../src/sources.ts";
+import {
+  CASES_PATH, DEFAULTS_CASES_PATH, ROOT, generate, run,
+} from "../tools/gen-config-cases.ts";
+import type { Case, DefaultsCase } from "../tools/gen-config-cases.ts";
 
-const CASES = path.join(import.meta.dirname, "..", "..", "tests", "fixtures",
-  "config", "cases.json");
-const DEFAULTS_CASES = path.join(import.meta.dirname, "..", "..", "tests",
-  "fixtures", "config", "defaults-cases.json");
 // The shipped defaults file, read as the mod reads it, under its folder.
 const SHIPPED_PATH = path.join(import.meta.dirname, "..", DEFAULTS_REL);
 const SHIPPED = fs.readFileSync(SHIPPED_PATH, "utf8");
 const DEFAULTS = parseDefaults(SHIPPED_PATH, SHIPPED);
-// The case's scratch directory, which the Python's ${ROOT} stands for.
-const ROOT = "/config-case";
 
-type Case = {
-  id: string; about: string;
-  tree: { [rel: string]: string | null };
-  env: { [name: string]: string };
-  start: string; flags: string[];
-  expected: {
-    root: string | null;
-    paths: { [layer: string]: string | null };
-    options: { [name: string]: [unknown, string] };
-    fields: { [path: string]: [unknown, string] };
-    warnings: string[];
-  };
-};
+const cases = JSON.parse(fs.readFileSync(CASES_PATH, "utf8")) as Case[];
 
-const fill = (text: string) => text.replaceAll("${ROOT}", ROOT);
-const cases = JSON.parse(fs.readFileSync(CASES, "utf8")) as Case[];
-
-/** A file system holding the case's tree and nothing else, which records
- * every path it is asked about. */
-function fakeFs(tree: Case["tree"]): { fs: ConfigFs; asked: string[] } {
-  const files = new Map<string, string>();
-  const dirs = new Set<string>();
-  for (const [rel, text] of Object.entries(tree)) {
-    const p = ROOT + "/" + rel.replace(/\/$/, "");
-    if (text === null) dirs.add(p);
-    else files.set(p, fill(text));
+test("the cases are what the generator writes", async () => {
+  for (const [p, text] of await generate()) {
+    assert.equal(fs.readFileSync(p, "utf8"), text,
+      `${path.basename(p)} is stale: run node mod/tools/gen-config-cases.ts`);
   }
-  for (const p of [...files.keys(), ...dirs]) {
-    for (let d = path.posix.dirname(p); d !== "/"; d = path.posix.dirname(d)) {
-      dirs.add(d);
-    }
-  }
-  const asked: string[] = [];
-  // As the OS reads one, `..` taken off the directory before it: a
-  // worktree's `.git` may name its git directory relatively.
-  const stat = async (p: string): Promise<FileStat | null> => {
-    asked.push(p);
-    p = path.posix.normalize(p);
-    const text = files.get(p);
-    if (text !== undefined) {
-      return { kind: "file", size: Buffer.byteLength(text), mtimeMs: 1 };
-    }
-    return dirs.has(p) ? { kind: "dir", size: 0, mtimeMs: 0 } : null;
-  };
-  return {
-    asked,
-    fs: {
-      stat,
-      read: async (p) => {
-        asked.push(p);
-        return files.get(path.posix.normalize(p)) ?? null;
-      },
-      realPath: async (p) => (await stat(p)) ? p : null,
-    },
-  };
-}
-
-function caseEnv(c: Case): ConfigEnv {
-  const env: { [name: string]: string } = {};
-  for (const [k, v] of Object.entries(c.env)) env[k] = fill(v);
-  return env;
-}
-
-const filled = (v: unknown): unknown => JSON.parse(fill(JSON.stringify(v)));
-
-test("the shared cases are the Python's, 51 of them", () => {
-  assert.equal(cases.length, 51);
-  assert.deepEqual(cases.filter((c) => c.flags.length).map((c) => c.id),
-    ["flag-over-local", "list-flag-repeated"]);
 });
 
 for (const c of cases) {
-  if (c.flags.length) continue;
   test(`config case ${c.id}: ${c.about}`, async () => {
-    const env = caseEnv(c);
-    for (const name of Object.keys(env)) {
+    for (const name of Object.keys(c.env)) {
       assert.ok((CONFIG_ENV as readonly string[]).includes(name),
         `the case sets ${name}, which the mod does not read`);
     }
-    const { fs: fake, asked } = fakeFs(c.tree);
-    const found = await load(fill(c.start), env, fake, DEFAULTS);
-    const options: Case["expected"]["options"] = {};
-    const fields: Case["expected"]["fields"] = {};
-    for (const [name, value] of Object.entries(found.options.values)) {
-      const layer = found.options.layers[name];
-      if (name === "rows") {
-        for (const [row, rec] of Object.entries(value as Rows)) {
-          for (const [field, v] of Object.entries(rec)) {
-            const at = found.options.fields[`${name}.${row}.${field}`];
-            if (at) fields[`${name}.${row}.${field}`] = [v, at];
-          }
-        }
-      } else if ((OPTIONS as { [n: string]: { type: string } })[name]?.type
-        === "record") {
-        for (const [field, v] of Object.entries(value as RecordValue)) {
-          const parts = v !== null && !Array.isArray(v) && typeof v === "object"
-            ? Object.entries(v).map(([k, item]) => [`.${k}`, item] as const)
-            : [["", v] as const];
-          for (const [key, part] of parts) {
-            const at = found.options.fields[`${name}.${field}${key}`];
-            if (at) fields[`${name}.${field}${key}`] = [part, at];
-          }
-        }
-      } else if (layer !== "default") {
-        options[name] = [value, layer];
-      }
-    }
-    assert.deepEqual({
-      root: found.root, paths: found.paths, options, fields,
-      warnings: found.options.warnings,
-    }, filled(c.expected));
+    const { expected, asked } = await run(c, DEFAULTS);
+    assert.deepEqual(expected, c.expected);
     const outside = asked.filter((p) => !p.startsWith(ROOT + "/"));
     assert.deepEqual(outside, [], "the walk asked outside the case's tree");
   });
 }
 
 // The defaults file read strictly: the shipped one passes, and each change
-// in tests/fixtures/config/defaults-cases.json fails with the Python's
-// words, naming the file and the key.
-type DefaultsCase = { id: string; about: string; path: string; text: string;
-  expected: string | null };
-const defaultsCases = JSON.parse(fs.readFileSync(DEFAULTS_CASES, "utf8")) as
-  DefaultsCase[];
+// in tests/fixtures/config/defaults-cases.json fails with its words, naming
+// the file and the key.
+const defaultsCases = JSON.parse(fs.readFileSync(DEFAULTS_CASES_PATH,
+  "utf8")) as DefaultsCase[];
 
 test("the defaults cases include a missing key, an extra key and a wrong type",
   () => {
@@ -169,7 +66,7 @@ test("the defaults cases include a missing key, an extra key and a wrong type",
       assert.ok(ids.includes(id), id);
     }
     assert.equal(defaultsCases.find((c) => c.id === "shipped")?.text, SHIPPED,
-      "defaults-cases.json is stale: run tests/fixtures/gen/config.py");
+      "defaults-cases.json is stale: run node mod/tools/gen-config-cases.ts");
   });
 
 for (const c of defaultsCases) {
@@ -188,7 +85,6 @@ for (const c of defaultsCases) {
 test("the shipped defaults hold every option, a derived one null", () => {
   assert.equal(DEFAULTS["usage-source"], "auto");
   assert.equal(DEFAULTS["right-edge"], null);
-  assert.equal(DEFAULTS.mode, "status");
   const merged = merge([], [], DEFAULTS);
   assert.equal(merged.values["right-edge"], 5);
   assert.equal(merged.layers["right-edge"], "derived");

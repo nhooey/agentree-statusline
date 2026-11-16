@@ -1,12 +1,11 @@
 // Spans: the text a cell draws, each run with its own colour and attributes.
 //
-// A port of coding_agent_usage_line/spans.py.  A cell returns spans, not a
-// string with escape codes in it, so that what it draws can be measured,
-// compared and carried to a mod, whose `Text` refuses control characters,
-// without parsing escapes back out.  The colour is the NAME of a spec
-// constant, "F_PNK" and not its value, so the Python and this port carry
-// the same span; the mod looks the name up in spec.ts for a hex colour,
-// and `join` derives from that hex the escape the Python's spec.py holds.
+// A cell returns spans, not a string with escape codes in it, so that
+// what it draws can be measured, compared and carried to a mod, whose
+// `Text` refuses control characters, without parsing escapes back out.
+// The colour is the NAME of a spec constant, "F_PNK" and not its value;
+// the mod looks the name up in spec.ts for a hex colour, and `join`
+// derives the escape from that hex.
 //
 // A plain string stands in for one uncoloured span wherever spans are
 // taken, so a mark or a pad need not be wrapped.
@@ -17,7 +16,7 @@ import type { Widths } from "./formatting.ts";
 
 // The attribute escapes.  The colours are spec's; these are not colours.
 export const R = "\x1b[0m";                // reset
-export const DIM = "\x1b[2m";              // dim attribute: see spans.py
+export const DIM = "\x1b[2m";              // dim attribute
 export const BOLD = "\x1b[1m";
 export const UNBOLD = "\x1b[22m";          // 22 (bold off) and not 0 (all
                                            // attributes off), so it cannot
@@ -90,7 +89,7 @@ export function spans(x: SpanLike): Span[] {
 }
 
 /** bool(x) of a SpanLike: a string or a list is true when it is not empty,
- * and a Span always is, since Python's is a tuple of five. */
+ * and a Span always is. */
 export function truthy(x: SpanLike): boolean {
   if (typeof x === "string") return x.length > 0;
   if (isSpan(x)) return true;
@@ -210,9 +209,7 @@ const TRUE_TERMS = ["alacritty", "contour", "foot", "ghostty", "rio",
   "wezterm", "xterm-ghostty", "xterm-kitty"];
 
 /** The colour level Claude Code draws at, from the environment it runs in:
- * 3 for true colour, 2 for 256, 1 for 16, 0 for none.  spans.py's
- * colour_level says which of Claude Code's rules are followed and which
- * are left out. */
+ * 3 for true colour, 2 for 256, 1 for 16, 0 for none. */
 export function colourLevel(
   env: { readonly [name: string]: string | undefined }): number {
   const force = env.FORCE_COLOR;
@@ -278,10 +275,10 @@ export function hexOf(name: string, truecolor = false): string {
   return hex;
 }
 
-/** The escape spec.py holds for the colour constant `name`, or its
+/** The escape for the colour constant `name`, or its
  * TRUE_COLOURS entry where `truecolor`: a B_ name lays a background (48),
  * any other a foreground (38), from the hex spec.ts holds.  An unknown
- * name throws, as getattr(spec, name) raises. */
+ * name throws. */
 export function escape(name: string, truecolor = false): string {
   const hex = hexOf(name, truecolor);
   const m = typeof hex === "string" ? /^#([0-9a-f]{6})$/i.exec(hex) : null;
@@ -317,7 +314,7 @@ function sgr(s: Span, truecolor: boolean): string {
  * a span that is a colour alone is not reset before another.
  *
  * `truecolor` draws the true set, where Claude Code draws true colour
- * (Settings.truecolor); spans.py's join reads that from its environment. */
+ * (Settings.truecolor). */
 export function join(x: SpanLike, close = false, runs = false,
   truecolor = false): string {
   let out = "";

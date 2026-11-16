@@ -1,10 +1,10 @@
 # coding-agent-usage-line
 
 Three readouts for Claude Code that show a session's cost, its plan usage,
-where the time went and what each subagent is doing, all on one grid. The
-renderer is the Python package in `coding_agent_usage_line/`, run through
-`coding-agent-usage-line.py`; the `usage-band` mod in `mod/` (TypeScript)
-draws the rows above the prompt and under the footer line. See `README.md`.
+where the time went and what each subagent is doing, all on one grid. They
+are the `usage-band` mod in `mod/` (TypeScript), which draws the rows above
+the prompt and under the footer line. The Python under `tools/` is
+development tooling only. See `README.md`.
 
 ## Build and test
 

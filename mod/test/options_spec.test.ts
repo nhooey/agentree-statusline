@@ -1,7 +1,7 @@
 // options_spec.ts is generated from spec/options.jsonc; these pin the forms
-// the generator writes: the records `as const`, with no default for an
-// option a file may set (its default is the defaults file's alone), and an
-// Options type that the defaults file, merged, fills.
+// the generator writes: the records `as const`, with no default in the spec
+// (every option's is the defaults file's alone), and an Options type that
+// the defaults file, merged, fills.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -11,26 +11,25 @@ import { DEFAULTS_REL, merge, optionsOf, parseDefaults } from "../src/config.ts"
 
 test("the records keep their literal values", () => {
   assert.deepEqual(OPTIONS.rows.fields.place.items, ["above", "footer"]);
-  assert.equal(OPTIONS["usage-source"].flag, "--usage-source");
+  assert.equal(OPTIONS["usage-source"].type, "string");
   assert.deepEqual(OPTIONS.rows.rows,
     ["turn", "agent", "session", "tag", "account", "subagents"]);
-  assert.equal(OPTIONS.mode.default, "status");
+  assert.equal(OPTIONS["account-period"]["doc-table"], "settings");
 });
 
-test("no option a file may set has a default in the spec", () => {
+test("no option has a default in the spec", () => {
   for (const [name, o] of Object.entries(OPTIONS)) {
-    assert.equal("default" in o, !o.file, name);
+    assert.ok(!("default" in o), name);
   }
 });
 
-test("the defaults file, merged, fills every option the mod reads", () => {
+test("the defaults file, merged, fills every option", () => {
   const p = path.join(import.meta.dirname, "..", DEFAULTS_REL);
   const options: Options = optionsOf(merge([], [],
     parseDefaults(p, fs.readFileSync(p, "utf8"))));
-  const mod = Object.entries(OPTIONS)
-    .filter(([, o]) => (o.ports as readonly string[]).includes("mod"))
-    .map(([name]) => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase()));
-  assert.deepEqual(Object.keys(options).sort(), mod.sort());
+  const names = Object.keys(OPTIONS)
+    .map((name) => name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase()));
+  assert.deepEqual(Object.keys(options).sort(), names.sort());
   assert.equal(options.rightEdge, 5);
   assert.equal(options.rows.turn.live, "running");
   assert.equal(options.rows.turn.place, "above");

@@ -1,18 +1,12 @@
-// The Stop-hook receipt's metric groups and its render stage, from
-// claude.py.
+// The Stop-hook receipt's metric groups and its render stage.
 //
-// claude.py draws the receipt's two kinds of row, a turn's (cost_group) and
-// the session's (cost_totals_group), and hands them to the layout in
-// claude_cost_render.py.  Those, the cells they are built from, and the
-// render stage that draws a figures document (render_cost_figures) are
-// here, each under its Python name in camelCase; the comment over each
-// names the claude.py function it came from.  claude.py's docstrings carry
-// the argument for every cell and are not copied: the comments here say
-// what the port has to do to match it.
+// The receipt has two kinds of row, a turn's (costGroup) and the
+// session's (costTotalsGroup), handed to the layout in
+// claude_cost_render.ts.  Those, the cells they are built from, and the
+// render stage that draws a figures document (renderCostFigures) are here.
 //
-// Pure, as the Python's render stage is: the clock is the document's
-// `clock.now`, drawn in the process's TZ, which the edge sets from
-// `clock.tz` (the Python's _fig_zone); the shares are the document's
+// Pure: the clock is the document's `clock.now`, drawn in the process's
+// TZ, which the edge sets from `clock.tz`; the shares are the document's
 // `accounting`, never worked out again; and the width comes in resolved,
 // since only the edge can ask the terminal for it.
 import {
@@ -70,15 +64,15 @@ function hms(now: number): string {
 // The cells.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** claude.py's plan_totals, off a figures document's plan reading: the two
+/** The plan totals, off a figures document's plan reading: the two
  * percentages as numbers, or {} where either is missing. */
 export function planTotals(plan: unknown): PlanTotals {
   return calibPlanTotals(plan as { [k: string]: unknown });
 }
 
-/** claude.py's share_half: the C_LIM_TOT half of a per-prompt limit cell,
- * the full seven columns even with no share, since seg pads the cost row
- * on the left and a short cell would shove the whole cell off its column. */
+/** The C_LIM_TOT half of a per-prompt limit cell, the full seven columns
+ * even with no share, since seg pads the cost row on the left and a short
+ * cell would shove the whole cell off its column. */
 export function shareHalf(st: Settings, emoji: string, share: number | null,
   colour: boolean): SpanLike {
   if (share === null) return " ".repeat(st.cLimTot);
@@ -86,8 +80,7 @@ export function shareHalf(st: Settings, emoji: string, share: number | null,
     span(padVal(st, 3, pct(share)), _c(colour, "F_AMB"))];
 }
 
-/** claude.py's _cost_cells: a cost row's cells, C_SEG_GAP blanks between
- * each two. */
+/** A cost row's cells, C_SEG_GAP blanks between each two. */
 export function _costCells(cells: readonly SpanLike[]): Span[] {
   const out: Span[] = [];
   cells.forEach((cell, index) => {
@@ -97,7 +90,7 @@ export function _costCells(cells: readonly SpanLike[]): Span[] {
   return out;
 }
 
-/** claude.py's _cache_ink: the colour a cache rate is drawn in. */
+/** The colour a cache rate is drawn in. */
 export function _cacheInk(p: number): string {
   if (p <= CACHE_CRIT) return "F_RED";
   if (p <= CACHE_WARN) return "F_AMB";
@@ -127,8 +120,8 @@ function cacheCell(st: Settings, cpct: number, colour: boolean): Span[] {
     : [], false);
 }
 
-/** claude.py's cost_group: the constant-width group for one prompt, its
- * shares read from the turn's accounting. */
+/** The constant-width group for one prompt, its shares read from the
+ * turn's accounting. */
 export function costGroup(st: Settings, t: Turn, shares: Accounting,
   win: number, colour: boolean, now: number, acct = true,
   stamps = true): Span[] {
@@ -175,13 +168,13 @@ export function costGroup(st: Settings, t: Turn, shares: Accounting,
       ? [S_DATE, span(padVal(st, 10, ymd(now)), _c(colour, "F_CRM"))]
       : [], false),
   ];
-  // Dropped, not blanked: see the Python.
+  // Dropped, not blanked.
   if (!stamps) cells.pop();
   return _costCells(cells);
 }
 
-/** claude.py's limit_cell: a totals-row limit cell, this session's share
- * then 💳 and the window's own reading, 💯 for a full one. */
+/** A totals-row limit cell, this session's share then 💳 and the window's
+ * own reading, 💯 for a full one. */
 export function limitCell(st: Settings, emoji: string, share: number | null,
   total: number | null, colour: boolean, acct = true,
   places = 2): SpanLike {
@@ -190,7 +183,7 @@ export function limitCell(st: Settings, emoji: string, share: number | null,
     ? decAlign(st, planPct(st, share, places), 2, places, E_PCT)
     : padVal(st, st.cSess - st.cLimTot - 5 + places, "?");
   if (!acct) return [emoji, span(" " + left, _c(colour, "F_AMB"))];
-  // The threshold is render_limit's, so the two readouts can never draw
+  // The threshold is renderLimit's, so the two readouts can never draw
   // different things for one window.
   let right: string;
   if (total === null) right = "?";
@@ -201,15 +194,15 @@ export function limitCell(st: Settings, emoji: string, share: number | null,
     span(padVal(st, 3, right), _c(colour, "F_AMB"))];
 }
 
-/** sum() of floats, left to right: claude_records.py's add_up. */
+/** sum() of floats, left to right. */
 function addUp(values: Iterable<number>): number {
   let total = 0;
   for (const v of values) total += v;
   return total;
 }
 
-/** claude.py's cost_totals_group: the session-to-date row under the
- * per-prompt one, its shares read from the session's accounting. */
+/** The session-to-date row under the per-prompt one, its shares read from
+ * the session's accounting. */
 export function costTotalsGroup(st: Settings, turns: readonly Turn[],
   totals: PlanTotals, win: number, colour: boolean, now: number,
   shares: Accounting | null = null, acct = true,
@@ -275,7 +268,7 @@ export function costTotalsGroup(st: Settings, turns: readonly Turn[],
 // ════════════════════════════════════════════════════════════════════════════
 
 // Turn's str fields: written null in the document when "", and "" again
-// here (claude.py's decode_record).  Turn has no other missing-value
+// here (decodeTurn).  Turn has no other missing-value
 // fields, and no stamps.
 const TURN_STRS = ["ts", "text", "agent_id", "agent_name", "prompt_id"];
 export const TURN_FIELDS: readonly string[] = ["ts", "text", "fresh",
@@ -285,7 +278,7 @@ export const TURN_FIELDS: readonly string[] = ["ts", "text", "fresh",
   "agent_model_s", "agent_tool_s", "agent_id", "agent_name", "prompt_id",
   "turn_index", "lines_added", "lines_removed", "eta"];
 
-/** claude.py's encode_record(Turn): its str fields null when "". */
+/** A Turn as the document writes it: its str fields null when "". */
 export function encodeTurn(t: Turn): { [k: string]: unknown } {
   const r = t as unknown as { readonly [k: string]: unknown };
   const out: { [k: string]: unknown } = {};
@@ -296,10 +289,10 @@ export function encodeTurn(t: Turn): { [k: string]: unknown } {
   return out;
 }
 
-/** claude.py's decode_record(Turn, d).  Every field must be present: a
+/** A Turn read back from the document.  Every field must be present: a
  * document missing one is from another schema, not a record with a
- * default.  A number is a number whichever way the document wrote it, so
- * _fig_typed's float() and int() have nothing to do here. */
+ * default.  A number is a number whichever way the document wrote it, and
+ * needs no conversion. */
 export function decodeTurn(d: { readonly [k: string]: unknown }): Turn {
   const out: { [k: string]: unknown } = {};
   for (const field of TURN_FIELDS) {
@@ -310,30 +303,29 @@ export function decodeTurn(d: { readonly [k: string]: unknown }): Turn {
   return out as unknown as Turn;
 }
 
-/** claude.py's _read_accounting: one turn's or the session's accounting
- * as it was worked out.  The Python makes the cost and the window shares
- * floats again; a number here is one already. */
+/** One turn's or the session's accounting as it was worked out.  The cost
+ * and the window shares are numbers as read. */
 export function _readAccounting(acc: { readonly [k: string]: unknown }):
   Accounting {
   return { ...acc } as unknown as Accounting;
 }
 
-/** claude.py's _flag: the value after `name`, or `dflt`. */
+/** The value after `name`, or `dflt`. */
 export function _flag(argv: readonly string[], name: string,
   dflt = ""): string {
   const i = argv.indexOf(name);
   return i >= 0 && i + 1 < argv.length ? argv[i + 1] : dflt;
 }
 
-/** claude.py's _cols: --cols, where "0" means a width that is unknown,
- * else what the edge reads off the terminal (term_cols). */
+/** --cols, where "0" means a width that is unknown, else what the edge
+ * reads off the terminal (termCols). */
 export function _cols(argv: readonly string[],
   termCols: () => number | null): number | null {
   const s = _flag(argv, "--cols");
   return pyIsDigit(s) ? (pyIntDigits(s) || null) : termCols();
 }
 
-/** claude.py's _cost_opts.  --no-usage-text keeps each row's marker glyph
+/** The receipt's options.  --no-usage-text keeps each row's marker glyph
  * and drops the words.  The width is resolved at the edge (_cols). */
 export function _costOpts(argv: readonly string[], cols: number | null,
   sessionId = ""): CostOpts {
@@ -370,9 +362,8 @@ export type CostFigures = {
   };
 };
 
-/** claude.py's render_cost_figures: the systemMessage, or "" for none.
- * Reads no file, no clock and no plan reading but the document's.  The
- * Python's _fig_zone sets TZ from `clock.tz` first; that is the caller's,
+/** The systemMessage, or "" for none.  Reads no file, no clock and no
+ * plan reading but the document's.  TZ from `clock.tz` is the caller's,
  * which must set it before calling. */
 export function renderCostFigures(st: Settings, fig: CostFigures,
   opts: CostOpts): string {

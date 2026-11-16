@@ -1,15 +1,16 @@
-// The main transcript's folds over the real transcripts on this machine:
-// the TypeScript's side of tests/fold_real.py, which has the whole story.
+// The main transcript's folds over the real transcripts on this machine.
 //
 //   node mod/tools/check-fold.ts [--largest N] [--seed S] [FILE...]
 //
-// Not in CI: it reads ~/.claude/projects, which is private.  For each
-// transcript (every *.jsonl under ~/.claude/projects, or the FILEs named;
-// the N largest with --largest) it folds the records as transcriptOf and
-// turnsOf do, breaks the fold at three record boundaries, either side of
-// every compaction and once inside a line, and checks that each reads on
-// to the whole fold.  One line a file, then a total; the exit status is the
-// number of files that broke.  `usage-dev folds` runs both.
+// Not in CI and not in tests/all.sh: it reads ~/.claude/projects, which is
+// private, and takes minutes over every file there.  For each transcript
+// (every *.jsonl under ~/.claude/projects, or the FILEs named; the N
+// largest with --largest) it folds the records as transcriptOf and turnsOf
+// do, and breaks the fold at a seeded set of points: three record
+// boundaries, either side of every compaction, and one cut inside a line.
+// At each break the fold is finished, and the fold read on from there must
+// finish as the whole fold does.  One line a file, then a total; the exit
+// status is the number of files that broke.  `usage-dev folds` runs it.
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
