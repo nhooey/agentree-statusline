@@ -53,7 +53,7 @@ Each row's place is `rows` in the
 [Layout](docs/layout.md#the-rows).
 
 Every row's figures, left to right: 🧬 Model · 🛫 Rate or Doing · 💰 Cost ·
-🧠 Context · 🧩 Tokens · 🎯 Hits · ⌛ Elapsed · ⛳ ETA · 🤖 Thinking · 🔧 Tools ·
+⛅ 🎁 💵 💸 [Credit paying](docs/layout.md#column-by-column) · 🧠 Context · 🧩 Tokens · 🎯 Hits · ⌛ Elapsed · ⛳ ETA · 🤖 Thinking · 🔧 Tools ·
 🚦 Waiting · 🔋 5-hour · 🪫 Weekly · 💾 Diff.
 
 ## Prompt receipt
