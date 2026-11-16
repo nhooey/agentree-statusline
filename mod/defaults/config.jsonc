@@ -11,7 +11,7 @@
 // ~/.config/coding-agent-usage-line/config.jsonc (or a project's
 // .config/coding-agent-usage-line/config.jsonc), such as
 //
-//   {"totals": false}
+//   {"mark-spacing": false}
 //
 // A key it does not set comes from here, and follows this file as it
 // changes.  A key that is no option refuses the whole file, with a
