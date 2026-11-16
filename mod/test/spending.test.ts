@@ -152,7 +152,7 @@ test("the 🎤, 🤖, 🎮 and subagent rows draw the column, blank while the " 
     assert.equal(row.cells.spend, undefined);
   }
   const fig = { ...fig0, spending: { kind: "extra", since: null, turn: 2.1,
-    main: 6.4, session: 35 }, agents: corpusAgents("01-mixed@220", "") };
+    main: 6.4, session: 35 }, agents: corpusAgents("corpus/01-mixed", "") };
   const rows = bandRows(st, fig, opts);
   assert.equal(text(rows.turn.cells.spend), "💸2.1 ");
   assert.equal(text(rows.main.cells.spend), "💸6.4 ");

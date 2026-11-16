@@ -104,7 +104,7 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `TF2` | **Done.** One figures document per distinct document, sparse | the plan's approval | none | `tests/run-cases.py`, `tests/fixtures/gen/cases.py`, `tests/fixtures/figures/`, `mod/test/`, `mod/tools/gen-row-cases.ts`, `mod/tools/draw-figures.ts` |
 | `TF3` | **Done.** `rows/` in one form, the second profile a sample | the plan's approval | `TF2` (it regenerates `rows/`) | `mod/tools/gen-row-cases.ts`, `mod/test/rows.test.ts`, `tests/fixtures/rows/` |
 | `TF4` | **Done.** The status line, the old receipt and the panel removed from the TypeScript, with their goldens | `OP5`, and the plan's decision 1 | none | `mod/src/claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts`, `figures.ts`, `tests/golden/`, `tests/fixtures/{receipt,render}/` |
-| `TF5` | The panel's inputs as tree cases | `TF4` | `TF3` | `tests/fixtures/panel/`, `mod/tools/gen-row-cases.ts`, `tests/fixtures/rows/` |
+| `TF5` | **Done.** The panel's inputs as tree cases: `panel/inputs.json`, each case drawn as the band's tree into `rows/` | `TF4` | `TF3` | `tests/fixtures/panel/`, `mod/tools/gen-row-cases.ts`, `tests/fixtures/rows/` |
 | `TF6` | The differential families written once, by the TypeScript | `OP5` | `TF4` (`render/`) | `mod/tools/`, `tests/fixtures/{records,calib,formatting,render,claude}/` |
 | `TF7` | **Done.** `grid/` in one form, on fewer widths | `OP5` | none | `mod/tools/gen-grid-cases.ts`, `mod/test/grid.test.ts`, `tests/fixtures/grid/`, `tools/diff-grid-fixtures.py` |
 

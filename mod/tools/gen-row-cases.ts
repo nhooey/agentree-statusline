@@ -25,7 +25,7 @@
 //             and, where the case has them, only the rows `places` (the
 //             defaults file's rows.*.place) puts in `place`; above the
 //             prompt, where the case has them, the band's tree with the
-//             subagents of the panel corpus's case `agents`, the main
+//             subagents of the panel input `agents`, the main
 //             thread's progress update `progress` and the cap `cap`;
 //             `rows`, each row's spans top to bottom
 //   receipt   one case a line: a cost document drawn at `cols` under
@@ -141,21 +141,31 @@ export type BandCase = { doc: string; cols: number; hide: string[];
   agents?: string; progress?: string; cap?: number; background?: boolean;
   session?: { name: string; color: string } };
 
-/** The panel's corpus, tests/fixtures/panel/corpus.json: its cases' tasks
+/** The panel's inputs, tests/fixtures/panel/inputs.json: by group and
+ * name, each case's prepared `(task, usage, meta, shares)` records, which
  * are the band's tree's subagents (corpusAgents). */
-const CORPUS = pathJoin(HERE, "..", "..", "tests", "fixtures", "panel",
-  "corpus.json");
+export const PANEL_INPUTS = pathJoin(HERE, "..", "..", "tests", "fixtures",
+  "panel", "inputs.json");
+type PanelInputs = { [group: string]: { [name: string]: Dict[] } };
+const panelInputs = (): PanelInputs =>
+  JSON.parse(readFileSync(PANEL_INPUTS, "utf8")) as PanelInputs;
 
-/** A status document's `agents` with the subagents of the corpus case
- * `id` ("" for none), each task's `label` standing for its latest progress
- * update and none for its activity, and `main` the main thread's.  The
- * corpus's clock is the figures documents'. */
+/** Every panel input's id, `<group>/<name>`, in the file's order. */
+export function panelInputIds(): string[] {
+  return Object.entries(panelInputs()).flatMap(([group, cases]) =>
+    Object.keys(cases).map((name) => group + "/" + name));
+}
+
+/** A status document's `agents` with the subagents of the panel input
+ * `id`, `<group>/<name>` ("" for none), each task's `label` standing for
+ * its latest progress update and none for its activity, and `main` the
+ * main thread's.  The inputs' clock is the figures documents'. */
 export function corpusAgents(id: string, main: string): Dict {
   if (!id) return { tasks: [], main_progress: main };
-  const corpus = JSON.parse(readFileSync(CORPUS, "utf8")) as Dict;
-  const got = (corpus.cases as Dict[]).find((c) => c.id === id);
-  if (!got) throw new Error("no corpus case " + JSON.stringify(id));
-  return { main_progress: main, tasks: ((got.input as Dict).tasks as Dict[])
+  const [group, name] = id.split("/");
+  const tasks = panelInputs()[group]?.[name];
+  if (!tasks) throw new Error("no panel input " + JSON.stringify(id));
+  return { main_progress: main, tasks: tasks
     .map((t) => ({ task: { ...t.task as Dict, label: "" }, usage: t.usage,
       meta: t.meta, shares: t.shares,
       progress: String((t.task as Dict).label ?? "") })) };
@@ -213,8 +223,9 @@ export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
       cap: c.cap }));
 }
 
-/** The band's tree with subagents, on TREE_DOC: each case of the corpus
- * that has some, at each width, with the main thread's progress update;
+/** The band's tree with subagents, on TREE_DOC, with the main thread's
+ * progress update: three of the corpus's sessions at each width, and every
+ * other panel input at INPUT_COLS;
  * one under a cap that folds siblings into `… N more`; one that hides the
  * progress updates; once between turns; with open background shells
  * and Monitors under the main thread and the agents that started them;
@@ -227,6 +238,11 @@ function treeCases(): BandCase[] {
   const out: BandCase[] = [];
   for (const agents of TREE_AGENTS) {
     for (const cols of [236, ...COLS]) out.push({ ...base, cols, agents });
+  }
+  for (const agents of panelInputIds()) {
+    if (!TREE_AGENTS.includes(agents)) {
+      out.push({ ...base, cols: INPUT_COLS, agents });
+    }
   }
   out.push({ ...base, cols: 200, agents: TREE_AGENTS[0], cap: 3 });
   out.push({ ...base, cols: 200, agents: TREE_AGENTS[0], cap: 0 });
@@ -248,10 +264,13 @@ function treeCases(): BandCase[] {
   return out;
 }
 
-// The tree's cases: a document, the corpus cases whose tasks are its
-// subagents, and the main thread's progress update.
+// The tree's cases: a document, the corpus sessions whose tasks are its
+// subagents at every width, the width every other panel input is drawn
+// at, and the main thread's progress update.
 const TREE_DOC = "status/01-baseline";
-const TREE_AGENTS = ["01-mixed@220", "03-tree@220", "02-parked@220"];
+const TREE_AGENTS = ["corpus/01-mixed", "corpus/03-tree",
+  "corpus/02-parked"];
+const INPUT_COLS = 160;
 const TREE_PROGRESS = "Checking the binary for subagentStatusLine, then " +
   "the changelog for a hook that replaces it";
 
