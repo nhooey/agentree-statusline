@@ -280,7 +280,7 @@ export function modelSpec(modelId: string): string {
   return pySlice(fam, null, 2);
 }
 
-/** 🤖, the two-character model spec and the effort's glyph, "🤖O⁵🏃". */
+/** 🧬, the two-character model spec and the effort's glyph, "🧬O⁵🏃". */
 export function renderModel(st: Settings, model: string,
   effort = ""): Span[] {
   if (!model) return [];

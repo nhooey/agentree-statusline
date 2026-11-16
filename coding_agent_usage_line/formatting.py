@@ -304,7 +304,7 @@ S_RESET = E_RESET
 # slope of.  The model carries no window, which is a constant the 🧠
 # percentage already divides by; its name is cut to the two characters the
 # agent rows use, "O⁵", with the effort's glyph against it as on the agent
-# rows, "🤖O⁵🏃".  The model and the cost share one row at the top of the
+# rows, "🧬O⁵🏃".  The model and the cost share one row at the top of the
 # two-value column rather than taking a column of their own, two short cells
 # over a reserved third.  🧠 heads the cache-share column, over 📖 and 📝,
 # and the ⌛ row heads the limits column, over 🔋 and 🪫.  What it costs is

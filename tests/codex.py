@@ -101,7 +101,7 @@ rich_quota = account_summary({"stale": True, "buckets": [
 check("quota keeps bucket window hierarchy", "🔋 general:" in rich_quota and "🔋 reasoning (gpt-5):" in rich_quota, True)
 check("quota keeps absent stale reset and expiry facts", "quota stale" in rich_quota and "weekly 7d unavailable" in rich_quota and "🔜 01:00Z" in rich_quota and "primary 7% expired" in rich_quota, True)
 check("organization period is separate from quota", "💳 organization team-a month stale: 🧩 in 12 out 3" in rich_quota and "$" not in rich_quota, True)
-check("summary uses shared model and token marks", "🤖" in codex_summary(partial, "gpt-5", "high") and "🧩" in codex_summary(partial, "gpt-5", "high"), True)
+check("summary uses shared model and token marks", "🧬" in codex_summary(partial, "gpt-5", "high") and "🧩" in codex_summary(partial, "gpt-5", "high"), True)
 check("rollout metadata scopes empty transcript", rollout_identity([
     {"type":"session_meta", "payload":{"id":"thread", "session_id":"real-session"}},
     {"type":"turn_context", "payload":{"turn_id":"stop-turn", "model":"gpt-5.6-terra", "effort":"high"}}], "stop-turn"),

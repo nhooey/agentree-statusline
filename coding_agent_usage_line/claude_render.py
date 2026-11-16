@@ -226,7 +226,7 @@ def render_cost(cost_usd: str, mark: str = S_COST) -> List[Span]:
 
 def render_model_cost(model: str, effort: str,
                       cost_usd: str) -> List[Span]:
-    """The model and the cost side by side in one cell — "🤖O⁵🏃 💰115 ".
+    """The model and the cost side by side in one cell — "🧬O⁵🏃 💰115 ".
 
     Column 2's first row: the two-value column holds them on its first row,
     rather than giving them two rows of a column of their own over an empty
@@ -530,7 +530,7 @@ def model_spec(model_id: str) -> str:
 
 
 def render_model(model: str, effort: str = "") -> List[Span]:
-    """🤖, the two-character model spec and the effort's glyph — "🤖O⁵🏃".
+    """🧬, the two-character model spec and the effort's glyph — "🧬O⁵🏃".
 
     No context window: the window is a constant for the session that 🧠's
     percentage already reads as a level, so of the three numbers this row
