@@ -404,10 +404,23 @@ generator to Node only where a step below keeps its family.
    suite runs, as `rows/` and `grid/` have). `config/` and `sources/`
    keep their Python generators.
 
-7. **`TF7` `grid/` in one form, on fewer widths.** The spans alone, as
-   `TF3`; the second profile a sample; 7 of the 13 widths (300, 200,
-   125, 80, 40, 20, 6), keeping each width at which a column is first
-   dropped. `tools/diff-grid-fixtures.py` follows the shape.
+7. **`TF7` `grid/` in one form, on fewer widths.** Done.
+
+   - Each draw case keeps its spans and drops the joined `line`, as
+     `TF3`; the first case in each file keeps its line.
+   - `iterm-tmux.json` keeps the cases a profile can change: each layout
+     case whose columns differ from `unknown.json`'s, with its draw
+     cases, and every draw case at 300 columns. `grid.test.ts` replays
+     `unknown.json`'s other layout cases under every profile.
+   - 11 of the 13 widths: 300, 160, 150, 125, 100, 80, 60, 40, 20, 11
+     and 6. Every width from 150 down to 20 drops a column under some
+     hide set and grid, and 160 sheds the 💳 row's clock with every
+     column kept, so only 240 and 200 go: every distinct layout (291)
+     and every way a row's label and chrome meet its room (the pieces
+     kept, whole, cut or gone; 416) is still reached.
+   - `tools/diff-grid-fixtures.py` compares spans alone.
+
+   5,289 KB to 1,751 KB.
 
 Then `tests/README.md` and `docs/tests.md` describe the layout as it is,
 and this plan moves to `closed/`.
@@ -450,8 +463,16 @@ and this plan moves to `closed/`.
   - Still covered by: each turn's shares under one, the totals under
     all.
 - **`grid/` on fewer widths (`TF7`).**
-  - Gives up: 6 widths between breakpoints.
-  - Still covered by: the widths either side of each breakpoint.
+  - Gives up: 240 and 200 columns, which reach no layout or label rule
+    that 300 and 160 do not.
+  - Still covered by: every distinct layout and label rule, at the
+    widths kept.
+- **`grid/` as spans, its second profile a sample (`TF7`).**
+  - Gives up: the escape codes of every drawn row, and `iterm` and
+    `tmux` drawn at every width.
+  - Still covered by: `formatting/spans.json` and one joined case per
+    file; the layouts a profile moves, drawn, and 300 columns drawn
+    under every hide set.
 
 After `OP5` the ports' agreement is kept exactly where two ports remain:
 `config/`, `sources/`, `formatting/` and `fold-saves.json` if the Python

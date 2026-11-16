@@ -106,7 +106,7 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `TF4` | The status line, the old receipt and the panel removed from the TypeScript, with their goldens | `OP5` | none | `mod/src/claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts`, `figures.ts`, `tests/golden/`, `tests/fixtures/{receipt,render}/` |
 | `TF5` | The panel's inputs as tree cases | `TF4` | `TF3` | `tests/fixtures/panel/`, `mod/tools/gen-row-cases.ts`, `tests/fixtures/rows/` |
 | `TF6` | The differential families written once, by the TypeScript | `OP5` | `TF4` (`render/`) | `mod/tools/`, `tests/fixtures/{records,calib,formatting,render,claude}/` |
-| `TF7` | `grid/` in one form, on fewer widths | `OP5` | none | `mod/tools/gen-grid-cases.ts`, `tests/fixtures/grid/`, `tools/diff-grid-fixtures.py` |
+| `TF7` | **Done.** `grid/` in one form, on fewer widths | `OP5` | none | `mod/tools/gen-grid-cases.ts`, `mod/test/grid.test.ts`, `tests/fixtures/grid/`, `tools/diff-grid-fixtures.py` |
 
 `RT8`'s and `RT6`/`RT7`'s edges in the plan: steps 4 to 7 land in order,
 step 8 needs steps 1 and 4 (done), step 9 needs step 1 (done).
