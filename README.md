@@ -114,8 +114,11 @@ echo '{"mark-spacing": false}' > ~/.config/coding-agent-usage-line/config.jsonc
 A project's settings go in its own `.config/coding-agent-usage-line/`
 instead; see [Configuration files](docs/options.md#configuration-files).
 
-For ⛳ ETAs, link the skill that has agents report them, and tell them to use
-it:
+For ⛳ ETAs, the `usage-band` plugin gives each session and subagent the ETA
+instruction at its start, the short form in
+[`mod/hooks/eta-instruction.md`](mod/hooks/eta-instruction.md). Link the
+skill as well, which holds the full rules and what `recurse` asks for; where
+the plugin is not enabled, also tell agents to use the skill:
 
 ```sh
 ln -s ~/src/claude-code-usage-statusline/skills/coding-agent-usage-line-report-eta ~/.claude/skills/
