@@ -2,7 +2,7 @@
 # Every deterministic suite, side by side, and one line each on how it went.
 #
 #   bash tests/all.sh                  # every suite
-#   bash tests/all.sh spec node        # the ones named
+#   bash tests/all.sh node typecheck   # the ones named
 #   bash tests/all.sh --repeat 20 node # until one fails, 20 at most
 #   bash tests/all.sh --skip generated # every suite but those
 #
@@ -14,7 +14,7 @@
 # are not here.
 #
 # Last, once the suites are done, `generated` reruns every generator of
-# committed files (tools/gen-spec.py and the mod's under mod/tools/) and
+# committed files (the mod's under mod/tools/) and
 # fails if `git status` then shows any changed or untracked file: a
 # generator's output left uncommitted, which GitHub's run would miss.  It
 # runs alone because it rewrites the suites' inputs, and it fails on
@@ -56,7 +56,6 @@ trap 'rm -rf "$work"' EXIT
 # name | directory under ROOT | command.  In the order the table prints.
 SUITES='
 usage-dev|.|python3 tests/usage-dev.py
-spec|.|python3 tools/gen-spec.py --check
 node|mod|node --test test/*.test.ts
 typecheck|mod|npm run -s typecheck
 typecheck-plugin|mod|npm run -s typecheck:plugin
@@ -109,7 +108,7 @@ if wanted generated "$@"; then
     cd "$ROOT" || exit 1
     start=$(now)
     {
-      python3 tools/gen-spec.py &&
+      node mod/tools/gen-option-docs.ts &&
         node mod/tools/gen-config-cases.ts >/dev/null &&
         node mod/tools/gen-fold-saves.ts >/dev/null &&
         node mod/tools/gen-grid-cases.ts >/dev/null &&

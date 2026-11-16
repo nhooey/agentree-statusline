@@ -130,7 +130,7 @@ async function sweepCalibrationsVia($: $, places: Places,
   }
 }
 
-/** The window-cost caches as they were named before spec/state.jsonc's
+/** The window-cost caches as they were named before state_spec.ts's
  * window-costs kind, removed once through `$`, by the marker it writes.
  * `rm` is handed only the names oldWindowCosts matched, under the state
  * directory. */
@@ -193,7 +193,7 @@ async function scanWindows($: $, places: Places, snap: Snapshot,
 
 /** The cost cache, once a load: each file's offset, the digest of the
  * bytes before it, and its priced records up to it, as _CostCache keeps
- * them, in the one file spec/state.jsonc's window-costs kind names.  Read
+ * them, in the one file state_spec.ts's window-costs kind names.  Read
  * in pieces past 4 MiB. */
 async function readCosts($: $, places: Places): Promise<void> {
   if (costsRead) return

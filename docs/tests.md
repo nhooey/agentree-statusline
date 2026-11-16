@@ -7,13 +7,13 @@ with one line per suite on how it went:
 
 ```sh
 tests                    # every suite, then generated
-tests spec node          # the ones named
+tests node typecheck     # the ones named
 tests --repeat 20 node   # again, until a round fails
 tests --skip generated   # all but those named
 ```
 
 Last comes `generated`: it reruns every generator of committed files,
-`tools/gen-spec.py` and the mod's under `mod/tools/`, and fails if
+the mod's under `mod/tools/`, and fails if
 `git status` then shows any changed or untracked file, so a generator's
 output left uncommitted shows here before GitHub's run would miss it. It
 exits with the number of suites that failed and prints the end of each
@@ -35,7 +35,6 @@ fixtures only, and never read your credentials or your `~/.claude` history.
 | Suite (`tests NAME`) | Command | Checks | Result line |
 |---|---|---|---|
 | `usage-dev` | `python3 tests/usage-dev.py` | `tools/usage-dev.py`'s argument parsing, the steps each command runs, and that every script they name exists | unittest `OK` (20 tests) |
-| `spec` | `python3 tools/gen-spec.py --check` | `mod/src/*_spec.ts` and the option table of `docs/options.md` written from `spec/*.jsonc` | no output |
 | `node` | `cd mod && node --test 'test/*.test.ts'` | the mod against the committed cases under `tests/fixtures/` and `tests/golden/`: the spec, the configuration and usage-source readers, the formatters and spans, the accounting, the calibration, the folds and their saves, the band's rows and tree, the grid, the receipt and the subagent rows; and each generator under `mod/tools/` run again in memory | `ℹ fail 0` |
 | `typecheck` | `cd mod && npm run typecheck` | the mod's types, with TypeScript and Node's type definitions from the lockfile | no output |
 | `typecheck-plugin` | `cd mod && npm run typecheck:plugin` | the hooks' types against the engine's, which loading the mod in Claude Code writes | no output |
@@ -47,7 +46,9 @@ fixtures only, and never read your credentials or your `~/.claude` history.
 [`.github/workflows/tests.yml`](../.github/workflows/tests.yml) runs on every
 push and pull request:
 
-- **mod** — the `node` suite, the type check, `spec` and `usage-dev`.
+- **mod** — the `node` suite, the type check, `docs/options.md`'s
+  option table against `node mod/tools/gen-option-docs.ts`, and
+  `usage-dev`.
 - **shell** — `bash -n` and `shellcheck -S warning` over `tests/*.sh`.
 
 `nix flake check` runs `tests/all.sh` too, in a build
@@ -76,7 +77,7 @@ git diff tests/fixtures/
 
 Accept the new cases only if every line that moved is one you meant to move,
 and commit them with the change: the diff is the review. A change to a saved
-fold's text goes with a new format in `spec/state.jsonc` and
+fold's text goes with a new format in `mod/src/state_spec.ts` and
 `usage-dev fixtures`; a change to an option, with `usage-dev fixtures` too,
 which writes the configuration cases.
 

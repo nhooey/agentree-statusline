@@ -31,7 +31,7 @@
 //   - Rounding.  `round` rounds half to even; see `_pyRound`.
 //   - Sums.  Left to right, as 3.9's sum() adds; 3.12's compensates.
 //   - Caches.  The calibration cache and the scan's cost cache are each one
-//     file every reader writes and reads, named by spec/state.jsonc
+//     file every reader writes and reads, named by state_spec.ts
 //     (state.ts), and written in the same bytes (`_calibCacheText`,
 //     `_windowCostsText`).
 //   - File order.  The scan visits files in the order the directory lists
@@ -701,13 +701,13 @@ export function _calibrationOf(snap: Snapshot, cached: Dict | null,
   return out;
 }
 
-/** The calibration cache's file name: spec/state.jsonc's calibration
+/** The calibration cache's file name: state_spec.ts's calibration
  * kind, keyed by the snapshot's scope.  The windows are inside the file. */
 export function _calibrationCacheName(snap: Snapshot): string {
   return stateName("calibration", pyStr(pyGet(snap, "_scope", "")));
 }
 
-// The calibration caches as spec/state.jsonc names them, one per scope; a
+// The calibration caches as state_spec.ts names them, one per scope; a
 // past period's, account's or session's is never read again.
 const CALIB_NAME = /^claude-calibration-[0-9a-f]{64}\.cache$/;
 // The window-cost cache, swept with them: a format moved on leaves the old
@@ -751,7 +751,7 @@ export function staleFoldFiles(
     .map((e) => e.name);
 }
 
-/** The window-cost caches as they were named before spec/state.jsonc's
+/** The window-cost caches as they were named before state_spec.ts's
  * window-costs kind, and the temporary files a killed save left. */
 const OLD_COSTS = /^claude-window-costs(-ts|-mod)?\.cache(\.\d+)?$/;
 /** Written once they are gone. */

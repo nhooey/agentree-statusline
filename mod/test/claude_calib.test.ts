@@ -348,7 +348,7 @@ test("staleFoldFiles: a fold directory nobody has written to", () => {
 });
 
 // The mod's half of removeOldCostsVia: the names before
-// spec/state.jsonc's window-costs kind, and nothing else.
+// mod/src/state_spec.ts's window-costs kind, and nothing else.
 test("oldWindowCosts: the window-cost caches by their old names", () => {
   const h = "0123456789abcdef".repeat(4);
   const w = "claude-window-costs";

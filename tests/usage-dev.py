@@ -46,8 +46,8 @@ def main(*argv):
 
 class Split(unittest.TestCase):
     def test_options_before_the_command_are_its_own(self):
-        self.assertEqual(dev.split(["-n", "spec", "--check"]),
-                         (["-n"], "spec", ["--check"]))
+        self.assertEqual(dev.split(["-n", "figures", "--cols"]),
+                         (["-n"], "figures", ["--cols"]))
 
     def test_no_command(self):
         self.assertEqual(dev.split(["--list"]), (["--list"], None, []))
@@ -118,9 +118,9 @@ class Main(unittest.TestCase):
                 re.escape(name), re.escape(text)))
 
     def test_command_help_is_usage_devs_own(self):
-        rc, out, _ = main("spec", "--help")
+        rc, out, _ = main("figures", "--help")
         self.assertEqual(rc, 0)
-        self.assertIn("usage-dev spec [ARGS...]", out)
+        self.assertIn("usage-dev figures [ARGS...]", out)
 
     def test_dry_run_prints_the_steps(self):
         rc, out, _ = main("-n", "test", "--repeat", "3", "node")

@@ -77,7 +77,7 @@ type OptionRec = Scalar & {
   rows?: readonly string[];
   derived?: Derived;
 };
-// How a derived option follows another (tools/gen-spec.py, check_derived):
+// How a derived option follows another (test/options_spec.test.ts):
 // by its value, or, with `field` and `any`, by whether any drawn row of a
 // table has `any` in that field.
 type Derived = { from: string; field?: string; any?: string;
@@ -1000,8 +1000,8 @@ function deriveKey(value: Value): string {
 
 /** The key a table's `derived` looks its map up by: its `any` item when
  * any row the mod draws (its `live` not "never") has that item in the
- * field, else the field's other item (tools/gen-spec.py holds the field
- * to two). */
+ * field, else the field's other item (test/options_spec.test.ts holds the
+ * field to two). */
 function anyKey(table: OptionRec, derived: Derived, rows: Rows): string {
   const field = derived.field!, want = derived.any!;
   if (Object.values(rows).some((rec) => rec[field] === want &&
@@ -1074,7 +1074,7 @@ export function merge(files: readonly Layer[], warnings: readonly string[],
     const derived = option.derived;
     if (derived && layers[name] === "default") {
       // The map names every value the option followed can take
-      // (tools/gen-spec.py holds it to that).
+      // (test/options_spec.test.ts holds it to that).
       const key = derived.field === undefined
         ? deriveKey(values[derived.from])
         : anyKey(SPEC[derived.from], derived, values[derived.from] as Rows);

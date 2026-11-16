@@ -917,7 +917,7 @@ into the agent's pane, which leaves nothing on the sending side, so 📨 can
 read lower than Claude Code's count. A killed or failed agent's inbox is
 dropped. Files last written before the earliest agent in the task list
 started are not read. Each file's sends and deliveries are saved per session in
-`claude-inbox-fold-<digest>/` in private state, as `spec/state.jsonc`'s
+`claude-inbox-fold-<digest>/` in private state, as `mod/src/state_spec.ts`'s
 `inbox-fold` row names it, so a tick reads only what each file had
 appended since the last; a file rewritten in place is read afresh.
 
@@ -1091,7 +1091,7 @@ pink, 🍳 mint, 🔌 periwinkle and 🤝 cream. The one exception is 🎯 (belo
 **Brightness is the unit.** A figure written with a unit takes its shade
 from that unit, in levels of its own hue, so 841k and 8.4M, or 3h and 3d,
 do not look alike in the same four columns. Two tables in
-`spec/layout.jsonc` and one rule decide it (`grade` in
+`mod/src/spec.ts` and one rule decide it (`grade` in
 `mod/src/formatting.ts`).
 
 A *scale* lists a kind of figure's units in order of size, smallest
@@ -1134,7 +1134,7 @@ In the 256 set a lighter shade is one of the 80 round-trip entries (see
 [Under tmux](#under-tmux)) of the same hue. The pinks' one lighter entry
 is ⛳'s own colour, which ▾ and 🧠 take as their lighter shade, so ▴ and ▾
 shade alike at one unit; ⛳ has nothing lighter, so its ramp collapses to
-two levels there. `tools/gen-spec.py` refuses a ramp that names a colour
+two levels there. `mod/test/spec.test.ts` refuses a ramp that names a colour
 the palette lacks, or whose levels, once collapsed, do not each draw
 lighter than the one below in every mode.
 
@@ -1173,8 +1173,8 @@ that index from the xterm palette, whose steps are not the ones the rounding
 assumes. So most colours come back a little off under tmux, and two near
 colours can come back as one.
 
-So each default colour has two values in `spec/layout.jsonc`, a 256 value
-and a true value:
+So each default colour has two values in `mod/src/spec.ts`, a 256 value
+under its name and a true value in `TRUE_COLOURS`:
 
 - **The 256 set** is drawn whenever Claude Code draws 256 colours or fewer,
   and wherever that is in doubt: tmux without `CLAUDE_CODE_TMUX_TRUECOLOR`,
@@ -1189,7 +1189,7 @@ and a true value:
   `CLAUDE_CODE_TMUX_TRUECOLOR`); a wrong guess errs to the 256 set, which
   draws right in true colour too.
 
-`tools/gen-spec.py` refuses a 256 value that is not one of the 80 entries
+`mod/test/spec.test.ts` refuses a 256 value that is not one of the 80 entries
 and names the nearest, and holds a figure that is drawn dim, in either set,
 to a floor of faint contrast. `tools/palette-review.py` draws both sets side
 by side, with the rows at each level, for a review by eye. A test in each

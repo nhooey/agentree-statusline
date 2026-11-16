@@ -691,7 +691,7 @@ function line(Text: any, spans: readonly Span[], key: string,
  * Code draws true colour: given the 256 set there, chalk would draw it as
  * given, and the softer true colours are the ones chosen to be seen.
  * Given the true set at 256, chalk would round it onto entries nobody
- * chose (see spec/layout.jsonc). */
+ * chose (see spec.ts). */
 function spanStyle(s: Span): Record<string, string | boolean> {
   const truecolor = st?.truecolor ?? false
   const p: Record<string, string | boolean> = {}

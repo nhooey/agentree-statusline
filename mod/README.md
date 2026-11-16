@@ -13,9 +13,9 @@ Node's type definitions.
     cd mod && node --test 'test/*.test.ts'
     cd mod && npm ci && npm run typecheck
 
-`src/spec.ts`, `src/state_spec.ts` and `src/options_spec.ts` are generated
-by `tools/gen-spec.py` from `spec/layout.jsonc`, `spec/state.jsonc` and
-`spec/options.jsonc`; never edit them. Each module's tests check it against
+`src/spec.ts`, `src/state_spec.ts` and `src/options_spec.ts` hold the
+constants: the glyphs, colours and widths, the state files and the options.
+Each module's tests check it against
 the cases under `tests/fixtures/` and the goldens under `tests/golden/`:
 committed data, or written by the generators under `tools/`
 ([tests/README.md](../tests/README.md) says which).
@@ -83,7 +83,7 @@ read strictly: while anything in it is
 wrong, the mod draws nothing from it, and shows the error in red under the
 footer line in place of its rows (see
 [Starting from the defaults](../docs/options.md#starting-from-the-defaults)).
-Every option is listed in `spec/options.jsonc`: the
+Every option is listed in `mod/src/options_spec.ts`: the
 usage source, `plan-usage` (the plan's windows asked of api.anthropic.com
 once a minute; see [Usage sources](../docs/usage-sources.md#the-plans-windows-under-the-mod)),
 the account and period, the `hide` paths, `mark-spacing`
@@ -120,7 +120,7 @@ read in place of the app's.
 The mod keeps the session's transcript as its two running folds, and folds
 only the lines written since the last read. It saves them once a minute
 (`foldSaveMs`) into the state directory, in
-`claude-main-fold-<digest>/`, as `spec/state.jsonc`'s `main-fold` row
+`claude-main-fold-<digest>/`, as `mod/src/state_spec.ts`'s `main-fold` row
 names them, so a `/reload-plugins` reads on from there rather than from
 the start. A saved fold is passed over when the transcript is no longer
 the bytes it was folded from, or its format is not the spec's.

@@ -5,7 +5,7 @@
 // values: a key missing here, one that is no option, or a value of the
 // wrong type is an error, drawn where the status line or the band would be.
 // The options' types, allowed values and documentation are in
-// spec/options.jsonc and docs/options.md.
+// mod/src/options_spec.ts and docs/options.md.
 //
 // To change a setting, write only that key in your own file,
 // ~/.config/coding-agent-usage-line/config.jsonc (or a project's

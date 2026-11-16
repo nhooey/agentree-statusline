@@ -199,7 +199,7 @@ type Kept = CostKept;
  * one file a request id after its first record is dropped as it is read.
  * A last line with no newline yet is billed if it parses, but not kept.
  *
- * The one file spec/state.jsonc's window-costs kind names, which the mod
+ * The one file state_spec.ts's window-costs kind names, which the mod
  * reads and writes too, in `_windowCostsText`'s bytes. */
 export class _CostCache {
   readonly path: string;

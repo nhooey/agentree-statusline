@@ -24,7 +24,7 @@
 //               whose deliveries are not folded.
 //
 // mod/test/{main,agent,inbox}_fold.test.ts save each fold again, digest it,
-// and fail where the digest differs or the format is not spec/state.jsonc's:
+// and fail where the digest differs or the format is not mod/src/state_spec.ts's:
 // a change to a fold, or to what is saved of it, cannot land without a new
 // format.  Bump the format, then run this.  --show prints the texts a
 // path's digests are of, to read what a change did by running it before

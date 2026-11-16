@@ -1,7 +1,7 @@
 // The mod's constants, and the settings it carries until the user's own
 // configuration file holds them.
 //
-// What the mod draws is set by the options (spec/options.jsonc), merged
+// What the mod draws is set by the options (options_spec.ts), merged
 // from the configuration files over the defaults file
 // (defaults/config.jsonc) (docs/options.md, "Configuration files";
 // configuration.ts, options()).

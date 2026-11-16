@@ -220,7 +220,7 @@ drawn.
 
 Every read reads every agent file of the session, and a long session can
 have hundreds of them. So each file's fold is saved, per session, in
-`claude-agent-fold-<digest>/` in private state, as `spec/state.jsonc`'s
+`claude-agent-fold-<digest>/` in private state, as `mod/src/state_spec.ts`'s
 `agent-fold` row names it, and a read takes only the lines written since.
 A saved fold is read only while the 4 KiB before its offset are the bytes
 it was folded from, so a file rewritten in place is read afresh. Requests
@@ -334,7 +334,7 @@ what was appended since. A file that shrank, or whose bytes before the offset
 changed, is read again from the start. Reading everything took 6.2 seconds on
 a week of 836 MB; a scan from the cache takes a tenth of a second. The mod
 writes it through a temporary file renamed over it. Its name is a digest of
-its format in `spec/state.jsonc`, which moves when the prices or what is
+its format in `mod/src/state_spec.ts`, which moves when the prices or what is
 billed do, so only such a change starts it cold.
 
 **Too small to divide by.** Percentages arrive as whole numbers, so a reading
@@ -396,7 +396,7 @@ The mod keeps what it has learnt in files in its private state directory
 reload or a new session starts from it: the calibration and the window scan
 (see [caching](#plan-window-shares)), the transcript's and each agent's
 folds, the inbox's, and the last usage-source reading. Each kind, its name
-and its format are in `spec/state.jsonc`; a session's files are named by a
+and its format are in `mod/src/state_spec.ts`; a session's files are named by a
 SHA-256 digest of its key.
 
 ## Compactions

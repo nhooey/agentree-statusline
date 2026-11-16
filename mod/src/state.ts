@@ -1,5 +1,5 @@
 // The files kept in the state directory, named by stateName and
-// statePath from spec/state.jsonc's table.
+// statePath from state_spec.ts's table.
 import { pyJoin } from "./claude_records.ts";
 import { sha256Hex } from "./sha256.ts";
 import { STATE_KINDS } from "./state_spec.ts";

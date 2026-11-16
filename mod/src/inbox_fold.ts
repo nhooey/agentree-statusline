@@ -1,5 +1,5 @@
 // The agent panel's inbox counts, read on from a saved fold.
-// spec/state.jsonc's "inbox-fold" row names the directory and the format;
+// state_spec.ts's "inbox-fold" row names the directory and the format;
 // agents/plans/closed/saved-running-totals.md has the design.  The
 // text:
 //

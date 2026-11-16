@@ -72,8 +72,8 @@
             packages = [
               nodejs
               pkgs.git
-              # For the scripts under tools/: usage-dev, gen-spec.py and the
-              # fixture and palette reviews.
+              # For the scripts under tools/: usage-dev and the fixture and
+              # palette reviews.
               pkgs.python3
             ];
             env = [

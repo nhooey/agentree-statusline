@@ -356,7 +356,7 @@ export function sessionLabel(): Piece[] {
 }
 
 /** The palette's colour for each of Claude Code's session colours (its
- * /color names), the nearest token in spec/layout.jsonc's palette. */
+ * /color names), the nearest token in spec.ts's palette. */
 export const SESSION_COLOURS: { readonly [name: string]: string } = {
   red: "F_RED", blue: "F_BLU", green: "F_GRN", yellow: "F_YEL",
   purple: "F_PUR", orange: "F_AMB", pink: "F_PNK", cyan: "F_CYN",
