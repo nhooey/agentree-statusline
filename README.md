@@ -21,10 +21,10 @@ Here the two places are drawn together, the prompt between them left out:
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵    🟢 main  Che…  🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤 🟢 turn  Why…  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-     ├─ 🎩 🟢 Clover      🧬O⁵🏃  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍 🟢 Marigold …  🧬O⁵🏃  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+  ╰⊟ 🧵    🟢 main  Che…  🧬O⁵🐇  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤 🟢 turn  Why…  🧬O⁵🐇  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+     ├─ 🎩 🟢 Clover      🧬O⁵🐇  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold …  🧬O⁵🐇  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
      ╰⊞ …     4 more              🟢   3   💰 0.1                 🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
@@ -162,11 +162,11 @@ different on one readout, the table says so.
 | Glyph | Name | Meaning | Rows | Subagent | Receipt |
 |---|---|---|:-:|:-:|:-:|
 | 🧬 `O⁵` | Model | family initial and major version, such as `O⁵` Opus 5, `S⁵` Sonnet 5 or `H⁴` Haiku 4.5; on the rows, the turn's | ✓ | ✓ | |
-| 🐢 | Low | reasoning effort `low` | ✓ | ✓ | |
-| 🚶 | Medium | reasoning effort `medium` | ✓ | ✓ | |
-| 🏃 | High | reasoning effort `high` | ✓ | ✓ | |
-| 🚀 | Xhigh | reasoning effort `xhigh` | ✓ | ✓ | |
-| 🔥 | Max | reasoning effort `max` | ✓ | ✓ | |
+| 🐌 | Low | reasoning effort `low` | ✓ | ✓ | |
+| 🐢 | Medium | reasoning effort `medium` | ✓ | ✓ | |
+| 🐇 | High | reasoning effort `high` | ✓ | ✓ | |
+| 🏃 | Xhigh | reasoning effort `xhigh` | ✓ | ✓ | |
+| 🚀 | Max | reasoning effort `max` | ✓ | ✓ | |
 
 ### Cost and tokens
 

@@ -66,8 +66,8 @@ tests/fixtures/figures/status/01-baseline.json --cols 160 --part above
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵    🟢 main        🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ╰─ 🎤 🟢 turn  Why…  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  ╰⊟ 🧵    🟢 main        🧬O⁵🐇  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Why…  🧬O⁵🐇  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
 ```
 
 and, past the prompt, under the footer line (the same with `--part
@@ -185,10 +185,10 @@ binary, then the changelog" --cols 200`):
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean                                        💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵    🟢 main  Checking the binary, then the chang…  🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤 🟢 turn  Why does the elapsed row report two…  🧬O⁵🏃  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-     ├─ 🎩 🟢 Clover                                      🧬O⁵🏃  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🏃  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+  ╰⊟ 🧵    🟢 main  Checking the binary, then the chang…  🧬O⁵🐇  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤 🟢 turn  Why does the elapsed row report two…  🧬O⁵🐇  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+     ├─ 🎩 🟢 Clover                                      🧬O⁵🐇  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🐇  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
      ╰⊞ …     4 more                                              🟢   3   💰 0.1                         🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
@@ -290,18 +290,18 @@ binary, then the changelog" --cols 200`):
 
   ```
   ⊟ 🎮           📦repo 🌿golden-clean…  💰  35                 🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵       🟢 main  Checkin…  🧬O⁵🏃  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤    🟢 turn  Why doe…  🧬O⁵🏃  💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
-     ├⊟ 🎩    🟡 Parsley         🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 20m ⛳  29m  🔋  .02٪  🪫  .022٪
-     │  ╰─ 🔍 🟢 Chive           🧬O⁵🏃  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 20m ⛳  29m  🔋  .01٪  🪫  .011٪
-     ├⊟ 🔩    🟡 Pine            🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 17m          🔋  .02٪  🪫  .022٪
+  ╰⊟ 🧵       🟢 main  Checkin…  🧬O⁵🐇  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤    🟢 turn  Why doe…  🧬O⁵🐇  💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
+     ├⊟ 🎩    🟡 Parsley         🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 20m ⛳  29m  🔋  .02٪  🪫  .022٪
+     │  ╰─ 🔍 🟢 Chive           🧬O⁵🐇  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 20m ⛳  29m  🔋  .01٪  🪫  .011٪
+     ├⊟ 🔩    🟡 Pine            🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 17m          🔋  .02٪  🪫  .022٪
      │  ╰─ 💻 🟢 Build the docs site                                            ⌛2.1m
-     ├⊟ 🔩    🟡 Poppy           🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 21k ▾1.2k  ⌛ 17m          🔋  .02٪  🪫  .033٪
+     ├⊟ 🔩    🟡 Poppy           🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 21k ▾1.2k  ⌛ 17m          🔋  .02٪  🪫  .033٪
      │  ├─ 📡 🟢 Watch the CI checks                                            ⌛2.1m
      │  ╰─ 💻 🟢 Build the docs site                                            ⌛2.1m
-     ├─ 🔍    🟢 Sage            🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +8m  🔋  .02٪  🪫  .022٪
-     ├─ 🔍    🟢 Sorrel          🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +5m  🔋  .02٪  🪫  .022٪
-     ├─ 📐    🟡 Peony           🧬O⁵🏃  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 10m ⛳  15m  🔋  .01٪  🪫  .011٪
+     ├─ 🔍    🟢 Sage            🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +8m  🔋  .02٪  🪫  .022٪
+     ├─ 🔍    🟢 Sorrel          🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +5m  🔋  .02٪  🪫  .022٪
+     ├─ 📐    🟡 Peony           🧬O⁵🐇  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 10m ⛳  15m  🔋  .01٪  🪫  .011٪
      ├─ 💻    🟢 Run the plugin tests                                           ⌛6.2m
      ╰─ 📡    🟢 Watch PR #38 for comments                                      ⌛ 25m
   ```
@@ -349,9 +349,9 @@ Not every scope fills every column: the model and 🛫 are a thread's state,
 so only the 🎤 and 🧵 rows and the agent rows draw them, and the session
 has no context and no ⛳ of its own.
 
-- **model**, `🧬O⁵🏃`: the model as its family initial and superscript major
+- **model**, `🧬O⁵🐇`: the model as its family initial and superscript major
   version (`O⁵` Opus 5, `S⁵` Sonnet 5, `H⁴` Haiku 4.5), then the reasoning
-  effort as a glyph: 🐢 low, 🚶 medium, 🏃 high, 🚀 xhigh, 🔥 max. The turn's,
+  effort as a glyph: 🐌 low, 🐢 medium, 🐇 high, 🏃 xhigh, 🚀 max. The turn's,
   on the 🎤 row.
 - **🛫**, `🛫 200`: the main thread's token rate, how fast 🧩's total is
   climbing, worked out by the mod from one reading to the next. It jumps by
@@ -545,7 +545,7 @@ its next turn runs on and no 🛫, and 💳 stays under the footer line
 
 ```
   ⊟ 🎮     📦repo 🌿golden-clean           💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰─ 🧵 ⚫ main           🧬O⁵🏃           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  ╰─ 🧵 ⚫ main           🧬O⁵🐇           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -559,9 +559,9 @@ no `✅ N done`. With subagents running between turns (`--phase done
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵    ⚫ main        🧬O⁵🏃           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎩 🟢 Clover      🧬O⁵🏃  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍 🟢 Marigold …  🧬O⁵🏃  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+  ╰⊟ 🧵    ⚫ main        🧬O⁵🐇           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎩 🟢 Clover      🧬O⁵🐇  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold …  🧬O⁵🐇  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
      ╰⊞ …     4 more              🟢   3   💰 0.1                 🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
@@ -618,8 +618,8 @@ the footer line:
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean                      💰  35                    🧩 ▴2.7M ▾841k  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🪫 8.45٪
-  ╰⊟ 🧵    🟢 main                      🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  🧩 ▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
-     ╰─ 🎤 🟢 turn  Why does the elap…  🧬O⁵🏃  🛫 200   💰 6.4           🧠- 42k  🧩 ▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
+  ╰⊟ 🧵    🟢 main                      🧬O⁵🐇  🤖   3m  💰  35           🧠 115k  🧩 ▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Why does the elap…  🧬O⁵🐇  🛫 200   💰 6.4           🧠- 42k  🧩 ▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                                     💳 🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -652,7 +652,7 @@ tests/fixtures/figures/status/18-agents.json`):
 
 ```
   🎮                                       💰 0.2                 🧩 ▴ 27k ▾4.4k  🎯96٪  ⌛1.2h         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .04٪  🪫  .059٪
-  ╰─ 🧵    ⚫ main        🧬O⁵🏃           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
+  ╰─ 🧵    ⚫ main        🧬O⁵🐇           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
      ╰─ 🎤 🏁 turn  And this one?          💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
@@ -691,12 +691,12 @@ case that had ended, with the ones still running owed to a later
 receipt:
 
 ```
-  🧵    ⚫ main  All four suites pass                     🧬O⁵🏃           💰 0.0           🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
+  🧵    ⚫ main  All four suites pass                     🧬O⁵🐇           💰 0.0           🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
   ├─ 🎤 🏁 turn  And this one?                                             💰 0.2           🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
-  ├─ 🔍 🏁 Daisy                                          🧬O⁵🏃  ✅  42m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
-  ├─ 🔩 🏁 Fern                                           🧬O⁵🏃  ❌  32m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ├─ 🔩 🏁 Kale                                           🧬O⁵🏃  🛑  23m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ╰─ 🔍 🏁 Elm                                            🧬O⁵🏃  💥  18m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ├─ 🔍 🏁 Daisy                                          🧬O⁵🐇  ✅  42m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+  ├─ 🔩 🏁 Fern                                           🧬O⁵🐇  ❌  32m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ├─ 🔩 🏁 Kale                                           🧬O⁵🐇  🛑  23m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ╰─ 🔍 🏁 Elm                                            🧬O⁵🐇  💥  18m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
@@ -794,15 +794,15 @@ a running agent in each state, finished ones, one not yet started, a shell
 and a teammate (the `corpus/01-mixed` case of `tests/fixtures/panel/inputs.json`):
 
 ```
-🔍🟢 Marigold  Runnin…  🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-🔩🟢 Bluebell           🤖So🐢  🤖 333   💰0.1   🧠 60k  30٪  🧩▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
-📐🟢 Thistle            🧬O⁵🏃  🚦 4.7m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
-🎩🟢 Clover             🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🔍⚫ Daisy               🧬O⁵🏃  ✅  42m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
-🔩⚫ Fern                🧬O⁵🏃  ❌  32m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🔩⚫ Kale                🧬O⁵🏃  🛑  23m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🔍⚫ Elm                 🧬O⁵🏃  💥  18m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-👥🟡 Quince              🧬O⁵🏃  🥚  30s
+🔍🟢 Marigold  Runnin…  🧬O⁵🐇  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+🔩🟢 Bluebell           🧬So🐌  🤖 333   💰0.1   🧠 60k  30٪  🧩▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
+📐🟢 Thistle            🧬O⁵🐇  🚦 4.7m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
+🎩🟢 Clover             🧬O⁵🐇  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🔍⚫ Daisy               🧬O⁵🐇  ✅  42m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+🔩⚫ Fern                🧬O⁵🐇  ❌  32m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🔩⚫ Kale                🧬O⁵🐇  🛑  23m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🔍⚫ Elm                 🧬O⁵🐇  💥  18m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+👥🟡 Quince              🧬O⁵🐇  🥚  30s
 🐚🟢 sleep 300 && make test                                                          ⌛  2m
 👥🟢 Willow             🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
 ```
@@ -937,14 +937,14 @@ with two children, one of them with a child of its own, a worktree agent
 and finished ones, with a right edge of 5:
 
 ```
-🎩🟢 👶🏻2 🤏2     Trunk          🧬O⁵🏃  🚦  23m  💰0.2   🧠 32k  16٪  🧩▴ 33k ▾2.4k  🎯91٪  ⌛ 33m         🤖⠆⠀ 🔧⠀⠀ 🚦⠶⠆  🔋  .04٪  🪫  .054٪
-🔍🟢           📨1 Twig         🧬O⁵🏃  🔧  50s  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 23m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🔩🟢 👶🏻1     📨2 Thorn        🧬O⁵🏃  🚦  22m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 23m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
-🔩🟢 👶🏻1         Tendril …  🧬O⁵🏃  🚦  20m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 22m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
-🔍🟢               Tip      🧬O⁵🏃  🤖  10s  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 20m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🎩⚫               Gourd           🧬O⁵🏃  ✅ 1.1h  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🔍⚫               Garlic          🧬O⁵🏃  ✅ 1.1h  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛2.5m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-🔍🟢               Moss           🧬O⁵🏃  🔧 6.7m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛8.3m         🤖⠆⠀ 🔧⠶⠆ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🎩🟢 👶🏻2 🤏2     Trunk          🧬O⁵🐇  🚦  23m  💰0.2   🧠 32k  16٪  🧩▴ 33k ▾2.4k  🎯91٪  ⌛ 33m         🤖⠆⠀ 🔧⠀⠀ 🚦⠶⠆  🔋  .04٪  🪫  .054٪
+🔍🟢           📨1 Twig         🧬O⁵🐇  🔧  50s  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 23m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🔩🟢 👶🏻1     📨2 Thorn        🧬O⁵🐇  🚦  22m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 23m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
+🔩🟢 👶🏻1         Tendril …  🧬O⁵🐇  🚦  20m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 22m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
+🔍🟢               Tip      🧬O⁵🐇  🤖  10s  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 20m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🎩⚫               Gourd           🧬O⁵🐇  ✅ 1.1h  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🔍⚫               Garlic          🧬O⁵🐇  ✅ 1.1h  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛2.5m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+🔍🟢               Moss           🧬O⁵🐇  🔧 6.7m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛8.3m         🤖⠆⠀ 🔧⠶⠆ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
 ```
 
 An agent spawned by another agent is drawn under its parent, its chrome
@@ -1247,8 +1247,8 @@ so `right-edge` follows to 2, the edge of Claude Code's footer container
 ```
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📦repo 🌿golden-clean  📁~/src/statusline-fixture/deep/tree                                💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
-  🎤 🟢 turn  Why …  🧬O⁵🏃  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-  🧵 🟢 main         🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  🎤 🟢 turn  Why …  🧬O⁵🐇  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  🧵 🟢 main         🧬O⁵🐇  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
   🎮                                  💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
 ```
 
@@ -1259,8 +1259,8 @@ own line (`--part above --rows` set so, `--right-edge 5`):
 ```
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
   ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵    🟢 main        🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ╰─ 🎤 🟢 turn  Why…  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  ╰⊟ 🧵    🟢 main        🧬O⁵🐇  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Why…  🧬O⁵🐇  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
 ```
 
 ### The footer's tail
