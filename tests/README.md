@@ -73,7 +73,9 @@ later payload without them reads. Anything else that runs the cases has to
 keep that order.
 
 `run-cases.py` runs the program with `/usr/bin/python3`, not the first
-`python3` on `PATH`; `--python` picks another.
+`python3` on `PATH`; `--python`, or `TEST_PYTHON` in the environment, picks
+another (`TEST_PYTHON` also runs `golden.sh` and `golden-cost.sh`
+themselves).
 
 ## The generated corpora
 

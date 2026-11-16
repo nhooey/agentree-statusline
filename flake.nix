@@ -132,6 +132,24 @@
             ];
           };
 
+          # Every suite tests/all.sh runs that a build can (nix/check-tests.sh
+          # names those left out), with the fixture generators checked too.
+          checks.tests =
+            pkgs.runCommand "coding-agent-usage-line-tests"
+              {
+                nativeBuildInputs = [
+                  nodejs
+                  pkgs.git
+                  pkgs.python3
+                ];
+                src = ./.;
+                modNodeModules = "${modNodeModules}/node_modules";
+              }
+              ''
+                bash ${./nix/check-tests.sh}
+                touch $out
+              '';
+
           treefmt = {
             projectRootFile = "flake.nix";
             programs.nixfmt.enable = true;
