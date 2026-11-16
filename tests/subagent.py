@@ -866,7 +866,7 @@ def run(tmp):
     check("exit 0, one row per task", (rc, sorted(rows)),
           (0, ["a1", "a2", "bash-1"]))
     right = "  ".join((
-        "\U0001F916O\u2075\U0001F3C3",  # model and effort, before 💰, open it
+        "\U0001F9ECO\u2075\U0001F3C3",  # model and effort, before 💰, open it
         sl.seg(sl.vis_width(sl.S_COST) + 4,
                "\U0001F4B0" + sl.pad_val(4, sl.money_fig(u.cost))),
         # 🧠, then its share of the 200k window the payload gives.
@@ -913,7 +913,7 @@ def run(tmp):
           # and its ✅ with the time since it finished, a minute after its
           # last record, in the 🛫 column.
           (rows["a2"].startswith("\U0001F465⚫ Zephyr"),
-           "\U0001F916O⁵\U0001F3C3  ✅" in rows["a2"]),
+           "\U0001F9ECO⁵\U0001F3C3  ✅" in rows["a2"]),
           (True, True))
     check("a finished agent shows no rate", "\U0001F6EB" in rows["a2"], False)
     # Decided 2026-10-19: a cell that says nothing draws nothing, so 💾 at
@@ -1044,11 +1044,11 @@ def run(tmp):
           "unknown width every column shows and the label keeps LABEL_MIN "
           "beside them, and two more at the top level",
           (render(sl, dict(wide, columns=400))[1]["a1"].count(long),
-           re.search(r"Review the plan, [^…]*…  \U0001F916",
+           re.search(r"Review the plan, [^…]*…  \U0001F9EC",
                      render(sl, dict(wide, columns=160))[1]["a1"]) is not None,
            unknown.count(long[:sl.LABEL_MIN + 2 - sl.vis_width(head) - 1] + "…"),
            all(unpainted(c) in unpainted(unknown) for c in (
-               "\U0001F916O", "\U0001F4B0", "\U0001F9E0", "\U0001F3AF",
+               "\U0001F9ECO", "\U0001F4B0", "\U0001F9E0", "\U0001F3AF",
                "⌛", "\U0001F50B", "\U0001FAAB", "\U0001F4BE"))),
           (1, True, 1, True))
     edge = [len({at_clock(r) + chrome(d) for r, d in zip(
@@ -1128,8 +1128,8 @@ def run(tmp):
           "after it, and the grid's columns are where a panel without them "
           "has them",
           (padded[:at], padded.index("Marigold") - at,
-           padded[padded.index("\U0001F916O"):]),
-          (plain[:at], 3 + 1 + 3 + 1 + 3 + 1, plain[plain.index("\U0001F916O"):]))
+           padded[padded.index("\U0001F9ECO"):]),
+          (plain[:at], 3 + 1 + 3 + 1 + 3 + 1, plain[plain.index("\U0001F9ECO"):]))
     check("🧠's share is blank where the payload gives no window",
           re.search("\U0001F9E0 *\\S+ +(\\S+)", irows["b2"]).group(1)[0], "\U0001F9E9")
     nothing = sl.NO_AGENT_USAGE

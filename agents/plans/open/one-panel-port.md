@@ -283,9 +283,9 @@ Marigold folded
    `--mode cost` for Claude, their tests and their fixture generators,
    and move what the TypeScript's tests still need to Node or keep it as
    committed data.
-6. **`OP6` 🧬 for the model cell.** `🤖O⁵🏃` becomes `🧬O⁵🏃` on every
-   row and the receipt (`E_MOD` in `spec/layout.jsonc`), so 🤖 keeps one
-   job. After `OP5` it touches the TypeScript and its cases alone.
+6. **`OP6` 🧬 for the model cell.** Done: the model cell is `🧬O⁵🏃` on
+   every row and the receipt (`E_MOD` in `spec/layout.jsonc`), so 🤖 keeps
+   one job, the model's share of the time.
 7. **`OP7` The band's clicks.** Done: a label's click switches the
    transcript to its thread (`$.ui.view`); a row with children folds and
    opens on its mark, its fold kept in `$.state` by agent id, 🎮 and 🧵

@@ -372,7 +372,7 @@ generator to Node only where a step below keeps its family.
    `tests/golden/`, `receipt/`, `render/status.json`, and the cases of
    `cases.json` that differ only in width or in a flag those renderers
    read. The cell helpers the band uses stay, pinned by
-   `render/cells.json` and `rows/`. See [To decide](#to-decide) 1.
+   `render/cells.json` and `rows/`.
 
 5. **`TF5` The panel's inputs as tree cases.** `panel/` keeps one file,
    `inputs.json`: the prepared tasks of the corpus sessions and of the

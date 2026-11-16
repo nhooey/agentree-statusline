@@ -218,14 +218,14 @@ def run(sl, sr, scratch):
            sl.main_doing(reading(run1, None))],
           [(sl.E_TOOL, 2.0), (sl.E_WAIT, 2.0), (sl.E_WAIT, 20.0),
            (sl.E_WORK, 9.0), (sl.E_WORK, 30.0), ("", 0.0)])
-    check("the model: 🤖, the two-character spec with its superscript "
+    check("the model: 🧬, the two-character spec with its superscript "
           "version, and the effort's glyph against it",
           [unpainted(sl.render_model(m, e)) for m, e in
            (("Opus 5 (1M context)", "high"), ("Haiku 4.5", "max"),
             ("Sonnet 4.6", ""), ("Fable 5", "null"), ("Opus 5", "odd"),
             ("", "high"))],
-          ["\U0001F916O⁵\U0001F3C3", "\U0001F916H⁴\U0001F525",
-           "\U0001F916S⁴", "\U0001F916F⁵", "\U0001F916O⁵\U0001F6B6", ""])
+          ["\U0001F9ECO⁵\U0001F3C3", "\U0001F9ECH⁴\U0001F525",
+           "\U0001F9ECS⁴", "\U0001F9ECF⁵", "\U0001F9ECO⁵\U0001F6B6", ""])
     mc = lambda m, e, c: unpainted(sl.render_model_cost(m, e, c))
     check("and beside the 💰 on column 2's first row since 2026-09-16: the "
           "model held at its full width, one space, the cost — the column",
@@ -233,8 +233,8 @@ def run(sl, sr, scratch):
            mc("", "", "115.2"), mc("Opus 5", "high", ""), mc("", "", ""),
            sl.vis_width(mc("Opus 5", "high", "115.2")),
            sl.vis_width(mc("Opus 5", "", "115.2"))),
-          ("🤖O⁵🏃 💰115 ", "🤖O⁵   💰1.2k",
-           "       💰115 ", "🤖O⁵🏃 ", "",
+          ("🧬O⁵🏃 💰115 ", "🧬O⁵   💰1.2k",
+           "       💰115 ", "🧬O⁵🏃 ", "",
            sl.RIGHT_GRID[1], sl.RIGHT_GRID[1]))
     check("the tokens and the 🛫 cell under it fill the same column",
           (sl.vis_width(cell(200.0, 98)),
@@ -258,7 +258,7 @@ def run(sl, sr, scratch):
     check("padded, column 2's first fields start one column past their "
           "marks and the second figures end on its right edge, 15 wide",
           (padded, [sl.vis_width(r) for r in padded]),
-          (["\U0001F916 O⁵\U0001F6B6  \U0001F4B05.1k",
+          (["\U0001F9EC O⁵\U0001F6B6  \U0001F4B05.1k",
             "\U0001F9E9 ▴1.6G  ▾6.2M",
             "\U0001F6EB 234/s \U0001F3AF 96٪"], [15, 15, 15]))
     ctx = lambda: unpainted(sl.render_ctx(11, 115000))

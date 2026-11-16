@@ -28,7 +28,7 @@ export const E_NAME = "📛";          // the session's name (/rename), on 🎮'
                                      // where it works.  U+1F4DB, Unicode 6.0, single
                                      // codepoint, Emoji_Presentation=Yes, inside
                                      // EAW_WIDE.
-export const E_MOD = "🤖";           // model
+export const E_MOD = "🧬";           // model
 export const E_TOK = "🧩";           // ▴/▾ tokens
 export const E_UP = "▴";             // input tokens, inside the 🧩 segment.  U+25B4 BLACK
                                      // UP-POINTING SMALL TRIANGLE.
@@ -87,7 +87,7 @@ export const E_RATE = "🛫";          // 🛫  the token RATE — how fast 🧩
 export const E_COST = "💰";          // cost
 export const E_DIFF = "💾";          // +adds/-removes
 // The effort has no fixed mark: it is the ladder glyph alone, against the
-// model spec, "🤖O⁵🏃".  The context-window size has no cell: the window is a
+// model spec, "🧬O⁵🏃".  The context-window size has no cell: the window is a
 // constant for the session, and 🧠's percentage is that constant read as a
 // level, so a figure for it would never say anything 🧠 does not.
 // A glyph this file needs from that region comes from the Unicode 6.0 range,
