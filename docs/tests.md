@@ -8,6 +8,7 @@ side by side, with one line per suite on how it went:
 bash tests/all.sh                  # every suite, then generated, about 45 s
 bash tests/all.sh status node      # the ones named
 bash tests/all.sh --repeat 20 node # again, until a round fails
+bash tests/all.sh --skip py39-floor # all but those named
 ```
 
 Last comes `generated`: it reruns the fixture generators and fails if
@@ -84,6 +85,12 @@ push and pull request:
   is active.
 - **python 3.9 floor** — `py39-floor.sh`, pointed at a real 3.9 through `PY39`.
 - **shell** — `bash -n` and `shellcheck -S warning` over `tests/*.sh`.
+
+`nix flake check` runs `tests/all.sh` too, in a build
+([`nix/check-tests.sh`](../nix/check-tests.sh)): every suite but
+`py39-floor`, which wants a Python 3.9, and the three that want the
+`claude` CLI or the types it writes. The goldens run under the build's
+Python, through `TEST_PYTHON`.
 
 `usage-source.py` runs in CI even though it reads a macOS app's preference
 store: it builds its own store with `plistlib`, so it needs neither macOS nor

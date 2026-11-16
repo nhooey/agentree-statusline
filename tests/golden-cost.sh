@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 # The cost cases of tests/fixtures/cases.json, kept under this name for CI
 # and habit.  See run-cases.py; --regen passes through.
-exec /usr/bin/python3 "$(dirname "$0")/run-cases.py" --suite cost "$@"
+# $TEST_PYTHON, where set, runs both the harness and the program.
+exec "${TEST_PYTHON:-/usr/bin/python3}" "$(dirname "$0")/run-cases.py" --suite cost "$@"

@@ -36,8 +36,8 @@ the renderer's inputs and the rows it draws for them, written again by
 fixtures/gen/panel.py and compared with what is committed.  --regen
 rewrites those too.
 
-The program runs under the interpreter given by --python, /usr/bin/python3 by
-default, the version floor on macOS.
+The program runs under the interpreter given by --python, else $TEST_PYTHON,
+else /usr/bin/python3, the version floor on macOS.
 
 The suites run side by side, and so do the render stages, apart from the
 full runs (Drawers).  The full runs of one suite stay one after another, in
@@ -425,7 +425,8 @@ def main():
     ap.add_argument("--suite", choices=("status", "cost", "panel"))
     ap.add_argument("--regen", action="store_true")
     ap.add_argument("--regen-figures", action="store_true")
-    ap.add_argument("--python", default="/usr/bin/python3")
+    ap.add_argument("--python",
+                    default=os.environ.get("TEST_PYTHON", "/usr/bin/python3"))
     args = ap.parse_args()
 
     with open(os.path.join(FIXTURES, "cases.json")) as fh:

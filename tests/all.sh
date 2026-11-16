@@ -4,6 +4,7 @@
 #   bash tests/all.sh              # every suite
 #   bash tests/all.sh status node  # the ones named
 #   bash tests/all.sh --repeat 20 node grid  # until one fails, 20 at most
+#   bash tests/all.sh --skip py39-floor,generated  # every suite but those
 #
 # The suites share no state, so they run at once; the longest, the status
 # goldens' chain of cases, is about the wall time of the whole.  Each line
@@ -41,6 +42,12 @@ if [ "${1:-}" = "--repeat" ]; then
     [ "$rc" -eq 0 ] || exit "$rc"
   done
   exit 0
+fi
+# --skip A,B[,...] leaves those suites out of the selection, named or not.
+skip=","
+if [ "${1:-}" = "--skip" ]; then
+  skip=",${2:-},"
+  shift 2
 fi
 work="$(mktemp -d "${TMPDIR:-/tmp}/all-suites.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
@@ -89,8 +96,10 @@ now() {
   else python3 -c 'import time; print(time.time())'; fi
 }
 
-# wanted NAME [ASKED...]: NAME is one of those asked for, or none were.
+# wanted NAME [ASKED...]: NAME is not skipped, and is one of those asked
+# for, or none were.
 wanted() {
+  case "$skip" in *",$1,"*) return 1 ;; esac
   [ $# -le 1 ] && return 0
   local n
   for n in "${@:2}"; do [ "$n" = "$1" ] && return 0; done
