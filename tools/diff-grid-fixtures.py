@@ -7,15 +7,19 @@
 
 tests/fixtures/grid/*.json are far too long to read as a diff: thousands of
 draw cases, each a row drawn at a width under a set of cells, hidden paths
-and spill.  After regenerating them (mod/tools/gen-grid-cases.ts), this
-matches each draw case with the one at BASE that has the same row, cells,
-width, hidden paths and spill, and prints one line a file:
+and spill, as spans.  The first profile's file holds every case and the
+others a sample (see mod/tools/gen-grid-cases.ts), so a file is compared
+with the same file at BASE.  After regenerating them, this matches each
+draw case with the one at BASE that has the same row, cells, width, hidden
+paths and spill, and prints one line a file:
 
   layout   how many layout cases each side has, and whether every old one
            is still there;
   rows     whether the rows the cases draw are the same;
   draw     how many cases each side has, how many changed, and of those how
-           many changed only in colour or spacing of spans and not in text;
+           many changed only in colour or spacing of spans and not in text
+           (a case's joined `line`, which only a file's first case has,
+           is not compared);
            how many were added and removed.
 
 Then, for the first --show cases (3 by default) whose text changed, the case
@@ -60,7 +64,7 @@ def compare(name, base, show):
         new = json.load(fh)
     o = {key(c): c for c in old["draw"]}
     n = {key(c): c for c in new["draw"]}
-    changed = [k for k in o if k in n and o[k] != n[k]]
+    changed = [k for k in o if k in n and o[k]["spans"] != n[k]["spans"]]
     retext = [k for k in changed if text(o[k]) != text(n[k])]
     lo = {json.dumps(c, sort_keys=True) for c in old["layout"]}
     ln = {json.dumps(c, sort_keys=True) for c in new["layout"]}

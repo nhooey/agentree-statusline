@@ -363,19 +363,21 @@ spans by column key, so a port lays them out without any renderer. Each
 `layout` case is a set of rows, `cols`, the `--hide` patterns and the fixed or
 from-the-rows grid, with the column keys `layout` keeps; each `draw` case is
 one row on those keys, with and without the label's spill, and what `draw`
-makes of it as spans and as the joined line. The matrix is 300 to 6
-columns, from a wide terminal (240 and 300) down
-to where a label has no room and the chrome alone runs past the right edge, eight hide sets, both grids, agents to each depth and both phases'
-rows, deduplicated. A file is one terminal profile's, and profiles whose
-cases come out the same share one: `iterm` and `tmux` share
-`iterm-tmux.json`, where `_PAD` widens 🧩, 🧠 and 💰, and `unknown.json` is
-the third. The
-shapes are in the generator's header.
+makes of it as spans; the first draw case in a file also has the joined
+line. The matrix is 300 to 6 columns, a wide terminal and then each width
+at which a column drops, down to where a label has no room and the chrome
+alone runs past the right edge, ten hide sets, both grids, agents to each
+depth and both phases' rows, deduplicated. `unknown.json` holds every case.
+`iterm-tmux.json`, where `_PAD` widens 🧩, 🧠 and 💰, holds the sample a
+profile can change: the layout cases whose columns differ, with their draw
+cases, and every draw case at 300 columns. The shapes are in the
+generator's header.
 
-`mod/test/grid.test.ts` replays every case under each of its file's profiles
-and runs the generator again in memory, failing if what it writes differs
-from what is committed, so regenerating and reading the diff is the only way
-to change them.
+`mod/test/grid.test.ts` replays every case under each of its file's
+profiles, and `unknown.json`'s layout cases under every other profile but
+where that profile's file has the case, and runs the generator again in
+memory, failing if what it writes differs from what is committed, so
+regenerating and reading the diff is the only way to change them.
 
 ## Row cases
 
