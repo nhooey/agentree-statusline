@@ -734,6 +734,36 @@ def run(tmp):
            for a in ("f", "g", "h", "i", "j")],
           [(), (sl.ts_epoch(ts(12)), 300.0), (sl.ts_epoch(ts(12)), 300.0),
            (), ()])
+    def hands_back(minute, rid):
+        r = agent_call(minute, rid, "hb_" + rid)
+        r["message"]["content"][0].update(
+            name="SubagentHandback", input={"message": "Report.\n" + ETA + "0s"})
+        return r
+    gave = [agent_user(10), agent_says(11, ETA + "10m"), hands_back(12, "hb1"),
+            agent_result(12, "hb_hb1")]
+    hb = session(tmp, "handback", agents=[
+        ("agent-k", gave, None),
+        ("agent-l", gave + [agent_user(14), agent_says(15, ETA + "5m")], None),
+        ("agent-m", [agent_user(10), agent_call(11, "r1", "t1"),
+                     started(12, "t1", backgroundTaskId="sh1"),
+                     ended(agent_says(13, ETA + "10m"))], None)])
+    hu = {a: sl.read_agent_usage(sl.agent_file_for(hb, a)) for a in "klm"}
+    check("a SubagentHandback ends the agent as a 0s at its stamp would, "
+          "though its last own report had time left and its sign-off was in "
+          "the report it handed back: ended, with no ⛳ drawn",
+          (hu["k"].eta, unpainted(sr.render_state("completed", hu["k"])),
+           "⛳" in unpainted(sr.render_agent_row(
+               task("k", status="completed"), hu["k"], {}, {}, sl.NO_LIMITS,
+               now=NOW))),
+          ((sl.ts_epoch(ts(12)), 0.0), "⚫✅", False))
+    check("resumed after its hand-back, it is live again on its new report",
+          (hu["l"].eta, unpainted(sr.render_state("running", hu["l"]))[:1]),
+          ((sl.ts_epoch(ts(15)), 300.0), "\U0001F7E2"))
+    check("but one that ends its turn with time left and a shell still "
+          "running in the background is parked",
+          (hu["m"].eta, hu["m"].background,
+           unpainted(sr.render_state("completed", hu["m"]))[:1]),
+          ((sl.ts_epoch(ts(13)), 600.0), (("sh1", "bash"),), "\U0001F7E1"))
 
     print("--- the plan windows ---")
     sh = sl.agent_window_shares(u)

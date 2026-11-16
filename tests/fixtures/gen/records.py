@@ -377,6 +377,22 @@ def handmade():
         queue(350, "remove", "queued prompt"),
         asst(360, "m16", FLAG + ETA + "1m", stop="end_turn"),
     ])
+    # A subagent's hand-back ends its run at a 0s, though its last own
+    # report had time left and its sign-off is only in the report; then a
+    # resumption that works again on a new report.
+    handback = asst(30, "h2", None, tools=[("hb", "SubagentHandback")])
+    handback["message"]["content"][0]["input"] = {
+        "message": "Report.\n" + FLAG + ETA + "0s"}
+    put("eta-handback.jsonl", [
+        prompt(0, "go"),
+        asst(10, "h1", FLAG + ETA + "10m", tools=[("t1", "Bash")]),
+        result(20, "t1"),
+        handback,
+        result(31, "hb"),
+        {"type": "user", "timestamp": stamp(60),
+         "message": {"content": "resumed"}},
+        asst(70, "h3", FLAG + ETA + "5m"),
+    ])
     # The main thread's own parts, its last reported ETA and the turn
     # opened last.  An ETA on a second record of one request, which the
     # dedupe skips, then the answer ending; a /compact that called before

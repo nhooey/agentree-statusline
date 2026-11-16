@@ -412,8 +412,9 @@ export function renderAgentSplit(st: Settings, elapsed: number | null,
 /** Whether a task is only waiting: one `$.agent.list()` calls waiting, or
  * one Claude Code calls completed with an ETA still live and time left on
  * it, an agent under it, or a background task it started.  A report of 0s
- * is the skill's sign-off: an agent that hands back after it, with no
- * answer ending its turn, has finished. */
+ * is the skill's sign-off, and liveEta reads a SubagentHandback call as
+ * one: an agent that has handed back, and has not been resumed since, has
+ * finished. */
 export function parked(status: string, eta: unknown, waitingOn = false,
   background: unknown = []): boolean {
   return status === "waiting" || (status === "completed" &&

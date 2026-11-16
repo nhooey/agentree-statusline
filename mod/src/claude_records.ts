@@ -1227,6 +1227,18 @@ export function etaFinish(eta: readonly number[]): number | null {
   return eta[0] + eta[1];
 }
 
+/** The tool a subagent hands its final report back with.  The call ends
+ * the agent's run: Claude Code lists it completed once it is made. */
+export const HANDBACK_TOOL = "SubagentHandback";
+
+/** True for an assistant record that calls HANDBACK_TOOL. */
+export function handsBack(r: Rec): boolean {
+  if (pyGet(r, "type") !== "assistant") return false;
+  const content = pyDig(r, "message", "content");
+  return Array.isArray(content) && content.some((b) => isDict(b) &&
+    pyGet(b, "type") === "tool_use" && pyGet(b, "name") === HANDBACK_TOOL);
+}
+
 /** True for an assistant record that ends its answer. */
 export function endsTurn(r: Rec): boolean {
   return pyGet(r, "type") === "assistant" &&
@@ -1255,10 +1267,13 @@ export function newEtaState(): EtaState {
  * its turn to wait on a background task, and says in the same breath how
  * long it expects the rest to take.  A 0s in the message that ends the
  * turn is finishing, not parking; and one that ends without a line in its
- * last message reads as finished too.  A message is split over several
- * records, one per block, so the test is on the message id.  `opens`,
- * whether `r` opens a turn, is the caller's where it keeps a turnOpens
- * gate; else turnStartText's. */
+ * last message reads as finished too.  A hand-back (handsBack) is a 0s
+ * at its stamp: the line is read from the agent's own text only, so a
+ * sign-off written into the report it hands back is never seen, and the
+ * call ends the run whatever its last line said.  A message is split over
+ * several records, one per block, so the test is on the message id.
+ * `opens`, whether `r` opens a turn, is the caller's where it keeps a
+ * turnOpens gate; else turnStartText's. */
 export function liveEta(r: Rec, state: EtaState,
   opens: boolean | null = null): void {
   if (opens ?? (turnStartText(r) !== null)) {
@@ -1266,7 +1281,9 @@ export function liveEta(r: Rec, state: EtaState,
     state[1] = false;
     state[3] = null;
   } else if (isWork(r)) {
-    const report = etaReport([r]);
+    let report = etaReport([r]);
+    const at = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
+    if (at !== null && handsBack(r)) report = [at, 0];
     const mid = pyDig(r, "message", "id") ?? null;
     if (report.length) {
       state[0] = report;
