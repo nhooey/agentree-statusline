@@ -90,7 +90,7 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `CB3` | **Built.** The sources: the OAuth answer's credits, asked every 5 minutes, and the shared cache | `CB2` | none | `mod/hooks/edges.ts`, `mod/src/sources.ts` |
 | `CB4` | **Built.** The conditions in both ports, the glyphs, and each credit's cell | `CB2` | none | `coding_agent_usage_line/credits.py`, `mod/src/credits.ts`, `spec/layout.jsonc` |
 | `CB4b` | **Built.** The credits drawn: the `credits` option, its condition lists in both configuration readers, the 💳 row, and the Console's credits from `credits.command` | `CB3`, `CB4` | `AR3` | `spec/options.jsonc`, `mod/defaults/config.jsonc`, `mod/src/band.ts` |
-| `CB6` | The spending column on the turn, agent, session and subagent rows | `CB3`, `CB4b` | none | `mod/src/band.ts`, `mod/src/cells.ts`, `coding_agent_usage_line/claude.py` |
+| `CB6` | **Built.** The spending column on the turn, agent, session and subagent rows | `CB3`, `CB4b` | none | `mod/src/band.ts`, `mod/src/cells.ts`, `coding_agent_usage_line/claude.py` |
 | `CB5` | Docs, and the acceptance check, live | `CB3`, `CB6` | none | `docs/layout.md`, `docs/options.md`, `docs/usage-sources.md` |
 | `OP1` | **Done.** Which entries reach each Python module: the panel, Codex, the fold worker, the tests | none | none | `tools/python-module-reach.py`, `one-panel-port.md` |
 | `OP2` | **Done.** Remove the agent panel command: `--mode subagent`, its suite, goldens, tools and docs | `OP1` | none | `cli.py`, `claude.py`, `tests/`, `tools/`, `examples/claude/settings.json`, `README.md`, `docs/` |

@@ -155,7 +155,24 @@ and its plan windows:
 - **The column:** after 💰, the payer's glyph and dollars; blank while
   the plan pays, which 🔋 and 🪫 already show. A turn that crossed into
   another pool shows the part after the crossing; the 🎮 session row
-  sums its turns, a figure per pool it used.
+  sums its turns' records billed to the pool paying now, the one figure
+  the column has room for.
+- **The payer:** `CLAUDE_CODE_REMOTE` set is a web session, ⛅;
+  `ANTHROPIC_API_KEY` set, with Bedrock and Vertex off, is an API key, 🎁
+  while an unexpired promotional credit has a balance, else 💵; a plan
+  login with its 5-hour or weekly window at 100% and an `extra` credit in
+  the reading is 💸. Bedrock, Vertex and anything else pay none of these.
+- **The crossing:** 💸, and 💵 after 🎁, are counted from the first
+  reading that found them paying, the moment before which is unknown;
+  every other pool has paid since the session began. The mod keeps the
+  spell, and the first reading of the paying credit for the measured
+  fall, in `$.state` (`usage-band`'s `spending`) for the session and in
+  `$.store` under `spending:<session id>`, so a `/reload-plugins`, a
+  restart or a `--resume` counts on from them rather than from the
+  reload; until the reloaded mod has read the credits, the kept spell
+  stands. A session start drops the store's entries saved over 31 days
+  ago, the longest billing month, past which a start is of a period
+  already over.
 - **The amount:** each record's share of 💰, the API-equivalent estimate,
   billed to the pool paying when it was made, so an agent's row bills its
   own records. The 🎮 session row takes the measured fall in the pool's
@@ -208,9 +225,10 @@ and its plan windows:
    `credits.command`, merged into the kept credits. Its `place` is
    `"account"` or `"none"`: a row of their own, and `show-missing`, are
    left until they're wanted.
-7. **`CB6`, the spending column.** The payer of each record, the column on
-   the 🎤, 🤖, 🎮 and subagent rows, and the session row's measured
-   figure; its cases.
+7. **`CB6`, the spending column.** Built. The payer of each record, the
+   column on the 🎤, 🤖, 🎮 and subagent rows, and the session row's
+   measured figure; its cases. The column, `cost.spend`, is first to drop
+   on a narrow terminal, and the receipt's rows leave it blank.
 8. **`CB5`, docs and the acceptance check, live.** `docs/layout.md`,
    `docs/options.md`, `docs/usage-sources.md`; then in a session here the
    band shows both credits as the billing pages do, and a `show` of `[]`

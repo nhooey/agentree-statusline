@@ -899,6 +899,8 @@ def run(tmp):
         "\U0001F9ECO\u2075\U0001F3C3",  # model and effort, before 💰, open it
         sl.seg(sl.vis_width(sl.S_COST) + 4,
                "\U0001F4B0" + sl.pad_val(4, sl.money_fig(u.cost))),
+        # The credit paying, after 💰: blank, as the panel draws none.
+        " " * sr.grid.cell_width("SPEND_W"),
         # 🧠, then its share of the 200k window the payload gives.
         "\U0001F9E0 41k  20\u066A",
         sl.seg(sl.vis_width(sl.S_TOK) + sl.VAL_W + sl.VAL2_W,
@@ -1075,7 +1077,7 @@ def run(tmp):
           "beside them, and two more at the top level",
           (render(sl, dict(wide, columns=400))[1]["a1"].count(long),
            re.search(r"Review the plan, [^…]*…  \U0001F9EC",
-                     render(sl, dict(wide, columns=160))[1]["a1"]) is not None,
+                     render(sl, dict(wide, columns=168))[1]["a1"]) is not None,
            unknown.count(long[:sl.LABEL_MIN + 2 - sl.vis_width(head) - 1] + "…"),
            all(unpainted(c) in unpainted(unknown) for c in (
                "\U0001F9ECO", "\U0001F4B0", "\U0001F9E0", "\U0001F3AF",

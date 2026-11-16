@@ -76,6 +76,15 @@ function cost(st: Settings, usd: number | null, est = false): Span[] {
     span(padVal(st, room, fig), "F_YEL", magDim(usd, MAG_COST))];
 }
 
+/** spend, after 💰: what the pool paying for the row's work, other than
+ * the plan, has paid, under that credit's glyph, `mark` (spending.ts),
+ * drawn as 💰 draws its dollars; nothing while the plan pays. */
+function spend(st: Settings, mark: string | null, usd: number | null):
+  Span[] {
+  if (mark === null || usd === null) return [];
+  return renderCost(st, pyFormatF(usd, 4), mark);
+}
+
 /** ctx, 🧠: the context's size and its share of the window.  An estimate
  * is marked "~" before the size, in the blank between the two figures. */
 function ctx(st: Settings, tokens: number, window: number,
@@ -172,8 +181,8 @@ function diff(st: Settings, added: number, removed: number): Span[] {
 
 /** The cells by GRID_CELLS key, with ctx's two other readings. */
 export const CELLS = {
-  model, rate, cost, ctx, ctxGrowth, growth, tok, cache, clock, eta, split,
-  five, week, diff,
+  model, rate, cost, spend, ctx, ctxGrowth, growth, tok, cache, clock, eta,
+  split, five, week, diff,
 };
 
 /** A cache rate as the receipt works it out: int(100 * read / input), or

@@ -480,11 +480,11 @@ def inherited_etas(prepared_tasks):
 SCOPE_CELLS = (
     # The account's plan is on its label, so it has no column.
     ("account", ()),
-    ("turn", ("cost", "ctx", "tok", "cache", "clock", "eta", "split", "five",
-              "week", "diff")),
+    ("turn", ("cost", "spend", "ctx", "tok", "cache", "clock", "eta", "split",
+              "five", "week", "diff")),
     ("main", tuple(c["key"] for c in GRID_CELLS)),
-    ("session", ("cost", "tok", "cache", "clock", "split", "five", "week",
-                 "diff")),
+    ("session", ("cost", "spend", "tok", "cache", "clock", "split", "five",
+                 "week", "diff")),
     ("agent", tuple(c["key"] for c in GRID_CELLS)),
 )
 

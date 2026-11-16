@@ -1489,7 +1489,9 @@ export const HIDE_GROUPS = {
                                                         //  🔌 🤝 on the 💳
                                                         //  label, and their
                                                         //  🔜 there
-  "cost": ["cost"],                                     // 💰
+  "cost": ["cost", "spend"],                            // 💰, and the
+                                                        //  credit paying
+                                                        //  for it
   "tokens": ["io", "cache"],                            // 🧩 ▴ ▾, 🎯
   "context": ["size", "share"],                         // 🧠, and its ٪
                                                         //  of the window
@@ -1518,12 +1520,14 @@ export const HIDE_GROUPS = {
 // `width` is the cell's own, gap aside.  A number is fixed.  A name is a
 // rule computed in code, since the terminal profile widens 🧩, 🧠 and 💰 by a
 // column (_PAD) and the marks' spacing moves them: the A_* widths are
-// claude_subagent_render's, COST_W is vis_width(S_COST) + 4 and TOK_W is
+// claude_subagent_render's, COST_W is vis_width(S_COST) + 4, SPEND_W the
+// widest of the paying credits' glyphs (⛅ 🎁 💵 💸) + 4, and TOK_W is
 // vis_width(S_TOK) + VAL_W + VAL2_W.
 export const GRID_CELLS = [
   {"key": "model", "hide": "state.model", "width": 6, "gap": 2},
   {"key": "rate", "hide": "state.rate", "width": "A_RATE_W", "gap": 2},
   {"key": "cost", "hide": "cost.cost", "width": "COST_W", "gap": 2},
+  {"key": "spend", "hide": "cost.spend", "width": "SPEND_W", "gap": 2},
   {"key": "ctx", "hide": "context.size", "width": "A_CTX_W", "gap": 2},
   {"key": "tok", "hide": "tokens.io", "width": "TOK_W", "gap": 2},
   {"key": "cache", "hide": "tokens.cache", "width": 5, "gap": 2},
@@ -1535,10 +1539,12 @@ export const GRID_CELLS = [
   {"key": "diff", "hide": "work.diff", "width": "A_DIFF_W", "gap": 2},
 ];
 // Least important first: the order whole columns drop in, from every row at
-// once, when a label would keep fewer than LABEL_MIN columns.  💰, then 🔋
-// and 🪫, are the last to go.  Which columns drop is worked out without a
+// once, when a label would keep fewer than LABEL_MIN columns.  The credit
+// paying, blank while the plan pays and 💰's own figure while a key pays,
+// goes first; 💰, then 🔋 and 🪫, are the last to go.  Which columns drop is worked out without a
 // label's spill, so the spill never changes the grid.
 export const DROP_ORDER = [
+  "spend",
   "rate",
   "diff",
   "cache",
