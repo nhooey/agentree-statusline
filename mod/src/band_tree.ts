@@ -41,27 +41,26 @@
 // document's prepared tasks (subagent_tasks.ts).
 import {
   E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MODE_MONITOR, E_MODE_SHELL,
-  E_MORE, E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN, E_SESS,
+  E_MORE, E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
-  E_TREE_MID, E_TURN, E_WEEK, E_SESSION, E_IDLE,
+  E_TREE_MID, E_TURN, E_SESSION, E_IDLE,
 } from "./spec.ts";
 import { durFmt, grade, padVal } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import { paint, pressed, span, spans } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
-import { pyFormatF } from "./py.ts";
 import type { Dict } from "./py.ts";
 import { squash } from "./claude_records.ts";
 import type { BgTask } from "./claude_records.ts";
-import { renderCost, renderTokens } from "./claude_render.ts";
 import type { Limits } from "./claude_sources.ts";
 import {
-  agentCells, agentElapsed, agentLabel, inheritedEtas,
-  parked, renderAgentCache, renderAgentDiff, renderAgentLimit, renderAgentRate,
-  renderAgentSplit, renderBackground, renderInbox, runningParents, treeShape,
-} from "./claude_subagent_render.ts";
-import type { Eta } from "./claude_subagent_render.ts";
-import { CELLS, sessionNamePieces, workspacePieces } from "./cells.ts";
+  agentCells, agentElapsed, agentLabel, inheritedEtas, parked, runningParents,
+  treeShape,
+} from "./agent_row.ts";
+import type { Eta } from "./agent_row.ts";
+import {
+  CELLS, renderBackground, renderInbox, sessionNamePieces, workspacePieces,
+} from "./cells.ts";
 import { PAYER_GLYPHS, partsSince } from "./spending.ts";
 import type { Payer } from "./spending.ts";
 import type { Workspace } from "./cells.ts";
@@ -708,7 +707,7 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
     of.reduce((n, t) => n + f(t), 0);
   const cells: { [key: string]: Span[] } = {};
   if (kind === "more") {
-    cells.rate = renderAgentRate(st, tasks.filter((t) =>
+    cells.rate = CELLS.rate(st, tasks.filter((t) =>
       t.task.status === "running").length, E_PHASE_RUN);
   } else {
     const ends = tasks.map((t) => num(t.usage.last_seen ?? t.usage.last_epoch))
@@ -720,28 +719,25 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
     }
   }
   if (billed.length) {
-    cells.cost = renderCost(st, pyFormatF(sum((t) => num(t.usage.cost),
-      billed), 4));
+    cells.cost = CELLS.cost(st, sum((t) => num(t.usage.cost), billed));
     const up = sum((t) => num(t.usage.tok_up), billed);
-    cells.tok = renderTokens(st, up, sum((t) => num(t.usage.tok_down),
+    cells.tok = CELLS.tok(st, up, sum((t) => num(t.usage.tok_down),
       billed));
     const weighed = billed.filter((t) => num(t.usage.cache_pct) >= 0);
     const w = sum((t) => num(t.usage.tok_up), weighed);
     if (w > 0) {
-      cells.cache = renderAgentCache(st, Math.trunc(sum((t) =>
+      cells.cache = CELLS.cache(st, Math.trunc(sum((t) =>
         num(t.usage.cache_pct) * num(t.usage.tok_up), weighed) / w));
     }
-    const diff = renderAgentDiff(st, {
-      lines_added: sum((t) => num(t.usage.lines_added), billed),
-      lines_removed: sum((t) => num(t.usage.lines_removed), billed) });
+    const diff = CELLS.diff(st,
+      sum((t) => num(t.usage.lines_added), billed),
+      sum((t) => num(t.usage.lines_removed), billed));
     if (diff.length) cells.diff = diff;
     const share = (k: "sess" | "week"): number | null =>
       billed.some((t) => t.shares[k] === null) ? null
         : sum((t) => t.shares[k] ?? 0, billed);
-    cells.five = renderAgentLimit(st, E_SESS, a.limits.session_pct,
-      share("sess"), "F_LIM_SESS");
-    cells.week = renderAgentLimit(st, E_WEEK, a.limits.weekly_pct,
-      share("week"), "F_LIM_WEEK", true, false, 4);
+    cells.five = CELLS.five(st, a.limits.session_pct, share("sess"));
+    cells.week = CELLS.week(st, a.limits.weekly_pct, share("week"));
   }
   const ages = tasks.map((t) => {
     const u = t.usage;
@@ -760,7 +756,7 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
     cells.clock = ageCell(st, age);
     const timed = tasks.filter((t) => t.usage.model_s !== null);
     if (timed.length) {
-      cells.split = renderAgentSplit(st, age, sum((t) => num(t.usage.model_s),
+      cells.split = CELLS.split(st, age, sum((t) => num(t.usage.model_s),
         timed), sum((t) => num(t.usage.tool_s), timed));
     }
   }

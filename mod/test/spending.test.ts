@@ -10,7 +10,7 @@ import type { Credential } from "../src/spending.ts";
 import { CELLS } from "../src/cells.ts";
 import { bandRows, treeOf } from "../src/band.ts";
 import { settings } from "../src/formatting.ts";
-import { decodeTurn } from "../src/claude_cost.ts";
+import { decodeTurn } from "../src/figures.ts";
 import type { Turn } from "../src/claude_records.ts";
 import type { Span } from "../src/spans.ts";
 import type { Dict } from "../src/py.ts";

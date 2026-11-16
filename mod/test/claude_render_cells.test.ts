@@ -1,16 +1,18 @@
-// claude_render.ts, cell by cell.
+// The status line's cells, cell by cell: claude_render.ts's and the ones
+// it shares with the band, cells.ts's.
 //
 // The status goldens (claude_render.test.ts) draw under one terminal
 // profile and one zone.  tests/fixtures/render/ holds, as committed data,
 // each cell and renderStatus over hand-made records, under every
 // profile, both mark spacings and the subscripts: each call's inputs and
-// result.  This builds the same Settings, runs the same call through the
-// TypeScript and compares.
+// result.  This builds the same Settings, runs the same call and
+// compares.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as cr from "../src/claude_render.ts";
+import * as cells from "../src/cells.ts";
 import * as fm from "../src/formatting.ts";
 import type { Env, Settings } from "../src/formatting.ts";
 import { enc, revive as reviveSpans } from "./formatting_codec.ts";
@@ -69,29 +71,29 @@ function keepingTz(body: () => void): void {
 // Each case's function by name, called with the case's arguments:
 // settings first where the function takes them.
 const FNS: { [fn: string]: (st: Settings, a: any[]) => unknown } = {
-  render_tokens: (st, a) => cr.renderTokens(st, a[0], a[1], a[2]),
-  main_doing: (_st, a) => cr.mainDoing(a[0]),
+  render_tokens: (st, a) => cells.CELLS.tok(st, a[0], a[1], a[2]),
+  main_doing: (_st, a) => cells.mainDoing(a[0]),
   render_rate_cache: (st, a) =>
     cr.renderRateCache(st, a[0], a[1], a[2], a[3]),
   render_ctx: (st, a) => cr.renderCtx(st, a[0], a[1], a[2]),
-  render_cost: (st, a) => cr.renderCost(st, a[0], a[1]),
+  render_cost: (st, a) => cells.costText(st, a[0], a[1]),
   render_model_cost: (st, a) => cr.renderModelCost(st, a[0], a[1], a[2]),
   render_limit: (st, a) => cr.renderLimit(st, a[0], a[1], a[2], a[3],
     a[4], a[5], a[6], a[7], a[8], a[9]),
   render_cache_share: (st, a) => cr.renderCacheShare(st, a[0], a[1], a[2],
     a[3], a[4], a[5]),
-  render_diff: (st, a) => cr.renderDiff(st, a[0], a[1]),
+  render_diff: (st, a) => cells.diffFig(st, a[0], a[1]),
   render_pr: (st, a) => cr.renderPr(st, a[0]),
-  model_label: (_st, a) => cr.modelLabel(a[0]),
-  model_spec: (_st, a) => cr.modelSpec(a[0]),
+  model_label: (_st, a) => cells.modelLabel(a[0]),
+  model_spec: (_st, a) => cells.modelSpec(a[0]),
   render_model: (st, a) => cr.renderModel(st, a[0], a[1]),
-  effort_glyph: (_st, a) => cr.effortGlyph(a[0]),
+  effort_glyph: (_st, a) => cells.effortGlyph(a[0]),
   render_queue: (st, a) => cr.renderQueue(st, a[0], a[1]),
   render_style: (_st, a) => cr.renderStyle(a[0]),
   render_time: (st, a) => cr.renderTime(st, a[0]),
   render_date: (st, a) => cr.renderDate(st, a[0]),
-  eta_reading: (_st, a) => cr.etaReading(a[0], a[1], a[2], a[3], a[4]),
-  inherit_eta: (_st, a) => cr.inheritEta(a[0], a[1], a[2]),
+  eta_reading: (_st, a) => cells.etaReading(a[0], a[1], a[2], a[3], a[4]),
+  inherit_eta: (_st, a) => cells.inheritEta(a[0], a[1], a[2]),
   eta_fig: (st, a) => cr.etaFig(st, a[0], a[1], a[2], a[3]),
   render_elapsed: (st, a) => cr.renderElapsed(st, a[0], a[1], a[2], a[3],
     a[4], a[5], a[6], a[7]),
@@ -100,7 +102,7 @@ const FNS: { [fn: string]: (st: Settings, a: any[]) => unknown } = {
     cr.renderThreadBackground(st, a[0], a[1]),
   render_where_group: (_st, a) =>
     cr.renderWhereGroup(a[0], a[1], a[2], a[3], a[4]),
-  project_name: (_st, a) => cr.projectName(a[0], a[1]),
+  project_name: (_st, a) => cells.projectName(a[0], a[1]),
   chat_row: (st, a) => cr.chatRow(st, a[0], a[1], a[2], a[3], a[4], a[5]),
   render_chat_rows: (st, a) => cr.renderChatRows(st, a[0], a[1], a[2], a[3]),
   drawn_line: (_st, a) => cr.drawnLine(a[0], a[1]),

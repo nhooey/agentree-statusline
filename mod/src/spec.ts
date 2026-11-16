@@ -1356,7 +1356,7 @@ export const WIDTH_PROFILES = [
 // where it does, the ink lands on the digit beside it.  iTerm needs a column of
 // air after the icons that carry a value directly.
 //
-// The agent rows' 🤖 has no pad (renderAgentModel), and that row's 💰
+// The agent rows' 🤖 has no pad (cells.ts's model), and that row's 💰
 // borrows this cell and follows it.  The status line's own 💰 touches its
 // figure, as ▾ does, so the column's second figures end together; see
 // renderModelCost.
@@ -1533,7 +1533,7 @@ export const HIDE_GROUPS = {
 // `width` is the cell's own, gap aside.  A number is fixed.  A name is a
 // rule computed in code, since the terminal profile widens 🧩, 🧠 and 💰 by a
 // column (_PAD) and the marks' spacing moves them: the A_* widths are
-// claude_subagent_render's, COST_W is visWidth(S_COST) + 4, SPEND_W the
+// cells.ts's, COST_W is visWidth(S_COST) + 4, SPEND_W the
 // widest of the paying credits' glyphs (⛅ 🎁 💵 💸) + 4, and TOK_W is
 // visWidth(S_TOK) + VAL_W + VAL2_W.
 export const GRID_CELLS = [

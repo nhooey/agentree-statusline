@@ -9,7 +9,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { FIGURES_SCHEMA, RECORD_FIELDS } from "../src/figures.ts";
-import { TURN_FIELDS } from "../src/claude_cost.ts";
+import { TURN_FIELDS } from "../src/figures.ts";
 import { isDict } from "../src/py.ts";
 import type { Dict } from "../src/py.ts";
 

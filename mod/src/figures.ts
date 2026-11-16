@@ -1,11 +1,10 @@
 // The figures boundary: the records written as a figures document and
 // read back, and stage two of each readout drawn from it.
 //
-// encodeRecord and decodeRecord and their tables, and
-// renderStatusFigures with the argv reading it does.  The documents
-// themselves are built by claude.ts.  tests/README.md,
-// "Figures", is the document's schema.  The cost line's half lives beside
-// its own renderer.
+// encodeRecord and decodeRecord and their tables, encodeTurn and
+// decodeTurn for a document's turns, and renderStatusFigures with the argv
+// reading it does.  The documents themselves are built by claude.ts.
+// tests/README.md, "Figures", is the document's schema.
 //
 // The render stage needs two things from outside the document: the
 // terminal profile, from the environment, and HOME, to show the working
@@ -18,10 +17,11 @@ import { STAMP_FMT } from "./spec.ts";
 import { settings } from "./formatting.ts";
 import type { Env, Settings } from "./formatting.ts";
 import type {
-  CacheShares, Git, Limits, Payload, Transcript,
+  CacheShares, Git, Limits, Payload, Transcript, Turn,
 } from "./claude_records.ts";
 import { renderStatus } from "./claude_render.ts";
 import { _naiveTimestamp, _strptimeStamp } from "./claude_calib.ts";
+import type { Accounting } from "./claude_calib.ts";
 import { isDict, pyIsDigit, pyIntDigits } from "./py.ts";
 import type { Dict } from "./py.ts";
 
@@ -90,7 +90,7 @@ const CACHE_SHARES: Fields = {
 
 /** Each record's fields, as a document writes them: what the tests fill a
  * committed document's records back out from, the null fields left out.
- * The Turn's are claude_cost.ts's TURN_FIELDS. */
+ * The Turn's are TURN_FIELDS. */
 export const RECORD_FIELDS: { readonly [record: string]: readonly string[] } =
   Object.fromEntries(Object.entries({
     Payload: PAYLOAD, Transcript: TRANSCRIPT, Git: GIT, Limits: LIMITS,
@@ -200,6 +200,49 @@ export function decodeLimits(d: unknown): Limits {
 
 export function decodeCacheShares(d: unknown): CacheShares {
   return decodeRecord<CacheShares>(CACHE_SHARES, d);
+}
+
+// Turn's str fields: written null in the document when "", and "" again
+// on reading (decodeTurn).  Turn has no other missing-value fields, and no
+// stamps.
+const TURN_STRS = ["ts", "text", "agent_id", "agent_name", "prompt_id"];
+export const TURN_FIELDS: readonly string[] = ["ts", "text", "fresh",
+  "cache_write", "cache_read", "out", "ctx", "calls", "dur_s", "dctx",
+  "usd_in", "usd_out", "usd_cr", "usd_cw", "compact", "reported", "parts",
+  "agent_calls", "agent_ids", "agent", "tool_s", "blocked_s",
+  "agent_model_s", "agent_tool_s", "agent_id", "agent_name", "prompt_id",
+  "turn_index", "lines_added", "lines_removed", "eta"];
+
+/** A Turn as the document writes it: its str fields null when "". */
+export function encodeTurn(t: Turn): { [k: string]: unknown } {
+  const r = t as unknown as { readonly [k: string]: unknown };
+  const out: { [k: string]: unknown } = {};
+  for (const field of TURN_FIELDS) {
+    const v = r[field];
+    out[field] = v === "" && TURN_STRS.includes(field) ? null : v;
+  }
+  return out;
+}
+
+/** A Turn read back from the document.  Every field must be present: a
+ * document missing one is from another schema, not a record with a
+ * default.  A number is a number whichever way the document wrote it, and
+ * needs no conversion. */
+export function decodeTurn(d: { readonly [k: string]: unknown }): Turn {
+  const out: { [k: string]: unknown } = {};
+  for (const field of TURN_FIELDS) {
+    if (!Object.hasOwn(d, field)) throw new Error("no " + field + " in Turn");
+    const v = d[field];
+    out[field] = v === null && TURN_STRS.includes(field) ? "" : v;
+  }
+  return out as unknown as Turn;
+}
+
+/** One turn's or the session's accounting as it was worked out.  The cost
+ * and the window shares are numbers as read. */
+export function readAccounting(acc: { readonly [k: string]: unknown }):
+  Accounting {
+  return { ...acc } as unknown as Accounting;
 }
 
 // ════════════════════════════════════════════════════════════════════════════

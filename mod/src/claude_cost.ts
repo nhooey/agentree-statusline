@@ -1,4 +1,5 @@
-// The Stop-hook receipt's metric groups and its render stage.
+// The Stop-hook receipt's metric groups and its render stage, pinned by
+// the cost goldens.  No entry draws it: the mod's receipt is receipt.ts's.
 //
 // The receipt has two kinds of row, a turn's (costGroup) and the
 // session's (costTotalsGroup), handed to the layout in
@@ -29,6 +30,7 @@ import type { Turn } from "./claude_records.ts";
 import { _pyRound, planTotals as calibPlanTotals, turnCost }
   from "./claude_calib.ts";
 import type { Accounting } from "./claude_calib.ts";
+import { decodeTurn, readAccounting } from "./figures.ts";
 import { costOpts, inkColour as _c, renderCostLine }
   from "./claude_cost_render.ts";
 import type { CostAccounting, CostOpts, PlanTotals }
@@ -267,49 +269,6 @@ export function costTotalsGroup(st: Settings, turns: readonly Turn[],
 // The render stage.
 // ════════════════════════════════════════════════════════════════════════════
 
-// Turn's str fields: written null in the document when "", and "" again
-// here (decodeTurn).  Turn has no other missing-value
-// fields, and no stamps.
-const TURN_STRS = ["ts", "text", "agent_id", "agent_name", "prompt_id"];
-export const TURN_FIELDS: readonly string[] = ["ts", "text", "fresh",
-  "cache_write", "cache_read", "out", "ctx", "calls", "dur_s", "dctx",
-  "usd_in", "usd_out", "usd_cr", "usd_cw", "compact", "reported", "parts",
-  "agent_calls", "agent_ids", "agent", "tool_s", "blocked_s",
-  "agent_model_s", "agent_tool_s", "agent_id", "agent_name", "prompt_id",
-  "turn_index", "lines_added", "lines_removed", "eta"];
-
-/** A Turn as the document writes it: its str fields null when "". */
-export function encodeTurn(t: Turn): { [k: string]: unknown } {
-  const r = t as unknown as { readonly [k: string]: unknown };
-  const out: { [k: string]: unknown } = {};
-  for (const field of TURN_FIELDS) {
-    const v = r[field];
-    out[field] = v === "" && TURN_STRS.includes(field) ? null : v;
-  }
-  return out;
-}
-
-/** A Turn read back from the document.  Every field must be present: a
- * document missing one is from another schema, not a record with a
- * default.  A number is a number whichever way the document wrote it, and
- * needs no conversion. */
-export function decodeTurn(d: { readonly [k: string]: unknown }): Turn {
-  const out: { [k: string]: unknown } = {};
-  for (const field of TURN_FIELDS) {
-    if (!Object.hasOwn(d, field)) throw new Error("no " + field + " in Turn");
-    const v = d[field];
-    out[field] = v === null && TURN_STRS.includes(field) ? "" : v;
-  }
-  return out as unknown as Turn;
-}
-
-/** One turn's or the session's accounting as it was worked out.  The cost
- * and the window shares are numbers as read. */
-export function _readAccounting(acc: { readonly [k: string]: unknown }):
-  Accounting {
-  return { ...acc } as unknown as Accounting;
-}
-
 /** The value after `name`, or `dflt`. */
 export function _flag(argv: readonly string[], name: string,
   dflt = ""): string {
@@ -369,8 +328,8 @@ export function renderCostFigures(st: Settings, fig: CostFigures,
   opts: CostOpts): string {
   const turns = fig.turns.map(decodeTurn);
   const accounting: CostAccounting = {
-    turns: fig.accounting.turns.map(_readAccounting),
-    session: _readAccounting(fig.accounting.session),
+    turns: fig.accounting.turns.map(readAccounting),
+    session: readAccounting(fig.accounting.session),
   };
   let line = renderCostLine(st, turns, opts, Math.trunc(fig.context_window),
     accounting, planTotals(fig.usage.plan), fig.clock.now, costGroup,

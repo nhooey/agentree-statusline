@@ -26,7 +26,7 @@ import {
   receiptLines, receiptScoped, receiptTurn, stampedOf, startLine,
 } from "../src/receipt.ts";
 import type { RowName } from "../src/band.ts";
-import { decodeTurn } from "../src/claude_cost.ts";
+import { decodeTurn } from "../src/figures.ts";
 import { PROFILES, spanFrom, spanJson } from "../tools/gen-grid-cases.ts";
 import {
   OUT, corpusAgents, document, drawAccount, drawBand, drawReceipt,

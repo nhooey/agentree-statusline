@@ -12,8 +12,7 @@
 // comes in as an argument: HOME, to show the working directory as "~", and
 // 🛫, the main thread's token rate, which the mod works out in memory from
 // successive documents (decision 1).  The clock's cells draw `clock.now`
-// in the process's TZ, which the edge sets from `clock.tz` before drawing,
-// as for claude_cost.ts.
+// in the process's TZ, which the edge sets from `clock.tz` before drawing.
 import {
   CHROME_DEPTH, E_ACCT, E_DATE, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN,
   E_TOOL, E_WORK, GRID_CELLS, QUIET_WARN_S, STALE_MARK_S,
@@ -32,15 +31,12 @@ import type {
 } from "./claude_records.ts";
 import type { Accounting } from "./claude_calib.ts";
 import {
-  ETA_LIVE_S, inheritEta, mainDoing, projectName,
-} from "./claude_render.ts";
-import {
-  decodeGit, decodeLimits, decodePayload, decodeTranscript,
+  decodeGit, decodeLimits, decodePayload, decodeTranscript, decodeTurn,
 } from "./figures.ts";
-import { decodeTurn } from "./claude_cost.ts";
 import {
-  CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, mainLabel, sessionLabel,
-  turnLabel, untilReset, workspacePieces, ymd,
+  CELLS, ETA_LIVE_S, SIDE_MARKS, accountLabel, cacheRate, hms, inheritEta,
+  mainDoing, mainLabel, projectName, sessionLabel, turnLabel, untilReset,
+  workspacePieces, ymd,
 } from "./cells.ts";
 import type { SideWindow, Workspace } from "./cells.ts";
 import type { Limits } from "./claude_sources.ts";
@@ -237,7 +233,7 @@ function spendCell(st: Settings, fig: Dict,
   }
 }
 
-/** The main thread's ⛳, as today's ⌛ row draws it: its own last report,
+/** The main thread's ⛳: its own last report,
  * pushed out by a live agent's (inheritEta), counted from the turn's
  * prompt; nothing with no transcript. */
 function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
@@ -252,7 +248,8 @@ function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
   const signedOff = tr.eta.length > 0 && tr.eta[1] === 0 &&
     shown.length > 0 && etaFinish(shown)! <= etaFinish(tr.eta)! + 1e-6;
   if (signedOff && tr.idle_at) return [];
-  return CELLS.eta(st, shown, tr.turn_s || null, now, signedOff);
+  return CELLS.eta(st, shown, tr.turn_s ? tr.turn_s * 1000 : null, now,
+    "running", null, signedOff);
 }
 
 /** 🎤's ⛳: the turn's own last report alone, and nothing before the turn
@@ -260,8 +257,8 @@ function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
 function turnEta(st: Settings, tr: Transcript, now: number): Span[] {
   if (!tr.start_s || !tr.eta.length) return [];
   if (tr.eta[1] === 0 && tr.idle_at) return [];
-  return CELLS.eta(st, tr.eta, tr.turn_s || null, etaNow(tr, now),
-    tr.eta[1] === 0);
+  return CELLS.eta(st, tr.eta, tr.turn_s ? tr.turn_s * 1000 : null,
+    etaNow(tr, now), "running", null, tr.eta[1] === 0);
 }
 
 /** The time a ⛳ is counted to: `now` while the thread answers, and the
@@ -434,7 +431,7 @@ function toolCell(st: Settings, tr: Transcript, now: number): Span[] | null {
     paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
-/** What the main thread is doing, as today's Doing cell says it: the mark
+/** What the main thread is doing: the mark
  * of its state and how long it has been in it, amber once it has worked
  * QUIET_WARN_S without a word.  Null on an offline read, and while a tool
  * runs, which 🎤's 🛫 column says (toolCell). */
@@ -455,8 +452,8 @@ function doingCell(st: Settings, tr: Transcript, now: number):
  * `accounting.own`, its compactions in, the 💰 marked an estimate by
  * `own_est` (decision 2); 🧠 its context, `ctx_est` marking an estimate;
  * 🧩 🎯 `own_tok_*` and `own_cache_pct`; ⌛ its age from `start_s` and the
- * split off `busy_s`, `tool_s` and `blocked_s`, as today's ⌛ row
- * partitions it; 💾 its own lines.  Running, 🛫's column says what it is
+ * split off `busy_s`, `tool_s` and `blocked_s`, a prompt that blocks
+ * counted as waiting; 💾 its own lines.  Running, 🛫's column says what it is
  * doing, and its label's 📨 counts the messages queued for its next turn,
  * `queued`. */
 function mainRow(st: Settings, fig: Dict, tr: Transcript, now: number,
