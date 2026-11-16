@@ -34,3 +34,21 @@ test("the defaults file, merged, fills every option", () => {
   assert.equal(options.rows.turn.live, "running");
   assert.equal(options.rows.turn.place, "above");
 });
+
+// An option nothing reads is one a file can set to no effect.  Each is read
+// as a field of the merged options, `o.name` or destructured, in a module
+// of the mod's own: not only its spec.
+test("every option is read by the mod", () => {
+  const root = path.join(import.meta.dirname, "..");
+  const code = ["src", "hooks"].flatMap((dir) =>
+    fs.readdirSync(path.join(root, dir))
+      .filter((f) => /\.tsx?$/.test(f) && !f.endsWith("_spec.ts"))
+      .map((f) => fs.readFileSync(path.join(root, dir, f), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "")))
+    .join("\n");
+  for (const name of Object.keys(OPTIONS)) {
+    const camel = name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
+    const read = new RegExp(`\\.${camel}\\b|\\{[^}]*\\b${camel}\\b[^}]*\\}\\s*=`);
+    assert.ok(read.test(code), `${name} is read by nothing`);
+  }
+});
