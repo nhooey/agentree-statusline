@@ -97,6 +97,19 @@ test("the session's measured fall: two readings bracketing its start", () => {
     null);
 });
 
+test("the kept bracket stands through a document with no credits read, as " +
+  "just after a load", () => {
+  const cloud = { id: "c", kind: "cloud", remaining: 10 };
+  const kept = nextBracket(null, "s", cloud, NOW - 60);
+  assert.equal(nextBracket(kept, "s", null, null), kept);
+  const after = nextBracket(nextBracket(kept, "s", null, null), "s",
+    { ...cloud, remaining: 7.5 }, NOW + 600);
+  assert.equal(measuredFall(after, { ...cloud, remaining: 7.5 }, NOW + 600,
+    NOW), 2.5);
+  // Another session's bracket is not this one's.
+  assert.equal(nextBracket(kept, "t", null, null), null);
+});
+
 test("spending: each row's figure, the session's fall where measured", () => {
   const spell = { session: "s", kind: "cloud" as const, since: null };
   const s = spendingOf(spell, null, [[null, 1.5]], [], 3);

@@ -139,12 +139,15 @@ export type Bracket = {
 };
 
 /** The bracket kept after a reading `asOf` of `credit` paying for
- * `session`: the first reading of that credit for the session is kept. */
+ * `session`: the first reading of that credit for the session is kept.
+ * With no credits read yet, as just after a load, the kept bracket
+ * stands, as the kept spell does. */
 export function nextBracket(prev: Bracket | null, session: string,
   credit: Dict | null, asOf: number | null): Bracket | null {
   const id = credit === null ? null : credit.id;
   const left = credit === null ? null : figure(credit.remaining);
-  if (prev !== null && prev.session === session && prev.id === id) {
+  if (prev !== null && prev.session === session &&
+      (prev.id === id || asOf === null)) {
     return prev;
   }
   if (typeof id !== "string" || left === null || asOf === null) return null;
