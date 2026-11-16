@@ -14,19 +14,15 @@
 // as arguments.
 import {
   C_CACHE_TIGHT, C_LIM_TOT_TIGHT, C_TOK_TIGHT, CACHE_CRIT, CACHE_WARN,
-  COL3_TIGHT_W, COL4_TIGHT_W, E_BOT, E_CACHE, E_COST, E_CTX, E_DATE, E_DIFF,
-  E_HUMAN, E_IDLE, E_MOD, E_PCT, E_PR, E_RATE, E_READ, E_RESET,
-  E_ROW_AGENTS, E_ROW_COMPACT, E_ROW_PROMPT, E_ROW_TOTAL, E_SESS, E_STY,
-  E_SUB_DIGITS, E_TIME, E_TOK, E_WEEK, E_WORK, E_WRITE, EAW_WIDE, G,
-  K, LINE3_TIGHT, M, MAG_SHARE_READ, MAG_SHARE_SESS, MAG_SHARE_TURN,
-  MAX_LINE, MODEL_FAMILIES, MONTH_S, PAD_PROFILES, PAIR_GAP, PROFILE_RULES,
-  RAMPS, RIGHT_EDGE, RULE_MIN, SCALES, SEG_GAP, SEG_RULE, VAL_W, VAL2_W,
-  WIDTH_PROFILES,
+  COL3_TIGHT_W, COL4_TIGHT_W, E_CACHE, E_COST, E_CTX, E_DATE, E_DIFF, E_MOD,
+  E_PCT, E_RATE, E_SUB_DIGITS, E_TIME, E_TOK, EAW_WIDE, G, K, LINE3_TIGHT, M,
+  MAG_SHARE_READ, MAG_SHARE_SESS, MAG_SHARE_TURN, MAX_LINE, MODEL_FAMILIES,
+  MONTH_S, PAD_PROFILES, PAIR_GAP, PROFILE_RULES, RAMPS, RIGHT_EDGE, RULE_MIN,
+  SCALES, SEG_GAP, SEG_RULE, VAL_W, VAL2_W, WIDTH_PROFILES,
 } from "./spec.ts";
 import {
   pyAsciiDigits, pyFormatF, pyFloatRepr, pyIntDigits, pyIntStr, pyIntText,
-  pyIsDigit, pyLen, pyLjust, pyPadS, pyRstrip, pySlice, pySplitWs, pyStrip,
-  pyTruthy,
+  pyIsDigit, pyLen, pyPadS, pyRstrip, pySlice, pySplitWs, pyStrip, pyTruthy,
 } from "./py.ts";
 import { pyFloat } from "./sources.ts";
 import { tsEpoch } from "./claude_records.ts";
@@ -38,45 +34,16 @@ import type { Span, SpanLike } from "./spans.ts";
 // Constants that do not depend on the terminal or the switches.
 // ════════════════════════════════════════════════════════════════════════════
 
-// Erase the line before painting it and past its end after: without it a
-// shrinking value leaves a "1sm" standing.
-export const LINE_CLEAR = "\x1b[0m\x1b[2K";
-export const EOL_CLEAR = "\x1b[K";
-
 // The ladder humanize and moneyFmt both climb, largest first.
 export const SI_UNITS: readonly (readonly [number, string])[] = [
   [G, "G"], [M, "M"], [K, "k"]];
 
-// The cost rows' labels, padded to one width so their 📊 stack.  The emoji
-// goes ahead of the padded text, never inside it: ljust counts characters
-// and the glyph is two columns.
-const LABELS = ["Usage: Prompt (last)", "Usage: Session (total)",
-  "Usage: Compact (last)", "Usage: Agents (other)"];
-const LABEL_W = Math.max(...LABELS.map(pyLen));
-const lab = (e: string, i: number): string =>
-  e + " " + pyLjust(LABELS[i], LABEL_W);
-export const C_LABEL = lab(E_ROW_PROMPT, 0);
-export const C_TOTALS_LABEL = lab(E_ROW_TOTAL, 1);
-export const C_COMPACT_LABEL = lab(E_ROW_COMPACT, 2);
-export const C_AGENTS_LABEL = lab(E_ROW_AGENTS, 3);
-
-// The status-mode glyph forms that carry a hard space in every profile, or
-// none.  The six that carry the profile's paint pad are Settings fields
-// (sTok and the rest).
-export const S_HUMAN = E_HUMAN + " ";
-export const S_BOT = E_BOT + " ";
+// The status-mode glyph forms that carry a hard space in every profile.
+// The six that carry the profile's paint pad are Settings fields (sTok and
+// the rest).
 export const S_TIME = E_TIME + " ";
 export const S_DATE = E_DATE + " ";
-export const S_IDLE = E_IDLE + " ";
-export const S_STY = E_STY + " ";
-export const S_PR = E_PR + " ";
 export const S_DIFF = E_DIFF + " ";
-export const S_WORK = E_IDLE + E_WORK;
-export const S_SESS = E_SESS + " ";
-export const S_WEEK = E_WEEK + " ";
-export const S_READ = E_READ + " ";
-export const S_WRITE = E_WRITE + " ";
-export const S_RESET = E_RESET;
 
 // ════════════════════════════════════════════════════════════════════════════
 // The terminal profile and the settings.

@@ -35,7 +35,7 @@ fixtures only, and never read your credentials or your `~/.claude` history.
 | Suite (`tests NAME`) | Command | Checks | Result line |
 |---|---|---|---|
 | `usage-dev` | `python3 tests/usage-dev.py` | `tools/usage-dev.py`'s argument parsing, the steps each command runs, and that every script they name exists | unittest `OK` (20 tests) |
-| `node` | `cd mod && node --test 'test/*.test.ts'` | the mod against the committed cases under `tests/fixtures/` and `tests/golden/`: the spec, the configuration and usage-source readers, the formatters and spans, the accounting, the calibration, the folds and their saves, the band's rows and tree, the grid, the receipt and the subagent rows; and each generator under `mod/tools/` run again in memory | `ℹ fail 0` |
+| `node` | `cd mod && node --test 'test/*.test.ts'` | the mod against the committed cases under `tests/fixtures/`: the spec, the configuration and usage-source readers, the formatters and spans, the accounting, the calibration, the folds and their saves, the band's rows and tree, the grid, and the receipt; and each generator under `mod/tools/` run again in memory | `ℹ fail 0` |
 | `typecheck` | `cd mod && npm run typecheck` | the mod's types, with TypeScript and Node's type definitions from the lockfile | no output |
 | `typecheck-plugin` | `cd mod && npm run typecheck:plugin` | the hooks' types against the engine's, which loading the mod in Claude Code writes | no output |
 | `plugin-test` | `cd mod && npm run test:plugin` | the hooks' own suites, `mod/mod-tests/`, run in the engine | `N pass` |

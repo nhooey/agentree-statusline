@@ -908,7 +908,7 @@ export const FILES: { readonly [path: string]: string } = {
 }
 
 /** The app-41-63 environment: its clock, its planted calibration, and
- * the tracker store the goldens' cases plant for it. */
+ * the tracker store the figures cases plant for it. */
 export const NOW = 1786847000
 export const CALIB = {"sess":5.5,"week":4.1}
 export const TRACKER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><dict>\n<key>activeProfileId</key><string>golden</string>\n<key>profiles_v3</key><string>[{\"id\":\"golden\",\"claudeUsage\":{\"lastUpdated\":808539600,\"sessionPercentage\":41,\"sessionResetTime\":808545600,\"weeklyPercentage\":63,\"weeklyResetTime\":808707800}}]</string>\n</dict></plist>\n"

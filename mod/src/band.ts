@@ -270,7 +270,7 @@ function etaNow(tr: Transcript, now: number): number {
   return tr.idle_at ? Math.min(now, tr.idle_at) : now;
 }
 
-/** The working directory under `home` as "~", as renderStatus shows it. */
+/** The working directory under `home` as "~". */
 function homeDir(dir: string, home: string): string {
   if (dir === home) return "~";
   if (home && dir.startsWith(home + "/")) {

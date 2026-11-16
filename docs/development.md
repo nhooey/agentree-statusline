@@ -17,14 +17,14 @@ mod/
   src/         the pure modules the hooks import, and their *_node.ts
                readers for the tests and tools
   defaults/    config.jsonc, every option's default
-  test/        node --test suites, against tests/fixtures and tests/golden
+  test/        node --test suites, against tests/fixtures
   mod-tests/   the hooks' own suites, run in the engine (npm run test:plugin)
   tools/       the generators of committed cases and of docs/options.md's
                option table, and drawing and timing tools
 tools/         usage-dev.py, diff-grid-fixtures.py, palette-review.py,
                stress-suites.sh
 tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
-               fixtures and goldens
+               fixtures
 ```
 
 | module | owns |
@@ -34,7 +34,6 @@ tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
 | `claude.ts`, `figures.ts` | A readout's figures, worked out from what was read, as a figures document. |
 | `band.ts`, `band_tree.ts`, `agent_row.ts`, `receipt.ts`, `cells.ts` | The band's rows and tree, each agent's row, the receipt and the tag lines, built from a figures document out of the cells, which `cells.ts` draws. |
 | `grid.ts` | The grid every row is laid out on: the columns kept, hidden and closed up, and each label's room. |
-| `claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts` | The status line, the old receipt and the agent panel, which no entry draws, pinned by the goldens and the panel cases. |
 | `main_fold.ts`, `agent_fold.ts`, `inbox_fold.ts` | The transcript's, each agent's and the inbox's folds, read on from where the last read stopped, and their saves. |
 | `sources.ts`, `claude_sources.ts`, `credits.ts` | The usage source: the version-1 reading, the payload's own windows, the scoped cache, the custom command, the tracker, and the credits' conditions. See [Usage sources](usage-sources.md). |
 | `config.ts` | The configuration files: the walk, the strict defaults file, the merge and its warnings. See [Options](options.md#configuration-files). |

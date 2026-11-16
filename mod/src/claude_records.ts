@@ -2731,8 +2731,8 @@ export function _foldAgents(turns: TurnBuild[],
   const late = new Map<string, TurnBuild>();
   if (agents.length === 0 || turns.length === 0) return late;
   const stamped = turns.filter((t) => t.t0 !== null && !pyTruthy(t.compact));
-  // The turn the 🎤 row will be about: the same selection renderCostLine
-  // and _withShares make.  `n` is main-thread calls, so folding agents in
+  // The turn the 🎤 row will be about: the same selection _withShares
+  // makes.  `n` is main-thread calls, so folding agents in
   // cannot move it.
   let prompt: TurnBuild | null = null;
   for (const t of turns) if (t.n && !pyTruthy(t.compact)) prompt = t;

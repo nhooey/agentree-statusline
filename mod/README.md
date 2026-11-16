@@ -16,8 +16,7 @@ Node's type definitions.
 `src/spec.ts`, `src/state_spec.ts` and `src/options_spec.ts` hold the
 constants: the glyphs, colours and widths, the state files and the options.
 Each module's tests check it against
-the cases under `tests/fixtures/` and the goldens under `tests/golden/`:
-committed data, or written by the generators under `tools/`
+the cases under `tests/fixtures/`: committed data, or written by the generators under `tools/`
 ([tests/README.md](../tests/README.md) says which).
 
 ## The mod

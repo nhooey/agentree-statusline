@@ -4,10 +4,9 @@
 // For each status and cost case in tests/fixtures/cases.json this reads
 // the case's inputs, builds the document with statusFigures or costFigures, and compares it with the
 // committed document the case names, tests/fixtures/figures/<suite>/
-// <figures>.json filled out (figures_doc.ts), field for field, so a case
-// at any width and flags must come to it; and checks the records of the
-// document built have exactly their fields, which the sparse committed
-// text cannot show.
+// <figures>.json filled out (figures_doc.ts), field for field; and checks
+// the records of the document built have exactly their fields, which the
+// sparse committed text cannot show.
 // What a run reads outside the transcript comes from the committed
 // document itself: the usage source's reading (sources.test.ts pins the
 // reader), the git context (claude.test.ts pins detectGit's reading of
@@ -44,10 +43,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
 const FIXTURES = path.join(REPO, "tests/fixtures");
 const SCRATCH = path.join(os.tmpdir(), "claude-glue-scratch");
 
-type Case = {
-  id: string; suite: string; env: string; input: string; cols: number;
-  flags: string[]; figures: string;
-};
+type Case = { suite: string; env: string; input: string; figures: string };
 
 function fill(text: string): string {
   return text.replaceAll("${HOME}", os.homedir())
@@ -109,12 +105,12 @@ const status = cases.filter((c) => c.suite === "status");
 const cost = cases.filter((c) => c.suite === "cost");
 
 test("every status and cost case is here", () => {
-  assert.equal(status.length, 145);
-  assert.equal(cost.length, 88);
+  assert.equal(status.length, 29);
+  assert.equal(cost.length, 16);
 });
 
 for (const c of status) {
-  test("status " + c.id, () => {
+  test("status " + c.figures, () => {
     const env = envOf(c), want = committed(c);
     withTz(env.tz, () => {
       const pay = decodePayload(want.payload);
@@ -142,7 +138,7 @@ for (const c of status) {
 }
 
 for (const c of cost) {
-  test("cost " + c.id, () => {
+  test("cost " + c.figures, () => {
     const env = envOf(c), want = committed(c);
     withTz(env.tz, () => {
       const tp = path.join(FIXTURES, c.input);
