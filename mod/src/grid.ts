@@ -13,7 +13,7 @@
 // the panel can hand it their own, and the shared cases under
 // tests/fixtures/grid/ can carry a row as JSON.  The rules' constants are
 // spec.ts's; the widths that depend on the terminal profile come from the
-// Settings, as claude_subagent_render.ts computes them.  Nothing here joins
+// Settings, as cells.ts computes them.  Nothing here joins
 // spans into escape codes: that is the printing's job.
 import {
   CHROME_DEPTH, DROP_ORDER, E_CLOUD, E_EXTRA, E_PCT, E_PREPAID, E_PROMO,
@@ -26,7 +26,7 @@ import type { Span } from "./spans.ts";
 import {
   A_CLOCK_W, A_LIMIT_W, A_LIMIT_WEEK_W, A_RATE_W, A_SPLIT_W,
   aCtxW, aDiffW, aEtaW,
-} from "./claude_subagent_render.ts";
+} from "./cells.ts";
 
 /** A part of a row's label, with the path --hide names it by, under the
  * row's scope.  A piece with a `drop` rank leaves the label whole, lowest

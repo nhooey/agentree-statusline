@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { receiptTurn, withEngineDuration } from "../src/receipt.ts";
-import { decodeTurn } from "../src/claude_cost.ts";
+import { decodeTurn } from "../src/figures.ts";
 import type { Dict } from "../src/py.ts";
 import { readFigures } from "./figures_doc.ts";
 

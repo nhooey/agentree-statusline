@@ -1,68 +1,185 @@
-// The redesigned grid's cells and label pieces, from figures to spans.
+// The grid's cells and label pieces, from figures to spans.
 //
-// One renderer per GRID_CELLS key, in CELLS, and the helpers that build the
-// pieces of each row's label.  The band and the receipt (band.ts,
-// receipt.ts) draw real figures through them and mod/tools/layout-mockup.ts
-// draws its made-up ones, so a cell looks the same in all three.  Each
-// takes plain figures, never a figures document: reading a document is the
-// builders' job, and a cell here cannot tell where its figures came from.
+// One function per GRID_CELLS key, in CELLS, each drawing its cell from
+// plain figures, and the helpers that build the pieces of each row's
+// label.  The band and the receipt (band.ts, band_tree.ts, receipt.ts)
+// draw real figures through them and mod/tools/layout-mockup.ts draws its
+// made-up ones, so a cell looks the same in all three.  Each takes plain
+// figures, never a figures document: reading a document is the builders'
+// job, and a cell here cannot tell where its figures came from.
 //
-// The cells are the agent panel's, from claude_subagent_render.ts, with
-// claude_render.ts's 💰 and 🧩, since the grid takes the panel's columns.
-// What the panel has no cell for is drawn here the way today's cells draw
-// the same case: the context's growth over a turn, an estimate marked "~"
-// as renderCtx marks one, a duration handed over as seconds.
+// The widths a cell is drawn at are here too, as grid.ts's width rules
+// read them (A_RATE_W, aCtxW, ...): the ones that measure a glyph depend
+// on the terminal profile, so they are worked out from the Settings each
+// time.
 //
-// Nothing here reads the clock or the environment.  The clock cells draw
-// `now` in the process's TZ, which the edge sets from the document's
-// `clock.tz`, as claude_cost.ts's do.
+// Nothing here reads the environment.  The clock cells draw `now` in the
+// process's TZ, which the edge sets from the document's `clock.tz`; the
+// eta cell reads the clock only where it is handed no `now`.
 import {
-  E_ACCT, E_COST, E_COWORK, E_DATE, E_DIR, E_DIRTY, E_FABLE, E_GIT_BAD,
-  E_GIT_OK, E_IDLE, E_NAME, E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR,
-  E_PROJ, E_RESET, E_SESS, E_SESSION, E_SONNET,
-  E_STALE, E_STY, E_THREAD,
-  E_TIME, E_TURN, E_TURN_ID, E_WEEK, K, MAG_COST, TAG_SCOPE,
-  TURN_ID_HEX,
+  E_ACCT, E_CACHE, E_COST, E_COWORK, E_DATE, E_DIFF, E_DIR, E_DIRTY, E_DOWN,
+  E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX, E_EFF_MED, E_EFF_XHIGH, E_ETA, E_FABLE,
+  E_GAUGE, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_IDLE, E_INBOX, E_KIDS, E_MOD,
+  E_NAME, E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR, E_PROJ, E_RATE,
+  E_KIND_CLAUDE, E_KIND_EXPLORE, E_KIND_FORK, E_KIND_GENERAL, E_KIND_GUIDE,
+  E_KIND_OTHER, E_KIND_PLAN, E_KIND_REMOTE, E_KIND_SETUP, E_KIND_SHELL,
+  E_KIND_TEAMMATE, E_KIND_WORKFLOW,
+  E_RESET, E_ROW_COMPACT, E_SESS, E_SESSION, E_SONNET,
+  E_STALE, E_STY, E_SUP_DIGITS, E_THREAD, E_TIME, E_TOOL, E_TURN,
+  E_TURN_ID, E_UP, E_WAIT, E_WEEK, E_WORK, GAUGE_W, K, MAG_COST,
+  MODEL_FAMILIES, TAG_SCOPE, TURN_ID_HEX, VAL_W, VAL2_W,
 } from "./spec.ts";
 import {
-  durFmt, grade, humanize, limitPct, magDim, moneyFig, padVal,
-  visWidth,
+  S_DIFF, cacheColor, decAlign, durFmt, grade, humanize, limitPct, magDim,
+  moneyFig, padVal, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { paint, span } from "./spans.ts";
+import { ink, paint, span, spans } from "./spans.ts";
 import type { Span } from "./spans.ts";
-import { pyFormatF, pyIntStr, pyRstrip, pySlice } from "./py.ts";
-import { renderCost, renderTokens } from "./claude_render.ts";
 import {
-  aCtxW, renderAgentCache, renderAgentCtx, renderAgentDiff, renderAgentEta,
-  renderAgentLimit, renderAgentModel, renderAgentRate, renderAgentSplit,
-  renderInbox,
-} from "./claude_subagent_render.ts";
+  pyAsciiDigits, pyFormatF, pyIntStr, pyRstrip, pySlice,
+} from "./py.ts";
+import { pyFloat } from "./sources.ts";
+import { etaFinish } from "./claude_records.ts";
+import type { Git, Transcript } from "./claude_records.ts";
 import { hidden } from "./grid.ts";
 import type { Piece } from "./grid.ts";
+
+// ════════════════════════════════════════════════════════════════════════════
+// The cells' widths, as grid.ts's width rules name them.
+// ════════════════════════════════════════════════════════════════════════════
+
+export const A_CLOCK_W = 6, A_RATE_W = 7;
+// 🤖 🔧 🚦, each two columns of mark and GAUGE_W of gauge, one space apart.
+export const A_SPLIT_W = 3 * (2 + GAUGE_W) + 2;
+// 🔋 and 🪫 hold the share's point in one column (limit): LIMIT_IP
+// integer columns, the point, limitPct's widest fraction (two at
+// digits=3, three at 4) and ٪, after the two-column mark.  Below 100 the
+// integer part is never wider than two, 💯 standing in from 99.5.
+export const LIMIT_IP = 2;
+export const A_LIMIT_W = 2 + LIMIT_IP + 1 + 2 + 1;
+export const A_LIMIT_WEEK_W = A_LIMIT_W + 1;
+// ⛳ and five for the figure: durFmt's widest is four, and an overrun
+// spends one more on its "+".
+export const A_ETA_FIG_W = 5;
+// 🧠's share of the window at its widest, "100٪".
+export const A_CTX_PCT_W = 4;
+
+// aEtaW, aDiffW and aCtxW are grid.ts's width rules A_ETA_W, A_DIFF_W and
+// A_CTX_W; the rows take them through cellWidth.
+/** ⛳ and its figure: E_ETA measured on this terminal. */
+export function aEtaW(st: Settings): number {
+  return visWidth(E_ETA, st.widths) + A_ETA_FIG_W;
+}
+
+/** 💾 and the eleven columns diffFig lays after it. */
+export function aDiffW(st: Settings): number {
+  return visWidth(E_DIFF + " ", st.widths) + 11;
+}
+
+/** 🧠, the size, a blank and the share: "🧠 124k 12٪". */
+export function aCtxW(st: Settings): number {
+  return visWidth(st.sCtx, st.widths) + 4 + 1 + A_CTX_PCT_W;
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // The cells, one per GRID_CELLS key.  Each returns [] where it has nothing
 // to draw, and the grid leaves the column blank.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** model: the family and version, then the effort's glyph. */
-function model(st: Settings, modelId: string, effort: string): Span[] {
-  return renderAgentModel(st, modelId, effort);
+// Up to two short runs of digits right after the family, and nothing that
+// runs on into more digits, which is the date stamp.  \p{Nd} is any
+// Unicode decimal digit.
+const MODEL_VERSION =
+  /^[-_. ]*(\p{Nd}{1,3})(?:[-_.](\p{Nd}{1,3}))?(?!\p{Nd})/u;
+
+/** A display name from a model id or alias: family from the id, version
+ * from the dotted digits after it, never the 8-digit date. */
+export function modelLabel(modelId: string): string {
+  const low = (modelId || "").toLowerCase();
+  const fam = (MODEL_FAMILIES as readonly string[])
+    .find((f) => low.includes(f.toLowerCase())) ?? "";
+  if (!fam) return pySlice(modelId, null, VAL_W);
+  const tail = low.slice(low.indexOf(fam.toLowerCase()) + fam.length);
+  const m = MODEL_VERSION.exec(tail);
+  if (!m) return fam;
+  return fam + " " + [m[1], m[2]].filter((g) => g).join(".");
 }
 
-/** rate, 🛫: tokens a second, or nothing with no reading. */
-function rate(st: Settings, perSecond: number | null): Span[] {
-  return renderAgentRate(st, perSecond);
+/** Two terminal cells: family initial and superscript major version. */
+export function modelSpec(modelId: string): string {
+  const label = modelLabel(modelId);
+  if (!label) return "";
+  const sp = label.indexOf(" ");
+  const fam = sp < 0 ? label : label.slice(0, sp);
+  const ver = sp < 0 ? "" : label.slice(sp + 1);
+  if (ver) {
+    const d = pySlice(ver, null, 1);
+    return pySlice(fam, null, 1) + (/^\p{Nd}$/u.test(d)
+      ? Array.from(E_SUP_DIGITS)[Number(pyAsciiDigits(d))] : d);
+  }
+  return pySlice(fam, null, 2);
+}
+
+const EFFORT_GLYPHS: Readonly<Record<string, string>> = {
+  low: E_EFF_LOW, medium: E_EFF_MED, high: E_EFF_HIGH, xhigh: E_EFF_XHIGH,
+  max: E_EFF_MAX,
+};
+
+/** The level's glyph on the ladder; the middle of it for one not on it. */
+export function effortGlyph(effort: string): string {
+  return Object.hasOwn(EFFORT_GLYPHS, effort) ? EFFORT_GLYPHS[effort]
+    : E_EFF_MED;
+}
+
+/** model: the family and version, then the effort's glyph. */
+function model(st: Settings, modelId: string, effort: string): Span[] {
+  if (!modelId) return [];
+  return spans([E_MOD, span(padVal(st, 2, modelSpec(modelId)), "F_PUR"),
+    effort && effort !== "null" ? effortGlyph(effort) : ""]);
+}
+
+/** rate, 🛫: tokens a second, without a "/s", as humanize writes a count:
+ * three columns of figure, its decimal among them, then the unit, "1.2k"
+ * and "632 "; nothing with no reading.  `mark` stands in for 🛫. */
+function rate(st: Settings, perSecond: number | null,
+  mark: string = E_RATE): Span[] {
+  if (perSecond === null) return [];
+  const fig = humanize(st, perSecond);
+  return [span(mark + " "),
+    paint(grade("count", "F_RATE", fig, st.colourMode), padVal(st, 4, fig))];
+}
+
+/** What the main thread is doing, as the Doing mark and the epoch it
+ * started; ["", 0] on an offline read. */
+export function mainDoing(tr: Transcript): [string, number] {
+  if (tr.tool_at) return [E_TOOL, tr.tool_at];
+  if (tr.wait_at) return [E_WAIT, tr.wait_at];
+  if (tr.idle_at) return [E_WAIT, tr.idle_at];
+  if (tr.last_seen) return [E_WORK, tr.last_seen];
+  return ["", 0.0];
+}
+
+/** The cost cell from a cost as text, "💰115 ", under `mark`, the
+ * settings' S_COST unless one is given; nothing for no cost, or one that
+ * does not read as a finite number. */
+export function costText(st: Settings, costUsd: string,
+  mark: string = st.sCost): Span[] {
+  if (!costUsd || costUsd === "null") return [];
+  const c = pyFloat(costUsd);
+  // json reads NaN and 1e400 as floats; both are dropped.
+  if (c === null || !Number.isFinite(c)) return [];
+  return [span(mark),
+    span(padVal(st, 4, moneyFig(st, c)), "F_YEL", magDim(c, MAG_COST))];
 }
 
 /** cost, 💰: dollars.  An estimate, `est`, is marked "~" before the
- * figure, as renderCtx marks an estimated context; the mark takes the
- * column the profile pads 💰 with where there is one, and where the figure
- * would still not fit, its decimal goes. */
+ * figure, as ctx marks an estimated context; the mark takes the column the
+ * profile pads 💰 with where there is one, and where the figure would
+ * still not fit, its decimal goes. */
 function cost(st: Settings, usd: number | null, est = false): Span[] {
   if (usd === null) return [];
-  if (!est) return renderCost(st, pyFormatF(usd, 4));
+  if (!est) return costText(st, pyFormatF(usd, 4));
   const room = visWidth(st.sCost, st.widths) + 4 - visWidth(E_COST, st.widths);
   // moneyFig's unit column kept where it fits, so the figure stands where
   // an exact one would.
@@ -82,25 +199,33 @@ function cost(st: Settings, usd: number | null, est = false): Span[] {
 function spend(st: Settings, mark: string | null, usd: number | null):
   Span[] {
   if (mark === null || usd === null) return [];
-  return renderCost(st, pyFormatF(usd, 4), mark);
+  return costText(st, pyFormatF(usd, 4), mark);
 }
 
-/** ctx, 🧠: the context's size and its share of the window.  An estimate
- * is marked "~" before the size, in the blank between the two figures. */
-function ctx(st: Settings, tokens: number, window: number,
+/** ctx, 🧠: the context's size and its share of the window, the share
+ * blank where there is no window; its column stays either way.  An
+ * estimate is marked "~" before the size, in the blank between the two
+ * figures. */
+function ctx(st: Settings, tokens: number, window = 0,
   est = false): Span[] {
-  const out = renderAgentCtx(st, tokens, window);
-  if (!est || !out.length) return out;
-  // [🧠, size, " ", share]: the size and its blank become one field.
-  const [mark, size, , share] = out;
-  return [mark, { ...size,
-    text: padVal(st, 5, "~" + pyRstrip(size.text.trimStart())) }, share];
+  if (tokens <= 0) return [];
+  const pct = window > 0 ? pyIntStr(tokens * 100 / window) + E_PCT : "";
+  const size = humanize(st, tokens);
+  const style = grade("count", "F_PNK", size, st.colourMode);
+  const fig = paint(style, padVal(st, 4, size));
+  const share = paint(style, padVal(st, A_CTX_PCT_W, pct));
+  // An estimate's size and its blank become one field.
+  if (est) {
+    return [span(st.sCtx), { ...fig,
+      text: padVal(st, 5, "~" + pyRstrip(fig.text.trimStart())) }, share];
+  }
+  return [span(st.sCtx), fig, span(" "), share];
 }
 
 /** ctx on a turn's row, 🧠 +34k +3٪: how much the context grew, in
  * tokens and in points of the window, signed, the sign the tokens'.  The
- * two fields keep the panel cell's widths, and where a five-character
- * figure would push the cell wider, the blank between them goes. */
+ * two fields keep ctx's widths, and where a five-character figure would
+ * push the cell wider, the blank between them goes. */
 function ctxGrowth(st: Settings, tokens: number,
   points: number | null): Span[] {
   const sign = tokens < 0 ? "-" : "+";
@@ -116,27 +241,41 @@ function ctxGrowth(st: Settings, tokens: number,
 }
 
 /** ctxGrowth from a turn's `dctx` over the window: nothing where the turn
- * has no reading, as the receipt's 🧠 draws nothing, and no points where
- * there is no window, as the panel's share. */
+ * has no reading, and no points where there is no window, as ctx draws
+ * no share. */
 function growth(st: Settings, dctx: number | null, window: number): Span[] {
   if (dctx === null) return [];
   return ctxGrowth(st, dctx,
     window > 0 ? Math.trunc(100 * dctx / window) : null);
 }
 
-/** tok, 🧩: ▴ the weighted input and ▾ the output. */
-function tok(st: Settings, up: number | null, down: number): Span[] {
-  return renderTokens(st, up, down);
+/** tok, 🧩: ▴ the weighted input and ▾ the output, each dimmed on its own
+ * figure; nothing where `up` is missing.  `downW` is the ▾ field's
+ * width. */
+function tok(st: Settings, up: unknown, down: unknown,
+  downW: number = VAL2_W): Span[] {
+  if (up === null || up === undefined) return [];
+  const u = humanize(st, up as number), dn = humanize(st, down as number);
+  return [span(st.sTok),
+    paint(grade("count", "F_TUP", u, st.colourMode),
+      padVal(st, VAL_W, E_UP + padVal(st, 4, u), true)),
+    paint(grade("count", "F_TDN", dn, st.colourMode),
+      padVal(st, downW, E_DOWN + padVal(st, 4, dn)))];
 }
 
 /** cache, 🎯: the share of the input read from the cache; nothing for a
  * negative rate, which is no input to rate. */
-function cache(st: Settings, pct: number | null): Span[] {
-  return renderAgentCache(st, pct);
+function cache(st: Settings, pct: unknown): Span[] {
+  if (pct === null || pct === undefined) return [];
+  const p = pct as number;
+  if (p < 0) return [];
+  // The bare 🎯: the cell draws no paint pad after it.
+  return [span(E_CACHE),
+    paint(cacheColor(p), (p >= 100 ? E_HUNDRED : padVal(st, 2, pyIntStr(p))) +
+      E_PCT)];
 }
 
-/** clock, ⌛: a duration in seconds, the panel's ⌛ drawn from it rather
- * than from a start. */
+/** clock, ⌛: a duration in seconds. */
 function clock(st: Settings, secs: number | null): Span[] {
   if (secs === null) return [];
   const run = Math.max(0.0, secs);
@@ -145,38 +284,202 @@ function clock(st: Settings, secs: number | null): Span[] {
     paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
 }
 
-/** eta, ⛳: the time left on `reported`, an (epoch, seconds) report or []
- * for none, at `now`, blank for none; late in amber, or red when
- * `signedOff`.  `startS` is when the work began, or null. */
+/** etaReading's three answers: null where there is no transcript to
+ * report in, [] for no live estimate, and otherwise the share done and
+ * the seconds left. */
+export type EtaReading = null | readonly [] | readonly [number, number];
+
+/** (share done, seconds left) off the latest ETA and the elapsed time;
+ * `eta` is (epoch, seconds left), or null for no transcript.  `startMs`
+ * is whatever the task record held, read as pyFloat reads it: what it
+ * cannot read is no start. */
+export function etaReading(eta: readonly number[] | null | undefined,
+  startMs: unknown, now: number, status = "running",
+  end: number | null = null): EtaReading {
+  if (eta === null || eta === undefined) return null;
+  if (!eta.length) return [];
+  let t = now;
+  if (end !== null && (status === "killed" || status === "failed")) {
+    t = Math.min(t, end);
+  }
+  const ms = pyFloat(startMs);
+  let t0 = ms === null ? null : ms / 1000.0;
+  const [at, said] = eta;
+  // A report older than the start is a resumed agent: read from the
+  // report instead.
+  if (t0 !== null) t0 = Math.min(t0, at);
+  const total = said + (t0 !== null ? at - t0 : 0.0);
+  const gone = t - (t0 !== null ? t0 : at);
+  const share = total > 0 ? gone / total : 1.0;
+  return [Math.min(1.0, Math.max(0.0, share)), total - gone];
+}
+
+// An agent whose file has been silent this long no longer holds the main
+// thread's ⛳ open.
+export const ETA_LIVE_S = 1800.0;
+
+/** The largest of xs, the first of equals, and a NaN only where it comes
+ * first.  xs not empty. */
+function firstMax(xs: readonly number[]): number {
+  let m = xs[0];
+  for (const x of xs.slice(1)) if (x > m) m = x;
+  return m;
+}
+
+/** `own` ETA, pushed out to the latest of the descendants' `finishes`.
+ * An `own` of null, an agent with no transcript, comes back as it went
+ * in. */
+export function inheritEta<E extends readonly number[] | null>(own: E,
+  finishes: readonly (number | null)[],
+  startS: number | null): E | readonly number[] {
+  const ends = finishes.filter((f): f is number => f !== null);
+  const mine = own && own.length ? etaFinish(own) : null;
+  if (mine !== null) ends.push(mine);
+  if (!ends.length || (mine !== null && ends.length === 1)) return own;
+  const at = startS ? startS : (own && own.length ? own[0] : firstMax(ends));
+  return [at, firstMax(ends) - at];
+}
+
+/** eta, ⛳: the time left on `reported`, an (epoch, seconds left) report,
+ * [] for none yet or null for no transcript, at `now` (the clock where it
+ * is null); see etaReading for `startMs`, when the work began, `status`
+ * and `end`.  Late, an amber "+", or a red one when `signedOff`; blank
+ * with no live estimate. */
 function eta(st: Settings, reported: readonly number[] | null,
-  startS: number | null, now: number, signedOff = false): Span[] {
-  return renderAgentEta(st, reported as [number, number] | [] | null,
-    startS === null ? null : startS * 1000, now, "running", null, signedOff);
+  startMs: unknown, now: number | null, status = "running",
+  end: number | null = null, signedOff = false): Span[] {
+  const got = etaReading(reported, startMs,
+    now === null ? Date.now() / 1000 : now, status, end);
+  if (got === null || !got.length) return [];
+  const left = got[1];
+  if (left < 0) {
+    return [span(E_ETA), span(padVal(st, A_ETA_FIG_W,
+      "+" + durFmt(st, -left)), signedOff ? "F_OVER" : "F_AMB")];
+  }
+  const fig = durFmt(st, left);
+  return [span(E_ETA),
+    paint(grade("duration", "F_ETA", fig, st.colourMode),
+      padVal(st, A_ETA_FIG_W, fig))];
 }
 
-/** split, 🤖 🔧 🚦: gauges of model, tool and the rest of `elapsed`. */
+/** `parts` shared out as whole dots that always sum to `dots`: largest
+ * remainder, ties to the earlier part, and a part of 1% or more that
+ * rounds to nothing raised to one dot taken from the largest. */
+export function gaugeDots(parts: readonly number[],
+  dots = 4 * GAUGE_W): number[] {
+  const total = parts.reduce((a, b) => a + b, 0);
+  if (total <= 0) return parts.map(() => 0);
+  const exact = parts.map((p) => dots * p / total);
+  const n = exact.map((x) => Math.trunc(x));
+  const short = dots - n.reduce((a, b) => a + b, 0);
+  const order = parts.map((_, i) => i)
+    .sort((a, b) => (n[a] - exact[a]) - (n[b] - exact[b]));
+  for (const i of order.slice(0, Math.max(0, short))) n[i] += 1;
+  parts.forEach((p, i) => {
+    if (n[i] === 0 && p >= 0.01 * total) {
+      n[n.indexOf(firstMax(n))] -= 1;
+      n[i] = 1;
+    }
+  });
+  return n;
+}
+
+/** `mark` and `n` dots of E_GAUGE, shaded by the unit its seconds are
+ * written in, as every duration on the row is. */
+function gauge(st: Settings, mark: string, secs: number, n: number): Span[] {
+  const steps = Array.from(E_GAUGE);
+  let cells = "";
+  for (let k = 0; k < GAUGE_W; k++) {
+    cells += steps[Math.max(0, Math.min(4, n - 4 * k))];
+  }
+  return [span(mark),
+    paint(grade("duration", "F_PRW", durFmt(st, secs), st.colourMode), cells)];
+}
+
+/** split, 🤖 🔧 🚦: each a gauge of its share of `elapsed`, the model's
+ * and the tools' seconds and the rest; blank with no split to read. */
 function split(st: Settings, elapsed: number | null, modelS: number | null,
-  toolS: number | null): Span[] {
-  return renderAgentSplit(st, elapsed, modelS, toolS);
+  toolS: number | null = 0.0): Span[] {
+  if (modelS === null || modelS === undefined || elapsed === null) return [];
+  const m = Math.max(0.0, modelS), t = Math.max(0.0, toolS || 0.0);
+  const parts = [m, t, Math.max(0.0, elapsed - m - t)];
+  const dots = gaugeDots(parts);
+  const out: Span[] = [];
+  [E_WORK, E_TOOL, E_WAIT].forEach((mark, i) => {
+    if (out.length) out.push(span(" "));
+    out.push(...gauge(st, mark, parts[i], dots[i]));
+  });
+  return out;
 }
 
-/** five, 🔋: a share of the five-hour window, drawn only while the plan
- * has a reading (`pctS`, the window's own percentage as given), "?" where
- * the share is not known. */
-function five(st: Settings, pctS: string, share: number | null): Span[] {
-  return renderAgentLimit(st, E_SESS, pctS, share, "F_LIM_SESS");
+/** `emoji` and a share of a plan window, drawn only while the plan has a
+ * reading (`pctS`, the window's own percentage as given) and the row is
+ * `billed`, "?" where the share is not known; `colour` names the row's
+ * F_* constant, dimmed with `dim`. */
+function limit(st: Settings, emoji: string, pctS: string,
+  share: number | null, colour: string, billed = true, dim = false,
+  digits = 3): Span[] {
+  if (!pctS || pyFloat(pctS) === null || !billed) return [];
+  const style = ink(colour, dim);
+  const fp = digits - 1;
+  // The point holds one column on every row (see decAlign); 💯 takes the
+  // integer columns and its ٪ the point's, and "?" the units column.
+  let fig: Span;
+  if (share === null || share === undefined) {
+    fig = span(padVal(st, LIMIT_IP, "?") + " ".repeat(fp + 2), "F_CRM", true);
+  } else if (share >= 99.5) {
+    fig = paint(style, padVal(st, LIMIT_IP, E_HUNDRED)
+      + padVal(st, fp + 2, E_PCT, true));
+  } else {
+    fig = paint(style,
+      decAlign(st, limitPct(st, share, digits), LIMIT_IP, fp, E_PCT));
+  }
+  return [span(emoji), fig];
+}
+
+/** five, 🔋: a share of the five-hour window; see limit. */
+function five(st: Settings, pctS: string, share: number | null,
+  billed = true, dim = false): Span[] {
+  return limit(st, E_SESS, pctS, share, "F_LIM_SESS", billed, dim);
 }
 
 /** week, 🪫: five's for the weekly window, a digit wider. */
-function week(st: Settings, pctS: string, share: number | null): Span[] {
-  return renderAgentLimit(st, E_WEEK, pctS, share, "F_LIM_WEEK", true,
-    false, 4);
+function week(st: Settings, pctS: string, share: number | null,
+  billed = true, dim = false): Span[] {
+  return limit(st, E_WEEK, pctS, share, "F_LIM_WEEK", billed, dim, 4);
+}
+
+/** 💾 and +adds/-removes, each half dimmed on its own count; nothing
+ * where `added` is "".  A figure that does not read as a finite number is
+ * "?". */
+export function diffFig(st: Settings, added: string,
+  removed: string): Span[] {
+  if (!added) return [];
+
+  // int(float(v)): an infinity or a NaN is "?".
+  const n = (v: string): number | null => {
+    const f = pyFloat(v);
+    return f === null || !Number.isFinite(f) ? null : Math.trunc(f);
+  };
+
+  const half = (sign: string, v: number | null, col: string): Span => {
+    // humanize's unit column kept, so 💾 stacks digit under digit down the
+    // grid, " 30k" over "  6 ".
+    const fig = v === null ? "? " : humanize(st, v);
+    return paint(grade("count", col, fig, st.colourMode),
+      sign + padVal(st, 4, fig));
+  };
+
+  return [span(S_DIFF), half("+", n(added), "F_GRN"), span(" "),
+    half("-", n(removed), "F_RED")];
 }
 
 /** diff, 💾: lines added and removed, blank when neither: none changed,
  * or none counted. */
-function diff(st: Settings, added: number, removed: number): Span[] {
-  return renderAgentDiff(st, { lines_added: added, lines_removed: removed });
+function diff(st: Settings, added: unknown, removed: unknown): Span[] {
+  const a = pyIntStr(added as number), r = pyIntStr(removed as number);
+  if (a === "0" && r === "0") return [];
+  return diffFig(st, a, r);
 }
 
 /** The cells by GRID_CELLS key, with ctx's two other readings. */
@@ -194,6 +497,40 @@ export function cacheRate(read: number, whole: number): number {
 // ════════════════════════════════════════════════════════════════════════════
 // Label pieces.
 // ════════════════════════════════════════════════════════════════════════════
+
+/** Each agent type's mark at the head of its row's label. */
+export const KIND_MARK: ReadonlyMap<string, string> = new Map([
+  ["general-purpose", E_KIND_GENERAL], ["claude", E_KIND_CLAUDE],
+  ["Explore", E_KIND_EXPLORE], ["Plan", E_KIND_PLAN],
+  ["claude-code-guide", E_KIND_GUIDE], ["statusline-setup", E_KIND_SETUP],
+  ["fork", E_KIND_FORK], ["local_agent", E_KIND_OTHER],
+  ["local_bash", E_KIND_SHELL], ["local_workflow", E_KIND_WORKFLOW],
+  ["remote_agent", E_KIND_REMOTE], ["in_process_teammate", E_KIND_TEAMMATE]]);
+
+/** The mark of an agent's type, or of its task's kind, else 👥. */
+export function renderKind(agentType: string, taskKind: string): string {
+  return KIND_MARK.get(agentType || taskKind) ?? E_KIND_OTHER;
+}
+
+/** 👶🏻 and how many agents hang under a row. */
+export function renderKids(n: number): Span[] {
+  return !n ? [] : [span(E_KIDS), span(pyIntStr(n), "F_CRM")];
+}
+
+/** 🤏 and how often an agent's window has been compacted. */
+export function renderCompactions(n: number): Span[] {
+  return !n ? [] : [span(E_ROW_COMPACT), span(pyIntStr(n), "F_PNK")];
+}
+
+/** 📨 and how many messages wait for a thread's next tool round. */
+export function renderInbox(n: number): Span[] {
+  return !n ? [] : [span(E_INBOX), span(pyIntStr(n), "F_CYN")];
+}
+
+/** 💻 or 📡 and how many shells or Monitors a thread has running. */
+export function renderBackground(mark: string, n: number): Span[] {
+  return !n ? [] : [span(mark), span(pyIntStr(n), "F_CRM")];
+}
 
 /** A part of a row's label, with the path --hide names it by; see Piece. */
 export function piece(path: string, text: string, colour: string | null = null,
@@ -336,6 +673,18 @@ export function mainLabel(inbox = 0): Piece[] {
     piece("name.label", E_THREAD)];
 }
 
+/** The project name: the main repository root's basename inside a repo,
+ * and "[none]" outside one. */
+export function projectName(git: Git, projectDir: string): string {
+  if (!git.in_git) return "[none]";
+  const base = (p: string): string => {
+    const t = pyRstrip(p, "/");
+    return t.slice(t.lastIndexOf("/") + 1);
+  };
+  const n = base(git.main_root || git.toplevel) || base(projectDir);
+  return n || "?";
+}
+
 /** Where the session works.  Each part is "" where there is none. */
 export type Workspace = {
   readonly project: string;
@@ -377,8 +726,7 @@ export function sessionNamePieces(name: string, colour: string): Piece[] {
 }
 
 /** Where the session works, under the path `workspace`: 📦 the project,
- * 🌿 the branch (🍂 and ✱ on a dirty tree, as today's line 3 draws one),
- * 📁 the directory, 🔀 the PR and 🎨 the output style, the last three
+ * 🌿 the branch (🍂 and ✱ on a dirty tree), 📁 the directory, 🔀 the PR and 🎨 the output style, the last three
  * leaving first, 🎨 before 🔀 before 📁; none for no workspace. */
 export function workspacePieces(ws: Workspace | null): Piece[] {
   const out: Piece[] = [];

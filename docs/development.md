@@ -32,9 +32,9 @@ tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
 | `claude_records.ts` | Claude Code's JSONL: payload fields, request deduplication, per-model prices, turns, tool spans, agent files. No terminal output. |
 | `claude_calib.ts` | The plan-window shares and their calibration from the window scan. |
 | `claude.ts`, `figures.ts` | A readout's figures, worked out from what was read, as a figures document. |
-| `band.ts`, `band_tree.ts`, `receipt.ts`, `cells.ts` | The band's rows and tree, the receipt and the tag lines, built from a figures document out of the cells. |
+| `band.ts`, `band_tree.ts`, `agent_row.ts`, `receipt.ts`, `cells.ts` | The band's rows and tree, each agent's row, the receipt and the tag lines, built from a figures document out of the cells, which `cells.ts` draws. |
 | `grid.ts` | The grid every row is laid out on: the columns kept, hidden and closed up, and each label's room. |
-| `claude_render.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts` | The status line, the old receipt and the subagent rows, pinned by the goldens and the panel cases. |
+| `claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts`, `claude_subagent_render.ts` | The status line, the old receipt and the agent panel, which no entry draws, pinned by the goldens and the panel cases. |
 | `main_fold.ts`, `agent_fold.ts`, `inbox_fold.ts` | The transcript's, each agent's and the inbox's folds, read on from where the last read stopped, and their saves. |
 | `sources.ts`, `claude_sources.ts`, `credits.ts` | The usage source: the version-1 reading, the payload's own windows, the scoped cache, the custom command, the tracker, and the credits' conditions. See [Usage sources](usage-sources.md). |
 | `config.ts` | The configuration files: the walk, the strict defaults file, the merge and its warnings. See [Options](options.md#configuration-files). |
@@ -76,7 +76,7 @@ These hold across the mod.
 | change | where | then |
 |---|---|---|
 | A cell on the mod's rows or its receipt | `mod/src/cells.ts`, and the row builders in `mod/src/band.ts` and `mod/src/receipt.ts` | Regenerate the row cases (`usage-dev row-cases`) and read the diff; `usage-dev figures` draws a figures document to look at; update [Layout](layout.md). |
-| A subagent-row cell | `mod/src/claude_subagent_render.ts` | Regenerate the row cases and read the diff. |
+| A subagent row's state, label or cells | `mod/src/agent_row.ts`, and the cell itself in `mod/src/cells.ts` | Regenerate the row cases and read the diff. |
 | A glyph, colour, width or cut | Its constant in `mod/src/spec.ts`; a colour's true value in its `TRUE_COLOURS` | The node suite's `spec.test.ts` holds the colours to the palette. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
 | An option | Its record in `mod/src/options_spec.ts`, its field in `Options` there and its default in `mod/defaults/config.jsonc`, then `usage-dev option-docs`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
 | Claude accounting (prices, turns, agents) | `mod/src/claude_records.ts`; window shares and calibration in `mod/src/claude_calib.ts` | The node suite; update [Accounting](accounting.md). |

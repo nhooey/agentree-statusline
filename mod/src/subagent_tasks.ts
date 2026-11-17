@@ -1,7 +1,7 @@
 // The subagents' facts the band's tree draws, from what the mod reads: each
 // agent's entry in `$.agent.list()`, its `.meta.json` sidecar and the fold
 // of its transcript (claude_records.ts's AgentFold), worked out as the
-// renderer's prepared tasks (claude_subagent_render.ts's Prepared):
+// tree's prepared tasks (agent_row.ts's Prepared):
 // (task, usage, meta, shares), each task built from the agent list and the
 // fold.
 //
@@ -15,7 +15,7 @@ import { _naiveTimestamp, _windowStarts } from "./claude_calib.ts";
 import type { Calib, Snapshot } from "./claude_calib.ts";
 import { isDict, pyGet, pyTruthy } from "./py.ts";
 import type { Dict } from "./py.ts";
-import type { Prepared } from "./claude_subagent_render.ts";
+import type { Prepared } from "./agent_row.ts";
 
 /** sum() of floats, left to right. */
 function addUp(values: Iterable<number>): number {

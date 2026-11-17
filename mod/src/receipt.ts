@@ -25,8 +25,9 @@ import type { Span } from "./spans.ts";
 import type { Turn } from "./claude_records.ts";
 import { turnShares } from "./claude_calib.ts";
 import type { Accounting } from "./claude_calib.ts";
-import { decodeLimits, decodeTranscript } from "./figures.ts";
-import { _readAccounting, decodeTurn } from "./claude_cost.ts";
+import {
+  decodeLimits, decodeTranscript, decodeTurn, readAccounting,
+} from "./figures.ts";
 import {
   CELLS, cacheRate, hms, sessionLabel, turnLabel, turnLine, ymd,
 } from "./cells.ts";
@@ -45,9 +46,8 @@ import type { Dict } from "./py.ts";
 
 type Cells = { [key: string]: Span[] };
 
-/** The turn the receipt bills, as renderCostLine picks it: the last with
- * calls that is neither a compaction nor an agent's, else the last; -1
- * with none. */
+/** The turn the receipt bills: the last with calls that is neither a
+ * compaction nor an agent's, else the last; -1 with none. */
 export function receiptTurn(turns: readonly Turn[]): number {
   for (let i = turns.length - 1; i >= 0; i--) {
     const t = turns[i];
@@ -138,7 +138,7 @@ export function inTurns<A extends Accounting | null>(turns: readonly Turn[],
 export function billedFig(fig: Dict): Dict {
   const raw = fig.turns as Dict[];
   const acc = fig.accounting as Dict;
-  const accTurns = (acc.turns as Dict[]).map(_readAccounting);
+  const accTurns = (acc.turns as Dict[]).map(readAccounting);
   const [turns, accs] = inTurns(raw.map(decodeTurn), accTurns);
   if (turns.length === raw.length) return fig;
   return { ...fig, turns, accounting: { ...acc, turns: accs } };
@@ -289,8 +289,8 @@ export function receiptRows(st: Settings, all: Dict):
   const win = Math.trunc(fig.context_window as number);
   return {
     turn: i < 0 ? null : turnRow(st, turns[i],
-      _readAccounting((acc.turns as Dict[])[i]), win, now, sp, wp),
-    session: sessionRow(st, turns, _readAccounting(acc.session as Dict),
+      readAccounting((acc.turns as Dict[])[i]), win, now, sp, wp),
+    session: sessionRow(st, turns, readAccounting(acc.session as Dict),
       now, sp, wp),
     prompt: i < 0 ? "" : turns[i].text,
   };

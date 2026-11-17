@@ -28,9 +28,8 @@ import type { Calib, Snapshot } from "./claude_calib.ts";
 import type { PreparedClaudeReading } from "./claude_sources.ts";
 import {
   encodeCacheShares, encodeGit, encodeLimits, encodePayload,
-  encodeTranscript, FIGURES_SCHEMA, stampEpoch,
+  encodeTranscript, encodeTurn, FIGURES_SCHEMA, stampEpoch,
 } from "./figures.ts";
-import { encodeTurn } from "./claude_cost.ts";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Git.

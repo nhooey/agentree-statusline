@@ -11,7 +11,7 @@ The mod, `usage-band` in [`mod/`](../mod/README.md), draws inside Claude
 Code's own screen: the band's tree of threads above the prompt, the 💳 row
 under the footer line, the receipt and the turn's tags. The subagent rows,
 one per subagent, hang in the band's tree, drawn by
-`claude_subagent_render`. Every row of all of them has the same columns in
+`agent_row.ts`. Every row of all of them has the same columns in
 the same order, so a figure stands on the same screen column wherever it
 is drawn. Claude Code's own agent panel draws its rows itself. Why it is
 laid out this way is in

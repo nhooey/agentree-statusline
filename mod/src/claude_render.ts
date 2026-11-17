@@ -1,4 +1,7 @@
-// Pure Claude status-line renderers.
+// The three-row status line (renderStatus), pinned by the status goldens
+// and tests/fixtures/render/.  No entry draws it: the band draws the
+// session's figures (band.ts).  The cells it shares with the band are
+// cells.ts's.
 //
 // All data arrives as arguments.  The settings come first as `st`
 // (formatting.ts's Settings: the profile's widths, the mark spacing and
@@ -7,20 +10,18 @@
 // `home`.  Each cell returns spans, [] for nothing to draw, and only
 // drawnLine joins them into escapes.
 import {
-  E_ACCT, E_COST, E_DIR, E_DIRTY, E_DOWN, E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX,
-  E_EFF_MED, E_EFF_XHIGH, E_ETA, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_INBOX,
-  E_MODE_MONITOR, E_MODE_SHELL, E_PCT, E_PROJ, E_ROW_COMPACT, E_SESSION,
-  E_SUP_DIGITS, E_TOOL, E_TURN, E_UP, E_WAIT, E_WORK, LEFT_GAP, LIM_ACCT_W,
+  E_ACCT, E_COST, E_DIR, E_DIRTY, E_ETA, E_GIT_BAD, E_GIT_OK, E_HUNDRED,
+  E_INBOX, E_MODE_MONITOR, E_MODE_SHELL, E_PCT, E_PROJ, E_ROW_COMPACT,
+  E_SESSION, E_TOOL, E_TURN, E_WAIT, E_WORK, LEFT_GAP, LIM_ACCT_W,
   LIM_FIG_W, LMIN_BRANCH, LMIN_PATH, LMIN_PROJ, LWT_BRANCH, LWT_PATH,
-  LWT_PROJ, MAG_COST, MAX_ROW,
-  MIN_GAP, MODEL_FAMILIES, QUIET_S, QUIET_WARN_S, RIGHT_MARGIN, RST_W,
-  SHARE_FIG_W, VAL_W, VAL2_W, W_STY,
+  LWT_PROJ, MAX_ROW, MIN_GAP, QUIET_S, QUIET_WARN_S, RIGHT_MARGIN, RST_W,
+  SHARE_FIG_W, VAL_W, W_STY,
 } from "./spec.ts";
 import {
-  EOL_CLEAR, LINE_CLEAR, S_BOT, S_DATE, S_DIFF, S_HUMAN, S_IDLE, S_PR,
+  EOL_CLEAR, LINE_CLEAR, S_BOT, S_DATE, S_HUMAN, S_IDLE, S_PR,
   S_READ, S_RESET, S_SESS, S_STY, S_TIME, S_WEEK, S_WRITE, cacheColor,
   cacheDims, durFmt, fitCols, fitHead, fitPath, gridRow,
-  humanize, limitPct, magDim, moneyFig, padVal, pct, pct2, rateFig,
+  humanize, limitPct, padVal, pct, pct2, rateFig,
   grade, rulesOn, seg, shareDims, shortDur, visWidth,
 } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
@@ -32,22 +33,13 @@ import { NO_CACHE_SHARES, etaFinish } from "./claude_records.ts";
 import type {
   AgentEta, CacheShares, Git, Limits, Payload, Transcript,
 } from "./claude_records.ts";
-import {
-  pyAsciiDigits, pyIntStr, pyLen, pyRstrip, pySlice,
-} from "./py.ts";
+import { pyIntStr, pyLen, pySlice } from "./py.ts";
 import { pyFloat } from "./sources.ts";
-
-/** The project name: the main repository root's basename inside a repo,
- * and "[none]" outside one. */
-export function projectName(git: Git, projectDir: string): string {
-  if (!git.in_git) return "[none]";
-  const base = (p: string): string => {
-    const t = pyRstrip(p, "/");
-    return t.slice(t.lastIndexOf("/") + 1);
-  };
-  const n = base(git.main_root || git.toplevel) || base(projectDir);
-  return n || "?";
-}
+import {
+  CELLS, ETA_LIVE_S, costText, diffFig, effortGlyph, etaReading, inheritEta,
+  mainDoing, modelSpec, projectName,
+} from "./cells.ts";
+import type { EtaReading } from "./cells.ts";
 
 // ════════════════════════════════════════════════════════════════════════════
 // Status-line segment renderers.
@@ -56,30 +48,6 @@ export function projectName(git: Git, projectDir: string): string {
 // below.  float(s), where a payload string is parsed, is pyFloat: null
 // where float() raises.
 // ════════════════════════════════════════════════════════════════════════════
-
-/** The ▴/▾ billable-equivalent token totals, each half dimmed on its own
- * figure.  `downW` is the ▾ field's width.  The panel hands over its
- * usage's fields as it read them, so `up` may be missing as well as None. */
-export function renderTokens(st: Settings, up: unknown, down: unknown,
-  downW: number = VAL2_W): Span[] {
-  if (up === null || up === undefined) return [];
-  const u = humanize(st, up as number), dn = humanize(st, down as number);
-  return [span(st.sTok),
-    paint(grade("count", "F_TUP", u, st.colourMode),
-      padVal(st, VAL_W, E_UP + padVal(st, 4, u), true)),
-    paint(grade("count", "F_TDN", dn, st.colourMode),
-      padVal(st, downW, E_DOWN + padVal(st, 4, dn)))];
-}
-
-/** What the main thread is doing, as the Doing mark and the epoch it
- * started; ["", 0] on an offline read. */
-export function mainDoing(tr: Transcript): [string, number] {
-  if (tr.tool_at) return [E_TOOL, tr.tool_at];
-  if (tr.wait_at) return [E_WAIT, tr.wait_at];
-  if (tr.idle_at) return [E_WAIT, tr.idle_at];
-  if (tr.last_seen) return [E_WORK, tr.last_seen];
-  return ["", 0.0];
-}
 
 /** The Doing figure and 🎯 the cache hit rate in one cell. */
 export function renderRateCache(st: Settings, rate: number | null,
@@ -124,23 +92,11 @@ export function renderCtx(st: Settings, ctxPct: number | null,
     paint(style, padVal(st, pctW, tilde + pyIntStr(ctxPct) + E_PCT))];
 }
 
-/** The session cost, "💰115 ", under `mark`, the settings' S_COST unless
- * one is given. */
-export function renderCost(st: Settings, costUsd: string,
-  mark: string = st.sCost): Span[] {
-  if (!costUsd || costUsd === "null") return [];
-  const c = pyFloat(costUsd);
-  // json reads NaN and 1e400 as floats; both are dropped.
-  if (c === null || !Number.isFinite(c)) return [];
-  return [span(mark),
-    span(padVal(st, 4, moneyFig(st, c)), "F_YEL", magDim(c, MAG_COST))];
-}
-
 /** The model and the cost side by side in one cell, "🤖 O⁵🚶  💰5.1k". */
 export function renderModelCost(st: Settings, model: string, effort: string,
   costUsd: string): Span[] {
   const mod = renderModel(st, model, effort);
-  const cost = renderCost(st, costUsd, E_COST);
+  const cost = costText(st, costUsd, E_COST);
   if (!mod.length && !cost.length) return [];
   return [...seg(st, visWidth(st.sMod, st.widths) + VAL_W, mod),
     ...(cost.length ? padVal(st, st.col2Val2W, cost) : [])];
@@ -213,66 +169,9 @@ export function renderCacheShare(st: Settings, emoji: string,
     fig(E_SESSION, sess, ink(colour, dimSess))]);
 }
 
-/** The +adds/-removes segment, each half dimmed on its own count. */
-export function renderDiff(st: Settings, added: string,
-  removed: string): Span[] {
-  if (!added) return [];
-
-  // int(float(v)): an infinity or a NaN raises, and is "?".
-  const n = (v: string): number | null => {
-    const f = pyFloat(v);
-    return f === null || !Number.isFinite(f) ? null : Math.trunc(f);
-  };
-
-  const half = (sign: string, v: number | null, col: string): Span => {
-    // humanize's unit column kept, so 💾 stacks digit under digit down the
-    // grid, " 30k" over "  6 ".
-    const fig = v === null ? "? " : humanize(st, v);
-    return paint(grade("count", col, fig, st.colourMode),
-      sign + padVal(st, 4, fig));
-  };
-
-  return [span(S_DIFF), half("+", n(added), "F_GRN"), span(" "),
-    half("-", n(removed), "F_RED")];
-}
-
 export function renderPr(st: Settings, pr: string): Span[] {
   if (!pr || pr === "null") return [];
   return [span(S_PR), span(padVal(st, 4, pr), "F_CYN")];
-}
-
-// Up to two short runs of digits right after the family, and nothing that
-// runs on into more digits, which is the date stamp.  Python's \d is any
-// Unicode decimal digit.
-const MODEL_VERSION =
-  /^[-_. ]*(\p{Nd}{1,3})(?:[-_.](\p{Nd}{1,3}))?(?!\p{Nd})/u;
-
-/** A display name from a model id or alias: family from the id, version
- * from the dotted digits after it, never the 8-digit date. */
-export function modelLabel(modelId: string): string {
-  const low = (modelId || "").toLowerCase();
-  const fam = (MODEL_FAMILIES as readonly string[])
-    .find((f) => low.includes(f.toLowerCase())) ?? "";
-  if (!fam) return pySlice(modelId, null, VAL_W);
-  const tail = low.slice(low.indexOf(fam.toLowerCase()) + fam.length);
-  const m = MODEL_VERSION.exec(tail);
-  if (!m) return fam;
-  return fam + " " + [m[1], m[2]].filter((g) => g).join(".");
-}
-
-/** Two terminal cells: family initial and superscript major version. */
-export function modelSpec(modelId: string): string {
-  const label = modelLabel(modelId);
-  if (!label) return "";
-  const sp = label.indexOf(" ");
-  const fam = sp < 0 ? label : label.slice(0, sp);
-  const ver = sp < 0 ? "" : label.slice(sp + 1);
-  if (ver) {
-    const d = pySlice(ver, null, 1);
-    return pySlice(fam, null, 1) + (/^\p{Nd}$/u.test(d)
-      ? Array.from(E_SUP_DIGITS)[Number(pyAsciiDigits(d))] : d);
-  }
-  return pySlice(fam, null, 2);
 }
 
 /** 🧬, the two-character model spec and the effort's glyph, "🧬O⁵🏃". */
@@ -283,17 +182,6 @@ export function renderModel(st: Settings, model: string,
     span(padVal(st, 2, modelSpec(model)), "F_PUR")];
   if (effort && effort !== "null") cell.push(span(effortGlyph(effort)));
   return cell;
-}
-
-const EFFORT_GLYPHS: Readonly<Record<string, string>> = {
-  low: E_EFF_LOW, medium: E_EFF_MED, high: E_EFF_HIGH, xhigh: E_EFF_XHIGH,
-  max: E_EFF_MAX,
-};
-
-/** The level's glyph on the ladder; the middle of it for one not on it. */
-export function effortGlyph(effort: string): string {
-  return Object.hasOwn(EFFORT_GLYPHS, effort) ? EFFORT_GLYPHS[effort]
-    : E_EFF_MED;
 }
 
 /** 📨 the queued messages, then 🤏 the compactions, "📨 2 🤏 1"; each half
@@ -337,62 +225,6 @@ export function renderDate(st: Settings, now: number): Span[] {
   const ymd = `${String(t.getFullYear()).padStart(4, "0")}-` +
     `${two(t.getMonth() + 1)}-${two(t.getDate())}`;
   return [span(S_DATE), span(padVal(st, 11, ymd), "F_CRM")];
-}
-
-/** etaReading's three answers: null where there is no transcript to
- * report in, [] for no live estimate (drawn "?"), and otherwise the share
- * done and the seconds left. */
-export type EtaReading = null | readonly [] | readonly [number, number];
-
-/** (share done, seconds left) off the latest ETA and the elapsed time;
- * `eta` is (epoch, seconds left), or null for no transcript.  `startMs`
- * is whatever the task record held, read as float() reads it: what it
- * cannot read is no start. */
-export function etaReading(eta: readonly number[] | null | undefined,
-  startMs: unknown, now: number, status = "running",
-  end: number | null = null): EtaReading {
-  if (eta === null || eta === undefined) return null;
-  if (!eta.length) return [];
-  let t = now;
-  if (end !== null && (status === "killed" || status === "failed")) {
-    t = Math.min(t, end);
-  }
-  const ms = pyFloat(startMs);
-  let t0 = ms === null ? null : ms / 1000.0;
-  const [at, said] = eta;
-  // A report older than the start is a resumed agent: read from the
-  // report instead.
-  if (t0 !== null) t0 = Math.min(t0, at);
-  const total = said + (t0 !== null ? at - t0 : 0.0);
-  const gone = t - (t0 !== null ? t0 : at);
-  const share = total > 0 ? gone / total : 1.0;
-  return [Math.min(1.0, Math.max(0.0, share)), total - gone];
-}
-
-// An agent whose file has been silent this long no longer holds the status
-// line's ⛳ open.
-export const ETA_LIVE_S = 1800.0;
-
-/** max(xs) as Python's: the first of equals, and a NaN only where it
- * comes first.  xs not empty. */
-function pyMax(xs: readonly number[]): number {
-  let m = xs[0];
-  for (const x of xs.slice(1)) if (x > m) m = x;
-  return m;
-}
-
-/** `own` ETA, pushed out to the latest of the descendants' `finishes`.
- * The panel's `own` is null for an agent with no transcript, which comes
- * back as it went in. */
-export function inheritEta<E extends readonly number[] | null>(own: E,
-  finishes: readonly (number | null)[],
-  startS: number | null): E | readonly number[] {
-  const ends = finishes.filter((f): f is number => f !== null);
-  const mine = own && own.length ? etaFinish(own) : null;
-  if (mine !== null) ends.push(mine);
-  if (!ends.length || (mine !== null && ends.length === 1)) return own;
-  const at = startS ? startS : (own && own.length ? own[0] : pyMax(ends));
-  return [at, pyMax(ends) - at];
 }
 
 /** ⛳ and the time left in a field of `w`: "?" with no live estimate, an
@@ -638,7 +470,7 @@ export function renderStatus(st: Settings, pay: Payload, tr: Transcript,
   ], null, rule);
   const limitsRow = gridRow(st, [
     renderPr(st, pay.pr_number),
-    renderTokens(st, tr.tok_up, tr.tok_down, st.col2Val2W),
+    CELLS.tok(st, tr.tok_up, tr.tok_down, st.col2Val2W),
     renderCacheShare(st, S_READ, cache.turn_read, cache.sess_read,
       "F_SHARE", dimRdTurn, dimRdSess),
     renderLimit(st, S_SESS, lim.session_pct, lim.session_share,
@@ -656,7 +488,7 @@ export function renderStatus(st: Settings, pay: Payload, tr: Transcript,
     renderLimit(st, S_WEEK, lim.weekly_pct, lim.weekly_share,
       lim.weekly_reset, lim.weekly_turn, "F_LIM_WEEK", false, now,
       dimTurn, dimSess),
-    renderDiff(st, pay.lines_added, pay.lines_removed),
+    diffFig(st, pay.lines_added, pay.lines_removed),
   ], null, rule);
 
   const [row1, row2] = renderChatRows(st, tr, usage, limitsRow, cols);

@@ -52,9 +52,8 @@ import type { Env, Settings } from "../src/formatting.ts";
 import { join, span } from "../src/spans.ts";
 import type { Span, SpanLike } from "../src/spans.ts";
 import { pyRstrip } from "../src/py.ts";
-import { renderKind } from "../src/claude_subagent_render.ts";
 import {
-  CELLS, accountLabel, mainLabel, piece, sessionLabel,
+  CELLS, accountLabel, mainLabel, piece, renderKind, sessionLabel,
   turnHead, turnLabel,
 } from "../src/cells.ts";
 import { chrome, draw, hidden, layout } from "../src/grid.ts";
@@ -84,7 +83,7 @@ function cells(st: Settings, f: Figures): { [key: string]: Span[] } {
   if (f.tok) out.tok = CELLS.tok(st, f.tok[0], f.tok[1]);
   if (f.cache !== undefined) out.cache = CELLS.cache(st, f.cache);
   if (f.clock !== undefined) out.clock = CELLS.clock(st, NOW - f.clock);
-  if (f.eta) out.eta = CELLS.eta(st, [NOW, f.eta[1]], f.eta[0], NOW);
+  if (f.eta) out.eta = CELLS.eta(st, [NOW, f.eta[1]], f.eta[0] * 1000, NOW);
   if (f.split) out.split = CELLS.split(st, ...f.split);
   // Any reading at all: the sample's plan has one.
   if (f.five !== undefined) out.five = CELLS.five(st, "1", f.five);
