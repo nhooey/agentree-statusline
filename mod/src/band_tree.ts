@@ -16,19 +16,17 @@
 //
 // After a thread's agents come its open background shells (💻) and
 // Monitors (📡), each a leaf row with its call's label and how long it has
-// run, in the order they opened; they count against no cap.  Under 🧵
-// main, after those, `✅ N done` sums the subagents that finished in the
-// turn.  A row that finishes, an agent that ends or a shell or Monitor
-// that closes, stays where it stood, ⚫, for `finished-linger` seconds
-// after it finished, and only then goes into `✅ N done` or goes.  Past the cap, the later siblings under one parent are summed on
-// that parent's `… N more`, and every shown row's parents stay.  A row
-// with children draws ⊟ in its tree line, or ⊞ where it is folded; a
-// folded thread counts every agent hidden under it with 👶🏻 and its own
-// hidden shells and Monitors with 💻 📡, which an opened one leaves to
-// the rows.
+// run, in the order they opened; they count against no cap.  A row that
+// finishes, an agent that ends or a shell or Monitor that closes, stays
+// where it stood, ⚫, for `finished-within` seconds after it finished,
+// its parents with it, and then goes.  Past the cap, the later siblings
+// under one parent are summed on that parent's `… N more`, and every
+// shown row's parents stay.  A row with children draws ⊟ in its tree
+// line, or ⊞ where it is folded; a folded thread counts every agent
+// hidden under it with 👶🏻 and its own hidden shells and Monitors with
+// 💻 📡, which an opened one leaves to the rows.
 // Each row's fold is kept under its key (ROOT_FOLD, MAIN_FOLD, an agent's
-// id, groupFold): the two grouped rows start folded, every other row
-// opened.
+// id, groupFold): `… N more` starts folded, every other row opened.
 //
 // The spans carry what a press on them does (Press): a fold mark toggles
 // its row's fold, an agent's label switches the transcript to it, and 🧵
@@ -44,7 +42,7 @@
 // Pure: the rows' figures come in built (band.ts), and the agents as the
 // document's prepared tasks (subagent_tasks.ts).
 import {
-  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_DONE, E_MODE_MONITOR, E_MODE_SHELL,
+  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_MONITOR, E_MODE_SHELL,
   E_MORE, E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
   E_TREE_MID, E_TURN, E_SESSION, E_IDLE,
@@ -59,7 +57,7 @@ import type { BgTask } from "./claude_records.ts";
 import type { Limits } from "./claude_sources.ts";
 import {
   A_STATE_W, agentCells, agentElapsed, agentLabel, inheritedEtas, parked,
-  runningParents, treeShape,
+  runningParents,
 } from "./agent_row.ts";
 import type { Eta } from "./agent_row.ts";
 import {
@@ -75,8 +73,8 @@ import type { Piece, Row } from "./grid.ts";
 
 /** The subagents the tree draws: the document's prepared tasks, the plan
  * reading their shares are drawn under, the clock, and when the turn
- * opened, which `✅ N done` counts finishes from (null: no turn running,
- * and no `✅ N done`).  `mainBackground` is the main thread's open
+ * opened, which the receipt counts the agents it ran from (stampedSplit;
+ * null: no turn running).  `mainBackground` is the main thread's open
  * background shells and Monitors, in the order they opened; each agent's
  * are its task's `bgTasks`. */
 export type TreeAgents = {
@@ -89,9 +87,8 @@ export type TreeAgents = {
    * each agent's are its task's `bgEnded`. */
   readonly mainEnded?: readonly BgTask[];
   /** How many seconds after it finished a row stays drawn as it was
-   * (`finished-linger`): an agent that ended, before it goes into `✅ N
-   * done`, and a shell or Monitor that closed, before it goes.  None where
-   * absent or 0. */
+   * (`finished-within`): an agent that ended, and a shell or Monitor that
+   * closed, before it goes.  None where absent or 0. */
   readonly linger?: number;
   /** The home folder, the document's `agents.home`, which a background
    * task's toast draws as `~` in its output file (bgPath); none where
@@ -149,10 +146,9 @@ export type Folds = { readonly [key: string]: boolean };
 export const ROOT_FOLD = "session";
 export const MAIN_FOLD = "main";
 
-/** The fold key of a grouped row, `… N more` ("more") or `✅ N done`
- * ("done"): its parent's key, an agent's id or MAIN_FOLD, then its
- * kind. */
-export function groupFold(parent: string, kind: "more" | "done"): string {
+/** The fold key of a grouped row, `… N more` ("more"): its parent's key,
+ * an agent's id or MAIN_FOLD, then its kind. */
+export function groupFold(parent: string, kind: "more"): string {
   return parent + "/" + kind;
 }
 
@@ -371,7 +367,7 @@ function drawNode(n: Node, lasts: readonly boolean[], out: Row[],
 }
 
 /** The tree's rows, top to bottom, under `hide`: 🎮, then 🧵 and under
- * it 🎤, its subagents, `… N more` and `✅ N done`.  Without 🎮 its
+ * it 🎤, its subagents and `… N more`.  Without 🎮 its
  * children stand at the top; without 🧵, 🎤 and the subagents hang from
  * the root.  Stamped, as TreeInput's `stamped` says. */
 export function treeRows(st: Settings, inp: TreeInput,
@@ -504,24 +500,24 @@ function ended(t: Dict, u: Dict, busy: ReadonlySet<string>): boolean {
 }
 
 /** The subagents as the tree's nodes under 🧵 main: each live agent under
- * the agent that started it (treeShape, which steps over a finished
- * ancestor), in the order they started; an ended agent only where a live
- * one hangs under it, or for `a.linger` seconds after it ended, as it
- * stood.  At most `cap` agent rows, in the tree's order, a lingering one
- * counted as a live one is: the siblings past it are summed on their
- * parent's `… N more`.  After each thread's agents, its open shells and
- * Monitors (bgNode), and the closed ones that linger, past no cap.  Then
- * `✅ N done`, the agents that ended since the turn opened and linger no
- * more. */
+ * the agent that started it, in the order they started; an ended agent
+ * only for `a.linger` seconds after it ended, as it stood, or where a
+ * live one hangs under it.  At most `cap` agent rows, in the tree's
+ * order, a lingering one counted as a live one is: the siblings past it
+ * are summed on their parent's `… N more`.  After each thread's agents, its open shells and
+ * Monitors (bgNode), and the closed ones that linger, past no cap. */
 function agentNodes(st: Settings, a: TreeAgents, cap: number,
   folds: Folds): Node[] {
   const prepared = preparedOf(a.tasks);
-  const shape = treeShape(prepared);
   const busy = runningParents(prepared);
   const etas = inheritedEtas(prepared);
   const byId = new Map(a.tasks.map((t) => [String(t.task.id), t]));
+  // Each agent under the one that started it, else under "" for 🧵: an
+  // agent drawn keeps every agent above it drawn (live).
   const kidsOf = new Map<string, string[]>();
-  for (const [id, [parent]] of shape) {
+  for (const [id, t] of byId) {
+    const up = String(t.meta?.parentAgentId ?? "");
+    const parent = up !== id && byId.has(up) ? up : "";
     if (!kidsOf.has(parent)) kidsOf.set(parent, []);
     kidsOf.get(parent)!.push(id);
   }
@@ -602,7 +598,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
           shut: true };
         const folded = foldShut(folds, fold.key, fold.shut);
         out.push(groupNode(st, a, rest.map((k) => byId.get(k)!),
-          E_MORE, rest.length + " more", "more", fold, folded,
+          E_MORE, rest.length + " more", fold, folded,
           folded ? [] : ids.slice(i).map((k) => agentNode(k, false))));
         break;
       }
@@ -611,25 +607,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
     }
     return out;
   };
-  const nodes = [...place(""), ...bgNodes("")];
-  if (a.turnStart !== null) {
-    const done = [...byId.keys()].filter((id) => !live(id) && (() => {
-      const end = endOf(id);
-      return end !== null && end >= a.turnStart!;
-    })());
-    if (done.length) {
-      // Opened, its agents one under another, in the order they started.
-      done.sort((x, y) => start(x) - start(y) ||
-        (x < y ? -1 : x > y ? 1 : 0));
-      const fold = { key: groupFold(MAIN_FOLD, "done"), shut: true };
-      const folded = foldShut(folds, fold.key, fold.shut);
-      nodes.push(groupNode(st, a, done.map((k) => byId.get(k)!),
-        E_MODE_DONE, done.length + " done", "done", fold, folded,
-        folded ? [] : done.map((k) => ({ row: agentRow(k), folded: false,
-          kids: [] }))));
-    }
-  }
-  return nodes;
+  return [...place(""), ...bgNodes("")];
 }
 
 /** Which agents a turn's receipt stamps, by id, and which it owes a row
@@ -738,35 +716,24 @@ function spendOn<C extends { readonly [key: string]: readonly Span[] }>(
 }
 
 /** A grouped row that sums `tasks`, kept under `fold`, folded or opened
- * over `kids`: `… N more` past the cap, or `✅ N done`, `glyph` in the
- * kind glyphs' place and `name` in the names' column (alignHeads).  Its
- * 🛫 column says 🟢 and how many of them run, or ✅ and how long since
- * the last of them ended; 💰, the column after it, 🧩 💾 and the plan's
+ * over `kids`: `… N more` past the cap, `glyph` in the kind glyphs'
+ * place and `name` in the names' column (alignHeads).  Its 🛫 column
+ * says 🟢 and how many of them run; 💰, the column after it, 🧩 💾 and the plan's
  * shares are their sums, 🎯 their cache rates weighed by their ▴, ⌛
  * their ages summed and 🤖 🔧 🚦 their split of it, as proportions of
  * themselves, as
  * 🎮's agent-seconds are.  No model, 🧠 or ⛳: they are each agent's
  * own. */
 function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
-  glyph: string, name: string, kind: "more" | "done", fold: Fold,
+  glyph: string, name: string, fold: Fold,
   folded: boolean, kids: readonly Node[]): Node {
   const num = (v: unknown): number => typeof v === "number" ? v : 0;
   const billed = tasks.filter((t) => (t.usage.parts as unknown[]).length);
   const sum = (f: (t: TreeTask) => number, of = tasks): number =>
     of.reduce((n, t) => n + f(t), 0);
   const cells: { [key: string]: Span[] } = {};
-  if (kind === "more") {
-    cells.rate = CELLS.rate(st, tasks.filter((t) =>
-      t.task.status === "running").length, E_PHASE_RUN);
-  } else {
-    const ends = tasks.map((t) => num(t.usage.last_seen ?? t.usage.last_epoch))
-      .filter((e) => e);
-    if (ends.length) {
-      const secs = Math.max(0, a.now - Math.max(...ends));
-      cells.rate = [span(E_MODE_DONE + " "),
-        span(padVal(st, 4, durFmt(st, secs)), "F_PRW")];
-    }
-  }
+  cells.rate = CELLS.rate(st, tasks.filter((t) =>
+    t.task.status === "running").length, E_PHASE_RUN);
   if (billed.length) {
     cells.cost = CELLS.cost(st, sum((t) => num(t.usage.cost), billed));
     const up = sum((t) => num(t.usage.tok_up), billed);

@@ -141,8 +141,7 @@ every row.
     `monitor`; and ⌛, how long it has run since the result that opened
     it. No other figure: a shell bills nothing and has no context.
   - *Where it sits.* After the thread's agents (and their `… N more`), in
-    the order they opened, and before `✅ N done`, which stays last under
-    🧵. 🎤 stays first and the agents stay in start order directly under
+    the order they opened. 🎤 stays first and the agents stay in start order directly under
     it: they are the thread's own work, and a shell is what one of them
     waits on. A shell that starts or ends moves nothing above it.
   - *The cap.* It counts against no cap. `subagent-rows` bounds the
@@ -188,9 +187,9 @@ every row.
   folded rows alone. An agent that starts under a
   folded row stays hidden and adds to its 👶🏻, and a row stays as it was
   left for the rest of the session.
-- **`✅ N done`,** under 🧵 main, sums the subagents that finished this
-  turn, which Claude Code's own panel drops after 30 seconds; it starts
-  folded, and opened lists them.
+- **Finished subagents** keep their own rows, ⚫, for `finished-within`
+  seconds (120 by default), their parents with them, and then go; the
+  turn's receipt holds them.
 - **The cap.** At most 6 running subagent rows by default. Past it, the
   later siblings under one parent fold into that parent's `… N more`,
   which sums them and starts folded; every shown row's parents stay.
@@ -204,7 +203,7 @@ every row.
 - **The receipt.** A turn that ran subagents stamps the same tree on its
   receipt, frozen at the turn's end (`treeRows` with `stamped`): 🧵 the
   parent, 🎤 first under it, then every agent the turn ran that had
-  ended, opened, with no cap, no `✅ N done`, no fold marks and no
+  ended, opened, with no cap, no fold marks and no
   clicks, 🏁 on 🎤 and each agent. One still at work is owed: the first
   receipt after it ends stamps it (`stampedSplit`). A turn that ran
   none stamps its rows as `rows` says, 🎤 alone as shipped.
