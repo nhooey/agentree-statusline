@@ -1,4 +1,4 @@
-# agentree
+# agentree-statusline
 
 [![tests](https://github.com/nhooey/agentree-statusline/actions/workflows/tests.yml/badge.svg)](https://github.com/nhooey/agentree-statusline/actions/workflows/tests.yml)
 
@@ -10,9 +10,9 @@ row, and you can switch tabs and compare sessions at a glance.
 
 ## Above the prompt and under the footer line
 
-Drawn by the `agentree` mod in [`mod/`](mod/README.md), one scope a row.
-Above the prompt, the session's threads as a tree: 🎮 the session at its
-root, then 🧵 the main thread with, under it, 🎤 its turn while it runs
+Drawn by the `agentree-statusline` mod in [`mod/`](mod/README.md), one
+scope a row. Above the prompt, the session's threads as a tree: 🎮 the
+session at its root, then 🧵 the main thread with, under it, 🎤 its turn while it runs
 and the subagents it started, and under each thread the background
 shells (💻) and Monitors (📡) it has open; under Claude Code's own footer
 line, the 💳
@@ -97,7 +97,7 @@ the clone, which Claude Code then reads in place:
 ```sh
 cd ~/src/agentree-statusline
 claude plugin marketplace add "$PWD"
-claude plugin install agentree@agentree-statusline
+claude plugin install agentree-statusline@agentree-statusline
 ```
 
 Its settings, such as the usage source and what it hides, are in the
@@ -111,15 +111,15 @@ file; every key it leaves out keeps the default, and follows the defaults
 file as it changes:
 
 ```sh
-mkdir -p ~/.config/coding-agent-usage-line
-echo '{"mark-spacing": false}' > ~/.config/coding-agent-usage-line/config.jsonc
+mkdir -p ~/.config/agentree-statusline
+echo '{"mark-spacing": false}' > ~/.config/agentree-statusline/config.jsonc
 ```
 
-A project's settings go in its own `.config/coding-agent-usage-line/`
+A project's settings go in its own `.config/agentree-statusline/`
 instead; see [Configuration files](docs/options.md#configuration-files).
 
-For ⛳ ETAs, the `agentree` plugin gives each session and subagent the ETA
-instruction at its start, the short form in
+For ⛳ ETAs, the `agentree-statusline` plugin gives each session and
+subagent the ETA instruction at its start, the short form in
 [`mod/hooks/eta-instruction.md`](mod/hooks/eta-instruction.md). Link the
 skill as well, which holds the full rules and what `recurse` asks for; where
 the plugin is not enabled, also tell agents to use the skill:

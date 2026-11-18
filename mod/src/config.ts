@@ -27,13 +27,13 @@ import type { Options } from "./options_spec.ts";
 import { PY_SPACE, pyFloatRepr, pyStrip } from "./py.ts";
 import { pyJsonDumps, validateSource } from "./sources.ts";
 
-export const NAME = "coding-agent-usage-line";
+export const NAME = "agentree-statusline";
 export const PROJECT_FILE = "config.jsonc";
 export const LOCAL_FILE = "config.local.jsonc";
 // A config file is a few hundred bytes; one this size is something else.
 export const MAX_BYTES = 64 * 1024;
 // The user-global directory, for the tests, as _STATE_DIR is for state.
-export const CONFIG_DIR_ENV = "CODING_AGENT_USAGE_LINE_CONFIG_DIR";
+export const CONFIG_DIR_ENV = "AGENTREE_STATUSLINE_CONFIG_DIR";
 
 // The file layers, highest first.
 export const FILE_LAYERS = ["project-local", "project", "user"] as const;

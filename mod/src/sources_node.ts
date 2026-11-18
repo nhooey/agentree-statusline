@@ -33,11 +33,11 @@ export function expandUser(path: string): string {
 // and the status line share one cache and one cadence:
 // the tracker is read once a minute between them, not once each.
 export function stateDir(env: Env): string {
-  let path = env.CODING_AGENT_USAGE_LINE_STATE_DIR ?? "";
+  let path = env.AGENTREE_STATUSLINE_STATE_DIR ?? "";
   if (!path) {
     const base = env.XDG_STATE_HOME ||
       nodePath.join(nodeOs.homedir(), ".local", "state");
-    path = nodePath.join(base, "coding-agent-usage-line");
+    path = nodePath.join(base, "agentree-statusline");
   }
   try { fs.mkdirSync(path, { recursive: true, mode: 0o700 }); } catch { /**/ }
   try { fs.chmodSync(path, 0o700); } catch { /**/ }

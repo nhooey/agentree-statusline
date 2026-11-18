@@ -58,14 +58,14 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `CM4` | **Done 2026-10-20.** The Python reads the files | `CM3` | none | `config.py` (new), `tests/config.py`, shared config cases |
 | `CM5` | **Done 2026-10-20.** The mod reads the files | `CM1`, `CM4` (its shared cases) | none | `mod/src/config.ts` (new), `mod/hooks/edges.ts` (the read), `config.test.ts` |
 | `CM6` | **Done 2026-10-21.** The mod draws from `options()`; the rows table (ran before `CK2`, which rebases over it) | `CM5` | `RT8`, `RT8i` | `mod/hooks/register.tsx`, `mod/hooks/edges.ts` (every `CONFIG.x`), `mod/hooks/config.ts` |
-| `CM7` | **Done 2026-10-21.** Today's settings move into files | `CM6` | none | `~/.claude/settings.json` (by hand), `.config/coding-agent-usage-line/`, `.gitignore` |
+| `CM7` | **Done 2026-10-21.** Today's settings move into files | `CM6` | none | `~/.claude/settings.json` (by hand), `.config/agentree-statusline/`, `.gitignore` |
 | `CM8` | The acceptance check, live | `CM7` | none | none |
 | `RT6` | **Done 2026-10-20.** The cold read folds in Python | none | none | `mod/scripts/agent_lines.py`, `mod/hooks/edges.ts` (`foldOf`), `main_fold.{py,ts}` |
 | `RT7` | **Done 2026-10-20.** The cut, dropped | `RT6` | none | `mod/hooks/edges.ts`, `mod/src/claude_records.ts`, `mod/scripts/agent_lines.py` |
 | `RT8` | **Done 2026-10-20.** The panel on the agent folds | `RT7` | `CM3` | `claude.py` (`read_agent_usage`), `claude_records.{py,ts}` (agent fold), `spec/state.jsonc`, `mod/hooks/edges.ts` |
 | `RT8i` | **Done 2026-10-21.** The inbox moves to the folds (a fold of its own, `inbox-fold`) | `RT8` | none | `claude_records.{py,ts}` (`inbox_counts`), `claude.py` (the panel's inbox) |
 | `RT9` | **Done 2026-10-20.** The window costs, one file | none | `CA` | `claude.py` (`_window_costs`), `mod/src/claude_calib_node.ts`, `spec/state.jsonc` |
-| `OPS` | **Done 2026-10-20.** Sweep the old `-ts-` calibration files | `CA` | none | `~/.local/state/coding-agent-usage-line/` (by hand) |
+| `OPS` | **Done 2026-10-20.** Sweep the old `-ts-` calibration files | `CA` | none | `~/.local/state/agentree-statusline/` (by hand) |
 | `CK1` | **Built 2026-10-20; tried live 2026-10-21, the agent message row a plain row again (its click is Claude Code's, to expand it); 🎤's scroll still the user's to try.** The clickable-rows trial: 🎤 and the agent message row as Buttons, tried live | none | none | `mod/hooks/register.tsx` (row drawing, `UserMessage` hooks), `mod/mod-tests/` |
 | `CK2` | **Done 2026-10-21** (started before the user's live click on 🎤, as they asked). The targets: `requestId`s recorded, 🎤 and 🤖 pressable in the band and the receipt | `CK1` (and the user's live report) | none | `mod/hooks/register.tsx`, `mod/src/receipt.ts` (`receiptScoped`), `mod/mod-tests/` |
 | `CK3` | **Done 2026-10-21.** Docs for the pressable rows | `CK2` | none | `docs/layout.md` |
@@ -77,7 +77,7 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `RP4` | **Done 2026-10-21.** The labels without the prompt, the reply and 🎮's workspace, their code removed; `LABEL_MIN` 12 | the plan's approval (given) | none | `cells.ts` (the labels), `band.ts` (`turnRow`, `mainRow`, `sessionRow`), `receipt.ts`, `spec/layout.jsonc`, row cases, grid cases, panel goldens |
 | `RP5` | **Done.** The 💳 row: a row by default, 🔀 🎨 on it, its order and shedding | `RP2` | `RP4` | `band.ts` (`accountPieces`, `accountLine`), `mod/defaults/config.jsonc`, row cases, fixtures module |
 | `RP6` | **Done.** Docs for the new layout | `RP3`, `RP4`, `RP5` | none | `docs/layout.md`, `docs/options.md`, `mod/README.md` |
-| `RP7` | **Done, with the user's own `rows` kept.** The user's file, by hand | `RP5` | none | `~/.config/coding-agent-usage-line/config.jsonc` |
+| `RP7` | **Done, with the user's own `rows` kept.** The user's file, by hand | `RP5` | none | `~/.config/agentree-statusline/config.jsonc` |
 | `RP8` | The acceptance check, live | `RP6`, `RP7` | none | none |
 | `AR1` | **Built; the user's live run pending.** The trial: what a subagent's end and a `/compact` raise, logged | none | none | `mod/hooks/register.tsx` |
 | `AR2` | A subagent's figures, from its own records | `AR1` | none | `mod/src/receipt.ts`, `mod/hooks/edges.ts` |

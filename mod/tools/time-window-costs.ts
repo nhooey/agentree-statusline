@@ -17,7 +17,7 @@ import type { CalibEnv } from "../src/claude_calib_node.ts";
 const at = process.argv.indexOf("--runs");
 const runs = at >= 0 ? Number(process.argv[at + 1]) : 3;
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "window-costs-"));
-const projectsDir = process.env.CODING_AGENT_USAGE_LINE_CLAUDE_PROJECTS_DIR ||
+const projectsDir = process.env.AGENTREE_STATUSLINE_CLAUDE_PROJECTS_DIR ||
   path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), ".claude"),
     "projects");
 const now = Date.now() / 1000;

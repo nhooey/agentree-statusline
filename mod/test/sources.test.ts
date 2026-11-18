@@ -194,7 +194,7 @@ test("native_reading", () => {
 test("tracker: plist store to reading", async () => {
   const dir = scratch();
   const file = path.join(dir, "tracker.plist");
-  const env = { CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST: file };
+  const env = { AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST: file };
   try {
     for (const c of load("tracker.json")) {
       setTz(c.tz);
@@ -268,8 +268,8 @@ test("collect: scenarios over one state directory", async () => {
     const tracker = path.join(dir, "tracker.plist");
     const config = path.join(dir, "config");
     fs.mkdirSync(config);
-    const env = { CODING_AGENT_USAGE_LINE_STATE_DIR: stateDir,
-                  CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST: tracker,
+    const env = { AGENTREE_STATUSLINE_STATE_DIR: stateDir,
+                  AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST: tracker,
                   CLAUDE_CONFIG_DIR: config };
     const put = (value: unknown) =>
       pyJsonLoads(JSON.stringify(value).replaceAll("${DIR}", dir));

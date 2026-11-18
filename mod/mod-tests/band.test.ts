@@ -119,9 +119,9 @@ function bandWant(st: ReturnType<typeof settings>, fig: Dict,
  * first, and the 💳 account's row under it, where it has one there. */
 async function mountBand($: any, surface: 'terminal' | 'desktop',
   props: RenderPropsOf['AbovePrompt']) {
-  const above = await $.ui.mount({ plugin: 'agentree', surface,
+  const above = await $.ui.mount({ plugin: 'agentree-statusline', surface,
     component: 'AbovePrompt', props })
-  const hint = await $.ui.mount({ plugin: 'agentree', surface,
+  const hint = await $.ui.mount({ plugin: 'agentree-statusline', surface,
     component: 'PromptHint', props: { isDraft: false,
       isWorking: props.isWorking, hint: '-- INSERT --' } })
   const rowsOf = (tree: Drawn | null, skip: number) => tree?.type === 'Box'
@@ -369,7 +369,7 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
   'among them, and their kinds are logged once, then as they change',
   async ($, on) => {
     const w = world(on)
-    w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
       encoder.encode('{"usage-source": "native"}'))
     w.usage.rateLimits = [
       { kind: 'five_hour', percentUsed: 15,
@@ -400,7 +400,7 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
  * `config`; and the Opus window's share in its document. */
 async function weeklyOpus($: any, on: On, config: string) {
   const w = world(on)
-  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
     encoder.encode(config))
   w.usage.rateLimits = [
     { kind: 'seven_day', percentUsed: 87,
@@ -409,7 +409,7 @@ async function weeklyOpus($: any, on: On, config: string) {
       resetsAt: '2026-08-18T01:00:00+00:00' }]
   await start($, w, 'terminal', STATUS)
   const drawn = JSON.stringify(await drawnOf(await $.ui.mount({
-    plugin: 'agentree', surface: 'terminal', component: 'PromptHint',
+    plugin: 'agentree-statusline', surface: 'terminal', component: 'PromptHint',
     props: { isDraft: false, isWorking: false, hint: '-- INSERT --' } })))
   return { drawn, opus: (lastDoc(w).limits as Dict).opus_pct }
 }
@@ -435,7 +435,7 @@ test('under auto, with no native reading, the plan comes from the usage ' +
   'endpoint, asked as the session, once per 5 minutes for every session ' +
   'on the account, with plan-usage off', async ($, on) => {
     const w = world(on)
-    w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
       encoder.encode('{"usage-source": "auto", "plan-usage": false}'))
     w.files.set('/claude/.claude.json', encoder.encode(
       '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
@@ -473,7 +473,7 @@ test('under auto, with no native reading, the plan comes from the usage ' +
  * as Claude Code's does, with the usage endpoint answering `answer`. */
 function planWorld(on: On, answer: Dict | null, settings = '{}'): World {
   const w = world(on)
-  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
     encoder.encode(JSON.stringify({ 'usage-source': 'auto',
       ...JSON.parse(settings) })))
   w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 87,
@@ -806,7 +806,7 @@ test('a Claude Code on the web session bills its rows to the cloud credit',
  * so 💸 pays. */
 function extraWorld(on: On): World {
   const w = world(on)
-  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
     encoder.encode('{"usage-source": "native"}'))
   w.files.set('/claude/.claude.json', encoder.encode(
     '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
@@ -850,7 +850,7 @@ test('when extra usage began paying survives a reload: the 💸 figure ' +
     const seed = { spell: EXTRA_SPELL, bracket: null }
     // The seed stands where the mod reads it until the mod writes its own.
     on('state.get', ($, e: any, next) =>
-      e.plugin === 'agentree' && e.key === 'spending'
+      e.plugin === 'agentree-statusline' && e.key === 'spending'
         ? { value: { value: w.spending.at(-1) ?? seed,
           version: w.spending.length + 1 } } : next(e))
     await start($, w, 'terminal', STATUS)
@@ -995,7 +995,7 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(await drawnRows(ui.hint)).toEqual(expected([account]))
   // All of them under the footer line, with every place "footer": the
   // band above the prompt is the engine's.
-  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
     encoder.encode('{"rows": {"turn": {"place": "footer"}, ' +
       '"agent": {"place": "footer"}, "session": {"place": "footer"}, ' +
       '"subagents": {"live": "never"}}}'))
@@ -1085,7 +1085,7 @@ test('a shell that closed stays drawn, ended, for finished-within, and ' +
   bytes.set(extra, was.length)
   w.files.set(path, bytes)
   // A window short enough that no tick reads a document before it ends.
-  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
     encoder.encode('{"finished-within": 5}'))
   await start($, w, 'terminal', path)
   const agents = lastDoc(w).agents as Dict
@@ -1186,7 +1186,7 @@ test('a survey above the prompt leaves the band to the engine',
   async ($, on) => {
     const w = world(on)
     await start($, w, 'terminal', STATUS)
-    const ui = await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    const ui = await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: { ...BAND, hasSurvey: true } })
     expect(await ui.find({ type: 'Text' })).toBeUndefined()
   })
@@ -1194,7 +1194,7 @@ test('a survey above the prompt leaves the band to the engine',
 /** The closing line as the mod draws it: one row high, a space and no
  * more, with no `✻ <word> for` and no tag. */
 async function blankClosing($: any, word: string, durationMs: number) {
-  const ui = await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  const ui = await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'TurnDuration', props: { word, durationMs },
     viewport: { columns: COLS, rows: 40 } })
   const tree = await ui.drawn() as Drawn
@@ -1217,14 +1217,14 @@ test('a turn ends on a blank closing line', async ($, on) => {
 
 /** A composer prompt's row drawn, as its instance `requestId`. */
 async function drawPrompt($: any, text: string, requestId: string) {
-  await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'UserMessage', requestId, props: { text,
       isExpanded: false, origin: { kind: 'composer' } } })
 }
 
 /** The footer line as drawn while a turn runs. */
 async function footer($: any) {
-  return $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  return $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'PromptHint', props: { isDraft: false, isWorking: true,
       hint: '-- INSERT --' } })
 }
@@ -1237,7 +1237,7 @@ test('above the prompt the rows are plain, and the band logs its widths ' +
     await $.turn.start({ text: 'Go on.', turnId: 't3' })
     await settle()
     const viewport = { columns: COLS, rows: 40, isFullscreen: false }
-    const band = await $.ui.mount({ plugin: 'agentree',
+    const band = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'AbovePrompt', viewport,
       props: { ...BAND, isWorking: true } })
     // Above the prompt the tree's fold marks and 🧵's and 🎤's labels
@@ -1255,13 +1255,13 @@ test('above the prompt the rows are plain, and the band logs its widths ' +
     // A survey: the band is the engine's, the log says so once, and the
     // footer drawn under it says so too.
     for (let i = 0; i < 2; i++) {
-      const held = await $.ui.mount({ plugin: 'agentree',
+      const held = await $.ui.mount({ plugin: 'agentree-statusline',
         surface: 'terminal', component: 'AbovePrompt', viewport,
         props: { ...BAND, isWorking: true, hasSurvey: true } })
       expect(await held.find({ type: 'Text' })).toBeUndefined()
     }
     expect(logOf(w).split('"hasSurvey":true}').length).toBe(2)
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'PromptHint', viewport, props: { isDraft: false,
         isWorking: true, hint: '-- INSERT --' } })
     expect(logOf(w)).toMatch(/footer: \[.*,false,true\]/)
@@ -1288,7 +1288,7 @@ async function promptTagged($: any, w: World) {
   expect((doc.transcript as Dict).prompt_id).toBe('p-next')
   const tag = startLine(BAND_ST, doc, HIDE)
   expect(tag.length).toBeGreaterThan(0)
-  const typed = await $.ui.mount({ plugin: 'agentree',
+  const typed = await $.ui.mount({ plugin: 'agentree-statusline',
     surface: 'terminal', component: 'UserMessage',
     props: { text: 'Go on.', isExpanded: false,
       origin: { kind: 'composer' } } })
@@ -1308,7 +1308,7 @@ test('a prompt from the composer gets its turn tag under it, at no indent',
     // with the receipt's 🔺🔖, both at no indent.
     expect(await tagDrawn(typed)).toEqual({ beside: false,
       text: text(tag) })
-    const other = await $.ui.mount({ plugin: 'agentree',
+    const other = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'UserMessage',
       props: { text: 'Go on.', isExpanded: false,
         origin: { kind: 'unclassified' } } as any })
@@ -1996,7 +1996,7 @@ async function receiptOf(w: World, now: number): Promise<Span[][]> {
 
 /** The closing line of a turn that took `durationMs`, as drawn. */
 async function closing($: any, durationMs: number) {
-  return drawnRows(await $.ui.mount({ plugin: 'agentree',
+  return drawnRows(await $.ui.mount({ plugin: 'agentree-statusline',
     surface: 'terminal', component: 'TurnDuration',
     props: { word: 'Worked', durationMs },
     viewport: { columns: COLS, rows: 40 } }))
@@ -2010,7 +2010,7 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
       isInteractive: true })
     await settle()
     // The band draws first, and the receipt is laid out at its width.
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     await askLive($, w, true)
     await until(w, 5_000)
@@ -2037,7 +2037,7 @@ test('a turn whose records land after turn.complete gets its receipt drawn as it
     // to the transcript as a notice.
     expect(await closing($, ASKED_MS)).toEqual(expected(want))
     // A blank row above it, apart from the answer, and one under it.
-    const drawn = await (await $.ui.mount({ plugin: 'agentree',
+    const drawn = await (await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'TurnDuration',
       props: { word: 'Worked', durationMs: ASKED_MS },
       viewport: { columns: COLS, rows: 40 } })).drawn() as Drawn
@@ -2062,7 +2062,7 @@ async ($, on) => {
   await $.session.start({ cwd: CWD, surface: 'terminal',
     isInteractive: true })
   await settle()
-  await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'AbovePrompt', props: BAND })
   await askLive($, w, true)
   await until(w, 5_000)
@@ -2090,7 +2090,7 @@ async ($, on) => {
   const owed = [...w.store].filter(([k]) => k.startsWith('receipt-owed:'))
   expect(owed.map(([, v]) => v)).toEqual([['p1']])
   expect(await closing($, ASKED_MS)).toEqual(expected(want))
-  const receipt = await $.ui.mount({ plugin: 'agentree',
+  const receipt = await $.ui.mount({ plugin: 'agentree-statusline',
     surface: 'terminal', component: 'TurnDuration',
     props: { word: 'Worked', durationMs: ASKED_MS },
     viewport: { columns: COLS, rows: 40 } })
@@ -2106,7 +2106,7 @@ test('a turn a task notification follows still gets its receipt and tag',
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     await askLive($, w, true)
     // Delivered as the turn ends, after its answer, and written as a turn
@@ -2130,7 +2130,7 @@ test('a turn a task notification follows still gets its receipt and tag',
 /** The receipt an answer block of `text` draws under itself: the rows of
  * the column Box under the engine's row, none where it draws none. */
 async function underAnswerRows($: any, text: string) {
-  const tree = await (await $.ui.mount({ plugin: 'agentree',
+  const tree = await (await $.ui.mount({ plugin: 'agentree-statusline',
     surface: 'terminal', component: 'AssistantMessage',
     props: { text, isFirstOfReply: true },
     viewport: { columns: COLS, rows: 40 } })).drawn() as Drawn
@@ -2147,7 +2147,7 @@ test('a turn a task notification opens while an agent still runs, which ' +
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     // The turn before ended waiting on one background agent, and the
     // notification opens the next with that agent still running: Claude
@@ -2201,7 +2201,7 @@ test('a turn whose closing line Claude Code draws keeps its receipt there, ' +
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     await askLive($, w, true)
     grow(w, { durationMs: ASKED_MS, isSidechain: false,
@@ -2224,7 +2224,7 @@ test('a task notification written before turn.complete does not take the receipt
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     grow(w, { message: { content: ASKED }, promptId: 'p-resume',
       promptSource: 'typed', timestamp: '2026-08-16T02:20:00Z', type: 'user',
@@ -2258,7 +2258,7 @@ test('a transcript moved while its turn is billed still gets the receipt',
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     await askLive($, w, true)
     // As leaving a worktree moves the session's transcript to the main
@@ -2282,7 +2282,7 @@ test('a notification written just before the prompt takes neither its tag nor it
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     // A task notification queued while idle, written with no turnPosition
     // before the prompt that opens the turn, which a read sees first (seen
@@ -2302,7 +2302,7 @@ test('a notification written just before the prompt takes neither its tag nor it
     await w.clock.advance(10_000)
     await settle()
     expect((lastDoc(w).transcript as Dict).prompt_id).toBe('p-resume')
-    const typed = await $.ui.mount({ plugin: 'agentree',
+    const typed = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'UserMessage',
       props: { text: ASKED, isExpanded: false, origin: { kind: 'composer' } } })
     expect((await tagDrawn(typed)).text).toContain('#366')
@@ -2324,7 +2324,7 @@ test('a turn the context was compacted in gets its receipt and tag',
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+    await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
       component: 'AbovePrompt', props: BAND })
     grow(w, { message: { content: ASKED }, promptId: 'p-resume',
       promptSource: 'typed', timestamp: '2026-08-16T02:20:00Z', type: 'user',
@@ -2580,7 +2580,7 @@ async function drewAll($: any, w: World) {
   const tag = startLine(BAND_ST, doc, HIDE)
   expect(tag.length).toBeGreaterThan(0)
   expect(w.store.get(startKey(ASKED))).toBeDefined()
-  const typed = await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  const typed = await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'UserMessage', props: { text: ASKED, isExpanded: false,
       origin: { kind: 'composer' } } })
   expect(await tagDrawn(typed)).toEqual({ beside: false, text: text(tag) })
@@ -2605,7 +2605,7 @@ test('a resumed session whose first turn calls no tool draws all three',
 // The project's local file the acceptance check writes
 // (config-merge.md, "Acceptance"): 🎤, 🤖 and 🎮 kept under the footer
 // line between turns, and stamped into the transcript too.
-const LOCAL = CWD + '/.config/coding-agent-usage-line/config.local.jsonc'
+const LOCAL = CWD + '/.config/agentree-statusline/config.local.jsonc'
 const KEPT_AND_STAMPED = '{"rows": {' +
   '"turn": {"live": "always", "transcript": true}, ' +
   '"agent": {"live": "always", "transcript": true}, ' +
@@ -2618,7 +2618,7 @@ test('a project file found on the tick keeps the rows and stamps them, ' +
   await $.session.start({ cwd: CWD, surface: 'terminal',
     isInteractive: true })
   await settle()
-  await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'AbovePrompt', props: BAND })
   expect(logOf(w)).toContain(`config from ${CWD}: user ${USER_FILE}` +
     ' (usage-source, hide, rows)')
@@ -2760,7 +2760,7 @@ function clicking(on: On, listed: AgentInfo[]) {
 /** The band above the prompt while a turn runs, mounted, and the rows it
  * should draw under `folds` off the last document. */
 async function clickBand($: any, w: World) {
-  const band = await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  const band = await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'AbovePrompt', props: { ...BAND, isWorking: true } })
   const want = (folds: { [key: string]: boolean }) => expected(
     bandLines(BAND_ST, lastDoc(w), COLS, HIDE, { rate: null,
@@ -2959,7 +2959,7 @@ function inRepo(remote: string | null) {
  * addresses and texts, in the world `w`. */
 async function linksDrawn($: any, w: World) {
   await start($, w, 'terminal', STATUS)
-  const band = await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
+  const band = await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'AbovePrompt', props: { ...BAND, isWorking: true } })
   // A Link's found text leads with its address, the prop it draws as
   // text; what follows is its children's.

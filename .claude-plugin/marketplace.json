@@ -1,10 +1,10 @@
 {
   "name": "agentree-statusline",
   "owner": { "name": "Neil Hooey" },
-  "description": "The agentree mod for Claude Code, from this repository",
+  "description": "The agentree-statusline mod for Claude Code, from this repository",
   "plugins": [
     {
-      "name": "agentree",
+      "name": "agentree-statusline",
       "source": "./mod",
       "description": "Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing."
     }

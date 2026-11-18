@@ -42,9 +42,9 @@
       ];
 
       agent-skill-flake.devshellSkills = {
-        name = "agentree";
+        name = "agentree-statusline";
         motd = ''
-          {bold}{14}📊 Entering the agentree dev shell{reset}
+          {bold}{14}📊 Entering the agentree-statusline dev shell{reset}
           Run {bold}menu{reset} to list available commands.
         '';
       };
@@ -113,7 +113,7 @@
           # Every suite tests/all.sh runs that a build can (nix/check-tests.sh
           # names those left out), with the fixture generators checked too.
           checks.tests =
-            pkgs.runCommand "agentree-tests"
+            pkgs.runCommand "agentree-statusline-tests"
               {
                 nativeBuildInputs = [
                   nodejs

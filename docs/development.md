@@ -1,7 +1,7 @@
 # Development
 
-The project is one Claude Code mod, `agentree`, in TypeScript under
-`mod/`; [its README](../mod/README.md) says how it is loaded and how its
+The project is one Claude Code mod, `agentree-statusline`, in TypeScript
+under `mod/`; [its README](../mod/README.md) says how it is loaded and how its
 hooks reach Claude Code. Node 23.6 or later runs its sources directly, with
 no build, for the tests and the tools. The only Python is under `tools/`:
 `usage-dev.py`, the dev shell's command tool, and two review scripts;

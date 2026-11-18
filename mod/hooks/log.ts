@@ -9,9 +9,9 @@
 //   is written when Claude Code runs with `--debug` or `--debug-file
 //   <path>`, beside the engine's own lines about the mod's hooks;
 //
-//   `agentree.log` in the status line's state directory, always: the
-//   last LOG_KEPT lines from every session, each naming its session, as
-//   src/modlog.ts lays them out.
+//   `agentree-statusline.log` in the status line's state directory,
+//   always: the last LOG_KEPT lines from every session, each naming its
+//   session, as src/modlog.ts lays them out.
 //
 // A line is never allowed to fail its caller: a log that cannot be written
 // is a log with a line missing.
@@ -38,7 +38,7 @@ export async function log($: $, what: string, err?: unknown): Promise<void> {
     // The line without its time.
   }
   try {
-    $.ui.log('agentree: ' + line, { to: 'debug' })
+    $.ui.log('agentree-statusline: ' + line, { to: 'debug' })
   } catch {
     // No debug log.
   }

@@ -67,7 +67,7 @@ session's own credential (`$.session.authorize()`, spent through
   printing the `credits[]` JSON, run at the same pace. The mod needs
   nothing more; a user may wrap theirs in `secretspec run`.
 - **Shared:** the mod writes the reading to the cache in
-  `~/.local/state/coding-agent-usage-line/`, so the Python status line
+  `~/.local/state/agentree-statusline/`, so the Python status line
   shows the same figures without fetching.
 - **On the band:** each credit as its glyph, its balance and 🔜 with the
   time to its expiry, drawn when its `show` conditions say, as below.
@@ -166,9 +166,10 @@ and its plan windows:
   reading that found them paying, the moment before which is unknown;
   every other pool has paid since the session began. The mod keeps the
   spell, and the first reading of the paying credit for the measured
-  fall, in `$.state` (`agentree`'s `spending`) for the session and in
-  `$.store` under `spending:<session id>`, so a `/reload-plugins`, a
-  restart or a `--resume` counts on from them rather than from the
+  fall, in `$.state` (`agentree-statusline`'s `spending`) for the
+  session and in `$.store` under `spending:<session id>`, so a
+  `/reload-plugins`, a restart or a `--resume` counts on from them rather
+  than from the
   reload; until the reloaded mod has read the credits, the kept spell
   stands. A session start drops the store's entries saved over 31 days
   ago, the longest billing month, past which a start is of a period

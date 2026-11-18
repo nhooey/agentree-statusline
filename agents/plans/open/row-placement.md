@@ -154,7 +154,7 @@ retired ([Decided](#decided), 1). The defaults, in
 
 ### What the user's file does after it
 
-`~/.config/coding-agent-usage-line/config.jsonc` (read, not written by
+`~/.config/agentree-statusline/config.jsonc` (read, not written by
 this plan) sets `rows.agent.transcript` and `rows.session.transcript` to
 `true`, and hides `account.workspace.project` and
 `account.workspace.branch` because 🎮 drew them. Left as it is, after the
