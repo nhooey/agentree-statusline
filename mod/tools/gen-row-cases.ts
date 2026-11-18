@@ -79,7 +79,7 @@ const SAMPLE_COLS = 155;
 // The start line's: none, and 🔋 hidden on the tag lines alone.
 const START_HIDES: readonly string[][] = [[], ["tag.plan.five_hour"]];
 // The Fable window's own: hidden, and the weekly window hidden, which
-// takes the shared 🔜 with it unless the Fable window draws its own.
+// leaves its 🔜 to the Fable window where they reset together.
 const FABLE_HIDES: readonly string[][] = [["account.plan.fable"],
   ["account.plan.week"]];
 // A document with every piece of the 💳 row, 🔀 and 🎨 among them, one
@@ -97,7 +97,7 @@ const DEFAULT_ROWS = parseDefaults(DEFAULTS_REL, readFileSync(
 // The weekly windows as the defaults file leaves them, all off, and the
 // hide paths of a document with any of them: as shipped; a file's own
 // `hide`, which leaves them off; Opus alone turned on; and every one on
-// with the weekly window hidden, which gives each its own 🔜.
+// with the weekly window hidden, which leaves its 🔜 leading the others.
 const DEFAULT_WINDOWS = parseDefaults(DEFAULTS_REL, readFileSync(
   pathJoin(HERE, "..", DEFAULTS_REL), "utf8"))["weekly-windows"] as
   { [key in WeeklyKey]: boolean };

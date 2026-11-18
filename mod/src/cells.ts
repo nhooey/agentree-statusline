@@ -563,12 +563,6 @@ export function untilReset(st: Settings, epoch: number | null,
   return delta <= 0 ? "now" : durFmt(st, delta);
 }
 
-/** A weekly window beside the plan's pair, as the 💳 row draws it after
- * 🪫: its key in SIDE_MARKS, its share and its reset, each null where it
- * has none. */
-export type SideWindow = { readonly key: SideKey; readonly pct: number | null;
-  readonly reset: string | null };
-
 /** The weekly windows beside the plan's pair, in the order the 💳 row
  * draws them, each by its key (its `hide` path's metric, `plan.<key>`,
  * and its Limits fields' prefix), with its mark and colour: 🦊 the Fable
@@ -578,46 +572,63 @@ export const SIDE_MARKS = [["fable", E_FABLE, "F_LIM_FABLE"],
   ["omelette", E_OMELETTE, "F_LIM_OMELETTE"],
   ["oauth_apps", E_OAUTH_APPS, "F_LIM_OAUTH_APPS"],
   ["cowork", E_COWORK, "F_LIM_COWORK"]] as const;
-export type SideKey = typeof SIDE_MARKS[number][0];
 
-/** The plan's two windows as the 💳 row draws them: 🔋 `sess` and 🪫
- * `week`, then each of `side`, the weekly windows beside them, in
- * SIDE_MARKS' order, each followed by its 🔜 reset where it has one, under
- * the paths `plan.five_hour`, `plan.week`, `plan.<key>` and `plan.reset`;
- * a window with neither a share nor a reset is left out.  With `stale`,
- * how long ago the reading was taken, each share is followed by 🧊 and
- * that.  Each window ends in blanks, which trimLast takes off the last. */
-export function planPieces(st: Settings, sess: number | null,
-  week: number | null, sessReset: string | null, weekReset: string | null,
-  stale: string | null = null, side: readonly SideWindow[] = []): Piece[] {
-  // Each window whole, its share then its reset, since the row has no
-  // figure in the plan columns to sit under: 🔋 15٪ 🔜 6.7m.  Three digits
-  // for both, so 🪫 reads 87٪ as 🔋 does, not the 87.0٪ the wider 🪫
-  // column draws for an agent's small share; padded to three on the left,
-  // so 9.9٪ going to 10٪ moves nothing after it.
-  const plan = (path: string, mark: string, colour: string,
-    v: number | null, reset: string | null): Piece[] => {
-    if (v === null && reset === null) return [];
-    const out: Piece[] = [];
-    out.push({ path, spans: [span(mark + " "), ...(v === null ? [] :
-      [span(limitPct(st, v, 3).padStart(3) + E_PCT, colour),
-        ...(stale === null ? [] : [span(" " + E_STALE + stale)])]),
-      span(" ")], drop: 0 });
-    if (reset !== null) {
-      out.push(piece("plan.reset", E_RESET + " " + reset + "  ", null, 0,
-        true));
-    } else {
-      out.push(piece(path, " "));
-    }
-    return out;
-  };
-  return [
-    ...plan("plan.five_hour", E_SESS, "F_LIM_SESS", sess, sessReset),
-    ...plan("plan.week", E_WEEK, "F_LIM_WEEK", week, weekReset),
-    ...SIDE_MARKS.flatMap(([key, mark, colour]) => {
-      const w = side.find((s) => s.key === key);
-      return w ? plan("plan." + key, mark, colour, w.pct, w.reset) : [];
-    })];
+/** Every window the 💳 row draws, in the order a group of them keeps: 🔋
+ * the plan's 5-hour window and 🪫 its weekly one, then SIDE_MARKS. */
+export const PLAN_MARKS = [["five_hour", E_SESS, "F_LIM_SESS"],
+  ["week", E_WEEK, "F_LIM_WEEK"], ...SIDE_MARKS] as const;
+export type PlanKey = typeof PLAN_MARKS[number][0];
+
+/** A window as the 💳 row draws it: its key in PLAN_MARKS, its share, the
+ * time until it resets, and `at`, the reset itself, which the windows that
+ * reset together share; each null where it has none. */
+export type PlanWindow = { readonly key: PlanKey; readonly pct: number | null;
+  readonly reset: string | null; readonly at: number | null };
+
+/** A window's mark and its share.  Three digits for every window, so 🪫
+ * reads 87٪ as 🔋 does, not the 87.0٪ the wider 🪫 column draws for an
+ * agent's small share; padded to three on the left, so 9.9٪ going to 10٪
+ * moves nothing after it.  With `stale`, how long ago the reading was
+ * taken, the share is followed by 🧊 and that. */
+function windowSpans(st: Settings, mark: string, colour: string,
+  v: number | null, stale: string | null): Span[] {
+  return [span(mark + " "), ...(v === null ? [] :
+    [span(limitPct(st, v, 3).padStart(3) + E_PCT, colour),
+      ...(stale === null ? [] : [span(" " + E_STALE + stale)])])];
+}
+
+/** `windows` as the 💳 row draws them, in groups that reset together (the
+ * same `at`), the soonest first, each led by its 🔜 reset, its windows in
+ * PLAN_MARKS' order a blank apart, and two blanks after it: 🔜 6.7m 🔋
+ * 15٪  🔜 1.9d 🪫 87٪ 🦊 4٪.  The windows with no reset are a last group,
+ * with no 🔜; a window with neither a share nor a reset is left out.  The
+ * windows are under the paths `plan.<key>`, the resets under `plan.reset`.
+ * A group's blanks end its last window, which trimLast takes off the
+ * row's last. */
+export function planPieces(st: Settings, windows: readonly PlanWindow[],
+  stale: string | null = null): Piece[] {
+  type Drawn = { w: PlanWindow; mark: string; colour: string };
+  const groups = new Map<number | null, Drawn[]>();
+  for (const [key, mark, colour] of PLAN_MARKS) {
+    const w = windows.find((x) => x.key === key);
+    if (!w || (w.pct === null && w.reset === null)) continue;
+    const at = w.reset === null ? null : w.at;
+    groups.set(at, [...groups.get(at) ?? [], { w, mark, colour }]);
+  }
+  return [...groups.keys()]
+    .sort((a, b) => a === null ? 1 : b === null ? -1 : a - b)
+    .flatMap((at) => {
+      const group = groups.get(at)!;
+      const reset = group[0].w.reset;
+      return [
+        ...reset === null ? [] : [piece("plan.reset",
+          E_RESET + " " + reset + " ", null, 0, true)],
+        ...group.map(({ w, mark, colour }, i): Piece => ({
+          path: "plan." + w.key,
+          spans: [...windowSpans(st, mark, colour, w.pct, stale),
+            span(i === group.length - 1 ? "  " : " ")],
+          drop: 0 }))];
+    });
 }
 
 /** `pieces` with the blanks after the last one taken off: they would only
@@ -633,26 +644,23 @@ export function trimLast(pieces: readonly Piece[]): Piece[] {
   return out;
 }
 
-/** 💳 account, then each window's 🔜 reset where it has one (planPieces),
- * then 📅 and 🕐 at the end, which leave first on a narrow terminal.  With
- * `stale`, how long ago the reading was taken, each figure is followed by
- * 🧊 and that: the footer's tail draws in one style, so the mark is in the
- * text.  `side` are the weekly windows beside the plan's pair, 🦊 the
- * Fable one and the others, drawn after 🪫 where the source has them. */
-export function accountLabel(st: Settings, sess: number | null,
-  week: number | null, sessReset: string | null, weekReset: string | null,
+/** 💳 account, then `windows` in groups, each led by its 🔜 reset
+ * (planPieces), then 📅 and 🕐 at the end, which leave first on a narrow
+ * terminal.  With `stale`, how long ago the reading was taken, each share
+ * is followed by 🧊 and that: the footer's tail draws in one style, so the
+ * mark is in the text. */
+export function accountLabel(st: Settings, windows: readonly PlanWindow[],
   date: string, time: string, stale: string | null = null,
-  credits: readonly { kind: string; spans: readonly Span[] }[] = [],
-  side: readonly SideWindow[] = []): Piece[] {
-  const windows = trimLast(planPieces(st, sess, week, sessReset, weekReset,
-    stale, side));
+  credits: readonly { kind: string; spans: readonly Span[] }[] = []):
+  Piece[] {
+  const plan = trimLast(planPieces(st, windows, stale));
   // The credits after the windows, each leaving before 📅 and 🕐 on a
   // narrow terminal.
   const owed: Piece[] = credits.map((c) => ({ path: "credits." + c.kind,
     spans: [span("  "), ...c.spans], drop: 1 }));
   // 📅 and 🕐 last, at the right end of the footer.
   return [
-    piece("name.label", E_ACCT + " "), ...windows, ...owed,
+    piece("name.label", E_ACCT + " "), ...plan, ...owed,
     piece("clock.date", "  " + E_DATE + " " + date, null, 2, true),
     piece("clock.time", "  " + E_TIME + " " + time, null, 3, true)];
 }
@@ -772,8 +780,8 @@ export function turnHead(arrow: string, promptId: string,
 
 /** A turn's tag line, "🔺🔖 8f37748e #12  💳 🔋  15٪  🪫  87٪  📅
  * 2026-10-19  🕐 13:06:02": turnTag, then the account's two windows, 🔋
- * `sess` and 🪫 `week`, as the 💳 row draws them (planPieces) without
- * their resets, then turnWhen, each part where it has something, two
+ * `sess` and 🪫 `week`, each as the 💳 row draws it, without its reset,
+ * two blanks apart, then turnWhen, each part where it has something, two
  * blanks apart.  The windows are under the paths `tag.plan.five_hour` and
  * `tag.plan.week` (TAG_SCOPE), which `hide` leaves out; 💳 goes with the
  * last of them.  [] with neither a tag nor a time, whatever the windows. */
@@ -784,12 +792,11 @@ export function turnLine(st: Settings, arrow: string, promptId: string,
   const tag = turnTag(arrow, promptId, turnIndex);
   const when = turnWhen(date, time);
   if (!tag && !when) return [];
-  // Every blank after the last window's share taken off, its own and the
-  // one that stands in for its reset, so two blanks part it from 📅.
-  const windows = planPieces(st, sess, week, null, null)
-    .filter((p) => !hidden(hide, TAG_SCOPE + "." + p.path))
-    .flatMap((p) => p.spans);
-  while (windows.length && /^ *$/.test(windows.at(-1)!.text)) windows.pop();
+  const windows = PLAN_MARKS.slice(0, 2).flatMap(([key, mark, colour], i) => {
+    const v = [sess, week][i];
+    return v === null || hidden(hide, TAG_SCOPE + ".plan." + key) ? []
+      : [windowSpans(st, mark, colour, v, null)];
+  }).flatMap((w, i) => i ? [span("  "), ...w] : w);
   const parts: Span[][] = [
     ...(tag ? [[span(tag)]] : []),
     ...(windows.length ? [[span(E_ACCT + " "), ...windows]] : []),

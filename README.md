@@ -26,17 +26,21 @@ Here the two places are drawn together, the prompt between them left out:
      ├─ 🎩 🟢 Clover      🧬O⁵🐇  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍 🟢 Marigold …  🧬O⁵🐇  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ …     4 more              🟢   3   💰 0.1                 🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+     ├─ 🔩 🟢 Bluebell    🧬So🐌  🤖 333   💰 0.1   🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
+     ├─ 📐 🟢 Thistle     🧬O⁵🐇  🚦 4.7m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
+     ├─ 🐚 🟢 sleep 300 && make test                                                     ⌛  2m
+     ╰─ 👥 🟡 Quince      🧬O⁵🐇  🥚  30s
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-  📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+  📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
 Read these three first:
 
 * **🎮 💰 35**: the session has cost $35 at API prices.
-* **💳 🔋 15٪ 🔜 6.7m**: the account has used 15٪ of its 5-hour window, which
+* **💳 🔜 6.7m 🔋 15٪**: the account has used 15٪ of its 5-hour window, which
   resets in 6.7 minutes. 🪫 is the same for the weekly window, and 🦊,
-  where the account has one, for the weekly Fable window.
+  where the account has one, for the weekly Fable window; each 🔜 leads
+  the windows that reset then, the soonest first.
 * **🧵 🧠115k 11٪**: the main thread's context holds 115k tokens, 11٪ of the
   window.
 

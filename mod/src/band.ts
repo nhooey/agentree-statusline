@@ -38,7 +38,7 @@ import {
   mainDoing, mainLabel, projectName, sessionLabel, turnLabel, untilReset,
   workspacePieces, ymd,
 } from "./cells.ts";
-import type { SideWindow, Workspace } from "./cells.ts";
+import type { PlanKey, PlanWindow, Workspace } from "./cells.ts";
 import type { Limits } from "./claude_sources.ts";
 import { WEEKLY_WINDOWS } from "./sources.ts";
 import type { WeeklyKey } from "./sources.ts";
@@ -319,12 +319,13 @@ export function workspaceOf(fig: Dict, home: string): Workspace {
  * Fable window, `limits.fable_pct`, and the others, `limits.opus_pct` and
  * the like), each where the source has it, and on the label the time to
  * each reset, `limits.session_reset`, `weekly_reset`, `fable_reset` and
- * the like, then 📅 🕐 off `clock.now`.  A side window's 🔜 is left out
- * where it is the weekly one's, already drawn after 🪫, unless
- * `weekHidden`.  A reading STALE_MARK_S or more old, by
- * `usage.reading.as_of`, has each figure marked with 🧊 and its age. */
+ * the like, leading the windows that reset then, then 📅 🕐 off
+ * `clock.now`.  A window whose path `plan.<key>` is `hide`'s is left out,
+ * and a 🔜 with it where no window is left to reset then.  A reading
+ * STALE_MARK_S or more old, by `usage.reading.as_of`, has each figure
+ * marked with 🧊 and its age. */
 function accountRow(st: Settings, fig: Dict, now: number,
-  weekHidden = false): Row {
+  hide: (path: string) => boolean = () => false): Row {
   const lim = decodeLimits(fig.limits);
   // The resets as the epochs the document carries, not the minute stamps
   // decodeLimits makes of them.
@@ -346,22 +347,21 @@ function accountRow(st: Settings, fig: Dict, now: number,
   const credits = drawn.map((d) => ({ kind: String((d.credit as Dict).kind),
     spans: creditCell(st, d.credit as Dict,
       d.tint as "red" | "amber" | null, owed?.original === true, now) }));
-  const week = pct(lim.weekly_pct);
-  const weekDrawn = !weekHidden && (week !== null ||
-    reset("weekly_reset") !== null);
-  // Each side window with a share; one 🔜 for it and the plan's week
-  // where they reset together: the weekly one's, while 🪫 is drawn.
-  const side: SideWindow[] = SIDE_MARKS.flatMap(([key]) => {
-    const v = pct(lim[(key + "_pct") as keyof Limits]);
-    if (v === null) return [];
-    const at = (raw[key + "_reset"] ?? null) as number | null;
-    const shared = weekDrawn && at !== null && at === raw.weekly_reset;
-    return [{ key, pct: v, reset: shared ? null : reset(key + "_reset") }];
-  });
-  return { scope: "account", label: accountLabel(st,
-    pct(lim.session_pct), week, reset("session_reset"),
-    reset("weekly_reset"), ymd(now), hms(now), stale, credits, side),
-    cells: {} };
+  const window = (key: PlanKey, share: string, k: string): PlanWindow => ({
+    key, pct: pct(share), reset: reset(k),
+    at: (raw[k] ?? null) as number | null });
+  // The plan's pair, then each side window with a share; planPieces puts
+  // those that reset together under one 🔜.
+  const windows: PlanWindow[] = [
+    window("five_hour", lim.session_pct, "session_reset"),
+    window("week", lim.weekly_pct, "weekly_reset"),
+    ...SIDE_MARKS.flatMap(([key]) => {
+      const w = window(key, lim[(key + "_pct") as keyof Limits],
+        key + "_reset");
+      return w.pct === null ? [] : [w];
+    })].filter((w) => !hide("plan." + w.key));
+  return { scope: "account", label: accountLabel(st, windows, ymd(now),
+    hms(now), stale, credits), cells: {} };
 }
 
 /** 🎤: the turn opened last, `open_turn`, with `accounting.open_turn`
@@ -639,8 +639,8 @@ export function phaseRows(rows: BandRows, phase: Phase,
 
 /** The 💳 row's label as one line of plain text after the workspace (📦
  * 🌿 📁, and 🔀 🎨 where the session has them),
- * "📦claude-code-usage-statusline 🌿master  📁~/git/📦  💳 🔋 1٪ 🔜 4.8h
- * 🪫 49٪ 🔜 9.8h  📅 2026-10-19  🕐 22:12:44", each piece hidden by its own
+ * "📦claude-code-usage-statusline 🌿master  📁~/git/📦  💳 🔜 4.8h 🔋 1٪
+ * 🔜 9.8h 🪫 49٪  📅 2026-10-19  🕐 22:12:44", each piece hidden by its own
  * path, the workspace's under `account.workspace`, with `home` shortening
  * the 📁 directory as the band's does; ""
  * under the hide path `account`.  The footer it is drawn on takes a string,
@@ -673,16 +673,11 @@ function accountPieces(st: Settings, fig: Dict, hide: readonly string[],
   const shown: Piece[] = workspacePieces(workspaceOf(fig, home)).filter((p) =>
     !hidden(hide, "account." + p.path) &&
     !(rooted && ROOT_WORKSPACE.includes(p.path)));
-  let dropped = false;
-  for (const p of accountRow(st, fig, now,
-    hidden(hide, "account.plan.week")).label) {
-    // A window's 🔜 goes with its window.
-    const gone: boolean = hidden(hide, "account." + p.path) ||
-      (dropped && p.path === "plan.reset");
-    dropped = gone && p.path !== "plan.reset";
-    if (!gone) shown.push(p);
-  }
-  return shown;
+  const gone = (path: string): boolean => hidden(hide, "account." + path);
+  // A hidden window is left out before the windows are grouped, so a 🔜
+  // leaves with the last window that resets then.
+  return [...shown,
+    ...accountRow(st, fig, now, gone).label.filter((p) => !gone(p.path))];
 }
 
 /** The paths the 💳 row sheds, one at a time and in this order, while it
