@@ -112,9 +112,10 @@ export function tokenRate(samples: unknown, status: string): number | null {
   return Math.max(0.0, last - first) / (A_TICK_S * (samples.length - 1));
 }
 
-/** The row's two state marks, (phase, mode). */
+/** The row's two state marks, (phase, mode), at `now`, else at the
+ * clock. */
 export function agentState(status: string, usage: unknown = null,
-  waitingOn = false): [string, string] {
+  waitingOn = false, now: number | null = null): [string, string] {
   if (status === "running") {
     const names = uaList(usage, "pending").map((p) => p[1]);
     const mode = ua(usage, "eta") === null ? ""
@@ -125,14 +126,15 @@ export function agentState(status: string, usage: unknown = null,
   if (status === "pending") return [E_PHASE_PAUSE, E_MODE_QUEUED];
   const eta = ua(usage, "eta") as Eta;
   const bg = ua(usage, "background", []);
+  const t = now === null ? Date.now() / 1000 : now;
   if (pyTruthy(ua(usage, "api_error", false)) &&
     (status === "completed" || status === "failed")) {
     // Claude Code calls an agent whose last request failed for good
     // completed; the mark says why it stopped.
-    return [parked(status, eta, waitingOn, bg) ? E_PHASE_PAUSE : E_PHASE_END,
-      E_MODE_API_ERROR];
+    return [parked(status, eta, t, waitingOn, bg) ? E_PHASE_PAUSE
+      : E_PHASE_END, E_MODE_API_ERROR];
   }
-  if (parked(status, eta, waitingOn, bg)) {
+  if (parked(status, eta, t, waitingOn, bg)) {
     const kinds = uaList(usage, "background").map((b) => b[1]);
     const woke = (["bash", "monitor"] as const).find((k) => kinds.includes(k));
     return [E_PHASE_PAUSE, waitingOn ? E_MODE_AGENTS
@@ -149,15 +151,15 @@ const PHASES: readonly string[] = [E_PHASE_RUN, E_PHASE_PAUSE, E_PHASE_END,
 
 /** The phase circle and the mode mark after it; see agentState. */
 export function renderState(status: string, usage: unknown = null,
-  waitingOn = false): Span[] {
-  const [phase, mode] = agentState(status, usage, waitingOn);
+  waitingOn = false, now: number | null = null): Span[] {
+  const [phase, mode] = agentState(status, usage, waitingOn, now);
   return spans([phaseSpan(phase), mode]);
 }
 
 /** The phase circle alone: the mode is the Doing cell's; see renderDoing. */
 export function renderPhase(status: string, usage: unknown = null,
-  waitingOn = false): Span[] {
-  return spans(phaseSpan(agentState(status, usage, waitingOn)[0]));
+  waitingOn = false, now: number | null = null): Span[] {
+  return spans(phaseSpan(agentState(status, usage, waitingOn, now)[0]));
 }
 
 /** The phase circle, or a status never seen in amber. */
@@ -187,21 +189,26 @@ export function agentElapsed(startMs: unknown, now: number | null,
   return Math.max(0.0, t - t0);
 }
 
-/** Whether a task is only waiting: one `$.agent.list()` calls waiting, or
- * one Claude Code calls completed with an ETA still live and time left on
- * it, an agent under it, or a background task it started.  A report of 0s
- * is the skill's sign-off, and liveEta reads a SubagentHandback call as
- * one: an agent that has handed back, and has not been resumed since, has
- * finished. */
-export function parked(status: string, eta: unknown, waitingOn = false,
-  background: unknown = []): boolean {
+/** Whether a task is only waiting at `now`: one `$.agent.list()` calls
+ * waiting, or one Claude Code calls completed with an agent under it, a
+ * background task it started, or an ETA with time left at `now`.  The
+ * ETA holds it only until the report's epoch plus the seconds it said
+ * were left; past that, it has finished.  A report of 0s is the skill's
+ * sign-off, and liveEta reads a SubagentHandback call as one: an agent
+ * that has handed back, and has not been resumed since, has finished. */
+export function parked(status: string, eta: unknown, now: number,
+  waitingOn = false, background: unknown = []): boolean {
   return status === "waiting" || (status === "completed" &&
-    (etaLeft(eta) || waitingOn || pyTruthy(background)));
+    (etaLeft(eta, now) || waitingOn || pyTruthy(background)));
 }
 
-/** Whether `eta`, a report as (epoch, seconds left), has time left. */
-function etaLeft(eta: unknown): boolean {
-  return Array.isArray(eta) && eta.length > 1 && Number(eta[1]) > 0;
+/** Whether `eta`, a report as (epoch, seconds left), has time left at
+ * `now`: some was left at the report, and its epoch plus that is later
+ * than `now`. */
+function etaLeft(eta: unknown, now: number): boolean {
+  if (!Array.isArray(eta) || eta.length < 2) return false;
+  const at = Number(eta[0]), left = Number(eta[1]);
+  return left > 0 && at + left > now;
 }
 
 /** The ids with an agent running or not yet started anywhere under them. */
@@ -260,9 +267,9 @@ export function stateSince(status: string, usage: unknown, phase: string,
 export function renderDoing(st: Settings, status: string, usage: unknown,
   waitingOn = false, rate: number | null = null, now: number | null = null,
   task: unknown = null): Span[] {
-  const [phase, mode] = agentState(status, usage, waitingOn);
-  if (!mode) return CELLS.rate(st, rate);
   const t = now === null ? Date.now() / 1000 : now;
+  const [phase, mode] = agentState(status, usage, waitingOn, t);
+  if (!mode) return CELLS.rate(st, rate);
   const since = stateSince(status, usage, phase, mode, task);
   const secs = since === null ? null : Math.max(0.0, t - since);
   const figW = A_RATE_W - visWidth(mode, st.widths) - 1;
@@ -346,8 +353,9 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
   const light = week !== null && (week as number) < MAG_SHARE_AGENT;
   const billed = pyTruthy(ua(usage, "parts", []));
   const ownEta = ua(usage, "eta") as Eta;
+  const t = now === null ? Date.now() / 1000 : now;
   const live = status === "running" ||
-    parked(status, ownEta, waitingOn, ua(usage, "background", []));
+    parked(status, ownEta, t, waitingOn, ua(usage, "background", []));
   // A finished row stops at its last billed stamp, else at its last
   // working span; with neither, ⌛ is blank.
   const work = uaList(usage, "work");
@@ -368,8 +376,7 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
     etaFinish(shownEta!)! <= etaFinish(ownEta!)! + 1e-6;
   // An agent that has ended has its ⛳ read at its end, as its ⌛ is; one
   // that signed off at zero draws none.
-  const etaNow = end === null ? now
-    : Math.min(now === null ? Date.now() / 1000 : now, end);
+  const etaNow = end === null ? now : Math.min(t, end);
   const etaCell = !live && signedOff ? [] : CELLS.eta(st, shownEta,
     task.startTime, etaNow, status,
     ua(usage, "last_epoch") as number | null, signedOff);
@@ -413,14 +420,16 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
  * counts, the name, the branch and the activity.  Each count is drawn at
  * its width in `widths0` (or `kidsW` for 👶🏻), and not at all at 0;
  * `packed` draws only the row's own counts, each at its own width, as the
- * band's tree does, where depth already moves each name. */
+ * band's tree does, where depth already moves each name.  The phase is
+ * the one at `now`, else at the clock. */
 export function agentLabel(st: Settings, task: Dict, usage: unknown,
   meta: unknown, waitingOn = false, kids = 0, kidsW = 0,
-  widths0: PanelWidths | null = null, packed = false): Piece[] {
+  widths0: PanelWidths | null = null, packed = false,
+  now: number | null = null): Piece[] {
   const widths: Partial<PanelWidths> = widths0 ?? {};
   const status = strOr(task.status), kind = strOr(task.type);
   const head = spans([renderKind(strOr(pyGet(meta, "agentType")), kind),
-    seg(st, A_STATE_W, renderPhase(status, usage, waitingOn)), " "]);
+    seg(st, A_STATE_W, renderPhase(status, usage, waitingOn, now)), " "]);
   const out: Piece[] = [{ path: "name.kind", spans: head, drop: 0 }];
   const counts: [string, number, Span[]][] = [
     ["state.kids", kidsW, renderKids(kids)],

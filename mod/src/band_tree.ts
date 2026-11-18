@@ -475,13 +475,14 @@ function linked(pieces: readonly Piece[], repo: string | null,
   });
 }
 
-/** Whether a task has ended: failed, killed, or completed and waiting on
- * nothing (parked says what a completed agent can still wait on).  A
- * waiting one has not: it is paused. */
-function ended(t: Dict, u: Dict, busy: ReadonlySet<string>): boolean {
+/** Whether a task has ended at `now`: failed, killed, or completed and
+ * waiting on nothing (parked says what a completed agent can still wait
+ * on).  A waiting one has not: it is paused. */
+function ended(t: Dict, u: Dict, busy: ReadonlySet<string>,
+  now: number): boolean {
   const s = String(t.status ?? "");
   if (s === "failed" || s === "killed") return true;
-  return s === "completed" && !parked(s, u.eta, busy.has(String(t.id)),
+  return s === "completed" && !parked(s, u.eta, now, busy.has(String(t.id)),
     u.background);
 }
 
@@ -512,7 +513,7 @@ function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
   }
   const isEnded = (id: string): boolean => {
     const t = byId.get(id)!;
-    return ended(t.task, t.usage, busy);
+    return ended(t.task, t.usage, busy, a.now);
   };
   const linger = a.linger ?? 0;
   // When an agent ended: its last record.
@@ -556,8 +557,9 @@ function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
     const folded = shut(id);
     const drawn = !folded && bgOf(id).length > 0;
     const label = agentLabel(st, t.task, t.usage, t.meta, waitingOn,
-      folded ? under(id).length : 0, 0, null, true).filter((p) => !drawn ||
-      (p.path !== "state.shells" && p.path !== "state.monitors"));
+      folded ? under(id).length : 0, 0, null, true, a.now)
+      .filter((p) => !drawn ||
+        (p.path !== "state.shells" && p.path !== "state.monitors"));
     return { scope: "agent",
       label: pressingAll([...label, ...progressPiece(t.progress)],
       { kind: "view", agent: id }),
@@ -600,7 +602,7 @@ export function stampedSplit(a: TreeAgents):
   const owe: string[] = [];
   for (const t of a.tasks.filter(ran)) {
     const id = String(t.task.id);
-    if (ended(t.task, t.usage, busy)) stamp.add(id);
+    if (ended(t.task, t.usage, busy, a.now)) stamp.add(id);
     else owe.push(id);
   }
   return { stamp, owe };
@@ -646,7 +648,7 @@ function stampedNodes(st: Settings, a: TreeAgents): Node[] {
     const waitingOn = busy.has(id);
     const eta: Eta | false = etas.has(id) ? etas.get(id)! : false;
     const label = agentLabel(st, t.task, t.usage, t.meta, waitingOn, 0, 0,
-      null, true).map((p) => p.path === "name.kind"
+      null, true, a.now).map((p) => p.path === "name.kind"
       ? { ...p, spans: p.spans.map((s) => ({ ...s,
         text: s.text.replace(E_PHASE_END, E_PHASE_DONE) })) } : p);
     return { scope: "agent",
