@@ -16,14 +16,37 @@ test("a waiting agent is paused, on its shell, its Monitor, its agents, " +
   assert.deepEqual(ar.agentState("waiting", bg(["monitor"])), ["🟡", "📡"]);
   assert.deepEqual(ar.agentState("waiting", bg([]), true), ["🟡", "💤"]);
   assert.deepEqual(ar.agentState("waiting", bg([])), ["🟡", "📋"]);
-  assert.ok(ar.parked("waiting", [], false, []));
+  assert.ok(ar.parked("waiting", [], 1000, false, []));
 });
 
 test("a completed agent is parked on an ETA with time left, and finished " +
   "on its 0s sign-off", () => {
-  assert.ok(ar.parked("completed", [1000, 60], false, []));
-  assert.ok(!ar.parked("completed", [1000, 0], false, []));
-  assert.ok(!ar.parked("completed", [], false, []));
+  assert.ok(ar.parked("completed", [1000, 60], 1030, false, []));
+  assert.ok(!ar.parked("completed", [1000, 0], 1000, false, []));
+  assert.ok(!ar.parked("completed", [], 1000, false, []));
+});
+
+test("a completed agent's pause on its ETA ends when the ETA runs out, " +
+  "unless a background task still holds it", () => {
+  const NOW = 1786847000;
+  const at = (eta: number[], kinds: string[] = []) => ({ eta, pending: [],
+    background: kinds.map((k, i) => ["b" + i, k]) });
+  const live = at([NOW - 60, 240]);
+  assert.ok(ar.parked("completed", live.eta, NOW, false, live.background));
+  assert.deepEqual(ar.agentState("completed", live, false, NOW),
+    ["🟡", "⛳"]);
+  const gone = at([NOW - 600, 240]);
+  assert.ok(!ar.parked("completed", gone.eta, NOW, false, gone.background));
+  assert.deepEqual(ar.agentState("completed", gone, false, NOW),
+    ["⚫", "✅"]);
+  const shell = at([NOW - 600, 240], ["bash"]);
+  assert.ok(ar.parked("completed", shell.eta, NOW, false, shell.background));
+  assert.deepEqual(ar.agentState("completed", shell, false, NOW),
+    ["🟡", "💻"]);
+  const zero = at([NOW - 60, 0]);
+  assert.ok(!ar.parked("completed", zero.eta, NOW, false, zero.background));
+  assert.deepEqual(ar.agentState("completed", zero, false, NOW),
+    ["⚫", "✅"]);
 });
 
 test("an ended agent reads its ⛳ at its end: none for a sign-off at zero, " +
@@ -71,8 +94,10 @@ test("a SubagentHandback ends the agent as a 0s sign-off does; resumed, it " +
     result(12, "hb")];
   const k = usage(gave);
   assert.deepEqual(k.eta, [T0 + 12 * 60, 0]);
-  assert.ok(!ar.parked("completed", k.eta, false, k.background));
-  assert.deepEqual(ar.agentState("completed", k), ["⚫", "✅"]);
+  assert.ok(!ar.parked("completed", k.eta, T0 + 13 * 60, false,
+    k.background));
+  assert.deepEqual(ar.agentState("completed", k, false, T0 + 13 * 60),
+    ["⚫", "✅"]);
   const st = fm.settings({}, true, false, 5);
   assert.deepEqual(ar.agentCells(st, { id: "k", status: "completed",
     startTime: (T0 + 600) * 1000 }, k, {}, {}, NO_LIMITS, T0 + 3 * 3600)
@@ -85,6 +110,7 @@ test("a SubagentHandback ends the agent as a 0s sign-off does; resumed, it " +
     says(13, ETA + "10m", "end_turn")]);
   assert.deepEqual(m.eta, [T0 + 13 * 60, 600]);
   assert.deepEqual(m.background, [["sh1", "bash"]]);
-  assert.ok(ar.parked("completed", m.eta, false, m.background));
-  assert.equal(ar.agentState("completed", m)[0], "🟡");
+  assert.ok(ar.parked("completed", m.eta, T0 + 14 * 60, false,
+    m.background));
+  assert.equal(ar.agentState("completed", m, false, T0 + 14 * 60)[0], "🟡");
 });
