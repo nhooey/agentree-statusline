@@ -40,15 +40,13 @@ export const PAYER_GLYPHS: { readonly [kind in Payer]: string } = {
   cloud: E_CLOUD, promo: E_PROMO, prepaid: E_PREPAID, extra: E_EXTRA,
 };
 
-/** What the edge knows of the session's credential, as it reads it. */
-export type Credential = {
-  /** CLAUDE_CODE_REMOTE: a Claude Code on the web session. */
-  readonly remote: boolean;
-  /** ANTHROPIC_API_KEY set, with Bedrock and Vertex off. */
-  readonly apiKey: boolean;
-  /** Bedrock, Vertex or another provider: none of the account's pools. */
-  readonly elsewhere: boolean;
-};
+/** The kind of the session's credential, as the edge reads it:
+ * - `elsewhere`: Bedrock, Vertex or another provider, none of the
+ *   account's pools;
+ * - `remote`: a Claude Code on the web session;
+ * - `key`: an API key;
+ * - `plan`: the plan's login. */
+export type Credential = "elsewhere" | "remote" | "key" | "plan";
 
 function figure(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -65,14 +63,19 @@ function live(credits: unknown, kind: string, now: number): Dict[] {
  * `credits` the kept reading's credits[]. */
 export function payerOf(cred: Credential, pcts: readonly (number | null)[],
   credits: unknown, now: number): Payer | null {
-  if (cred.elsewhere) return null;
-  if (cred.remote) return "cloud";
-  if (cred.apiKey) {
-    return live(credits, "promo", now).some((c) =>
-      (figure(c.remaining) ?? 0) > 0) ? "promo" : "prepaid";
+  switch (cred) {
+    case "elsewhere":
+      return null;
+    case "remote":
+      return "cloud";
+    case "key":
+      return live(credits, "promo", now).some((c) =>
+        (figure(c.remaining) ?? 0) > 0) ? "promo" : "prepaid";
+    case "plan": {
+      const spent = pcts.some((p) => p !== null && p >= 100);
+      return spent && live(credits, "extra", now).length ? "extra" : null;
+    }
   }
-  const spent = pcts.some((p) => p !== null && p >= 100);
-  return spent && live(credits, "extra", now).length ? "extra" : null;
 }
 
 /** The credit of the reading that `payer` draws on: the first unexpired
