@@ -365,14 +365,19 @@ what is left for the TypeScript to write, so `OP5` should move a
 generator to Node only where a step below keeps its family.
 
 4. **`TF4` The status line, the old receipt and the panel, removed from
-   the TypeScript, with their goldens.** `renderStatus`,
-   `renderStatusFigures`, `renderCostLine`, `renderCostFigures` and
-   `renderTaskRows` go, with `claude_render.test.ts`,
-   `claude_cost.test.ts`, `claude_subagent_render.test.ts`,
-   `tests/golden/`, `receipt/`, `render/status.json`, and the cases of
-   `cases.json` that differ only in width or in a flag those renderers
-   read. The cell helpers the band uses stay, pinned by
-   `render/cells.json` and `rows/`.
+   the TypeScript, with their goldens.** Done.
+
+   - `claude_render.ts`, `claude_cost.ts`, `claude_cost_render.ts` and
+     `claude_subagent_render.ts` are gone, with their tests,
+     `tests/golden/`, `receipt/` and `render/status.json`, and the
+     constants and the `figures.ts` argv readers only they used.
+   - `cases.json` holds one case per figures document, 45, with no
+     `cols` and no `flags`; the two true-colour environments and the
+     cost document only they named go.
+   - The cell helpers the band uses stay, pinned by `render/cells.json`,
+     cut to their 470 cases, and `rows/`.
+   - `panel/` stays as `TF5`'s inputs; its drawn rows are read by no
+     test.
 
 5. **`TF5` The panel's inputs as tree cases.** `panel/` keeps one file,
    `inputs.json`: the prepared tasks of the corpus sessions and of the

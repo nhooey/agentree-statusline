@@ -16,7 +16,6 @@ import type { Dict } from "../src/py.ts";
 import { workspacePieces } from "../src/cells.ts";
 import { draw } from "../src/grid.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
-import { panelLayout } from "../src/claude_subagent_render.ts";
 import {
   FOOTER_GAP, FOOTER_JOIN, MODE_PILLS, TAIL_CUT, accountLine, accountText, footerParts, modeOfHint, bandLines, bandRows, fixedKeys, footerTail,
   phaseRows,
@@ -411,13 +410,12 @@ test("the 💳 row draws 🔀 and 🎨, each hidden by its path, and sheds in or
     assert.ok(plain([], 30).endsWith("…"));
   });
 
-test("rows inset under the footer line stack on the agent panel's columns", () => {
-  // Claude Code draws the footer line's container hint-inset columns
-  // in; drawn at the full width there, every cell of the band stood that
-  // many columns right of the panel's (seen live 2026-10-20).  At the
-  // default edge, and at 0, where the band under the footer line and the
-  // panel under --right-edge 0 take the [-]'s columns back (asked
-  // 2026-10-20).
+test("rows inset under the footer line keep the columns of a row at full width", () => {
+  // Claude Code draws the footer line's container hint-inset columns in;
+  // drawn at the full width there, every cell of the band stood that many
+  // columns right of a row drawn at the full width.  At the default edge,
+  // and at 0, where the band under the footer line takes the [-]'s
+  // columns back.
   for (const edge of [RIGHT_EDGE, 0]) {
     const st = settings({}, true, false, edge);
     const fig = document("status/18-agents");
@@ -432,12 +430,12 @@ test("rows inset under the footer line stack on the agent panel's columns", () =
       });
     for (const cols of [120, 160, 196]) {
       const opts = { rate: null, phase: "running" as const };
-      const [pcols, keys] = panelLayout(st, cols, hide);
-      assert.deepEqual(keys, fixedKeys(st, cols, hide), String(cols));
-      // The agent panel's row, `  ◯ ` chrome and all, at no indent.
+      const keys = fixedKeys(st, cols, hide);
+      // The main row as an agent row, `  ◯ ` chrome and all, at the full
+      // width.
       const main = inZone(fig, () => bandRows(st, fig, opts)).main;
-      const panel = plain(draw(st, { ...main, scope: "agent", depth: 1 },
-        keys, pcols, hide));
+      const full = plain(draw(st, { ...main, scope: "agent", depth: 1 },
+        keys, cols, hide));
       for (const inset of [0, 2]) {
         const band = inZone(fig, () => bandLines(st, fig, cols, hide,
           { ...opts, inset }));
@@ -447,7 +445,7 @@ test("rows inset under the footer line stack on the agent panel's columns", () =
             [edge, cols, inset, line].join(" "));
         }
         const line = " ".repeat(inset) + plain(band[1]);
-        assert.deepEqual(at(line), at(panel),
+        assert.deepEqual(at(line), at(full),
           [edge, cols, inset, line].join(" "));
         // The 💳 row ends where they do, on a terminal wide enough for it.
         if (cols < 160) continue;

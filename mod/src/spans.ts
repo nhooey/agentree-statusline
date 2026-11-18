@@ -300,14 +300,13 @@ function sgr(s: Span, truecolor: boolean): string {
  * Each styled span is opened with its escapes and closed with a reset of
  * its own, so no attribute leaks into the next: R, or UNBOLD for a span
  * that is only bold, which turns bold off without stomping the colour
- * around it.  Two exceptions keep the bytes the renderers wrote before
- * spans, which the goldens pin:
+ * around it.  Two exceptions, which tests/fixtures/formatting/spans.json
+ * pins:
  *
  * - A span is not reset before one that only lays a background under the
  *   same colour: a chat row's prefix runs straight into its body on the
  *   dark band, "fg 👤 B_DRK fg text R".
- * - `close` writes one more reset at the end, which the status line's grid
- *   rows always carried after their last cell.
+ * - `close` writes one more reset at the end, after the last cell.
  *
  * `runs` keeps the receipt's bytes: its metric groups wrote a run of bare
  * colours, F_TUP ▴ then F_TDN ▾, with one reset after the run, so with it

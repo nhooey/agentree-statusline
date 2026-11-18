@@ -1,28 +1,16 @@
 // The figures boundary: the records written as a figures document and
-// read back, and stage two of each readout drawn from it.
+// read back.
 //
-// encodeRecord and decodeRecord and their tables, encodeTurn and
-// decodeTurn for a document's turns, and renderStatusFigures with the argv
-// reading it does.  The documents themselves are built by claude.ts.
-// tests/README.md, "Figures", is the document's schema.
-//
-// The render stage needs two things from outside the document: the
-// terminal profile, from the environment, and HOME, to show the working
-// directory as "~".  Both are the caller's, the profile as the Settings it
-// builds (statusSettings) and HOME as an argument.  It also needs TZ at
-// the document's clock.tz; JavaScript reads TZ afresh for every Date, so
-// the edge sets process.env.TZ before drawing and nothing here touches
-// the environment.
+// encodeRecord and decodeRecord and their tables, and encodeTurn and
+// decodeTurn for a document's turns.  The documents themselves are built
+// by claude.ts.  tests/README.md, "Figures", is the document's schema.
 import { STAMP_FMT } from "./spec.ts";
-import { settings } from "./formatting.ts";
-import type { Env, Settings } from "./formatting.ts";
 import type {
   CacheShares, Git, Limits, Payload, Transcript, Turn,
 } from "./claude_records.ts";
-import { renderStatus } from "./claude_render.ts";
 import { _naiveTimestamp, _strptimeStamp } from "./claude_calib.ts";
 import type { Accounting } from "./claude_calib.ts";
-import { isDict, pyIsDigit, pyIntDigits } from "./py.ts";
+import { isDict } from "./py.ts";
 import type { Dict } from "./py.ts";
 
 // The status document's `turn`, `accounting` and `open_turn`,
@@ -198,10 +186,6 @@ export function decodeLimits(d: unknown): Limits {
   return decodeRecord<Limits>(LIMITS, d);
 }
 
-export function decodeCacheShares(d: unknown): CacheShares {
-  return decodeRecord<CacheShares>(CACHE_SHARES, d);
-}
-
 // Turn's str fields: written null in the document when "", and "" again
 // on reading (decodeTurn).  Turn has no other missing-value fields, and no
 // stamps.
@@ -243,60 +227,4 @@ export function decodeTurn(d: { readonly [k: string]: unknown }): Turn {
 export function readAccounting(acc: { readonly [k: string]: unknown }):
   Accounting {
   return { ...acc } as unknown as Accounting;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// The flags a render reads.
-// ════════════════════════════════════════════════════════════════════════════
-
-/** _flag: the value after `--name`, matched by membership. */
-export function flag(argv: readonly string[], name: string,
-  dflt = ""): string {
-  const i = argv.indexOf(name);
-  return i >= 0 && i + 1 < argv.length ? argv[i + 1] : dflt;
-}
-
-/** column_rules: the ASK for the rules; rulesOn decides the room. */
-export function columnRules(argv: readonly string[]): boolean {
-  return argv.includes("--column-rules") &&
-    !argv.includes("--no-column-rules");
-}
-
-/** _cols: --cols as a width, "--cols 0" an unknown one, and anything else
- * the terminal's width, which the edge measures and passes as `termCols`
- * (termCols in formatting.ts). */
-export function cols(argv: readonly string[],
-  termCols: number | null = null): number | null {
-  const s = flag(argv, "--cols");
-  if (!pyIsDigit(s)) return termCols;
-  return pyIntDigits(s) || null;
-}
-
-/** The settings a render draws under: the terminal profile from `env`, and
- * the two switches main() sets from argv before anything is drawn. */
-export function statusSettings(env: Env, argv: readonly string[]): Settings {
-  return settings(env, !argv.includes("--no-mark-spacing"),
-    argv.includes("--subscript-decimals"));
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Stage two.
-// ════════════════════════════════════════════════════════════════════════════
-
-/** renderStatusFigures: the status document drawn at --cols under the
- * flags in argv, reading no file and no clock.  `home` stands for HOME. */
-export function renderStatusFigures(st: Settings, fig: Dict,
-  argv: readonly string[], home: string,
-  termCols: number | null = null): string {
-  const clock = fig.clock as Dict;
-  const rate = fig.rate as number | null;
-  let output = renderStatus(st,
-    decodePayload(fig.payload), decodeTranscript(fig.transcript),
-    decodeGit(fig.git), decodeLimits(fig.limits), cols(argv, termCols),
-    clock.now as number, columnRules(argv),
-    Math.trunc(fig.context_window as number), rate,
-    decodeCacheShares(fig.cache_shares), home);
-  const text = (fig.usage as Dict).account_text;
-  if (text) output += (text as string) + "\n";
-  return output;
 }

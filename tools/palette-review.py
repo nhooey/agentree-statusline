@@ -55,8 +55,6 @@ DRAWINGS = [
      ["node", "mod/tools/draw-figures.ts",
       "tests/fixtures/figures/cost/01-plain.json", "--cols", "150"]),
 ]
-GOLDENS = [("true colour", "status/true-colour-01@196.txt"),
-           ("256 colours", "status/01-baseline@196.txt")]
 
 
 # The 256-colour palette as Claude Code's renderer rounds to it.
@@ -262,12 +260,6 @@ def main():
             for level, env in LEVELS:
                 out += ["", "\x1b[1m%s, at %s\x1b[0m" % (label, level), ""]
                 out.append(run(argv, env).rstrip("\n"))
-        for level, golden in GOLDENS:
-            out += ["", "\x1b[1mthe status line golden %s, at %s\x1b[0m" % (
-                golden, level), ""]
-            with open(os.path.join(REPO, "tests", "golden", golden),
-                      encoding="utf-8") as fh:
-                out.append(fh.read().rstrip("\n"))
     sys.stdout.write("\n".join(out) + "\n")
     return 0
 

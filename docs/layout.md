@@ -1274,10 +1274,7 @@ column digits in its place to check it.
 
 ### The status line and the Stop hook
 
-The mod's `mod/src/claude_render.ts` draws the session's figures as a
-status line of three rows, a grid of its own with 👤💬, 📖 and 📝 cells,
-and `mod/src/claude_cost_render.ts` the prompt receipt in the same shape;
-the goldens in `tests/golden/` pin both. Leave any `statusLine` command or
-`Stop` hook that drew them out of `settings.json`: the mod's rows replace
-the status line, and its receipt the Stop hook's, which would otherwise
-print a second one each turn.
+Leave any `statusLine` command or `Stop` hook that drew the session's
+figures out of `settings.json`: the mod's rows replace the status line,
+and its receipt the Stop hook's, which would otherwise print a second one
+each turn.

@@ -6,7 +6,6 @@ holds and which side writes it, what the pinned environment holds still, what
 each case is for, and which recorded behaviours are deliberate.
 
 - [The committed corpora](#the-committed-corpora)
-- [Golden files](#golden-files)
 - [The pinned environment](#the-pinned-environment)
 - [Figures](#figures)
 - [Status cases](#status-cases)
@@ -23,14 +22,13 @@ each case is for, and which recorded behaviours are deliberate.
 
 Everything under `fixtures/` is committed, and each family is one of two
 kinds: written by a generator under `mod/tools/`, or committed data that no
-generator writes, which the mod's tests read as the reference. Payload paths are `${HOME}` and `${FIXTURES}` placeholders that
-the tests fill in, so neither the fixtures nor the goldens carry a
-username.
+generator writes, which the mod's tests read as the reference. Payload
+paths are `${HOME}` and `${FIXTURES}` placeholders that the tests fill in,
+so no fixture carries a username.
 
 ```
 fixtures/
-  cases.json             every case, in order: id, suite, input, cols, env,
-                         flags, figures
+  cases.json             every case, in order: suite, input, env, figures
   env/<name>.json        clock, zone, locale, terminal, usage source,
                          calibration, tracker store, which repo
   payloads/status/       status-line payloads
@@ -39,11 +37,11 @@ fixtures/
   transcripts/subagent/  sessions with agents, for the fold and calibration
                          fixtures; see Subagent row cases below
   figures/<suite>/       the figures documents the cases name; see Figures
-  panel/<group>.json     the subagent rows from the renderer's inputs;
-                         see Subagent row cases below
-  records/ calib/ render/ receipt/ claude/
+  panel/<group>.json     prepared subagent tasks; see Subagent row cases
+                         below
+  records/ calib/ render/ claude/
                          calls of the accounting, the calibration, the cells
-                         and the receipt, each with its arguments and result
+                         and the glue, each with its arguments and result
   config/                the configuration files' cases; see The
                          configuration cases below
   formatting/ sources/   calls of the formatters, the spans and the
@@ -66,25 +64,6 @@ fixtures/
 A family with a generator changes only through it: a hand edit is lost on
 the next run. `tests/all.sh`'s `generated` step reruns them all and fails
 on a difference, and the node suite runs each again in memory.
-
-## Golden files
-
-`golden/status/` and `golden/cost/` hold the status line and the Stop hook's
-receipt of each case in `fixtures/cases.json`, byte for byte, committed
-data. `mod/test/claude_render.test.ts` draws each status case's figures
-document with `mod/src/claude_render.ts` and compares it with its golden, and
-`mod/test/claude_cost.test.ts` each cost case's with
-`mod/src/claude_cost_render.ts`. A golden's name is `CASE@WIDTH.txt`, where
-`WIDTH` is the case's `cols`, the width it is drawn at, and `none` means 0, the
-"terminal width unknown" path. A cost golden is the hook's `systemMessage`,
-not the JSON envelope around it, so a diff is readable.
-
-The files keep their ANSI escapes. To look at one as the terminal would:
-
-```sh
-cat tests/golden/status/01-baseline@196.txt                        # in colour
-sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g' tests/golden/status/01-baseline@196.txt
-```
 
 ## The pinned environment
 
@@ -131,11 +110,11 @@ A readout runs in two stages:
 1. **Figures.** The inputs read -- payload, transcript and agent files, usage
    source, calibration cache, repository, the clock -- and every figure the
    rows draw worked out from them: `statusFigures` in `mod/src/claude.ts`
-   for the status line and the band, and `costFigures` for the receipt.
+   for the band, and `costFigures` for the receipt.
    Everything that reads a file or a cache, runs a command or reads the
    clock happens here.
-2. **Render.** A figures document drawn at a width, under the flags and the
-   terminal profile, reading nothing else.
+2. **Render.** A figures document drawn into rows at a width, under the
+   options and the terminal profile, reading nothing else.
 
 Between them is a figures document. A document has no width and no flags,
 so each case names one in `cases.json`'s `figures`, and the cases that come
@@ -143,9 +122,8 @@ to the same document name the same one, committed once as
 `fixtures/figures/<suite>/<figures>.json`. `mod/test/claude.test.ts` builds
 each case's document from its inputs and compares it, field for field,
 with the one it names, so a case whose document differs fails, and checks
-that the document's records have exactly their fields. The goldens'
-tests draw the committed documents, and the row cases are drawn from them
-too. To draw one by hand:
+that the document's records have exactly their fields. The row cases are
+drawn from the committed documents. To draw one by hand:
 
 ```sh
 node mod/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
@@ -163,10 +141,11 @@ The text is canonical:
 - **Times are epochs**; `clock.tz` is the zone the clock cells are drawn in.
 - **Paths are placeholders**: `${HOME}`, `${FIXTURES}`, and `${SCRATCH}` for
   the suite's scratch directory (the fixture repos, the `cmd:` sources).
-- **No width and no flags.** A case drawn at five widths names one
-  document, except where the cases' shared state makes them differ: the
-  first cost case to run a `cmd:` source records what the command printed,
-  and the later ones read it back from the source cache, which keeps less.
+- **No width and no flags.** A document is drawn at any width and under
+  any option, so a case names one by its input and environment alone,
+  except where the cases' shared state makes them differ: the first cost
+  case to run a `cmd:` source records what the command printed, and the
+  later ones read it back from the source cache, which keeps less.
 - **Committed sparse.** The committed text leaves out `schema`, and each
   field of a record (a `Payload`, `Transcript`, `Git`, `Limits`,
   `CacheShares` or `Turn`) whose value is null, so a schema number touches
@@ -199,7 +178,7 @@ weekly Fable window, `fable_pct` and `fable_reset`, which the 💳 row draws as
 | `usage.plan` | the plan figures the accounting divided by: `session_pct`, `weekly_pct`, `session_resets_at`, `weekly_resets_at` |
 | `usage.account_text` | the account summary row, when one is drawn |
 
-A status document adds the records the status line takes, field for field
+A status document adds the records the band takes, field for field
 as `mod/src/claude_records.ts` defines them:
 
 | Key | Record |
@@ -236,8 +215,7 @@ themselves, so the render stage takes only the percentages from
 
 ## Status cases
 
-The status suite renders each of the 19 payloads at widths 196, 150, 120, 92, 60 and
-unknown (114 goldens), then:
+The status cases are the 19 payloads under the default environment, then:
 
 | Case | What it checks |
 |---|---|
@@ -259,19 +237,13 @@ unknown (114 goldens), then:
 | `17-rounding-boundary` | 999,600 output tokens, which must print `1M`, not `1000k` |
 | `18-agents` | a session whose agents billed |
 | `19-queue-and-compact` | two queued messages and a compaction, the 📨 and 🤏 cells |
-| `dirty-01@*` | `01-baseline` inside the dirty repo: 🍂 and `✱` |
-| `stale-plan-*@196` | an explicitly selected `cmd:` source replaces the native reading the main loop left in the cache |
-| `tight-*@*` | `--no-mark-spacing` |
-| `rules-*@196` | `--column-rules`; the same text as the unruled goldens once the `\|` are spaces |
-| `straddle-02@196` | a 5-hour window that opened inside the last turn |
-| `uncalibrated-02@196` | a reading too coarse to calibrate window shares from |
-| `subdec-*@*` | `--subscript-decimals` |
-| `model-fable@196`, `model-mythos@196` | model families other than Opus, Sonnet and Haiku in the 🤖 cell |
-| `fable-own-reset@196`, `fable-shared-reset@196` | a weekly Fable window beside the plan's two, resetting after the weekly one and with it; the status line draws neither, the 💳 row's cases do |
-| `weekly-windows@196` | the weekly Opus window resetting with the plan's week and the weekly Sonnet window two days after it; the status line draws neither, the 💳 row's cases do, off as the defaults leave them and on |
-
-The column rules are opt-in, and only 196 is wide enough for them (the cut-off
-is 170), so the two `rules-*@196` goldens are the only ruled ones.
+| `dirty-01` | `01-baseline` inside the dirty repo: 🍂 and `✱` |
+| `stale-plan-*` | an explicitly selected `cmd:` source replaces the native reading the main loop left in the cache |
+| `straddle-02` | a 5-hour window that opened inside the last turn |
+| `uncalibrated-02` | a reading too coarse to calibrate window shares from |
+| `model-fable`, `model-mythos` | model families other than Opus, Sonnet and Haiku in the 🤖 cell |
+| `fable-own-reset`, `fable-shared-reset` | a weekly Fable window beside the plan's two, resetting after the weekly one and with it, which the 💳 row's cases draw |
+| `weekly-windows` | the weekly Opus window resetting with the plan's week and the weekly Sonnet window two days after it, which the 💳 row's cases draw, off as the defaults leave them and on |
 
 The status cases' documents read `--usage-source auto`. `01-baseline`
 carries native `rate_limits`, which are cached for 60 seconds, so later
@@ -296,28 +268,21 @@ and `87٪`.
 | `10-turn-id` | the turn tag: a real `promptId` and a `turnIndex` past 9, and the first turn's ids kept off the second's row |
 | `11-turn-id-late` | an opener with no ids, as a queue operation writes it: the tag prints the hash alone |
 
-Each renders at 196, 150, 120, 92 and unknown (55 goldens), then:
+Each is a case under the `app-41-63` environment, then:
 
 | Case | What it checks |
 |---|---|
-| `tight-*` | `--no-mark-spacing`; each has an unflagged sibling at the same width, so the pair's diff is the flag |
-| `plan-cache-01@*` | a second planted source reading (15٪ / 87٪) instead of the default 41٪ / 63٪ |
-| `plan-full-01@*`, `plan-full-tight-01@196` | a window at 99.6٪ and 100٪, drawn 💯 as the status line draws it |
-| `no-acct-01`, `no-datetime-01`, `no-usage-01`, `no-usage-02`, `force-nl-01` | each display switch, at a width where what it removes was visible |
-| `all-off-01@92`, `all-off-02@92` | all four switches at once, at the tightest width |
-| `straddle-01@*` | a window that opened inside the last turn |
-| `uncalibrated-01@*` | a reading too coarse to calibrate from |
-| `subdec-*` | `--subscript-decimals` |
-
-`force-nl-01` is checked at 196 on purpose: the receipt adds that newline by
-itself when the window is narrow, so a narrow case would pass without the flag.
+| `plan-cache-01` | a second planted source reading (15٪ / 87٪) instead of the default 41٪ / 63٪ |
+| `plan-full-01`, `plan-full-02` | a window at 99.6٪ and 100٪, drawn 💯 |
+| `straddle-01` | a window that opened inside the last turn |
+| `uncalibrated-01` | a reading too coarse to calibrate from |
 
 ## Subagent row cases
 
 Two families: the sessions under `transcripts/subagent/`, a main
 transcript each with its agents' files beside it, which the fold fixtures,
-the calibration scan and the band's tree cases read; and the render cases
-under `panel/`.
+the calibration scan and the band's tree cases read; and the prepared
+tasks under `panel/`.
 
 | Session | What it holds |
 |---|---|
@@ -327,9 +292,8 @@ under `panel/`.
 | `04-bare` | no agent files: its tasks were shells and a remote agent |
 | `05-empty` | no agent files and no tasks |
 
-**Render**, `fixtures/panel/<group>.json`: `renderTaskRows`' inputs and the
-rows it draws, each as the joined string and as its spans. The inputs are
-the prepared `(task, usage, meta, shares)` records, the `Limits`, `cols` (the
+**Prepared tasks**, `fixtures/panel/<group>.json`, committed data: the
+prepared `(task, usage, meta, shares)` records, the `Limits`, `cols` (the
 terminal's width), `now` and, where there are any, the `--hide` paths
 `hide`; a group is one terminal profile and one setting of the two switches.
 `corpus*.json` hold the inputs prepared from
@@ -344,10 +308,13 @@ what the corpus does not reach: `states`, `eta`, `counts`, `tree`,
 mixed panel from 400 columns down to 20), `hide` (the mixed panel under `--hide` paths), `missing` (no usage, a partial
 one, no meta or shares, tasks that are skipped), and the mixed panel again
 under each switch and terminal (`tight`, `subdec`, `tmux`, `iterm`,
-`unknown`).
-
-`mod/test/claude_subagent_render.test.ts` draws every case and compares
-both forms with what is committed. `tests/fixtures/claude/agent-usage.json`
+`unknown`). Each case also holds the rows an agent panel drew from them,
+which no test reads. `mod/tools/gen-row-cases.ts` draws `corpus.json`'s
+tasks as the band's tree (see Row cases below), and
+`mod/tools/draw-figures.ts` draws one of its cases by id; the other groups
+are inputs for tree cases still to come, step `TF5` of
+[the fixture plan](../agents/plans/test-fixture-simplification.md).
+`tests/fixtures/claude/agent-usage.json`
 holds each session's agents' usage, field for field, which
 `mod/test/band_tree.test.ts` holds `agentUsageOf` to.
 
@@ -484,23 +451,21 @@ terminal update and before changing any glyph or width-table entry. See
 
 ## Behaviours that look like bugs
 
-Each of these is deliberate and recorded in the goldens.
+Each of these is deliberate and recorded in the figures documents and the
+row cases.
 
 1. **▴ is a weighted sum and is not truncated per turn.** Flooring each turn
    and summing drifts below the true total; the per-turn rows and the totals
    row would stop agreeing.
 2. **Plan percentages come through a source cache.** A reading is fresh for 60
    seconds (300 for admin and experimental sources), so a totals row can lag
-   the live figure by up to a minute. The status line and the cost line quoting
-   the same reading matters more than either being current.
+   the live figure by up to a minute. The band and the receipt quoting the
+   same reading matters more than either being current.
 3. **A limit percentage under 1 drops its leading zero** — `.09٪` — to keep
    two significant digits in four columns. Exactly zero is `0٪`.
-4. **A cost block too narrow for its labels cuts every row's label together.**
-   `place_stacked` decides once against the tightest row, so the 📊 marks stay
-   stacked. The `@92` and `@120` goldens show the whole block cut at once.
-5. **`13-empty-transcript` shows `🎮 0٪` beside `🎤 ?`.** An empty transcript
+4. **`13-empty-transcript` shows `🎮 0٪` beside `🎤 ?`.** An empty transcript
    has a session with no spend, but no last turn to take a share of.
 
 The `plan-cache-*` and `stale-plan-*` cases plant `cmd:` source readings,
-as described in the tables above; no plan cache of the status line's is
+as described in the tables above; no other plan cache is
 involved.

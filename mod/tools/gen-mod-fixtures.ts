@@ -8,7 +8,7 @@
 // answers with are carried in a module: each one's path under /fixtures,
 // as the documents name it, and its bytes as base64.  The tracker store
 // and the planted calibration are the app-41-63 environment's, the store
-// written as the goldens' cases plant it, and the defaults file's text.
+// written as the figures cases plant it, and the defaults file's text.
 // --check fails if the module is stale; test/mod-fixtures.test.ts runs it.
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -30,7 +30,7 @@ function walk(rel: string): string[] {
     .flatMap((n) => walk(path.posix.join(rel, n)));
 }
 
-// The goldens' tracker store, with profiles_v3 as one line.
+// The figures cases' tracker store, with profiles_v3 as one line.
 const TRACKER = '<?xml version="1.0" encoding="UTF-8"?>\n' +
   '<plist version="1.0"><dict>\n' +
   "<key>activeProfileId</key><string>golden</string>\n" +
@@ -58,7 +58,7 @@ export function render(): string {
     "}",
     "",
     "/** The app-41-63 environment: its clock, its planted calibration, and",
-    " * the tracker store the goldens' cases plant for it. */",
+    " * the tracker store the figures cases plant for it. */",
     `export const NOW = ${JSON.stringify(env.now)}`,
     `export const CALIB = ${JSON.stringify(env.calib)}`,
     `export const TRACKER = ${JSON.stringify(tracker)}`,

@@ -7027,13 +7027,7 @@
  ],
  "constants": {
   "BOLD": "\u001b[1m",
-  "C_AGENTS_LABEL": "👥 Usage: Agents (other) ",
-  "C_COMPACT_LABEL": "🤏 Usage: Compact (last) ",
-  "C_LABEL": "🎤 Usage: Prompt (last)  ",
-  "C_TOTALS_LABEL": "🎮 Usage: Session (total)",
   "DIM": "\u001b[2m",
-  "EOL_CLEAR": "\u001b[K",
-  "LINE_CLEAR": "\u001b[0m\u001b[2K",
   "R": "\u001b[0m",
   "SI_UNITS": [
    [
@@ -7049,20 +7043,9 @@
     "k"
    ]
   ],
-  "S_BOT": "🤖 ",
   "S_DATE": "📅 ",
   "S_DIFF": "💾 ",
-  "S_HUMAN": "👤💬 ",
-  "S_IDLE": "⌛ ",
-  "S_PR": "🔀 ",
-  "S_READ": "📖 ",
-  "S_RESET": "🔜",
-  "S_SESS": "🔋 ",
-  "S_STY": "🎨 ",
   "S_TIME": "🕐 ",
-  "S_WEEK": "🪫 ",
-  "S_WORK": "⌛🤖",
-  "S_WRITE": "📝 ",
   "UNBOLD": "\u001b[22m"
  },
  "envs": {

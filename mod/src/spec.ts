@@ -1395,8 +1395,7 @@ export const PAD_PROFILES = ["iterm", "tmux"];
 // Subscripts narrow the readings at or above 1٪ -- "4.1٪" to "4₁٪" -- and
 // those are not the widest.  The sub-1 reading is, in both forms, and the
 // leading zero that makes it so is deliberate and stays (below).  So the
-// switch buys leading pad on the middle magnitudes and no column anywhere,
-// which is what the six widths of golden files show.
+// switch buys leading pad on the middle magnitudes and no column anywhere.
 //
 // EVERY FIELD KEEPS ITS WIDTH under the switch, so a shorter figure gets one
 // more column of leading pad and the grid cannot tear on the switch.  That is

@@ -12,7 +12,7 @@
 // span's colour must match.  That proves the edges (that `$.fs` was read
 // as the bytes are), the filing (the start line's trip through `$.store`)
 // and the drawing (spans to Text); the documents themselves are proven
-// against the goldens by test/claude.test.ts.  The receipt, which the mod
+// against the committed ones by test/claude.test.ts.  The receipt, which the mod
 // writes rather than draws, is checked as the `$.ui.log` lines it sends,
 // against receiptLines over the same bytes.
 import { expect } from 'claude-code/testing'

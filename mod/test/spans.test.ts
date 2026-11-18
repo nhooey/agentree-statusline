@@ -4,7 +4,7 @@
 // lists for each of join's special cases, then seeded random ones, each
 // with what the helpers make of it and the bytes `join` writes under each
 // of its switches.  The escapes have to match byte for byte: they are what
-// the goldens pin.
+// the terminal is sent.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
