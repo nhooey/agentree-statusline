@@ -22,9 +22,8 @@
 // PLAN_USAGE_LOCK_STALE seconds is a session's that died holding it.
 import type { EngineInterface } from 'claude-code'
 
-import {
-  claudeOauthReading, oauthLimitWindows, pyJsonLoads,
-} from '../src/sources.ts'
+import { claudeOauthReading, oauthLimitWindows } from '../src/sources.ts'
+import { parseJson } from '../src/exact.ts'
 import type { Reading } from '../src/sources.ts'
 import { isDict, pyGet } from '../src/py.ts'
 import { sha256Hex } from '../src/sha256.ts'
@@ -236,7 +235,7 @@ async function askHeld($: $, key: string, now: number, handle: Handle,
     }
     let raw: unknown
     try {
-      raw = pyJsonLoads(r.text)
+      raw = parseJson(r.text)
     } catch {
       throw new Error('an answer that is not JSON')
     }

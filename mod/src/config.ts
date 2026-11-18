@@ -17,15 +17,15 @@
 // in the tests; the environment is a plain object.  Paths are POSIX, and the
 // path functions are posixpath's.
 //
-// A warning quotes a file's key or value the way Python's json module
-// would, which this file spells out: json.loads keeping a dict's keys in
-// the order written (a JavaScript object puts "1" first) and telling 1 from
-// 1.0, and json.dumps with and without ensure_ascii.
+// A warning quotes a file's key or value in one exact form, which this
+// file spells out: the keys of an object in the order written (a
+// JavaScript object puts "1" first), 1 told from 1.0, and JSON written
+// with and without its non-ASCII characters escaped.
 
 import { OPTIONS } from "./options_spec.ts";
 import type { Options } from "./options_spec.ts";
-import { PY_SPACE, pyFloatRepr, pyStrip } from "./py.ts";
-import { pyJsonDumps, validateSource } from "./sources.ts";
+import { floatRepr, stableJson, stripSpace, UNICODE_SPACE } from "./exact.ts";
+import { validateSource } from "./sources.ts";
 
 export const NAME = "agentree-statusline";
 export const PROJECT_FILE = "config.jsonc";
@@ -85,10 +85,10 @@ type Derived = { from: string; field?: string; any?: string;
 const SPEC = OPTIONS as unknown as { readonly [name: string]: OptionRec };
 const NAMES = Object.keys(SPEC);
 
-// ── JSON as Python reads and writes it ────────────────────────────────────
+// ── JSON with its integers and key order kept ─────────────────────────────
 
 /** A value json.loads gives: an int as a bigint and a float as a number,
- * since Python tells 1 from 1.0, and an object as a Map, whose keys keep
+ * so 1 is told from 1.0, and an object as a Map, whose keys keep
  * the order written (a repeated key keeps its first place and its last
  * value, as a dict's does). */
 export type Json = null | boolean | bigint | number | string | Json[] |
@@ -193,8 +193,8 @@ export function jsonLoads(text: string): Json {
   return result;
 }
 
-/** json.dumps(s), ensure_ascii and all, of a string. */
-const dumps = (s: string): string => pyJsonDumps(s);
+/** A string as stableJson writes it, every non-ASCII character escaped. */
+const dumps = (s: string): string => stableJson(s);
 
 const SHORT: { readonly [c: string]: string } = {
   '"': '\\"', "\\": "\\\\", "\n": "\\n", "\r": "\\r", "\t": "\\t",
@@ -209,7 +209,7 @@ export function dumpsUnicode(value: Json): string {
   if (typeof value === "number") {
     if (Number.isNaN(value)) return "NaN";
     if (!Number.isFinite(value)) return value > 0 ? "Infinity" : "-Infinity";
-    return pyFloatRepr(value);
+    return floatRepr(value);
   }
   if (typeof value === "string") {
     return '"' + value.replace(/[\x00-\x1f\\"]/g, (c) => SHORT[c] ??
@@ -222,7 +222,7 @@ export function dumpsUnicode(value: Json): string {
 
 // ── JSONC ─────────────────────────────────────────────────────────────────
 
-const IS_SPACE = new RegExp(`^[${PY_SPACE}]$`, "u");
+const IS_SPACE = new RegExp(`^[${UNICODE_SPACE}]$`, "u");
 
 /** `text` with each `//` comment and each trailing comma blanked to
  * spaces, outside strings, so jsonLoads reads what is left.  A trailing
@@ -361,7 +361,7 @@ const exists = async (fs: ConfigFs, p: string) => (await fs.stat(p)) !== null;
  * universal newlines; null when it cannot be read. */
 async function firstLine(fs: ConfigFs, p: string): Promise<string | null> {
   const text = await fs.read(p);
-  return text === null ? null : pyStrip(text.split(/\r\n|\r|\n/)[0]);
+  return text === null ? null : stripSpace(text.split(/\r\n|\r|\n/)[0]);
 }
 
 /** The main checkout of the worktree whose top directory is `top`, or
@@ -372,7 +372,7 @@ export async function mainCheckout(top: string, fs: ConfigFs):
     Promise<string | null> {
   const line = await firstLine(fs, join(top, ".git"));
   if (line === null || !line.startsWith("gitdir:")) return null;
-  const gitdir = join(top, pyStrip(line.slice("gitdir:".length)));
+  const gitdir = join(top, stripSpace(line.slice("gitdir:".length)));
   const common = await firstLine(fs, join(gitdir, "commondir"));
   if (common === null) return null;
   const dir = normpath(join(gitdir, common));

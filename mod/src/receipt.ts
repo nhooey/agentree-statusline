@@ -41,7 +41,7 @@ import type { RowName } from "./band.ts";
 import { treeRows } from "./band_tree.ts";
 import type { TreeAgents } from "./band_tree.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
-import { pyFloat } from "./sources.ts";
+import { toFloat } from "./exact.ts";
 import type { Dict } from "./py.ts";
 
 type Cells = { [key: string]: Span[] };
@@ -322,7 +322,7 @@ export function withEngineDuration(all: Dict, durationMs: number): Dict {
 /** A share of a plan window as a figures document gives it, a number or
  * its text, or null for none. */
 function pctOf(v: unknown): number | null {
-  const f = pyFloat(v ?? null);
+  const f = toFloat(v ?? null);
   return f === null || Number.isNaN(f) ? null : f;
 }
 

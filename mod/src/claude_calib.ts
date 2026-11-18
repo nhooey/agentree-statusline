@@ -10,25 +10,26 @@
 // cache, is in claude_calib_node.ts for Node, and in the mod's handlers
 // for the mod, which runs with no Node and reads through `$`.
 //
-// Python's rules this follows, decided once:
+// The rules this follows, decided once:
 //
 //   - Time.  The window boundaries are NAIVE LOCAL datetimes, compared as
 //     wall-clock times and turned into instants by datetime.timestamp(),
 //     which has its own answer for a time in a DST gap or fold.  A `Naive`
 //     here is that wall-clock time as seconds counted as if it were UTC,
-//     and `_naiveTimestamp` is CPython's search for the instant, step for
-//     step.  Both read the process's TZ, as localtime does.
-//   - Keys.  The scan dedupes request ids as Python sets do, where 1, 1.0
-//     and True are one key and a list is no key at all (TypeError).  `_idKey`
-//     spells that out.  json.loads hands back ONE NaN object for every NaN
-//     it reads, so every NaN id is the same key, by identity.  An integer
-//     id past 2**53 loses its precision, as everywhere else.
+//     and `_naiveTimestamp` is datetime's C search for the instant, step
+//     for step.  Both read the process's TZ, as localtime does.
+//   - Keys.  The scan dedupes request ids as a set of JSON values does,
+//     where 1, 1.0 and True are one key and a list is no key at all
+//     (TypeError).  `_idKey` spells that out.  json.loads hands back ONE
+//     NaN object for every NaN it reads, so every NaN id is the same key,
+//     by identity.  An integer id past 2**53 loses its precision, as
+//     everywhere else.
 //   - Crashes.  A malformed record the scan cannot price (a message that is
 //     not an object, a token count that is a string) throws and takes the
 //     whole calibration with it; its callers draw "?", since carrying on
 //     would print a figure where there is none.  A count too large for a
-//     float, which raises OverflowError in Python, is Infinity here.
-//   - Rounding.  `round` rounds half to even; see `_pyRound`.
+//     float is Infinity here.
+//   - Rounding.  `round` rounds half to even; see `_roundEven`.
 //   - Sums.  Left to right, as 3.9's sum() adds; 3.12's compensates.
 //   - Caches.  The calibration cache and the scan's cost cache are each one
 //     file every reader writes and reads, named by state_spec.ts
@@ -41,13 +42,13 @@
 
 import { STAMP_FMT } from "./spec.ts";
 import type { Dict } from "./py.ts";
+import { isDict, pyGet, pyHas, pyOr, pyTruthy } from "./py.ts";
 import {
-  daysFromCivil, daysIn, isDict, pyAsciiDigits, pyGet, pyHas, pyOr, PY_SPACE,
-  pyTruthy, utf8,
-} from "./py.ts";
-import { pyFloat, pyJsonDumps, pyJsonLoads } from "./sources.ts";
+  asciiDigits, daysFromCivil, daysIn, parseJson, printableText, stableJson,
+  toFloat, UNICODE_SPACE, utf8,
+} from "./exact.ts";
 import { stateName } from "./state.ts";
-import { _price, pyStr, tsEpoch, turnTimes } from "./claude_records.ts";
+import { _price, tsEpoch, turnTimes } from "./claude_records.ts";
 import type { Transcript, Turn } from "./claude_records.ts";
 import { noPlan } from "./claude_sources.ts";
 import type { Limits } from "./claude_sources.ts";
@@ -81,7 +82,7 @@ export type Snapshot = Dict;
 
 /** Dollars per point of each window, or null.  A planted calibration cache
  * states them directly and may hold anything, which the readers divide by
- * as Python's `/` does, throwing where it raises. */
+ * as `divide` does, throwing where it is not a number. */
 export type Calib = { readonly sess?: unknown; readonly week?: unknown };
 
 /** A naive local datetime: its wall-clock reading in seconds, counted from
@@ -89,20 +90,20 @@ export type Calib = { readonly sess?: unknown; readonly week?: unknown };
 export type Naive = number;
 
 // ════════════════════════════════════════════════════════════════════════════
-// Python's semantics, where JavaScript's differ.
+// Arithmetic on JSON values.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** round(x) to an int: half to even, and a NaN or an infinity raises. */
-export function _pyRound(x: number): number {
+/** x rounded to an integer, half to even; a NaN or an infinity throws. */
+export function _roundEven(x: number): number {
   if (!Number.isFinite(x)) throw new RangeError("cannot round " + x);
   const f = Math.floor(x), d = x - f;
   const r = d > 0.5 ? f + 1 : d < 0.5 ? f : f % 2 === 0 ? f : f + 1;
-  return r + 0;  // never -0: Python's int has no sign on zero
+  return r + 0;  // never -0: an integer has no sign on zero
 }
 
 /** `a / b` for JSON values: a bool is 0 or 1, anything but a number
  * raises TypeError.  `b` is never zero here; every caller tests it first. */
-function pyDiv(a: unknown, b: unknown): number {
+function divide(a: unknown, b: unknown): number {
   const n = (v: unknown): number => {
     if (typeof v === "boolean") return v ? 1 : 0;
     if (typeof v === "number") return v;
@@ -111,17 +112,17 @@ function pyDiv(a: unknown, b: unknown): number {
   return n(a) / n(b);
 }
 
-/** `v * p` for a token count read off a record, which Python multiplies
- * when it is a number or a bool and raises TypeError on otherwise. */
-function pyMulCount(v: unknown, p: number): number {
+/** `v * p` for a token count read off a record: a bool is 0 or 1, and
+ * anything but a number throws TypeError. */
+function timesCount(v: unknown, p: number): number {
   if (typeof v === "boolean") return (v ? 1 : 0) * p;
   if (typeof v === "number") return v * p;
   throw new TypeError("can't multiply sequence by non-int of type 'float'");
 }
 
-/** A request id as a key of a Python set: equal ids get equal keys.  1,
- * 1.0 and True are one key, -0.0 and 0 another, every NaN json.loads made
- * a third; a list or a dict is unhashable and raises. */
+/** A request id as a key of a set of JSON values: equal ids get equal
+ * keys.  1, 1.0 and True are one key, -0.0 and 0 another, every NaN
+ * json.loads made a third; a list or a dict is unhashable and raises. */
 export function _idKey(k: unknown): string {
   if (k === null || k === undefined) return "N";
   if (typeof k === "string") return "s" + k;
@@ -180,7 +181,7 @@ export function naiveStr(n: Naive | null): string {
 }
 
 /** The wall clock at instant `u`, as localtime(u) reads it in the TZ.
- * Off datetime's calendar it raises, as CPython's local() does, so a
+ * Off datetime's calendar it raises, as datetime's C local() does, so a
  * timestamp of the first or last day of the calendar can raise. */
 function local(u: number): Naive {
   const t = new Date(u * 1000);
@@ -189,7 +190,7 @@ function local(u: number): Naive {
 }
 
 /** datetime.timestamp() of a naive datetime: the instant whose local wall
- * clock reads `n`.  CPython's local_to_seconds, step for step, with fold
+ * clock reads `n`.  datetime's C local_to_seconds, step for step, with fold
  * 0: in a fold, the earlier of the two instants; in a gap, the wall clock
  * read with the offset from before it, which lands after the gap. */
 export function _naiveTimestamp(n: Naive): number {
@@ -220,7 +221,7 @@ const STAMP_STRPTIME = (() => {
     throw new Error("STAMP_STRPTIME is out of step with STAMP_FMT");
   }
   return new RegExp("^(\\p{Nd}\\p{Nd}\\p{Nd}\\p{Nd})-(1[0-2]|0[1-9]|[1-9])" +
-    "-(3[01]|[12]\\p{Nd}|0[1-9]|[1-9]| [1-9])[" + PY_SPACE + "]+" +
+    "-(3[01]|[12]\\p{Nd}|0[1-9]|[1-9]| [1-9])[" + UNICODE_SPACE + "]+" +
     "(2[0-3]|[0-1]\\p{Nd}|\\p{Nd}):([0-5]\\p{Nd}|\\p{Nd})", "iu");
 })();
 
@@ -230,7 +231,7 @@ export function _strptimeStamp(v: unknown): Naive | null {
   const m = STAMP_STRPTIME.exec(v);
   if (!m || m[0].length !== v.length) return null;
   const [y, mo, d, h, mi] = m.slice(1)
-    .map((g) => parseInt(pyAsciiDigits(g), 10));
+    .map((g) => parseInt(asciiDigits(g), 10));
   if (y < 1 || d > daysIn(y, mo)) return null;
   return naive(y, mo, d, h, mi);
 }
@@ -255,7 +256,7 @@ export function _localNaive(ts: string): Naive | null {
 
 /** A carried percentage back as a number, or null if it is not one. */
 export function _pctNum(v: unknown): number | null {
-  return pyFloat(v);
+  return toFloat(v);
 }
 
 /** The plan reading as the accounting reads it.
@@ -273,7 +274,7 @@ export function seedLimitsSnapshot(lim: Limits,
   // that is the session, which shares nothing.
   const scope = [part("source"),
     pyOr(part("account_id"), part("account_name")), part("period_start")]
-    .map((v) => pyStr(pyOr(v, ""))).join("\0");
+    .map((v) => printableText(pyOr(v, ""))).join("\0");
   return { session_pct: _pctNum(lim.session_pct),
     session_resets_at: lim.session_reset,
     weekly_pct: _pctNum(lim.weekly_pct),
@@ -348,7 +349,7 @@ export function windowShares(t: Turn, calib: Calib, snap: Snapshot):
     { sess: null, week: null };
   for (const [key, start] of [["sess", ss], ["week", ws]] as const) {
     const unit = pyGet(calib, key);
-    if (pyTruthy(unit)) out[key] = pyDiv(turnCostSince(t, start), unit);
+    if (pyTruthy(unit)) out[key] = divide(turnCostSince(t, start), unit);
   }
   return out;
 }
@@ -358,7 +359,7 @@ export function windowShares(t: Turn, calib: Calib, snap: Snapshot):
 export function turnShares(t: Turn): [number | null, number | null] {
   const c = turnCost(t);
   if (c <= 0) return [null, null];
-  return [_pyRound(100 * t.usd_cr / c), _pyRound(100 * t.usd_cw / c)];
+  return [_roundEven(100 * t.usd_cr / c), _roundEven(100 * t.usd_cw / c)];
 }
 
 /** turnShares over the whole session, summed before dividing. */
@@ -369,7 +370,7 @@ export function sessionCacheShares(turns: readonly Turn[]):
   if (c <= 0) return [null, null];
   for (const t of turns) cr += t.usd_cr;
   for (const t of turns) cw += t.usd_cw;
-  return [_pyRound(100 * cr / c), _pyRound(100 * cw / c)];
+  return [_roundEven(100 * cr / c), _roundEven(100 * cw / c)];
 }
 
 /** What THIS session put into each plan window, as a percentage of it:
@@ -385,7 +386,7 @@ export function sessionShares(turns: readonly Turn[], calib: Calib,
     if (!pyTruthy(unit) || start === null) continue;
     let sum = 0;
     for (const t of turns) sum += turnCostSince(t, start);
-    out[key] = pyDiv(sum, unit);
+    out[key] = divide(sum, unit);
   }
   return out;
 }
@@ -470,7 +471,7 @@ export function partsShares(parts: readonly (readonly [number | null,
     const edge = _naiveTimestamp(start);
     let sum = 0;
     for (const [e, c] of parts) if (e === null || e >= edge) sum += c;
-    out[key] = pyDiv(sum, unit);
+    out[key] = divide(sum, unit);
   }
   return out;
 }
@@ -508,7 +509,7 @@ export type Priced = [number | null, unknown, number];
 export function _pricedRecord(line: Uint8Array): Priced | null {
   let r: unknown;
   try {
-    r = pyJsonLoads(utf8(line, false, true));
+    r = parseJson(utf8(line, false, true));
   } catch {
     return null;
   }
@@ -525,10 +526,10 @@ export function _pricedRecord(line: Uint8Array): Priced | null {
   const [pi, po, pr, pw] = _price(model);
   if (!isDict(u)) throw new TypeError("usage has no get");
   const n = (k: string) => pyGet(u, k, 0);
-  const c = pyMulCount(n("input_tokens"), pi) +
-    pyMulCount(n("output_tokens"), po) +
-    pyMulCount(n("cache_read_input_tokens"), pr) +
-    pyMulCount(n("cache_creation_input_tokens"), pw);
+  const c = timesCount(n("input_tokens"), pi) +
+    timesCount(n("output_tokens"), po) +
+    timesCount(n("cache_read_input_tokens"), pr) +
+    timesCount(n("cache_creation_input_tokens"), pw);
   // tsEpoch is lru_cached, so a list raises on hashing, and anything else
   // that is not a string raises on .split.
   if (typeof ts !== "string") throw new TypeError("timestamp is no str");
@@ -628,7 +629,7 @@ export function nextTicks(prev: unknown, windows: string, sc: unknown,
   wc: unknown, sp: unknown, wp: unknown, prevAge: number | null): Ticks {
   const old: Dict = isDict(prev) && pyHas(prev, "windows") ? prev : {};
   const halves = windows.split("|");
-  const was = pyStr(pyGet(old, "windows", "")).split("|");
+  const was = printableText(pyGet(old, "windows", "")).split("|");
   const one = (i: number, key: string, cost: unknown, pct: unknown) => {
     const same = was.length === 2 && halves.length === 2 &&
       _sameStart(was[i], halves[i]);
@@ -692,11 +693,11 @@ export function _calibrationOf(snap: Snapshot, cached: Dict | null,
   const sr = tickRate(st), wr = tickRate(wt);
   if (sr !== null) out.sess = sr;
   else if (pyTruthy(spn) && spn! >= CALIB_MIN_PCT && sc !== null) {
-    out.sess = pyDiv(sc, spn);
+    out.sess = divide(sc, spn);
   }
   if (wr !== null) out.week = wr;
   else if (pyTruthy(wpn) && wpn! >= CALIB_MIN_PCT && wc !== null) {
-    out.week = pyDiv(wc, wpn);
+    out.week = divide(wc, wpn);
   }
   return out;
 }
@@ -704,7 +705,7 @@ export function _calibrationOf(snap: Snapshot, cached: Dict | null,
 /** The calibration cache's file name: state_spec.ts's calibration
  * kind, keyed by the snapshot's scope.  The windows are inside the file. */
 export function _calibrationCacheName(snap: Snapshot): string {
-  return stateName("calibration", pyStr(pyGet(snap, "_scope", "")));
+  return stateName("calibration", printableText(pyGet(snap, "_scope", "")));
 }
 
 // The calibration caches as state_spec.ts names them, one per scope; a
@@ -775,7 +776,7 @@ export type CostKept = { off: number; tail: string | null; recs: Priced[] };
  * float. */
 export function _windowCostsText(files: Readonly<Record<string, CostKept>>):
   string {
-  return pyJsonDumps({ files }, true, [""]);
+  return stableJson({ files }, { sortKeys: true, floats: [""] });
 }
 
 /** The files a window-cost cache's text keeps, or null where it will not
@@ -784,7 +785,7 @@ export function _windowCostsFiles(text: string):
   Record<string, CostKept> | null {
   let d: unknown;
   try {
-    d = pyJsonLoads(text);
+    d = parseJson(text);
   } catch {
     return null;
   }
@@ -803,8 +804,8 @@ export function _calibCacheText(windows: string, sc: unknown, wc: unknown,
     d.sess_ticks = _tickList(ticks.sess);
     d.week_ticks = _tickList(ticks.week);
   }
-  return pyJsonDumps(d, false,
-    ["sess_cost", "week_cost", "sess_pct", "week_pct", ""]);
+  return stableJson(d, {
+    floats: ["sess_cost", "week_cost", "sess_pct", "week_pct", ""] });
 }
 
 /** The cached readings no longer the snapshot's: the reading has moved,

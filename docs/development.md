@@ -39,6 +39,7 @@ tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
 | `config.ts` | The configuration files: the walk, the strict defaults file, the merge and its warnings. See [Options](options.md#configuration-files). |
 | `formatting.ts`, `spans.ts` | The `S_*` glyph forms and widths, the fixed-width number formats, the dim and tier rules, and `Span`, a run of text with a colour named by its `F_*` constant, joined into escape codes once, where a line is drawn. |
 | `state.ts` | Each file the mod keeps in the state directory, named from `mod/src/state_spec.ts`. |
+| `exact.ts` | The helpers whose bytes land in a file, a hash or a fixture, each named for the form it makes: `stableJson` and `parseJson`, `floatRepr`, `fixed` and `intText`, `UNICODE_SPACE`, the code-point string helpers, `joinPath`. |
 
 The comments in the code are dense on purpose. These documents cover what is
 worth knowing before you open a file; a detail that matters only at one line

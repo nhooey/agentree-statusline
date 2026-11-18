@@ -60,7 +60,7 @@ import { fileURLToPath } from "node:url";
 import { settings, stripAnsi } from "../src/formatting.ts";
 import { join, span } from "../src/spans.ts";
 import type { Span } from "../src/spans.ts";
-import { pyRstrip } from "../src/py.ts";
+import { stripEnd } from "../src/exact.ts";
 import type { Dict } from "../src/py.ts";
 import {
   FOOTER_JOIN, ROW_NAMES, accountLine, bandLines, bandRows, footerTail,
@@ -253,6 +253,6 @@ if (part === "band") {
   fail("--part: invalid choice: '" + part + "'");
 }
 // In the set Claude Code would draw this terminal's rows in.
-const text = lines.map((l) => pyRstrip(join(l, false, false, st.truecolor)))
+const text = lines.map((l) => stripEnd(join(l, false, false, st.truecolor)))
   .join("\n");
 process.stdout.write((plain ? stripAnsi(text) : text) + "\n");

@@ -10,7 +10,7 @@
 // A plain string stands in for one uncoloured span wherever spans are
 // taken, so a mark or a pad need not be wrapped.
 import * as spec from "./spec.ts";
-import { pyLen, pyLstrip, pyRstrip } from "./py.ts";
+import { charLen, stripEnd, stripStart } from "./exact.ts";
 import { visWidth } from "./formatting.ts";
 import type { Widths } from "./formatting.ts";
 
@@ -66,7 +66,7 @@ export function span(text: string, colour: string | null = null,
 }
 
 /** Span.styled(): whether it writes an escape.  "" names no colour, as it
- * is false to Python. */
+ * is false. */
 export function styled(s: Span): boolean {
   return Boolean(s.colour || s.bg || s.dim || s.bold);
 }
@@ -158,7 +158,7 @@ export function cut(x: SpanLike, cols: number, w: Widths): Span[] {
 export function rstrip(x: SpanLike): Span[] {
   const out = spans(x);
   while (out.length && !styled(out[out.length - 1])) {
-    const t = pyRstrip(out[out.length - 1].text);
+    const t = stripEnd(out[out.length - 1].text);
     if (t) {
       out[out.length - 1] = { ...out[out.length - 1], text: t };
       break;
@@ -174,7 +174,7 @@ export function rstrip(x: SpanLike): Span[] {
 export function lstrip(x: SpanLike, chars: string | null = null): Span[] {
   const out = spans(x);
   while (out.length && !styled(out[0])) {
-    const t = pyLstrip(out[0].text, chars);
+    const t = stripStart(out[0].text, chars);
     if (t) {
       out[0] = { ...out[0], text: t };
       break;
@@ -186,7 +186,7 @@ export function lstrip(x: SpanLike, chars: string | null = null): Span[] {
 
 /** Columns of blanks the spans open with: what lstrip(" ") takes off. */
 export function indent(x: SpanLike): number {
-  return pyLen(text(x)) - pyLen(text(lstrip(x, " ")));
+  return charLen(text(x)) - charLen(text(lstrip(x, " ")));
 }
 
 /** Whether `s` and `nxt` are both a colour alone, so the escape that opens

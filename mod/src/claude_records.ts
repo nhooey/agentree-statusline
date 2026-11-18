@@ -11,7 +11,7 @@
 // The state directory, the clock and
 // the cache version are arguments, never read from the environment here.
 //
-// Python's rules this follows, decided once:
+// The rules this follows, decided once:
 //
 //   - Truthiness.  `r.get("x") or y` treats 0, "", [], {} and None alike;
 //     JavaScript does not, so every such test goes through py.ts's
@@ -22,8 +22,8 @@
 //   - Numbers.  JSON.parse cannot tell 5 from 5.0, so the two places that
 //     ask `isinstance(v, int)` accept an integral float here; and an
 //     integer past 2**53 loses precision.
-//   - Strings.  Python counts and iterates code points, and its regexes'
-//     \d and \s are Unicode classes; this does the same explicitly.
+//   - Strings.  Counted and iterated by code point; digits are the Unicode
+//     decimal digits (\p{Nd}) and spaces exact.ts's UNICODE_SPACE.
 //   - Bytes.  Agent files are read as bytes and their offsets are byte
 //     offsets; lines are found in a Uint8Array, never in a decoded string.
 //   - Crashes.  Where a field is malformed (a record that is not an
@@ -32,14 +32,14 @@
 
 import { sha256Hex } from "./sha256.ts";
 import { E_FOLD, E_ETA_INF, E_ETA_REPORT } from "./spec.ts";
+import { isDict, pyDig, pyGet, pyHas, pyOr, pyTruthy } from "./py.ts";
 import {
-  daysIn, isDict, PY_SPACE, pyAsciiDigits, pyDig, pyFloatRepr, pyGet, pyHas,
-  pyLen, pyOr, pyStrip, pyTruthy,
-  utf8,
-} from "./py.ts";
+  asciiDigits, baseName, charLen, cmpStr, daysIn, firstMax, firstMin,
+  joinPath, printableText, stripSpace, UNICODE_SPACE, utf8,
+} from "./exact.ts";
 
 // ════════════════════════════════════════════════════════════════════════════
-// Python's semantics, where JavaScript's differ.
+// A record's numbers, their order and their prices.
 // ════════════════════════════════════════════════════════════════════════════
 
 /** A parsed JSON object, the shape every record is read as. */
@@ -50,113 +50,11 @@ function num0(v: unknown): number {
   return typeof v === "number" && pyTruthy(v) ? v : 0;
 }
 
-/** A number field read `u.get(k, 0)`: present and null, a TypeError in
- * Python, is read here as 0. */
+/** A number field read `u.get(k, 0)`: present and null, which no number
+ * can stand for, is read here as 0. */
 function numGet(d: unknown, k: string): number {
   const v = pyGet(d, k);
   return typeof v === "number" ? v : 0;
-}
-
-/** Python's code-point string order, which `sorted` and `<` use.  The
- * default JavaScript order is by UTF-16 unit, and puts an astral character
- * before U+E000..U+FFFF. */
-export function cmpStr(a: string, b: string): number {
-  const ia = a[Symbol.iterator](), ib = b[Symbol.iterator]();
-  for (;;) {
-    const x = ia.next(), y = ib.next();
-    if (x.done || y.done) return x.done ? (y.done ? 0 : -1) : 1;
-    const cx = x.value.codePointAt(0)!, cy = y.value.codePointAt(0)!;
-    if (cx !== cy) return cx < cy ? -1 : 1;
-  }
-}
-
-// What isprintable() refuses, which repr() escapes: the C and Z categories
-// but the space.
-const UNPRINTABLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
-
-/** repr() of a JSON value, as `"%s" % v` prints a list or a dict.  A JSON
- * number is an int when integral; see the head of the file. */
-export function pyRepr(v: unknown): string {
-  if (v === null || v === undefined) return "None";
-  if (v === true) return "True";
-  if (v === false) return "False";
-  if (typeof v === "number") {
-    return Number.isInteger(v) ? BigInt(v).toString() : pyFloatRepr(v);
-  }
-  if (typeof v === "string") {
-    const q = v.includes("'") && !v.includes('"') ? '"' : "'";
-    let out = q;
-    for (const ch of v) {
-      const cp = ch.codePointAt(0)!;
-      if (ch === q || ch === "\\") out += "\\" + ch;
-      else if (ch === "\t") out += "\\t";
-      else if (ch === "\n") out += "\\n";
-      else if (ch === "\r") out += "\\r";
-      else if (ch !== " " && UNPRINTABLE.test(ch)) {
-        const h = cp.toString(16);
-        out += cp < 0x100 ? "\\x" + h.padStart(2, "0")
-          : cp < 0x10000 ? "\\u" + h.padStart(4, "0")
-          : "\\U" + h.padStart(8, "0");
-      } else out += ch;
-    }
-    return out + q;
-  }
-  if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
-  if (isDict(v)) {
-    return "{" + Object.entries(v)
-      .map(([k, x]) => pyRepr(k) + ": " + pyRepr(x)).join(", ") + "}";
-  }
-  return String(v);
-}
-
-/** str(v). */
-export function pyStr(v: unknown): string {
-  return typeof v === "string" ? v : pyRepr(v);
-}
-
-/** os.path.join for two parts, which unlike path.join normalises nothing,
- * so a path built here is spelt as os.path.join spells it. */
-export function pyJoin(a: string, b: string): string {
-  if (b.startsWith("/")) return b;
-  return a === "" || a.endsWith("/") ? a + b : a + "/" + b;
-}
-
-/** os.path.basename, which unlike path.basename keeps a trailing slash's
- * empty name. */
-export function pyBasename(p: string): string {
-  return p.slice(p.lastIndexOf("/") + 1);
-}
-
-/** json.dumps(d) for a flat {str: int}, with its default ", " and ": " and
- * ensure_ascii, so a file the two languages write is the same bytes. */
-export function pyJsonDumps(d: ReadonlyMap<string, number>): string {
-  const str = (s: string) => '"' + Array.from(s, (ch) => {
-    const cp = ch.codePointAt(0)!;
-    if (ch === '"') return '\\"';
-    if (ch === "\\") return "\\\\";
-    const esc: Record<string, string> = {
-      "\n": "\\n", "\r": "\\r", "\t": "\\t", "\b": "\\b", "\f": "\\f" };
-    if (esc[ch]) return esc[ch];
-    if (cp < 0x20 || cp > 0x7e) {
-      const u = (c: number) => "\\u" + c.toString(16).padStart(4, "0");
-      if (cp < 0x10000) return u(cp);
-      const c = cp - 0x10000;
-      return u(0xd800 + (c >> 10)) + u(0xdc00 + (c & 0x3ff));
-    }
-    return ch;
-  }).join("") + '"';
-  return "{" + [...d].map(([k, v]) => str(k) + ": " + String(v))
-    .join(", ") + "}";
-}
-
-/** Python's `max(a, b)`: `a` unless `b` is greater. */
-function pyMax(a: number, b: number): number {
-  return b > a ? b : a;
-}
-
-/** Python's `min(a, b)`: `a` unless `b` is less. */
-function pyMin(a: number, b: number): number {
-  return b < a ? b : a;
 }
 
 /** Lexicographic order over number tuples, as `sorted` orders them. */
@@ -457,7 +355,7 @@ export function _num(v: unknown): string {
   if (typeof v === "number" && Number.isInteger(v)) {
     return BigInt(v).toString();
   }
-  return pyStr(v);
+  return printableText(v);
 }
 
 /** Parse the status-line JSON.  A malformed payload yields empty fields
@@ -500,8 +398,8 @@ export function readPayload(raw: string): Payload {
 // Reading the transcript.
 // ════════════════════════════════════════════════════════════════════════════
 
-// Decoding as Python's text mode does with errors="replace", keeping a BOM,
-// which "utf-8" (unlike "utf-8-sig") does not strip.
+// Decoding with U+FFFD for a bad byte, keeping a leading BOM, which "utf-8"
+// (unlike "utf-8-sig") does not strip.
 const DECODE_REPLACE = { decode: (b: Uint8Array) => utf8(b, false, true) };
 // Decoding as json.loads(bytes) does: invalid UTF-8 raises, and the line is
 // skipped; a leading BOM is taken as "utf-8-sig" and dropped.
@@ -509,8 +407,8 @@ const DECODE_STRICT = { decode: (b: Uint8Array) => utf8(b, true) };
 
 /** Every line of `data` that parses, in order, as `_records` yields them.
  *
- * Lines split as Python's text mode's universal newlines split them, on
- * "\r\n", "\r" and "\n" alike.  A record that is not an object is
+ * Lines split as universal newlines split them, on "\r\n", "\r" and "\n"
+ * alike.  A record that is not an object is
  * dropped. */
 export function _recordsOf(data: Uint8Array): Rec[] {
   const out: Rec[] = [];
@@ -652,13 +550,13 @@ export function tsEpoch(ts: unknown): number | null {
   const m = STRPTIME.exec(s);
   if (!m || m[0].length !== s.length) return null;
   const [y, mo, d, h, mi, sec] = m.slice(1).map(
-    (g) => parseInt(pyAsciiDigits(g.trim()), 10));
+    (g) => parseInt(asciiDigits(g.trim()), 10));
   if (y < 1 || d > daysIn(y, mo) || sec > 59) return null;
   return utcEpoch(y, mo, d, h, mi, sec);
 }
 
-/** tsEpoch's inverse: a transcript-shaped UTC stamp, "" for null.  Python
- * rounds the epoch to the microsecond before taking its second. */
+/** tsEpoch's inverse: a transcript-shaped UTC stamp, "" for null.  The
+ * epoch is rounded to the microsecond before its second is taken. */
 export function _stampUtc(epoch: number | null): string {
   if (epoch === null) return "";
   const s = Math.floor(Math.round(epoch * 1e6) / 1e6);
@@ -672,7 +570,7 @@ export function _stampUtc(epoch: number | null): string {
 /** The four prices of a model: the first MODEL_PRICE row whose key is in
  * its lowercased name, else the "opus" ceiling. */
 export function _price(model: unknown): Prices {
-  const m = pyStr(pyOr(model, "")).toLowerCase();
+  const m = printableText(pyOr(model, "")).toLowerCase();
   for (const [key, prices] of MODEL_PRICE) {
     if (m.includes(key)) return prices;
   }
@@ -698,7 +596,7 @@ export function unionSeconds(spans: readonly Span[]): number {
   const sorted = spans.filter((s) => s[1] > s[0]).sort(cmpTuple);
   for (const [lo, hi] of sorted) {
     if (cur === null) cur = [lo, hi];
-    else if (lo <= cur[1]) cur[1] = pyMax(cur[1], hi);
+    else if (lo <= cur[1]) cur[1] = firstMax([cur[1], hi]);
     else {
       total += cur[1] - cur[0];
       cur = [lo, hi];
@@ -752,11 +650,11 @@ export function scanToolSpans(r: Rec, pending: Pending, out: Span[],
     const kind = pyGet(b, "type");
     if (kind === "tool_use") {
       if (pyTruthy(pyGet(b, "id"))) {
-        pending.set(pyStr(pyGet(b, "id")),
-          [t, pyStr(pyOr(pyGet(b, "name"), ""))]);
+        pending.set(printableText(pyGet(b, "id")),
+          [t, printableText(pyOr(pyGet(b, "name"), ""))]);
       }
     } else if (kind === "tool_result") {
-      const id = pyStr(pyOr(pyGet(b, "tool_use_id"), ""));
+      const id = printableText(pyOr(pyGet(b, "tool_use_id"), ""));
       const hit = pending.get(id);
       pending.delete(id);
       if (hit !== undefined && t > hit[0]) {
@@ -792,7 +690,7 @@ export function notificationText(r: Rec): string {
   let c: unknown = pyGet(a, "type") === "queued_command" ? pyGet(a, "prompt")
     : pyGet(r, "type") === "user" ? pyDig(r, "message", "content") : null;
   if (Array.isArray(c)) {
-    c = c.filter(isDict).map((b) => pyStr(pyOr(pyGet(b, "text"), "")))
+    c = c.filter(isDict).map((b) => printableText(pyOr(pyGet(b, "text"), "")))
       .join("");
   }
   return typeof c === "string" && c.includes("<task-notification>") ? c : "";
@@ -868,7 +766,7 @@ export function backgroundLabel(input: unknown): string {
   for (const k of ["description", "command"]) {
     const v = pyGet(input, k);
     if (typeof v !== "string") continue;
-    const line = v.split("\n").map(pyStrip).find((l) => l) ?? "";
+    const line = v.split("\n").map(stripSpace).find((l) => l) ?? "";
     if (line) return Array.from(line).slice(0, BG_LABEL_MAX).join("");
   }
   return "";
@@ -881,7 +779,7 @@ export function backgroundLabel(input: unknown): string {
 export function backgroundCommand(input: unknown): string {
   const v = pyGet(input, "command");
   if (typeof v !== "string") return "";
-  const cs = Array.from(v.split("\n").map(pyStrip).filter((l) => l)
+  const cs = Array.from(v.split("\n").map(stripSpace).filter((l) => l)
     .join(BG_NEWLINE));
   return cs.length > BG_COMMAND_MAX
     ? cs.slice(0, BG_COMMAND_MAX - 1).join("") + "…" : cs.join("");
@@ -892,7 +790,7 @@ export function backgroundCommand(input: unknown): string {
 export function backgroundOutput(block: unknown): string {
   let c = pyGet(block, "content");
   if (Array.isArray(c)) {
-    c = c.filter(isDict).map((b) => pyStr(pyOr(pyGet(b, "text"), "")))
+    c = c.filter(isDict).map((b) => printableText(pyOr(pyGet(b, "text"), "")))
       .join("");
   }
   const m = typeof c === "string" ? BG_OUTPUT.exec(c) : null;
@@ -966,11 +864,12 @@ export function scanBackground(r: Rec, open: Map<string, string>,
       if (type === "tool_use" && BG_TOOLS.has(pyGet(b, "name")) &&
         pyTruthy(pyGet(b, "id"))) {
         const input = pyGet(b, "input");
-        info.set(pyStr(pyGet(b, "id")),
+        info.set(printableText(pyGet(b, "id")),
           [backgroundLabel(input), null, backgroundCommand(input), ""]);
       } else if (type === "tool_result" &&
         pyTruthy(pyGet(b, "tool_use_id"))) {
-        calls.push([pyStr(pyGet(b, "tool_use_id")), backgroundOutput(b)]);
+        calls.push([printableText(pyGet(b, "tool_use_id")),
+          backgroundOutput(b)]);
       }
     }
   }
@@ -1003,15 +902,15 @@ export function scanBackground(r: Rec, open: Map<string, string>,
   const res = pyGet(r, "toolUseResult");
   if (isDict(res)) {
     if (pyTruthy(pyGet(res, "backgroundTaskId"))) {
-      opened(pyStr(pyGet(res, "backgroundTaskId")), "bash");
+      opened(printableText(pyGet(res, "backgroundTaskId")), "bash");
     } else if (pyTruthy(pyGet(res, "taskId")) && pyHas(res, "timeoutMs")) {
-      opened(pyStr(pyGet(res, "taskId")), "monitor");
+      opened(printableText(pyGet(res, "taskId")), "monitor");
     } else if (pyTruthy(pyGet(res, "task_id")) && pyHas(res, "message")) {
-      closed(pyStr(pyGet(res, "task_id")));
+      closed(printableText(pyGet(res, "task_id")));
     }
     const task = pyGet(res, "task");
     if (isDict(task) && TASK_ENDED.has(pyGet(task, "status"))) {
-      closed(pyStr(pyOr(pyGet(task, "task_id"), "")));
+      closed(printableText(pyOr(pyGet(task, "task_id"), "")));
     }
   }
   if (info) {
@@ -1020,10 +919,10 @@ export function scanBackground(r: Rec, open: Map<string, string>,
   const text = notificationText(r);
   const m = text ? TASK_ID.exec(text) : null;
   if (m) {
-    const id = pyStrip(m[1]);
+    const id = stripSpace(m[1]);
     const got = open.has(id) ? info?.get(id) : undefined;
     const out = TASK_OUTPUT.exec(text);
-    if (got && !got[3] && out) got[3] = pyStrip(out[1]);
+    if (got && !got[3] && out) got[3] = stripSpace(out[1]);
     if (text.includes("<status>") || text.includes(MONITOR_EXPIRED)) {
       closed(id);
     }
@@ -1042,12 +941,12 @@ export function scanAgentEnd(r: Rec, ends: Map<string, number>): void {
   let aid: string;
   if (isDict(res) && pyTruthy(pyGet(res, "agentId")) &&
     TASK_ENDED.has(pyGet(res, "status"))) {
-    aid = pyStr(pyGet(res, "agentId"));
+    aid = printableText(pyGet(res, "agentId"));
   } else {
     const text = notificationText(r);
     const m = text.includes("<status>") ? TASK_ID.exec(text) : null;
     if (!m) return;
-    aid = pyStrip(m[1]);
+    aid = stripSpace(m[1]);
   }
   const t = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
   if (t !== null && t > (ends.get(aid) ?? -Infinity)) ends.set(aid, t);
@@ -1058,7 +957,7 @@ export function scanAgentEnd(r: Rec, ends: Map<string, number>): void {
  * `spans`. */
 export function netToolSeconds(spans: readonly Span[],
   blocked: readonly Span[]): number {
-  return pyMax(0.0, unionSeconds(spans) - unionSeconds(blocked));
+  return firstMax([0.0, unionSeconds(spans) - unionSeconds(blocked)]);
 }
 
 /** Run every tool call still waiting on its result on to `now`.
@@ -1123,7 +1022,7 @@ export function splitClock(work: readonly Span[], tools: readonly Span[],
     while (lo < t) {
       while (j < cuts.length - 1 && cuts[j] <= lo) j++;
       if (cuts[j] <= lo) break;
-      const hi = pyMin(t, cuts[j]);
+      const hi = firstMin([t, cuts[j]]);
       if (live[1] && !live[2]) out[j][1] += hi - lo;
       else if (live[0] && !live[1]) out[j][0] += hi - lo;
       lo = hi;
@@ -1140,7 +1039,7 @@ export function turnClock(tools: readonly Span[], waiting: readonly Span[],
   t0: number | null, t1: number | null): [number, number] {
   if (t0 === null || t1 === null || t1 <= t0) return [0.0, 0.0];
   const clip = (spans: readonly Span[]): Span[] =>
-    spans.map(([lo, hi]) => [pyMax(lo, t0), pyMin(hi, t1)]);
+    spans.map(([lo, hi]) => [firstMax([lo, t0]), firstMin([hi, t1])]);
   const tc = clip(tools), wc = clip(waiting);
   return [netToolSeconds(tc, wc), unionSeconds(wc)];
 }
@@ -1148,7 +1047,7 @@ export function turnClock(tools: readonly Span[], waiting: readonly Span[],
 /** The receipt's ⌛🤖: the turn's span less its tool and waiting seconds,
  * clamped at zero. */
 export function turnModelS(t: Turn): number {
-  return pyMax(0.0, t.dur_s - t.tool_s - t.blocked_s);
+  return firstMax([0.0, t.dur_s - t.tool_s - t.blocked_s]);
 }
 
 /** The receipt's ⌛🤖 and 🔧 for a row: the main thread's, plus its
@@ -1173,7 +1072,7 @@ export function turnTimes(t: Turn): [number, number] {
 //
 // Its ^ and $ are at a "\n" alone, as re.MULTILINE's are; JavaScript's m
 // flag also breaks at "\r", U+2028 and U+2029, so the line ends are spelt
-// out as lookarounds instead.  \d is Unicode's, as Python's is.
+// out as lookarounds instead.  \d is Unicode's, \p{Nd}.
 export const ETA_SKILL = "coding-agent-usage-line-report-eta";
 export const ETA_PART = String.raw`\p{Nd}+(?:\.\p{Nd}+)? ?[smh]`;
 export const ETA_LINE = new RegExp(
@@ -1201,14 +1100,14 @@ export function etaReport(records: readonly unknown[]): number[] {
     if (!Array.isArray(content)) continue;
     for (const block of content) {
       if (!isDict(block) || pyGet(block, "type") !== "text") continue;
-      const hits = [...pyStr(pyOr(pyGet(block, "text"), ""))
+      const hits = [...printableText(pyOr(pyGet(block, "text"), ""))
         .matchAll(ETA_LINE)].map((m) => m[1]);
       const epoch = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
       if (hits.length && epoch !== null) {
         const hit = hits[hits.length - 1];
         let secs = hit === E_ETA_INF ? Infinity : 0;
         for (const [, n, unit] of hit.matchAll(ETA_SPLIT)) {
-          secs += parseFloat(pyAsciiDigits(n)) * ETA_UNIT_S[unit];
+          secs += parseFloat(asciiDigits(n)) * ETA_UNIT_S[unit];
         }
         last = [epoch, secs];
       }
@@ -1327,7 +1226,7 @@ export function agentSpan(r: Rec, state: SpanState, spans: Span[]): void {
     if (type !== "user" && type !== "assistant") return;
     state[0] = state[1] = t;
   } else if (isWork(r)) {
-    state[1] = pyMax(state[1]!, t);
+    state[1] = firstMax([state[1]!, t]);
   }
   if (endsTurn(r)) closeAgentSpan(state, spans);
 }
@@ -1582,7 +1481,7 @@ export function turnOpens(r: Rec, gate: TurnGate): string | null {
 export const PEER_LEAD = "Another Claude session sent a message:";
 export const HANDBACK_LEAD = "[Subagent hand-back]";
 export const HANDBACK_FOLLOWS = "The report follows:";
-const TAG_NAME_END = new RegExp(`[${PY_SPACE}>]`, "u");
+const TAG_NAME_END = new RegExp(`[${UNICODE_SPACE}>]`, "u");
 
 /** A hand-back's report out of its frame: the preamble cut off, and the
  * indent Claude Code puts on each of its lines taken off. */
@@ -1592,7 +1491,7 @@ function handbackReport(body: string): string {
     body = at >= 0 ? body.slice(at + HANDBACK_FOLLOWS.length)
       : body.slice(HANDBACK_LEAD.length);
   }
-  return pyStrip(body.split("\n").map(pyStrip).join("\n"));
+  return stripSpace(body.split("\n").map(stripSpace).join("\n"));
 }
 
 /** What the first <name>...</name> in `text` holds, or null. */
@@ -1607,9 +1506,9 @@ function tagBody(text: string, name: string): string | null {
 /** A slash command's record as it was typed: its <command-name>, else "/"
  * and its <command-message>, and its <command-args> after a space. */
 export function commandLabel(text: string): string {
-  let name = pyStrip(tagBody(text, "command-name") ?? "");
-  if (!name) name = "/" + pyStrip(tagBody(text, "command-message") ?? "");
-  const args = pyStrip(tagBody(text, "command-args") ?? "");
+  let name = stripSpace(tagBody(text, "command-name") ?? "");
+  if (!name) name = "/" + stripSpace(tagBody(text, "command-message") ?? "");
+  const args = stripSpace(tagBody(text, "command-args") ?? "");
   return args ? name + " " + args : name;
 }
 
@@ -1628,20 +1527,20 @@ export function openerLabel(r: Rec, text: string): string {
   if (isDict(o) && pyGet(o, "kind") === "peer") {
     handback = pyTruthy(pyGet(o, "handback"));
     const rep = pyGet(o, "handbackReportText"), body = pyGet(o, "body");
-    if (typeof rep === "string" && pyStrip(rep)) said = pyStrip(rep);
-    else if (typeof body === "string" && pyStrip(body)) {
-      said = handbackReport(pyStrip(body));
+    if (typeof rep === "string" && stripSpace(rep)) said = stripSpace(rep);
+    else if (typeof body === "string" && stripSpace(body)) {
+      said = handbackReport(stripSpace(body));
     }
   }
   if (!said && text.startsWith(PEER_LEAD)) {
-    let rest = pyStrip(text.slice(PEER_LEAD.length));
+    let rest = stripSpace(text.slice(PEER_LEAD.length));
     if (rest.startsWith("<") && rest.includes(">")) {
       const name = rest.slice(1).split(TAG_NAME_END, 1)[0];
       rest = rest.slice(rest.indexOf(">") + 1);
       const close = name ? rest.indexOf("</" + name + ">") : -1;
       if (close >= 0) rest = rest.slice(0, close);
     }
-    rest = pyStrip(rest);
+    rest = stripSpace(rest);
     handback = handback || rest.startsWith(HANDBACK_LEAD);
     said = handbackReport(rest);
   }
@@ -1673,7 +1572,7 @@ export function isWork(r: Rec): boolean {
  * everything it spawned.  "" for a path that is not a transcript at all. */
 export function _agentDir(transcript: string): string {
   if (!transcript.endsWith(".jsonl")) return "";
-  return pyJoin(transcript.slice(0, -".jsonl".length), "subagents");
+  return joinPath(transcript.slice(0, -".jsonl".length), "subagents");
 }
 
 /** One record of an agent file that carries usage, as _readAgentFile keeps
@@ -1749,7 +1648,7 @@ export function agentRecordsOf(
     const cuts: number[] = [];
     let cut = -Infinity;
     for (const a of out.slice(first)) {
-      cut = a.epoch !== null ? pyMax(cut, a.epoch) : cut;
+      cut = a.epoch !== null ? firstMax([cut, a.epoch]) : cut;
       cuts.push(cut);
     }
     const split = splitClock(got.work, got.tools, got.waiting, cuts);
@@ -1873,7 +1772,7 @@ function isBlock(b: unknown): boolean {
   if (!isDict(b)) return false;
   const type = pyGet(b, "type"), text = pyGet(b, "text");
   return type === "tool_use" ||
-    (type === "text" && typeof text === "string" && pyStrip(text) !== "");
+    (type === "text" && typeof text === "string" && stripSpace(text) !== "");
 }
 
 /** Fold one line of the file into `fold`: `length` its bytes, its newline
@@ -1944,15 +1843,15 @@ export function agentReadingOf(fold: AgentFold): AgentReading {
  * Per session, in private application state.  A one-way digest keeps a raw
  * transcript/session id out of the path. */
 export function _agentStatePath(transcript: string, stateDir: string): string {
-  let sid = pyBasename(transcript);
+  let sid = baseName(transcript);
   if (sid.endsWith(".jsonl")) sid = sid.slice(0, -".jsonl".length);
   const digest = sha256Hex("claude-agent-offsets\0" + sid);
-  return pyJoin(stateDir, "claude-agent-offsets-" + digest + ".json");
+  return joinPath(stateDir, "claude-agent-offsets-" + digest + ".json");
 }
 
 /** agentOffsets' reading of the file's text: the byte offset the last Stop
  * reported each agent file up to, or null for a file that is not a JSON
- * object.  A value must be an int, and Python's bool is one.  Throws on
+ * object.  A value must be an int, and a bool counts as one.  Throws on
  * text that will not parse, which the reader takes as no file. */
 export function agentOffsetsOf(text: string): Map<string, number> | null {
   const d: unknown = JSON.parse(text);
@@ -1967,7 +1866,7 @@ export function agentOffsetsOf(text: string): Map<string, number> | null {
 
 /** The id off an agent file's `agent-<id>.jsonl`, else "". */
 export function agentLabelId(path: string): string {
-  const base = pyBasename(path);
+  const base = baseName(path);
   return base.startsWith("agent-") && base.endsWith(".jsonl") &&
     base.length >= "agent-".length + ".jsonl".length
     ? base.slice("agent-".length, -".jsonl".length) : "";
@@ -1988,7 +1887,7 @@ export function agentLabelOf(path: string, meta: Uint8Array | null):
   try {
     const d: unknown = JSON.parse(DECODE_FATAL_BOM.decode(meta));
     if (isDict(d)) {
-      name = pyStr(pyOr(pyOr(pyGet(d, "description"),
+      name = printableText(pyOr(pyOr(pyGet(d, "description"),
         pyGet(d, "agentType")), ""));
     }
   } catch {
@@ -2012,10 +1911,10 @@ export function noSidecar(path: string): [string, string] {
 // waits in that agent's inbox until its next tool round, and Claude Code's
 // panel counts it on the agent's row as "1 queued".  The payload the panel
 // hands the subagent status line carries no such count, so inboxCounts
-// rebuilds it from the two ends.  \S is Python's, the complement of
-// PY_SPACE.
+// rebuilds it from the two ends.  Its \S is the complement of
+// UNICODE_SPACE.
 export const SEND_QUEUED_RE = new RegExp(
-  `queued for delivery to ([^${PY_SPACE}]+) at its next tool round`, "u");
+  `queued for delivery to ([^${UNICODE_SPACE}]+) at its next tool round`, "u");
 export const SEND_QUEUED_MARK = new TextEncoder()
   .encode("queued for delivery to");
 // The origins inboxDelivery counts: tighter than `"queued_command"`, which
@@ -2177,7 +2076,7 @@ export function diffLines(r: Rec, seen: Set<string>): [number, number] {
   // Iterating a string or a dict meets no dict, so only a list has blocks.
   for (const block of Array.isArray(content) ? content : []) {
     if (isDict(block) && pyTruthy(pyGet(block, "tool_use_id"))) {
-      tid = pyStr(pyGet(block, "tool_use_id"));
+      tid = printableText(pyGet(block, "tool_use_id"));
       break;
     }
   }
@@ -2190,7 +2089,7 @@ export function diffLines(r: Rec, seen: Set<string>): [number, number] {
   if (Array.isArray(patch) && patch.length) {
     for (const hunk of patch) {
       const lines = pyOr(pyGet(pyOr(hunk, {}), "lines"), []);
-      // A str is iterated by character, as Python iterates it.
+      // A string is iterated by character, a code point.
       const each = typeof lines === "string" ? Array.from(lines)
         : Array.isArray(lines) ? lines : [];
       for (const line of each) {
@@ -2201,17 +2100,17 @@ export function diffLines(r: Rec, seen: Set<string>): [number, number] {
     }
   } else if (pyGet(res, "type") === "create" &&
     typeof pyGet(res, "content") === "string") {
-    added += pySplitlinesCount(pyGet(res, "content") as string);
+    added += lineCount(pyGet(res, "content") as string);
   }
   return [added, removed];
 }
 
-// str.splitlines' line boundaries.
+// Unicode's line boundaries, as str.splitlines takes them.
 const LINE_BREAK = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/g;
 
-/** len(s.splitlines()): a break ends a line, and a last line without one
- * is a line too. */
-function pySplitlinesCount(s: string): number {
+/** The lines in `s`, len(s.splitlines()): a break ends a line, and a last
+ * line without one is a line too. */
+function lineCount(s: string): number {
   if (!s) return 0;
   const breaks = s.match(LINE_BREAK)?.length ?? 0;
   const tail = s.replace(LINE_BREAK, "\n").endsWith("\n") ? 0 : 1;
@@ -2426,7 +2325,7 @@ function foldOwnParts(f: TranscriptFold, r: Rec, kept: boolean,
     const md = pyOr(pyGet(r, "compactMetadata"), {});
     const opener = f.opener;
     const at: unknown = opener !== null && !opener[2] &&
-      pyStrip(opener[1]) === "/compact" ? opener[0]
+      stripSpace(opener[1]) === "/compact" ? opener[0]
       : pyOr(pyGet(r, "timestamp"), "");
     f.compacting = f.parts.length;
     f.parts.push([tsEpoch(at), [num0(pyGet(md, "preTokens")) * P_CR, 0.0]]);
@@ -2439,7 +2338,7 @@ function foldOwnParts(f: TranscriptFold, r: Rec, kept: boolean,
     const c = pyDig(r, "message", "content");
     if (typeof c === "string") {
       (f.parts[f.compacting][1] as [number, number])[1] =
-        Math.trunc(pyLen(c) / SUMMARY_CPT) * P_OUT;
+        Math.trunc(charLen(c) / SUMMARY_CPT) * P_OUT;
     }
   }
   if (!kept) return;
@@ -2602,7 +2501,7 @@ export function transcriptFinish(f: TranscriptFold,
   const tools = f.tools.slice(), blocked = f.blocked.slice();
   if (now !== null) openToolSpans(f.pending, now, tools, blocked);
   const [busy, tool, blocked_s] = threadClock(spans, tools, blocked);
-  const min = (xs: number[]) => xs.reduce((a, b) => pyMin(a, b));
+  const min = (xs: number[]) => xs.reduce((a, b) => firstMin([a, b]));
   const etaState = f.etaState;
   const background = f.background;
   const first = f.first;
@@ -2621,10 +2520,10 @@ export function transcriptFinish(f: TranscriptFold,
     cache_pct: inAll > 0 ? Math.trunc(100 * cread / inAll) : -1,
     ctx_tokens: ctx,
     ctx_est: f.ctxEst,
-    user_ts: pyStr(user_ts),
+    user_ts: printableText(user_ts),
     user_text: squash(user_text),
-    asst_ts: pyStr(asst_ts),
-    asst_text: squash(pyStr(asst_text)),
+    asst_ts: printableText(asst_ts),
+    asst_text: squash(printableText(asst_text)),
     tool_s: tool,
     blocked_s,
     turn_s: pyOr(openAt, 0.0) as number,
@@ -2648,7 +2547,8 @@ export function transcriptFinish(f: TranscriptFold,
     lines_removed: f.removed,
     prompt_id: f.opened.pid,
     turn_index: f.opened.tidx,
-    session_name: pyStrip(squash(pyStrip(f.title) ? f.title : f.agentName)),
+    session_name: stripSpace(squash(stripSpace(f.title) ? f.title
+      : f.agentName)),
     session_color: f.color,
   });
 }
@@ -2703,10 +2603,10 @@ export function _newTurn(ts: string, text: string): TurnBuild {
  * yet.  First one wins: every user record of a turn carries the same
  * promptId, and a turn a queue-operation record opened gets its id from
  * the first tool result instead of from its opener.  A bool is not an
- * index, though Python's int would take it. */
+ * index, though it counts as an int elsewhere. */
 export function _stampTurnId(cur: TurnId, r: Rec): void {
   const pid = pyGet(r, "promptId");
-  if (pyTruthy(pid) && !cur.pid) cur.pid = pyStr(pid);
+  if (pyTruthy(pid) && !cur.pid) cur.pid = printableText(pid);
   const idx = pyDig(r, "turnPosition", "turnIndex");
   if (cur.tidx === null && typeof idx === "number" && Number.isInteger(idx)) {
     cur.tidx = idx;
@@ -2906,7 +2806,7 @@ export function foldTurns(f: TurnsFold, r: Rec): void {
       cur.ts = pyOr(pyGet(r, "timestamp"), cur.ts) as string;
       cur.t0 = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
     } else {
-      cur = _newTurn(pyStr(pyOr(pyGet(r, "timestamp"), "")), text);
+      cur = _newTurn(printableText(pyOr(pyGet(r, "timestamp"), "")), text);
       turns.push(cur);
     }
     _stampTurnId(cur, r);
@@ -2940,9 +2840,9 @@ export function foldTurns(f: TurnsFold, r: Rec): void {
     // turn of its own unless the one open is the /compact that asked for
     // it.
     const md = pyOr(pyGet(r, "compactMetadata"), {});
-    if (cur === null || cur.n || pyStrip(cur.text) !== "/compact") {
-      cur = _newTurn(pyStr(pyOr(pyGet(r, "timestamp"), "")),
-        `/compact (${pyStr(pyOr(pyGet(md, "trigger"), "auto"))})`);
+    if (cur === null || cur.n || stripSpace(cur.text) !== "/compact") {
+      cur = _newTurn(printableText(pyOr(pyGet(r, "timestamp"), "")),
+        `/compact (${printableText(pyOr(pyGet(md, "trigger"), "auto"))})`);
       turns.push(cur);
     }
     cur.cr = num0(pyGet(md, "preTokens"));
@@ -2962,7 +2862,7 @@ export function foldTurns(f: TurnsFold, r: Rec): void {
     // estimate on either row.
     const c = pyDig(r, "message", "content");
     if (typeof c === "string") {
-      cur.out = Math.trunc(pyLen(c) / SUMMARY_CPT);
+      cur.out = Math.trunc(charLen(c) / SUMMARY_CPT);
       cur.usd[1] = cur.out * P_OUT;
     }
   } else if (pyGet(r, "type") === "assistant" &&

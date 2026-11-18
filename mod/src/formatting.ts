@@ -20,11 +20,12 @@ import {
   MONTH_S, PAD_PROFILES, PAIR_GAP, PROFILE_RULES, RAMPS, RIGHT_EDGE, RULE_MIN,
   SCALES, SEG_GAP, SEG_RULE, VAL_W, VAL2_W, WIDTH_PROFILES,
 } from "./spec.ts";
+import { pyTruthy } from "./py.ts";
 import {
-  pyAsciiDigits, pyFormatF, pyFloatRepr, pyIntDigits, pyIntStr, pyIntText,
-  pyIsDigit, pyLen, pyPadS, pyRstrip, pySlice, pySplitWs, pyStrip, pyTruthy,
-} from "./py.ts";
-import { pyFloat } from "./sources.ts";
+  asciiDigits, charLen, charSlice, digitsInt, firstMin, fixed, floatRepr,
+  intText, isDigits, padField, parseIntText, splitSpace, stripEnd,
+  stripSpace, toFloat,
+} from "./exact.ts";
 import { tsEpoch } from "./claude_records.ts";
 import { _naiveTimestamp, _strptimeStamp } from "./claude_calib.ts";
 import * as sp from "./spans.ts";
@@ -322,16 +323,16 @@ export function gridRow(st: Settings, cells: readonly SpanLike[],
 
 /** Trim to `maxChars` CHARACTERS by dropping them off the end. */
 export function fitHead(t: string, maxChars: number): string {
-  if (maxChars > 1 && pyLen(t) > maxChars) {
-    return pySlice(t, null, maxChars - 1) + "…";
+  if (maxChars > 1 && charLen(t) > maxChars) {
+    return charSlice(t, null, maxChars - 1) + "…";
   }
   return t;
 }
 
 /** Trim the path by dropping characters off the FRONT. */
 export function fitPath(p: string, maxChars: number): string {
-  if (maxChars > 1 && pyLen(p) > maxChars) {
-    return "…" + pySlice(p, -(maxChars - 1));
+  if (maxChars > 1 && charLen(p) > maxChars) {
+    return "…" + charSlice(p, -(maxChars - 1));
   }
   return p;
 }
@@ -365,13 +366,13 @@ export function trunc(st: Settings, s: string, want: number): string {
 // ════════════════════════════════════════════════════════════════════════════
 // Formatting.
 //
-// SIGNIFICANT DIGITS, not decimal places, throughout.  Python's "%.Nf"
-// rounds the double's exact value half to even, which toFixed does not, so
-// every one goes through pyFormatF.
+// SIGNIFICANT DIGITS, not decimal places, throughout.  "%.Nf" rounds the
+// double's exact value half to even, which toFixed does not, so every one
+// goes through fixed.
 // ════════════════════════════════════════════════════════════════════════════
 
 const SUB_DIGITS = Array.from(E_SUB_DIGITS);
-const DEC_RUN = /\.(\p{Nd}+)/gu;    // Python's \d: any Unicode decimal digit
+const DEC_RUN = /\.(\p{Nd}+)/gu;    // any Unicode decimal digit
 
 /** A formatted number with its fraction in subscript digits, or unchanged
  * when the switch is off.  Works on the rendered string, so one function
@@ -380,11 +381,11 @@ export function subDec(st: Settings, v: string): string {
   if (!st.subDec || !v.includes(".")) return v;
   if (v.startsWith(".")) v = "0" + v;
   return v.replace(DEC_RUN, (_m, ds: string) =>
-    Array.from(pyAsciiDigits(ds), (d) => SUB_DIGITS[Number(d)]).join(""));
+    Array.from(asciiDigits(ds), (d) => SUB_DIGITS[Number(d)]).join(""));
 }
 
-/** 10 ** k as Python's float power gives it for an integer k: the double
- * nearest, which a literal is and Math.pow need not be. */
+/** 10 ** k for an integer k as the double nearest, which a literal is and
+ * Math.pow need not be. */
 function pow10(k: number): number {
   return Number("1e" + k);
 }
@@ -401,21 +402,21 @@ export function humanize(st: Settings, n: number): string {
     // The cut is where the mantissa would round up into a fourth digit.
     if (n >= lim - lim / 2000.0) {
       const v = n / lim;
-      const s = v >= 10 ? pyFormatF(v, 0) : dropPointZero(pyFormatF(v, 1));
+      const s = v >= 10 ? fixed(v, 0) : dropPointZero(fixed(v, 1));
       return subDec(st, s + unit);
     }
   }
-  return subDec(st, pyIntStr(n) + " ");
+  return subDec(st, intText(n) + " ");
 }
 
 /** The token rate in three characters where three will hold it: no blank
  * unit, and rounded to the unit where humanize keeps a decimal. */
 export function rateFig(st: Settings, rate: number): string {
-  let s = pyRstrip(humanize(st, rate));
+  let s = stripEnd(humanize(st, rate));
   if (visWidth(s, st.widths) > 3) {
     for (const [lim, unit] of SI_UNITS) {
       if (rate >= lim) {
-        s = pyFormatF(rate / lim, 0) + unit;
+        s = fixed(rate / lim, 0) + unit;
         break;
       }
     }
@@ -428,7 +429,7 @@ export function rateFig(st: Settings, rate: number): string {
  * prints as the int. */
 export function pct2(v: number): string {
   if (v > 99) return "99";
-  return Number.isInteger(v) ? pyIntStr(v) : pyFloatRepr(v);
+  return Number.isInteger(v) ? intText(v) : floatRepr(v);
 }
 
 /** A plan-window percentage for the COST row, `places` decimals at most,
@@ -438,8 +439,8 @@ export function planPct(st: Settings, v: number, places = 2): string {
     return subDec(st, "99." + "9".repeat(Math.max(0, places - 1)));
   }
   const s = v >= 10 - 0.5 * pow10(-places)
-    ? pyFormatF(v, places - 1) : pyFormatF(v, places);
-  return subDec(st, pyRstrip(pyRstrip(s, "0"), ".") || "0");
+    ? fixed(v, places - 1) : fixed(v, places);
+  return subDec(st, stripEnd(stripEnd(s, "0"), ".") || "0");
 }
 
 /** A plan-window percentage in the characters its segment budgets: three
@@ -454,20 +455,20 @@ function limitPctRaw(v: number, digits: number): string {
   if (v <= 0) return "0";
   if (digits > 3) {
     if (v >= 99.95) return "100";
-    if (v >= 9.995) return pyFormatF(v, 1);
-    if (v >= 0.9995) return pyFormatF(v, 2);
-    return pySlice(pyFormatF(v, 3), 1);
+    if (v >= 9.995) return fixed(v, 1);
+    if (v >= 0.9995) return fixed(v, 2);
+    return charSlice(fixed(v, 3), 1);
   }
   if (digits < 3) {
     if (v >= 99.5) return "100";
-    if (v >= 0.95) return pyFormatF(v, 0);
-    if (v > 0) return pySlice(pyFormatF(v, 1), 1);
+    if (v >= 0.95) return fixed(v, 0);
+    if (v > 0) return charSlice(fixed(v, 1), 1);
     return "0";
   }
   if (v >= 99.5) return "100";
-  if (v >= 9.95) return pyFormatF(v, 0);
-  if (v >= 0.995) return dropPointZero(pyFormatF(v, 1));
-  return pySlice(pyFormatF(v, 2), 1);
+  if (v >= 9.95) return fixed(v, 0);
+  if (v >= 0.995) return dropPointZero(fixed(v, 1));
+  return charSlice(fixed(v, 2), 1);
 }
 
 /** A dollar figure in four characters: 0.4, 1.9, 12.3, 123, 1.2k, 12k. */
@@ -477,24 +478,24 @@ export function moneyFmt(st: Settings, c: number): string {
     // character: $999.5 belongs with "1.0k".
     if (c >= lim - lim / 2000.0) {
       const v = c / lim;
-      return subDec(st, (v >= 10 ? pyFormatF(v, 0)
-        : dropPointZero(pyFormatF(v, 1))) + unit);
+      return subDec(st, (v >= 10 ? fixed(v, 0)
+        : dropPointZero(fixed(v, 1))) + unit);
     }
   }
-  return subDec(st, c >= 99.95 ? pyFormatF(c, 0) : pyFormatF(c, 1));
+  return subDec(st, c >= 99.95 ? fixed(c, 0) : fixed(c, 1));
 }
 
 /** A dollar figure as three characters and a unit column, humanize's
  * shape, for the status line's 💰: "0.4 ", "12 ", "115 ", "1.2k". */
 export function moneyFig(st: Settings, c: number): string {
   if (c >= K - K / 2000.0) return humanize(st, c);
-  return (c >= 9.95 ? pyFormatF(c, 0) : pyFormatF(c, 1)) + " ";
+  return (c >= 9.95 ? fixed(c, 0) : fixed(c, 1)) + " ";
 }
 
 /** Seconds → "45s" / "1.5m" / "58m" / "2.5h" / "3d" / "1.4M"; `digits`
  * two forbids the decimal. */
 export function durFmt(st: Settings, d: number, digits = 3): string {
-  if (d < 60) return subDec(st, pyIntStr(d) + "s");
+  if (d < 60) return subDec(st, intText(d) + "s");
   // The minute and hour cuts sit half a unit early, where "%.0f" would
   // round up into the next unit.
   let v: number, u: string;
@@ -502,8 +503,8 @@ export function durFmt(st: Settings, d: number, digits = 3): string {
   else if (d < 84600) [v, u] = [d / 3600.0, "h"];
   else if (d < MONTH_S) [v, u] = [d / 86400.0, "d"];
   else [v, u] = [d / MONTH_S, "M"];
-  if (digits < 3 || v >= 10) return subDec(st, pyFormatF(v, 0) + u);
-  return subDec(st, dropPointZero(pyFormatF(v, 1)) + u);
+  if (digits < 3 || v >= 10) return subDec(st, fixed(v, 0) + u);
+  return subDec(st, dropPointZero(fixed(v, 1)) + u);
 }
 
 /** int(now): the clock in whole seconds, so a fraction cannot tip a
@@ -521,8 +522,8 @@ export function shortDur(st: Settings, target: string | null,
   now: number): string | null {
   if (!target) return null;
   const t = wholeSeconds(now);
-  if (pyIsDigit(target)) {
-    const delta = pyIntDigits(target) - t;
+  if (isDigits(target)) {
+    const delta = digitsInt(target) - t;
     return delta <= 0 ? "now" : durFmt(st, delta);
   }
   const n = _strptimeStamp(target);
@@ -556,11 +557,11 @@ export function elapsedShort(st: Settings, ts: string | null,
 export function shortModel(m: string, field: number = VAL_W): string {
   const fam = (MODEL_FAMILIES as readonly string[])
     .find((f) => m.startsWith(f)) ?? "";
-  if (!fam) return pySlice(m, null, field);
-  const ver = pyStrip(pySlice(m, pyLen(fam))).split(" ")[0];
-  if (ver && pyLen(fam) + pyLen(ver) <= field) return fam + ver;
-  if (pyLen(fam) <= field) return fam;
-  return pySlice(m, null, Math.max(0, field - pyLen(ver))) + ver;
+  if (!fam) return charSlice(m, null, field);
+  const ver = stripSpace(charSlice(m, charLen(fam))).split(" ")[0];
+  if (ver && charLen(fam) + charLen(ver) <= field) return fam + ver;
+  if (charLen(fam) <= field) return fam;
+  return charSlice(m, null, Math.max(0, field - charLen(ver))) + ver;
 }
 
 /** `v` padded so its decimal point falls in a fixed column: `ip` columns
@@ -586,7 +587,7 @@ export function decAlign(st: Settings, v: string, ip: number, fp: number,
       frac = cps.slice(cut).join("") + suffix;
     }
   }
-  return pyPadS(head, ip) + pyPadS(frac, fp + 1 + pyLen(suffix), true);
+  return padField(head, ip) + padField(frac, fp + 1 + charLen(suffix), true);
 }
 
 /** moneyFmt decimal-aligned in the six columns both cost rows reserve, its
@@ -606,22 +607,17 @@ export function signed(st: Settings, n: number): string {
   return (n >= 0 ? "+" : "-") + padVal(st, 4, humanize(st, Math.abs(n)));
 }
 
-/** min(a, b) as Python's: `a` unless `b` is less, so a NaN first stays. */
-function pyMin(a: number, b: number): number {
-  return b < a ? b : a;
-}
-
 /** A delta as a signed percentage of `whole`: sign, then six columns. */
 export function signedPct(st: Settings, n: number, whole: number): string {
-  // `if whole`: a NaN is true to Python.
+  // `if whole`: a NaN whole is true, and divides.
   const p = whole !== 0 ? 100.0 * n / whole : 0.0;
   return (p >= 0 ? "+" : "-") +
-    decAlign(st, pyFormatF(pyMin(Math.abs(p), 99.9), 1), 2, 1, E_PCT);
+    decAlign(st, fixed(firstMin([Math.abs(p), 99.9]), 1), 2, 1, E_PCT);
 }
 
 /** A percentage in at most three columns, clamped so it never needs four. */
 export function pct(p: number): string {
-  return pyIntStr(pyMin(wholeSeconds(p), 99)) + E_PCT;
+  return intText(firstMin([wholeSeconds(p), 99])) + E_PCT;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -691,9 +687,9 @@ export function magDim(v: number | null, cut: number): boolean {
   return !(v === null || v >= cut);
 }
 
-/** float(value), or null where float() raises. */
+/** `value` as toFloat reads it, or null. */
 function pctNum(value: unknown): number | null {
-  return pyFloat(value);
+  return toFloat(value);
 }
 
 /** Whether the 🎤 and 🎮 shares dim, for both limit rows, off the weekly
@@ -742,14 +738,14 @@ export function termCols(ppid: number, ps: PsRun,
     if (p <= 1) return null;
     const stdout = ps(p);
     if (stdout === null) return null;
-    const out = pySplitWs(stdout);
+    const out = splitSpace(stdout);
     if (out.length < 2) return null;
     const [tty, parent] = out;
     if (tty && tty !== "?" && tty !== "??") {
       const cols = winsize("/dev/" + tty);
       if (cols) return cols;
     }
-    const next = pyIntText(parent);
+    const next = parseIntText(parent);
     if (next === null) return null;
     p = next;
   }

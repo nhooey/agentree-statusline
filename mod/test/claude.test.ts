@@ -31,10 +31,10 @@ import {
 import type { Calib, Snapshot } from "../src/claude_calib.ts";
 import {
   _mainRoot, _pctStr, baseLimits, costFigures, ctxWindowFor, detectGit,
-  pyG, statusFigures, windowFor,
+  statusFigures, windowFor,
 } from "../src/claude.ts";
 import { decodeGit, decodePayload, FIGURES_SCHEMA } from "../src/figures.ts";
-import { pyJsonLoads } from "../src/sources.ts";
+import { general, parseJson } from "../src/exact.ts";
 import type { Dict } from "../src/py.ts";
 import { keyProblems, readFigures } from "./figures_doc.ts";
 
@@ -80,7 +80,7 @@ function envOf(c: Case): any {
 /** The committed document the case names, read as Python's json.loads does
  * (NaN and the infinities as numbers). */
 function committed(c: Case): any {
-  return readFigures(c.suite, c.figures, fill, pyJsonLoads);
+  return readFigures(c.suite, c.figures, fill, parseJson);
 }
 
 /** `got` against the committed document, and its records' keys. */
@@ -185,7 +185,7 @@ test("_pctStr, as _pct_str", () => {
   for (const c of glue.pct_str) {
     assert.equal(_pctStr(float(c.v)), c.expected, JSON.stringify(c));
   }
-  assert.equal(pyG(0.15 + 0.15 + 0.15), "0.45");
+  assert.equal(general(0.15 + 0.15 + 0.15), "0.45");
 });
 
 test("_mainRoot, as _main_root", () => {

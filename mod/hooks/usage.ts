@@ -3,11 +3,13 @@
 // reading.
 import type { EngineInterface } from 'claude-code'
 
-import { pyJoin } from '../src/claude_records.ts'
 import {
-  cacheName, commandInput, commandOutput, identity, isCacheName, pyFloat,
+  joinPath, parseJson, stableJson, toFloat, valueText,
+} from '../src/exact.ts'
+import {
+  cacheName, commandInput, commandOutput, identity, isCacheName,
   claudeOauthReading, creditsReading, CREDITS_PERIOD, CREDITS_SOURCE,
-  CREDITS_TTL, normalise, pyJsonDumps, pyJsonLoads, pyStr, trackerV1,
+  CREDITS_TTL, normalise, trackerV1,
 } from '../src/sources.ts'
 import type { Env, Fetch, Reading, Store } from '../src/sources.ts'
 import {
@@ -106,7 +108,7 @@ async function fetchOne($: $, home: string, selected: string,
       const r = await $.http.fetch(OAUTH_USAGE_URL, { auth: auth.handle,
         headers: { 'anthropic-beta': 'oauth-2025-04-20' } })
       if (!r.ok) return {}
-      return claudeOauthReading(pyJsonLoads(r.text),
+      return claudeOauthReading(parseJson(r.text),
         (await $.clock.now()) / 1000)
     } catch {
       return {}
@@ -146,7 +148,7 @@ async function readJson($: $, path: string): Promise<Dict> {
   const text = await readText($, path)
   if (text === null) return {}
   try {
-    const v = pyJsonLoads(text)
+    const v = parseJson(text)
     return isDict(v) ? v : {}
   } catch {
     return {}
@@ -156,7 +158,7 @@ async function readJson($: $, path: string): Promise<Dict> {
 /** fileStore's load. */
 async function storeLoad($: $, dir: string, agent: string, source: string,
   account: string, periodStart: string): Promise<Dict> {
-  const value = await readJson($, pyJoin(dir,
+  const value = await readJson($, joinPath(dir,
     cacheName(agent, source, account, periodStart)))
   const want = identity([agent, source, account, periodStart])
   const have = identity([value.agent, value.source, value.account_name,
@@ -167,10 +169,10 @@ async function storeLoad($: $, dir: string, agent: string, source: string,
 /** fileStore's save. */
 async function storeSave($: $, dir: string, agent: string, source: string,
   account: string, periodStart: string, value: Dict): Promise<void> {
-  await writeText($, pyJoin(dir, cacheName(agent, source, account,
-    periodStart)), pyJsonDumps({ ...value, agent: String(agent),
+  await writeText($, joinPath(dir, cacheName(agent, source, account,
+    periodStart)), stableJson({ ...value, agent: String(agent),
     source: String(source), account_name: String(account),
-    period_start: String(periodStart) }, true))
+    period_start: String(periodStart) }, { sortKeys: true }))
 }
 
 /** fileStore's findCompatible: the newest reading for this account and
@@ -180,13 +182,13 @@ async function storeFind($: $, dir: string, agent: string, account: string,
   let newest: Dict = {}
   for (const e of await listDir($, dir)) {
     if (!isCacheName(e.name)) continue
-    const value = await readJson($, pyJoin(dir, e.name))
+    const value = await readJson($, joinPath(dir, e.name))
     if (value.agent !== agent || value.account_name !== account ||
-        pyStr(pyGet(value, 'period_start')) !== pyStr(periodStart)) {
+        valueText(pyGet(value, 'period_start')) !== valueText(periodStart)) {
       continue
     }
-    const mine = pyFloat(pyGet(value, 'as_of'))
-    const theirs = pyFloat(pyGet(newest, 'as_of', -1))
+    const mine = toFloat(pyGet(value, 'as_of'))
+    const theirs = toFloat(pyGet(newest, 'as_of', -1))
     const newer = mine === null || theirs === null
       ? Object.keys(newest).length === 0 : mine > theirs
     if (newer) newest = value
@@ -250,7 +252,7 @@ export async function creditsVia($: $, places: Places, now: number,
   const dir = places.stateDir
   const kept = await storeLoad($, dir, 'claude', CREDITS_SOURCE, who,
     CREDITS_PERIOD)
-  const asked = pyFloat(pyGet(kept, 'attempted_at'))
+  const asked = toFloat(pyGet(kept, 'attempted_at'))
   const due = asked === null || now - asked >= CREDITS_TTL || now < asked
   if (due && !creditsAsking) {
     creditsAsking = true
@@ -284,7 +286,7 @@ async function askCredits($: $, places: Places, who: string,
       const r = await $.http.fetch(OAUTH_USAGE_URL, { auth: auth.handle,
         headers: { 'anthropic-beta': 'oauth-2025-04-20' } })
       if (r.ok) {
-        const got = creditsReading(pyJsonLoads(r.text), now)
+        const got = creditsReading(parseJson(r.text), now)
         found.push(...(Array.isArray(got.credits) ? got.credits : []))
         answered = true
       }

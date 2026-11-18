@@ -43,7 +43,7 @@ function revive(v: any): any {
 }
 
 /** A value with every dict a plain object, as deepEqual wants it:
- * pyJsonLoads builds its dicts with no prototype. */
+ * parseJson builds its dicts with no prototype. */
 function plain(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(plain);
   if (isDict(v)) {

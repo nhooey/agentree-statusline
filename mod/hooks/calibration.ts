@@ -3,7 +3,7 @@
 // the render and only changed files read again.
 import type { EngineInterface } from 'claude-code'
 
-import { pyJoin } from '../src/claude_records.ts'
+import { joinPath, parseJson } from '../src/exact.ts'
 import { statePath } from '../src/state.ts'
 import {
   _calibCacheText, _calibrationCacheName, _calibrationOf, _idKey,
@@ -15,7 +15,6 @@ import {
 import type {
   Calib, CostKept, Priced, Snapshot,
 } from '../src/claude_calib.ts'
-import { pyJsonLoads } from '../src/sources.ts'
 import { sha256Hex } from '../src/sha256.ts'
 import { isDict, pyGet } from '../src/py.ts'
 import type { Dict } from '../src/py.ts'
@@ -50,7 +49,7 @@ export async function calibrationVia($: $, places: Places, snap: Snapshot,
   now: number): Promise<Calib> {
   const [ss, ws] = _windowStarts(snap)
   const windows = _windowsKey(ss, ws)
-  const path = pyJoin(places.stateDir, _calibrationCacheName(snap))
+  const path = joinPath(places.stateDir, _calibrationCacheName(snap))
   let cached: Dict | null = null
   let fresh = false
   // The cache whatever its windows, and its age: what a scan's steps are
@@ -59,7 +58,7 @@ export async function calibrationVia($: $, places: Places, snap: Snapshot,
   let prevAge: number | null = null
   try {
     const st = await $.fs.stat(path)
-    const d = pyJsonLoads(await readTextVia($, path))
+    const d = parseJson(await readTextVia($, path))
     if (isDict(d)) {
       prev = d
       prevAge = now - st.mtimeMs / 1000
@@ -101,7 +100,7 @@ export async function calibrationVia($: $, places: Places, snap: Snapshot,
  * leaves one that holds anything else. */
 async function sweepCalibrationsVia($: $, places: Places,
   now: number): Promise<void> {
-  const marker = pyJoin(places.stateDir, CALIB_SWEPT)
+  const marker = joinPath(places.stateDir, CALIB_SWEPT)
   try {
     const st = await $.fs.stat(marker)
     if (now - st.mtimeMs / 1000 < CALIB_SWEEP_EVERY_S) return
@@ -111,14 +110,14 @@ async function sweepCalibrationsVia($: $, places: Places,
   if (!await writeText($, marker, '')) return
   const listed = await listDir($, places.stateDir)
   const stale = staleCalibrations(listed, now)
-    .map((name) => pyJoin(places.stateDir, name))
+    .map((name) => joinPath(places.stateDir, name))
   const dirs: string[] = []
   for (const e of listed) {
     if (e.kind !== 'dir' || !FOLD_DIR.test(e.name)) continue
-    const dir = pyJoin(places.stateDir, e.name)
+    const dir = joinPath(places.stateDir, e.name)
     const names = staleFoldFiles(await listDir($, dir), now)
     if (names === null) continue
-    stale.push(...names.map((n) => pyJoin(dir, n)))
+    stale.push(...names.map((n) => joinPath(dir, n)))
     dirs.push(dir)
   }
   for (let i = 0; i < stale.length; i += RM_AT_ONCE) {
@@ -135,10 +134,10 @@ async function sweepCalibrationsVia($: $, places: Places,
  * `rm` is handed only the names oldWindowCosts matched, under the state
  * directory. */
 async function removeOldCostsVia($: $, places: Places): Promise<void> {
-  const marker = pyJoin(places.stateDir, OLD_COSTS_DONE)
+  const marker = joinPath(places.stateDir, OLD_COSTS_DONE)
   if (await fileSize($, marker) !== null) return
   const old = oldWindowCosts(await listDir($, places.stateDir))
-    .map((name) => pyJoin(places.stateDir, name))
+    .map((name) => joinPath(places.stateDir, name))
   if (old.length) {
     const r = await runVia($, ['/bin/rm', '-f', '--', ...old],
       { timeoutMs: 15_000 })
@@ -313,14 +312,14 @@ async function projectFiles($: $, dir: string): Promise<Listed[]> {
   const subs: string[] = []
   for (const proj of await listDir($, dir)) {
     if (proj.kind !== 'dir' || proj.name.startsWith('.')) continue
-    const p = pyJoin(dir, proj.name)
+    const p = joinPath(dir, proj.name)
     for (const e of await listDir($, p)) {
       if (e.name.startsWith('.')) continue
       if (e.kind === 'file' && e.name.endsWith('.jsonl')) {
-        out.push({ path: pyJoin(p, e.name), size: e.size,
+        out.push({ path: joinPath(p, e.name), size: e.size,
           mtimeMs: e.mtimeMs })
       } else if (e.kind === 'dir') {
-        subs.push(pyJoin(pyJoin(p, e.name), 'subagents'))
+        subs.push(joinPath(joinPath(p, e.name), 'subagents'))
       }
     }
   }

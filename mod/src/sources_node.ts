@@ -12,9 +12,9 @@ import * as nodePath from "node:path";
 import { readTracker } from "./claude_sources_node.ts";
 import { isDict, pyGet, pyTruthy } from "./py.ts";
 import {
-  cacheName, commandInput, commandOutput, identity, isCacheName, pyFloat,
-  pyJsonDumps, pyJsonLoads, pyStr, trackerV1,
+  cacheName, commandInput, commandOutput, identity, isCacheName, trackerV1,
 } from "./sources.ts";
+import { parseJson, stableJson, toFloat, valueText } from "./exact.ts";
 import type { Dict, Env, Fetch, Reading, Store } from "./sources.ts";
 
 export * from "./sources.ts";
@@ -46,7 +46,7 @@ export function stateDir(env: Env): string {
 
 function readJson(path: string): Dict {
   try {
-    const value = pyJsonLoads(fs.readFileSync(path, "utf8"));
+    const value = parseJson(fs.readFileSync(path, "utf8"));
     return isDict(value) ? value : {};
   } catch {
     return {};
@@ -74,7 +74,8 @@ export function fileStore(env: Env): Store {
       const tmp = nodePath.join(nodePath.dirname(target),
         ".tmp-" + process.pid + "-" + Math.random().toString(36).slice(2));
       try {
-        fs.writeFileSync(tmp, pyJsonDumps(stored, true), { mode: 0o600 });
+        fs.writeFileSync(tmp, stableJson(stored, { sortKeys: true }),
+          { mode: 0o600 });
         fs.renameSync(tmp, target);
         fs.chmodSync(target, 0o600);
       } catch { /* an unwritable cache is a cache miss next time */ }
@@ -88,11 +89,12 @@ export function fileStore(env: Env): Store {
         if (!isCacheName(name)) continue;
         const value = readJson(nodePath.join(dir(), name));
         if (value.agent !== agent || value.account_name !== account ||
-            pyStr(pyGet(value, "period_start")) !== pyStr(periodStart)) {
+            valueText(pyGet(value, "period_start")) !==
+              valueText(periodStart)) {
           continue;
         }
-        const mine = pyFloat(pyGet(value, "as_of"));
-        const theirs = pyFloat(pyGet(newest, "as_of", -1));
+        const mine = toFloat(pyGet(value, "as_of"));
+        const theirs = toFloat(pyGet(newest, "as_of", -1));
         const newer = mine === null || theirs === null
           ? !pyTruthy(newest) : mine > theirs;
         if (newer) newest = value;

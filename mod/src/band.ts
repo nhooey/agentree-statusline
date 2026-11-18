@@ -21,8 +21,8 @@ import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import { cut, ink, paint, span, width } from "./spans.ts";
 import type { Span } from "./spans.ts";
-import { isDict, pyLen, pyRstrip, pySlice } from "./py.ts";
-import { pyFloat } from "./sources.ts";
+import { isDict } from "./py.ts";
+import { charLen, charSlice, stripEnd, toFloat } from "./exact.ts";
 import {
   W_CACHE_READ, W_CACHE_WRITE, etaFinish, tsEpoch,
 } from "./claude_records.ts";
@@ -269,7 +269,7 @@ function etaNow(tr: Transcript, now: number): number {
 function homeDir(dir: string, home: string): string {
   if (dir === home) return "~";
   if (home && dir.startsWith(home + "/")) {
-    return "~" + pySlice(dir, pyLen(home));
+    return "~" + charSlice(dir, charLen(home));
   }
   return dir;
 }
@@ -280,7 +280,7 @@ function homeDir(dir: string, home: string): string {
  * is null outside the project. */
 function projectDir(dir: string, root: string, home: string):
   [string, readonly [number, number] | null] {
-  const r = pyRstrip(root, "/");
+  const r = stripEnd(root, "/");
   const shown = homeDir(dir, home);
   if (!r || (dir !== r && !dir.startsWith(r + "/"))) return [shown, null];
   const end = homeDir(r, home).length;
@@ -331,7 +331,7 @@ function accountRow(st: Settings, fig: Dict, now: number,
   const reset = (k: string): string | null =>
     untilReset(st, raw[k] as number | null, now);
   const pct = (s: string): number | null => {
-    const v = pyFloat(s);
+    const v = toFloat(s);
     return v === null || Number.isNaN(v) ? null : v;
   };
   const reading = (fig.usage as Dict | undefined)?.reading as Dict | null;

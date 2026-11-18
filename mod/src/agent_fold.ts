@@ -10,8 +10,9 @@
 // file, and else the other.
 import type { AgentFold, AgentRaw } from "./claude_records.ts";
 import {
-  bgInfoJson, bgInfoOf, etaJson, etaOfJson, newAgentFold, pyJoin,
+  bgInfoJson, bgInfoOf, etaJson, etaOfJson, newAgentFold,
 } from "./claude_records.ts";
+import { joinPath } from "./exact.ts";
 import { sha256Hex } from "./sha256.ts";
 import { stateName } from "./state.ts";
 import { STATE_KINDS } from "./state_spec.ts";
@@ -27,7 +28,7 @@ const SEQ = /^\{"format":(\d+),"seq":(\d+),/;
 /** The directory a session's agent folds are saved in, under the state
  * directory `stateDir`. */
 export function foldDir(stateDir: string, transcript: string): string {
-  return pyJoin(stateDir, stateName("agent-fold", transcript));
+  return joinPath(stateDir, stateName("agent-fold", transcript));
 }
 
 /** The two files agent file `path`'s fold is saved to in turn. */

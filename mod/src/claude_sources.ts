@@ -14,10 +14,12 @@
 // mod's own handlers' in the mod.
 
 import { STAMP_FMT } from "./spec.ts";
-import { isDict, pyGet, pyStrip, pyTruthy, utf8 } from "./py.ts";
+import { isDict, pyGet, pyTruthy } from "./py.ts";
 import {
-  collect, FABLE_WINDOW, hashedAccountId, pyFloatText, pyJsonLoads,
-  splitTimestamp, WEEKLY_WINDOWS,
+  parseFloatText, parseJson, scalarEq, stripSpace, utf8,
+} from "./exact.ts";
+import {
+  collect, FABLE_WINDOW, hashedAccountId, splitTimestamp, WEEKLY_WINDOWS,
 } from "./sources.ts";
 import type {
   AccountOf, Dict, Env, Fetch, Reading, Store,
@@ -95,12 +97,12 @@ export type PreparedClaudeReading = {
 };
 
 // "%.6f" without its trailing zeros.  toFixed and "%.6f" agree but on an
-// exact tie, which toFixed rounds up and Python to even: a figure that is
+// exact tie, which toFixed rounds up and "%.6f" to even: a figure that is
 // an odd number of 128ths, 0.0078125 say.
 export function pct(value: unknown): string {
   let n: number | null;
   if (typeof value === "number") n = value;
-  else if (typeof value === "string") n = pyFloatText(value);
+  else if (typeof value === "string") n = parseFloatText(value);
   else if (typeof value === "boolean") n = value ? 1 : 0;
   else n = null;
   if (n === null) return "";
@@ -124,7 +126,7 @@ export function pct(value: unknown): string {
 export function reset(value: unknown): string {
   if (value === null || value === undefined) return "";
   const t = typeof value === "number" ? value
-    : typeof value === "string" ? pyFloatText(value) : null;
+    : typeof value === "string" ? parseFloatText(value) : null;
   if (t === null || !Number.isFinite(t)) return "";
   const [secs] = splitTimestamp(t);
   return formatLocal(secs);
@@ -235,12 +237,6 @@ export const APPLE_EPOCH = 978307200;  // 2001-01-01 UTC, in Unix seconds.
                                        // Every timestamp in a macOS app's
                                        // own store is in this epoch.
 
-// Python's ==, as far as a profile id needs it: True is 1.
-function pyEq(a: unknown, b: unknown): boolean {
-  const n = (v: unknown) => (typeof v === "boolean" ? Number(v) : v);
-  return n(a) === n(b);
-}
-
 // A STAMP_FMT string as time.strptime and time.mktime read it: local wall
 // time, one or two digits where %m %d %H %M allow it.
 const STAMP_RE = new RegExp(
@@ -267,9 +263,9 @@ export function asEpoch(v: unknown): number | null {
   if (typeof v === "boolean" || v === null || v === undefined) return null;
   if (typeof v === "number") return v;
   if (typeof v === "string") {
-    const s = pyStrip(v);
+    const s = stripSpace(v);
     if (!s) return null;
-    const n = pyFloatText(s);
+    const n = parseFloatText(s);
     if (n !== null) return n;
     return stampEpoch(s);
   }
@@ -288,12 +284,12 @@ export function trackerReading(store: unknown): Dict {
   if (!isDict(store)) throw new TypeError("the store is not a dict");
   let profs = pyGet(store, "profiles_v3");
   if (profs instanceof Uint8Array) {
-    // Python's decode keeps a byte-order mark, and json.loads refuses one.
+    // Decoded with a byte-order mark kept, which parseJson refuses.
     profs = utf8(profs, false, true);
   }
   if (typeof profs === "string") {
     try {
-      profs = pyJsonLoads(profs);
+      profs = parseJson(profs);
     } catch {
       return {};
     }
@@ -302,7 +298,7 @@ export function trackerReading(store: unknown): Dict {
   const want = pyGet(store, "activeProfileId");
   const first = (pred: (p: Dict) => boolean) =>
     profs.find((p: unknown) => isDict(p) && pred(p)) ?? null;
-  let prof: unknown = first((p) => pyEq(pyGet(p, "id"), want));
+  let prof: unknown = first((p) => scalarEq(pyGet(p, "id"), want));
   if (!pyTruthy(prof)) {
     prof = first((p) => pyTruthy(pyGet(p, "isSelectedForDisplay")));
   }
@@ -345,7 +341,7 @@ export function configAccountOf(text: string): string {
 
 // Only the XML form: `defaults export` writes it, and so does any export.
 // A binary plist (a copy of the app's own file in ~/Library/Preferences)
-// is refused, where Python's plistlib would read it.
+// is refused, though plistlib would read it.
 export function plistLoads(bytes: Uint8Array): unknown {
   let start = 0;
   if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) start = 3;
@@ -378,9 +374,9 @@ function decodeEntities(text: string): string {
   });
 }
 
-// int() of a plist <integer>: base 10, or 16 after 0x.
-function pyIntText(raw: string): number {
-  const s = pyStrip(raw);
+// The integer a plist <integer> spells: base 10, or 16 after 0x.
+function plistInt(raw: string): number {
+  const s = stripSpace(raw);
   const hex = /^0[xX]_?([0-9a-fA-F](?:_?[0-9a-fA-F])*)$/.exec(s);
   if (raw.startsWith("0x") || raw.startsWith("0X")) {
     if (!hex) throw new Error("invalid literal for int()");
@@ -493,9 +489,9 @@ function parsePlistXml(source: string): unknown {
       case "array": stack.pop(); break;
       case "true": addObject(true); break;
       case "false": addObject(false); break;
-      case "integer": addObject(pyIntText(getData())); break;
+      case "integer": addObject(plistInt(getData())); break;
       case "real": {
-        const n = pyFloatText(getData());
+        const n = parseFloatText(getData());
         if (n === null) throw new Error("could not convert to float");
         addObject(n);
         break;

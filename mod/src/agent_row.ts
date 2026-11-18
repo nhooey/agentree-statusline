@@ -19,9 +19,9 @@ import { durFmt, grade, padVal, seg, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import { ink, paint, span, spans } from "./spans.ts";
 import type { Span, SpanLike } from "./spans.ts";
-import { isDict, pyGet, pyOr, pySlice, pyTruthy } from "./py.ts";
+import { isDict, pyGet, pyOr, pyTruthy } from "./py.ts";
 import type { Dict } from "./py.ts";
-import { pyFloat, pyStr } from "./sources.ts";
+import { charSlice, firstMax, firstMin, toFloat, valueText } from "./exact.ts";
 import { WAITING_TOOLS, etaFinish, squash } from "./claude_records.ts";
 import type { Limits } from "./claude_sources.ts";
 import {
@@ -68,13 +68,13 @@ function uaList(u: unknown, k: string): readonly any[] {
 
 /** `v` as a string, "" for a missing or false value. */
 export function strOr(v: unknown): string {
-  return pyTruthy(v) ? pyStr(v) : "";
+  return pyTruthy(v) ? valueText(v) : "";
 }
 
-/** A startTime in milliseconds as seconds, or null where pyFloat reads
+/** A startTime in milliseconds as seconds, or null where toFloat reads
  * none. */
 function msToS(v: unknown): number | null {
-  const f = v === null || v === undefined ? null : pyFloat(v);
+  const f = v === null || v === undefined ? null : toFloat(v);
   return f === null ? null : f / 1000.0;
 }
 
@@ -83,31 +83,17 @@ export function hasId(t: unknown): t is Dict {
   return isDict(t) && pyTruthy(t.id);
 }
 
-/** The largest of xs, the first of equals; xs not empty. */
-export function firstMax(xs: readonly number[]): number {
-  let m = xs[0];
-  for (const x of xs.slice(1)) if (x > m) m = x;
-  return m;
-}
-
-/** The smallest of xs, the first of equals; xs not empty. */
-function firstMin(xs: readonly number[]): number {
-  let m = xs[0];
-  for (const x of xs.slice(1)) if (x < m) m = x;
-  return m;
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // The row's state.
 // ════════════════════════════════════════════════════════════════════════════
 
 /** Tokens a second over the task's samples, A_TICK_S apart; null unless
- * running with two samples pyFloat reads. */
+ * running with two samples toFloat reads. */
 export function tokenRate(samples: unknown, status: string): number | null {
   if (status !== "running" || !Array.isArray(samples) || samples.length < 2) {
     return null;
   }
-  const first = pyFloat(samples[0]), last = pyFloat(samples.at(-1));
+  const first = toFloat(samples[0]), last = toFloat(samples.at(-1));
   if (first === null || last === null) return null;
   return Math.max(0.0, last - first) / (A_TICK_S * (samples.length - 1));
 }
@@ -143,7 +129,7 @@ export function agentState(status: string, usage: unknown = null,
   }
   const end = END_MARK.get(status);
   if (end !== undefined) return [E_PHASE_END, end];
-  return status ? [pySlice(status, null, 2), ""] : ["", ""];
+  return status ? [charSlice(status, null, 2), ""] : ["", ""];
 }
 
 const PHASES: readonly string[] = [E_PHASE_RUN, E_PHASE_PAUSE, E_PHASE_END,
@@ -216,13 +202,13 @@ export function runningParents(prepared: readonly Prepared[]): Set<string> {
   const parent = new Map<string, string>();
   for (const [t, , m] of prepared) {
     if (hasId(t)) {
-      parent.set(pyStr(t.id), strOr(pyGet(pyOr(m, {}), "parentAgentId")));
+      parent.set(valueText(t.id), strOr(pyGet(pyOr(m, {}), "parentAgentId")));
     }
   }
   const out = new Set<string>();
   for (const [t] of prepared) {
     if (hasId(t) && (t.status === "running" || t.status === "pending")) {
-      let up = parent.get(pyStr(t.id)) ?? "";
+      let up = parent.get(valueText(t.id)) ?? "";
       const seen = new Set<string>();
       while (up && !seen.has(up)) {
         seen.add(up);
@@ -294,7 +280,7 @@ export function inheritedEtas(prepared: readonly Prepared[]):
   Map<string, Eta> {
   const rows = new Map<string, [Dict, unknown, unknown]>();
   for (const [t, u, m] of prepared) {
-    if (hasId(t)) rows.set(pyStr(t.id), [t, u, pyOr(m, {})]);
+    if (hasId(t)) rows.set(valueText(t.id), [t, u, pyOr(m, {})]);
   }
   const kids = new Map<string, string[]>();
   for (const [tid, [, , m]] of rows) {
