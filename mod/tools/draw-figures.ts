@@ -45,8 +45,7 @@
 // such as "corpus/03-tree" or "states/queued", in the band's tree above
 // the prompt, each task's `label` standing for its latest progress
 // update; --progress is the main thread's.  The inputs' clock is the
-// figures documents'.  --cap is
-// subagent-rows.  With --part receipt they go in the --status document,
+// figures documents'.  With --part receipt they go in the --status document,
 // and the receipt stamps the turn's agents under 🧵.  --background gives
 // the threads open shells and Monitors, as the rows' cases do
 // (withBackground).  --session-name is the session's name, as /rename
@@ -81,7 +80,7 @@ const USAGE = "usage: draw-figures.ts FILE [--cols N] " +
   "[--phase {running,done}] " +
   "[--hide PATH] [--rate N] [--home DIR] [--status STATUS_FILE] " +
   "[--rows JSON] [--right-edge N] [--inset N] " +
-  "[--hint TEXT] [--agents CASE] [--progress TEXT] [--cap N] " +
+  "[--hint TEXT] [--agents CASE] [--progress TEXT] " +
   "[--background] [--session-name NAME[:COLOUR]] [--plain]";
 
 function fail(msg: string): never {
@@ -99,7 +98,6 @@ const argv = process.argv.slice(2);
 let file = "", cols = 160, part = "", phase: Phase = "running";
 let rate: number | null = null, home = "${HOME}", statusFile = "", plain = false;
 let rowsArg = "", agentsCase = "", progress = "";
-let cap: number | undefined;
 let background = false, sessionName = "";
 let rightEdge = RIGHT_EDGE, inset = 0;
 let hint = "-- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)";
@@ -125,7 +123,6 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === "--hint") hint = next();
   else if (a === "--agents") agentsCase = next();
   else if (a === "--progress") progress = next();
-  else if (a === "--cap") cap = Number(next());
   else if (a === "--background") background = true;
   else if (a === "--session-name") sessionName = next();
   else if (a.startsWith("--")) fail("unrecognized arguments: " + a);
@@ -209,8 +206,8 @@ const stamped = ROW_NAMES.filter((r) => rows[r].transcript);
 const agents = rows.subagents.live as Live;
 const band = (place?: Place): Span[][] =>
   bandLines(st, fig, cols, hide, place === "above"
-    ? { rate, phase, live, place, places, indent: inset, agents, cap }
-    : { rate, phase, live, place, places, inset, agents, cap });
+    ? { rate, phase, live, place, places, indent: inset, agents }
+    : { rate, phase, live, place, places, inset, agents });
 // The tree's root draws 📦 🌿 🔀, and the 💳 row leaves them out.
 const rooted = rootDrawn(rows.session.place, rows.session.live, phase, hide);
 const account = (place?: Place): Span[][] => {

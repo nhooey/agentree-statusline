@@ -1,7 +1,7 @@
 // The band's tree (band_tree.ts) and the subagents' facts it draws
 // (subagent_tasks.ts): agentUsageOf against the committed answers over
 // the fixture agents, the progress update off a transcript's tail,
-// and the tree's lines, groups, cap and folds over the panel corpus's
+// and the tree's lines and folds over the panel corpus's
 // tasks.  The drawn rows themselves are pinned by the rows' cases
 // (rows.test.ts, gen-row-cases.ts's tree cases).
 import { test } from "node:test";
@@ -24,7 +24,7 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  bgPath, bgText, foldShut, groupFold, pruneFolds, treeRows,
+  bgPath, bgText, foldShut, pruneFolds, treeRows,
   workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
@@ -172,7 +172,7 @@ function inboxTree(statuses: { [id: string]: string } = {}): string[] {
   const rows = treeRows(ST, { session: blank("session"),
     main: blank("main"), turn: blank("turn"), workspace: null,
     mainPhase: "🟢", mainInbox: 0, mainProgress: "", turnPhase: "🟢",
-    agents: { tasks, limits: LIMITS, now: NOW, turnStart: null }, cap: 20 },
+    agents: { tasks, limits: LIMITS, now: NOW, turnStart: null } },
   []);
   const keys = fixedKeys(ST, 200, []);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
@@ -228,7 +228,7 @@ function tree(id: string, over: Partial<TreeInput> = {},
       pr: "38", style: "" },
     mainPhase: "🟢", mainInbox: 0, mainProgress: doc.main_progress as string,
     turnPhase: "🟢", agents: { tasks: doc.tasks as TreeTask[],
-      limits: LIMITS, now: NOW, turnStart }, cap: 6, ...over }, hide);
+      limits: LIMITS, now: NOW, turnStart }, ...over }, hide);
   const keys = fixedKeys(ST, 200, hide);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, hide)))
     .trimEnd());
@@ -285,19 +285,6 @@ test("the state circles stand in one column, a blank past the deepest " +
   assert.equal(colOf(deep.find((l) => l.includes("Trunk"))!, "🤏"), 21);
 });
 
-test("a grouped row draws its glyph where a kind glyph stands and its " +
-  "name in the names' column", () => {
-  const lines = tree("corpus/03-tree", { cap: 2 });
-  const more = lines.filter((l) => l.includes("more"));
-  // Twig's glyph, three levels down, ends at 11: the names stand at 15.
-  assert.match(more[0], /^   │  ╰⊞ … {5}3 more/u);
-  assert.match(more[1], /^   ╰⊞ … {8}1 more/u);
-  for (const l of more) {
-    assert.equal(colOf(l, "…"), colOf(l, "⊞") + 2);
-    assert.equal(colOf(l, "more") - 2, colOf(lines[1], "main"));
-  }
-});
-
 test("🎮 draws the session's name in the names' column, before 📦, in " +
   "its colour, with no press; 📦 there without a name, and " +
   "workspace.name hides it", () => {
@@ -314,7 +301,7 @@ test("🎮 draws the session's name in the names' column, before 📦, in " +
   const root = (colour: string) => treeRows(ST, { session: { scope: "session",
     label: [], cells: {} }, main: null, turn: null, workspace: null,
     mainPhase: "🟢", mainInbox: 0, mainProgress: "", turnPhase: "🟢",
-    agents: null, cap: 6, sessionName: "Statusline",
+    agents: null, sessionName: "Statusline",
     sessionColour: colour }, [])[0];
   const badge = (colour: string) => root(colour).label
     .find((p) => p.path === "workspace.name")!;
@@ -333,7 +320,7 @@ test("on a narrow 🎮 label the name gives way after 🔀 and before 📦",
       cells: {} }, main: null, turn: null,
     workspace: { project: "repo", branch: "main", dirty: false, dir: "",
       pr: "38", style: "" }, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
-    turnPhase: "🟢", agents: null, cap: 6, sessionName: "Statusline",
+    turnPhase: "🟢", agents: null, sessionName: "Statusline",
     sessionColour: "purple" }, [])[0];
     const at = (room: number) => stripAnsi(join(labelText(ST, row, [],
       room)));
@@ -348,8 +335,8 @@ test("on a narrow label the blanks before the circle stay, and the name " +
   const rows = treeRows(ST, { session: null, main: null, turn: null,
     workspace: null, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
     turnPhase: "🟢", agents: { tasks: corpusAgents("corpus/03-tree", "")
-      .tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart: null },
-    cap: 20 }, []);
+      .tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart: null } },
+  []);
   const at = (name: string, room: number) => stripAnsi(join(labelText(ST,
     rows.find((r) => r.label.some((p) => p.spans.some((s) =>
       s.text === name)))!, [], room)));
@@ -420,14 +407,27 @@ test("an agent's label packs its own counts before its name, with no " +
   assert.match(label("Moss"), /🔍 +🟢 Moss/u);
 });
 
-test("past the cap the later siblings fold into their parent's … N more, " +
-  "and every shown row's parents stay", () => {
-  const lines = tree("corpus/03-tree", { cap: 2 });
-  assert.equal(lines.length, 7);
-  assert.match(lines[3], /^   ├⊟ 🎩 +🟢 🤏2 Trunk/u);
-  assert.match(lines[4], /^   │  ├─ 🔍 +🟢 📨1 Twig/u);
-  assert.match(lines[5], /^   │  ╰⊞ … +3 more/u);
-  assert.match(lines[6], /^   ╰⊞ … +1 more/u);
+test("every agent under a parent draws a row, however many it has", () => {
+  const doc = corpusAgents("corpus/03-tree", "");
+  const t1 = (doc.tasks as TreeTask[]).find((t) => t.task.id === "t1")!;
+  const kids = Array.from({ length: 9 }, (_, i): TreeTask => ({ ...t1,
+    task: { ...t1.task, id: "k" + i, name: "Kid" + i, status: "running",
+      startTime: (t1.task.startTime as number) + i },
+    meta: { ...t1.meta, name: "Kid" + i, parentAgentId: "t1" },
+    progress: "" }));
+  const lines = tree("corpus/03-tree", { agents: { tasks: [
+    ...doc.tasks as TreeTask[], ...kids], limits: LIMITS, now: NOW,
+    turnStart: null } });
+  for (let i = 0; i < kids.length; i++) {
+    assert.ok(lines.some((l) => l.includes("Kid" + i)), lines.join("\n"));
+  }
+  assert.ok(!lines.some((l) => /… +\d+ more/u.test(l)));
+  // Folded, the parent hides them all and counts them.
+  const folded = tree("corpus/03-tree", { folds: { t1: true }, agents: {
+    tasks: [...doc.tasks as TreeTask[], ...kids], limits: LIMITS, now: NOW,
+    turnStart: null } });
+  assert.ok(!folded.some((l) => l.includes("Kid")));
+  assert.match(folded.find((l) => l.includes("Trunk"))!, /👶🏻13 /u);
 });
 
 test("a folded agent draws ⊞ and counts every agent hidden under it", () => {
@@ -437,8 +437,7 @@ test("a folded agent draws ⊞ and counts every agent hidden under it", () => {
   assert.ok(!lines.some((l) => l.includes("Twig")));
 });
 
-test("the agents that ended past finished-within draw no row and no " +
-  "grouped row", () => {
+test("the agents that ended past finished-within draw no row", () => {
   const lines = tree("corpus/01-mixed", {}, [], NOW - 3600);
   assert.ok(!lines.some((l) => l.includes("Daisy")));
   assert.ok(!lines.some((l) => l.includes("done")));
@@ -465,10 +464,10 @@ test("🎤 draws the prompt typed last after its name, and chat.prompt " +
 
 test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +
   "and for how long since its last record, its progress update drawn, " +
-  "counted toward the cap and kept", () => {
+  "and kept", () => {
   const turn = NOW - 3600;
   const waiting = { p1: "waiting", x1: "waiting" };
-  const lines = tree("corpus/02-parked", { cap: 10 }, [], turn, waiting);
+  const lines = tree("corpus/02-parked", {}, [], turn, waiting);
   const row = (name: string) => lines.find((l) => l.includes(name))!;
   // Pine waits on its background shell, 980s after its last record.
   assert.match(row("Pine"), /🔩 +🟡 💻1 Pine .*💻  16m/u);
@@ -476,11 +475,6 @@ test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +
   assert.match(row("Yarrow"), /🔍 +🟡 Yarrow .*📋  13m/u);
   assert.ok(!tree("corpus/02-parked", {}, [], turn).some((l) =>
     l.includes("Yarrow")));
-  // Each takes a row under the cap like any other live agent.
-  const capped = tree("corpus/02-parked", { cap: 7 }, [], turn, waiting);
-  assert.ok(capped.some((l) => /… +1 more/u.test(l)));
-  assert.ok(!tree("corpus/02-parked", { cap: 7 }, [], turn).some((l) =>
-    l.includes("more")));
 });
 
 test("a waiting agent's progress update stays drawn", () => {
@@ -490,7 +484,7 @@ test("a waiting agent's progress update stays drawn", () => {
   const rows = treeRows(ST, { session: null, main: null, turn: null,
     workspace: null, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
     turnPhase: "🟢", agents: { tasks, limits: LIMITS, now: NOW,
-      turnStart: null }, cap: 10 }, []);
+      turnStart: null } }, []);
   const keys = fixedKeys(ST, 200, []);
   const lines = rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
   assert.ok(lines.some((l) => /🔍 +🟡 Yarrow  Held/u.test(l)));
@@ -512,7 +506,7 @@ function bgTree(id: string, over: Partial<TreeInput> = {},
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart,
       mainBackground: doc.main_background as BgTask[],
       mainEnded: (doc.main_background_ended ?? []) as BgTask[], linger },
-    cap: 10, ...over }, hide);
+    ...over }, hide);
   const keys = fixedKeys(ST, 200, hide);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, hide)))
     .trimEnd());
@@ -538,9 +532,9 @@ test("each open shell and Monitor is a leaf under the thread that " +
 });
 
 /** The tree over 01-mixed's agents, Elm's last record `ago` seconds
- * before NOW, a finished row kept `linger` seconds, at most `cap` agent
- * rows, the turn opened an hour before NOW. */
-function lingerTree(ago: number, linger: number, cap = 10): string[] {
+ * before NOW, a finished row kept `linger` seconds, the turn opened an
+ * hour before NOW. */
+function lingerTree(ago: number, linger: number): string[] {
   const doc = corpusAgents("corpus/01-mixed", "");
   const tasks = (doc.tasks as TreeTask[]).map((t) => t.task.id === "e1"
     ? { ...t, usage: { ...t.usage, last_seen: NOW - ago,
@@ -549,7 +543,7 @@ function lingerTree(ago: number, linger: number, cap = 10): string[] {
   const rows = treeRows(ST, { session: null, main: blank("main"),
     turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
     mainProgress: "", turnPhase: "🟢", agents: { tasks, limits: LIMITS,
-      now: NOW, turnStart: NOW - 3600, linger }, cap }, []);
+      now: NOW, turnStart: NOW - 3600, linger } }, []);
   const keys = fixedKeys(ST, 200, []);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, [])))
     .trimEnd());
@@ -579,7 +573,7 @@ test("an ended parent stays drawn, ended, while a child it started " +
     const rows = treeRows(ST, { session: null, main: blank("main"),
       turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
       mainProgress: "", turnPhase: "🟢", agents: { tasks, limits: LIMITS,
-        now: NOW, turnStart: NOW - 3600, linger: 120 }, cap: 20 }, []);
+        now: NOW, turnStart: NOW - 3600, linger: 120 } }, []);
     const keys = fixedKeys(ST, 200, []);
     return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
   };
@@ -590,13 +584,6 @@ test("an ended parent stays drawn, ended, while a child it started " +
   const gone = lines(200);
   assert.ok(!gone.some((l) => l.includes("Gourd") || l.includes("Garlic")),
     gone.join("\n"));
-});
-
-test("a lingering agent row counts toward subagent-rows as a live one " +
-  "does", () => {
-  const more = (lines: string[]): number => Number(lines.find((l) =>
-    l.includes("more"))?.match(/… +(\d+) more/u)?.[1] ?? 0);
-  assert.equal(more(lingerTree(2, 5, 4)), more(lingerTree(2, 0, 4)) + 1);
 });
 
 test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
@@ -633,15 +620,6 @@ test("a shell with no label draws its kind, and one with no start no ⌛",
       { id: "b", kind: "monitor", label: "", start: NOW - 5 }] }));
   assert.match(lines.at(-2)!, /^├─ 💻 +🟢 shell$/u);
   assert.match(lines.at(-1)!, /^╰─ 📡 +🟢 monitor +⌛  5s$/u);
-});
-
-test("shells and Monitors count against no cap", () => {
-  const capped = bgTree("corpus/02-parked", { cap: 2 });
-  assert.ok(capped.some((l) => /… +\d+ more/u.test(l)));
-  assert.ok(capped.some((l) => l.includes("Run the plugin tests")));
-  assert.ok(capped.some((l) => l.includes("Watch PR #38")));
-  const none = bgTree("corpus/02-parked", { cap: 0 });
-  assert.equal(none.filter((l) => /[💻📡] +🟢/u.test(l)).length, 2);
 });
 
 test("an opened thread leaves its 💻 📡 counts to its rows, and a folded " +
@@ -685,8 +663,8 @@ function bandTree(phase: Phase, agents: Live): string[] {
 }
 
 test("between turns live \"always\" keeps the running agents under 🧵 " +
-  "and draws no grouped row of the ended ones, as the running turn " +
-  "draws none", () => {
+  "and draws no row of the ended ones, as the running turn draws none",
+() => {
   const running = bandTree("running", "always");
   assert.ok(!running.some((l) => l.includes("done")));
   const done = bandTree("done", "always");
@@ -716,7 +694,7 @@ function treeOfCase(id: string, over: Partial<TreeInput> = {},
       pr: "38", style: "" },
     mainPhase: "🟢", mainInbox: 0, mainProgress: doc.main_progress as string,
     turnPhase: "🟢", agents: { tasks: doc.tasks as TreeTask[],
-      limits: LIMITS, now: NOW, turnStart }, cap: 6, ...over }, []);
+      limits: LIMITS, now: NOW, turnStart }, ...over }, []);
 }
 
 /** The part of a span's text its press is on, all of it where its press
@@ -743,15 +721,15 @@ function pressesOf(r: Row): string[] {
 
 test("every row with children presses its fold, under its key, with its " +
   "default, and every agent's label, 🧵's and 🎤's switch the view", () => {
-  const rows = treeOfCase("corpus/03-tree", { cap: 2 });
+  const rows = treeOfCase("corpus/03-tree", { folds: { t3: true } });
   const marks = rows.map((r) => pressesOf(r).filter((p) =>
     p.startsWith("fold:")));
   assert.deepEqual(marks, [["fold:session:false"], ["fold:main:false"], [],
-    ["fold:t1:false"], [], ["fold:t1/more:true"], ["fold:main/more:true"]]);
+    ["fold:t1:false"], [], ["fold:t3:false"], []]);
   const views = rows.map((r) => pressesOf(r).filter((p) =>
     p.startsWith("view:")));
   assert.deepEqual(views, [[], ["view:main"], ["view:main"], ["view:t1"],
-    ["view:t2"], [], []]);
+    ["view:t2"], ["view:t3"], ["view:m1"]]);
   // 🎤's press is on its label alone: it has no fold.
   assert.deepEqual(pressesOf(rows[2]), ["view:main"]);
   // The press is on the mark alone, not the line's bars before it.
@@ -776,8 +754,7 @@ test("each open shell's and Monitor's label toasts what the band knows " +
     mainProgress: "", turnPhase: "🟢", agents: {
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW,
       turnStart: null, mainBackground: doc.main_background as BgTask[],
-      home: "/Users/u" },
-    cap: 10 }, []);
+      home: "/Users/u" } }, []);
   const bg = (doc.main_background as BgTask[]).map((b) => b.id);
   const tail = rows.slice(-bg.length);
   assert.deepEqual(tail.map(pressesOf), bg.map((id) => ["task:" + id]));
@@ -852,13 +829,6 @@ test("🎮 and 🧵 fold everything under them", () => {
   assert.match(main[1], /^╰⊞ 🧵 +🟢 main/u);
 });
 
-test("an opened … N more lists its agents under it", () => {
-  const more = tree("corpus/03-tree", { cap: 2, folds: { "main/more": false } });
-  const at = more.findIndex((l) => /… +1 more/u.test(l));
-  assert.match(more[at], /^   ╰⊟ … +1 more/u);
-  assert.match(more[at + 1], /^      ╰─ 🔍 +🟢 Moss/u);
-});
-
 test("🎮's 📦 🌿 🔀 link to the repository, its branch and its pull " +
   "request, with the blanks after each pressing nothing", () => {
   const repo = "https://github.com/o/r";
@@ -878,20 +848,17 @@ test("🎮's 📦 🌿 🔀 link to the repository, its branch and its pull " +
   { "workspace.project": repo });
 });
 
-test("an ended agent's folds go, its grouped rows' with them, and 🎮's " +
-  "and 🧵's stay", () => {
-  const folds = { session: true, main: false, "main/more": false,
-    t1: true, "t1/more": false, t2: true, gone: true,
-    "gone/more": false };
+test("an ended agent's folds go, and 🎮's and 🧵's stay", () => {
+  const folds = { session: true, main: false, t1: true, t2: true,
+    gone: true };
   const tasks = [{ id: "t1", status: "running" },
     { id: "t2", status: "completed" }, { id: "t3", status: "failed" }];
   assert.deepEqual(pruneFolds(folds, tasks), { session: true, main: false,
-    "main/more": false, t1: true, "t1/more": false });
+    t1: true });
   const kept = { session: true, t1: false };
   assert.equal(pruneFolds(kept, tasks), kept);
-  assert.equal(groupFold("t1", "more"), "t1/more");
-  assert.equal(foldShut({}, "main/more", true), true);
-  assert.equal(foldShut({ "main/more": false }, "main/more", true), false);
+  assert.equal(foldShut({}, "t1", true), true);
+  assert.equal(foldShut({ t1: false }, "t1", true), false);
 });
 
 test("the repository's address on GitHub is read off its remote, in each " +
@@ -914,7 +881,7 @@ function stamped(id: string, turnStart: number | null = null,
   over: Partial<TreeInput> = {},
   statuses: { [id: string]: string } = {}): string[] {
   return tree(id, { session: null, mainPhase: "⚫", turnPhase: "🏁",
-    stamped: true, cap: 2, ...over }, [], turnStart, statuses);
+    stamped: true, ...over }, [], turnStart, statuses);
 }
 
 /** corpus/03-tree with every agent completed. */
@@ -927,7 +894,7 @@ function lines(drawn: readonly string[]): string[] {
 }
 
 test("stamped, the tree lists every agent opened, each under the agent " +
-  "that started it, with no cap, no grouped rows and no fold marks", () => {
+  "that started it, with no fold marks", () => {
   const drawn = stamped("corpus/03-tree", null, {}, TREE_DONE);
   assert.deepEqual(lines(drawn), ["", "├─ ", "├─ ", "│  ╰─ ", "├─ ",
     "│  ├─ ", "│  ╰─ ", "│     ╰─ ", "│        ╰─ ", "╰─ "]);
@@ -1029,7 +996,7 @@ function endedTree(status: string, eta: readonly number[],
   const rows = treeRows(ST, { session: null, main: null, turn: null,
     workspace: null, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
     turnPhase: "🟢", agents: { tasks, limits: LIMITS, now,
-      turnStart: NOW - 3600, linger: 3600 }, cap: 10 }, []);
+      turnStart: NOW - 3600, linger: 3600 } }, []);
   const keys = fixedKeys(ST, 200, []);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
 }

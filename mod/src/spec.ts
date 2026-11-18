@@ -1142,8 +1142,7 @@ export const E_TREE_BAR = "│";         // │  an ancestor whose siblings go o
 // row's label (band_tree.ts).  Ambiguous too, and drawn one column wide.
 // Only these lines and a row's kind glyph move with its depth: the state
 // circles stand in one column, a blank past the deepest kind glyph drawn,
-// and the names three columns after it, 🎮's session name and a grouped
-// row's `N more` with them.
+// and the names three columns after it, 🎮's session name with them.
 export const E_TREE_LAST = "╰";        // ╰  the band's last child
 export const E_TREE_DASH = "─";        // ─  a branch to a row with no children
 export const E_FOLD_OPEN = "⊟";        // ⊟  a row whose children are showing
@@ -1168,17 +1167,13 @@ export const E_KIND_SHELL = "🐚";      // 🐚  local_bash
 export const E_KIND_WORKFLOW = "🔗";   // 🔗  local_workflow
 export const E_KIND_REMOTE = "🌐";     // 🌐  remote_agent
 export const E_KIND_TEAMMATE = "🎎";   // 🎎  in_process_teammate
-export const E_MORE = "…";             // …  the later siblings past the cap, summed,
-                                       //    in the kind slot
 // An agent row's state, in two marks: a circle for its phase and a mark for
 // what it is doing in it.  The status line's task list says completed for
 // an agent that has finished and for one that ended its turn to wait on
 // something, and the one question a person asks of a row is which; the
 // mod's `$.agent.list()` says waiting for the second.  Every mark here is
 // one codepoint, Emoji_Presentation=Yes, EAW W.
-export const E_PHASE_RUN = "🟢";       // 🟢  running: it has the floor.  On a
-                                       //    `… N more` row, with how many of its
-                                       //    agents run
+export const E_PHASE_RUN = "🟢";       // 🟢  running: it has the floor
 export const E_PHASE_PAUSE = "🟡";     // 🟡  paused: not started yet, or waiting to resume
 export const E_PHASE_END = "⚫";       // ⚫  not running: an agent that ended, with
                                        //    ✅ ❌ 🛑 after it for how, or the main

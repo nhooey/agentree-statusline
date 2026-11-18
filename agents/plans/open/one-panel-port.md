@@ -124,7 +124,7 @@ every row.
   🧵, 🎤 the turn, the main thread's own work, comes first, then each
   subagent under the thread that started it, in the order they started.
   🎤 is a leaf whose click shows the main conversation, folds away with
-  🧵, and is not a subagent row, so the cap does not count it. After a
+  🧵, and is not a subagent row. After a
   thread's agents come its open background shells and Monitors (see
   below). The lines are `├─` `╰─` `│`, branching at the middle of the
   cell, three columns a depth.
@@ -140,13 +140,10 @@ every row.
     to 120 characters and cut with `…` like any label, else `shell` or
     `monitor`; and ⌛, how long it has run since the result that opened
     it. No other figure: a shell bills nothing and has no context.
-  - *Where it sits.* After the thread's agents (and their `… N more`), in
+  - *Where it sits.* After the thread's agents, in
     the order they opened. 🎤 stays first and the agents stay in start order directly under
     it: they are the thread's own work, and a shell is what one of them
     waits on. A shell that starts or ends moves nothing above it.
-  - *The cap.* It counts against no cap. `subagent-rows` bounds the
-    agents, which can fan out by the dozen; a thread holds few shells,
-    and each leaves when it ends.
   - *Folding.* It is a leaf and does not fold. Its thread folds it away:
     a thread with only shells under it still gets its ⊟ mark.
   - *The counts.* The 💻 📡 counts on a thread's label count its own open
@@ -190,9 +187,8 @@ every row.
 - **Finished subagents** keep their own rows, ⚫, for `finished-within`
   seconds (120 by default), their parents with them, and then go; the
   turn's receipt holds them.
-- **The cap.** At most 6 running subagent rows by default. Past it, the
-  later siblings under one parent fold into that parent's `… N more`,
-  which sums them and starts folded; every shown row's parents stay.
+- **Every row drawn.** The tree draws every subagent it holds, however
+  many; the person scrolls the band, or folds a row to hide its subtree.
 - **The glyphs.** 🧵 marks the main thread, in the kind slot 🔍 🔩 📐 fill
   for agents; 🤖 keeps one job, the model having the floor, in the 🛫
   column and the first time gauge.
@@ -203,7 +199,7 @@ every row.
 - **The receipt.** A turn that ran subagents stamps the same tree on its
   receipt, frozen at the turn's end (`treeRows` with `stamped`): 🧵 the
   parent, 🎤 first under it, then every agent the turn ran that had
-  ended, opened, with no cap, no fold marks and no
+  ended, opened, with no fold marks and no
   clicks, 🏁 on 🎤 and each agent. One still at work is owed: the first
   receipt after it ends stamps it (`stampedSplit`). A turn that ran
   none stamps its rows as `rows` says, 🎤 alone as shipped.
@@ -343,9 +339,10 @@ Marigold folded
 - **The shared state files.** Until `OP5`, the Python's Codex side and
   the mod both read the `window-costs` cache (`spec/state.jsonc`); its
   format must not move.
-- **The band's height.** Each running subagent adds a row above the
-  prompt, up to the cap, and each open background shell or Monitor one
-  more, past it; `rows.subagents` can be hidden like any other row.
+- **The band's height.** Each running subagent, and each open background
+  shell or Monitor, adds a row above the prompt, with no bound; folding a
+  row hides its subtree, and `rows.subagents` can be hidden like any
+  other row.
 
 ## Decided
 

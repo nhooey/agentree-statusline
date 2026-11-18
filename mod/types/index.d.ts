@@ -48,10 +48,9 @@ declare module 'claude-code' {
        * options, so every drawing draws again with them. */
       configured: number;
       /** The folds of the band's tree the person left, by key: an agent's
-       * id, "session" for 🎮, "main" for 🧵, a grouped row's parent's key
-       * then "/more" or "/done"; true folded, false opened.  A key absent
-       * is its row's default.  An agent's, and its grouped rows', go once
-       * it ends. */
+       * id, "session" for 🎮, "main" for 🧵; true folded, false opened.
+       * A key absent is its row's default.  An agent's goes once it
+       * ends. */
       folds: { [key: string]: boolean };
       /** Which credit pays for the session other than the plan and since
        * when, and the first reading of its balance for the 🎮 row's

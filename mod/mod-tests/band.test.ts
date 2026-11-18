@@ -85,9 +85,10 @@ const STAMPED = ROW_NAMES.filter((r) => OPTIONS.rows[r].transcript)
 // Where the band draws each row.
 const PLACES = { turn: OPTIONS.rows.turn.place,
   agent: OPTIONS.rows.agent.place, session: OPTIONS.rows.session.place }
-// When the band's tree draws the subagents, and how many at most.
+// When the band's tree draws the subagents, and how long a finished one
+// stays.
 const AGENTS = { agents: OPTIONS.rows.subagents.live,
-  cap: OPTIONS.subagentRows, linger: OPTIONS.finishedWithin }
+  linger: OPTIONS.finishedWithin }
 // How far in every row starts, above the prompt, under the footer line and
 // in the receipt.
 const INSET = OPTIONS.hintInset
@@ -2805,7 +2806,7 @@ test('a press on a label switches the transcript to its agent, and 🧵 ' +
   const { band } = await clickBand($, w)
   const keys: string[] = (await band.findAll({ type: 'Button' }))
     .map((b: { key?: string }) => b.key ?? '')
-  // 🎮 and the grouped rows have no label to press.
+  // 🎮 has no label to press.
   expect(keys.filter((k) => k.startsWith('view:')).sort())
     .toEqual(['view:c1', 'view:main', 'view:p1', 'view:turn'])
   await band.press({ key: 'view:c1' })

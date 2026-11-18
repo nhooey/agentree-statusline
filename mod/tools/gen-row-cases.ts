@@ -26,7 +26,7 @@
 //             defaults file's rows.*.place) puts in `place`; above the
 //             prompt, where the case has them, the band's tree with the
 //             subagents of the panel input `agents`, the main
-//             thread's progress update `progress` and the cap `cap`;
+//             thread's progress update `progress`;
 //             `rows`, each row's spans top to bottom
 //   receipt   one case a line: a cost document drawn at `cols` under
 //             `hide`; its lines as spans, `rows`
@@ -138,7 +138,7 @@ export function inZone<T>(fig: Dict, f: () => T): T {
 
 export type BandCase = { doc: string; cols: number; hide: string[];
   phase: Phase; rate: number | null; place?: Place; places?: RowsPlace;
-  agents?: string; progress?: string; cap?: number; background?: boolean;
+  agents?: string; progress?: string; background?: boolean;
   session?: { name: string; color: string } };
 
 /** The panel's inputs, tests/fixtures/panel/inputs.json: by group and
@@ -204,8 +204,7 @@ export function withBackground(doc: Dict, now: number): Dict {
 }
 
 /** The band case's rows: with `agents` or `progress`, the document's
- * `agents` from the corpus (corpusAgents), drawn in the tree under `cap`,
- * with open background tasks under `background` (withBackground); with
+ * `agents` from the corpus (corpusAgents), drawn in the tree, with open background tasks under `background` (withBackground); with
  * `session`, the transcript's session name and colour. */
 export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
   const fig1 = c.session === undefined ? fig0 : { ...fig0,
@@ -219,14 +218,13 @@ export function drawBand(st: Settings, fig0: Dict, c: BandCase): Span[][] {
   const fig = c.agents !== undefined || c.progress !== undefined
     ? { ...fig1, agents: agents() } : fig1;
   return inZone(fig, () => bandLines(st, fig, c.cols, c.hide,
-    { rate: c.rate, phase: c.phase, place: c.place, places: c.places,
-      cap: c.cap }));
+    { rate: c.rate, phase: c.phase, place: c.place, places: c.places }));
 }
 
 /** The band's tree with subagents, on TREE_DOC, with the main thread's
  * progress update: three of the corpus's sessions at each width, and every
  * other panel input at INPUT_COLS;
- * one under a cap that folds siblings into `… N more`; one that hides the
+ * one that hides the
  * progress updates; once between turns; with open background shells
  * and Monitors under the main thread and the agents that started them;
  * and with the session named, at each width, in a colour and in none, and
@@ -244,14 +242,11 @@ function treeCases(): BandCase[] {
       out.push({ ...base, cols: INPUT_COLS, agents });
     }
   }
-  out.push({ ...base, cols: 200, agents: TREE_AGENTS[0], cap: 3 });
-  out.push({ ...base, cols: 200, agents: TREE_AGENTS[0], cap: 0 });
   out.push({ ...base, cols: 200, agents: TREE_AGENTS[1],
     hide: ["*.chat.progress"] });
   out.push({ ...base, cols: 200, agents: TREE_AGENTS[1], phase: "done" });
   for (const cols of [236, 120]) {
-    out.push({ ...base, cols, agents: TREE_AGENTS[2], cap: 10,
-      background: true });
+    out.push({ ...base, cols, agents: TREE_AGENTS[2], background: true });
   }
   const session = { name: "Statusline", color: "purple" };
   for (const cols of [...COLS, 60]) {

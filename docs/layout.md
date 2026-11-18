@@ -173,15 +173,15 @@ main, the main thread; under 🧵 first 🎤, the turn the main thread is
 working, then the subagents it started, each under the thread that
 started it, in the order they started, and after a thread's agents its
 open background shells and Monitors. 🎤 is a leaf: it folds away
-with 🧵, and is not a subagent row, so the cap does not count it.
+with 🧵, and is not a subagent row.
 Between turns 🎤 is gone, and 🧵 has a fold mark only while
 subagents, shells or Monitors hang under it. The rows under the footer
 line keep their own order, 🎤 then 🧵, and so does the receipt of a turn
 that ran no subagent; one that ran any stamps the same tree, its agents
 without their shells or Monitors ([The receipt](#the-receipt)).
-With three subagents running and four more folded past a cap of 3 (the
-render above with `--agents corpus/01-mixed --cap 3 --progress "Checking the
-binary, then the changelog" --cols 200`):
+With seven subagents at work (the render above with `--agents
+corpus/01-mixed --progress "Checking the binary, then the changelog"
+--cols 200`):
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean                                        💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
@@ -190,7 +190,10 @@ binary, then the changelog" --cols 200`):
      ├─ 🎩 🟢 Clover                                      🧬O⁵🐇  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🐇  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
      ├─ 👥 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ …     4 more                                              🟢   3   💰 0.1                         🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+     ├─ 🔩 🟢 Bluebell                                    🧬So🐌  🤖 333   💰 0.1           🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
+     ├─ 📐 🟢 Thistle                                     🧬O⁵🐇  🚦 4.7m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
+     ├─ 🐚 🟢 sleep 300 && make test                                                                                             ⌛  2m
+     ╰─ 👥 🟡 Quince                                      🧬O⁵🐇  🥚  30s
 ```
 
 - **The lines.** `├─` and `╰─` join a row to its parent, `│` carries a
@@ -202,8 +205,7 @@ binary, then the changelog" --cols 200`):
   column, a blank past the deepest kind glyph drawn, and every name
   three columns after it, so the names, the text after them and every
   figure line up on every row. The column moves when a deeper row
-  appears or goes. A grouped row's `…` stands where a kind glyph
-  would, and its `N more` in the names' column; on 🎮 the
+  appears or goes. On 🎮 the
   session's name stands there, then 📦 🌿 🔀, and with no name 📦
   does. On a narrow terminal the blanks before the circle stay and the
   name after it is cut with `…`.
@@ -212,14 +214,15 @@ binary, then the changelog" --cols 200`):
   folds or opens its row. A folded agent keeps its own figures and draws
   👶🏻 and how many agents are hidden under it, and 💻 📡 how many of its
   own shells and Monitors; 🧵 folded hides 🎤 with its agents, and
-  counts its own shells and Monitors with 💻 📡. The grouped row below
-  starts folded and every other row opened; opened, `… N more` lists the
-  agents past the cap.
+  counts its own shells and Monitors with 💻 📡. Every row starts opened.
+- **Every row drawn.** The tree draws every agent, shell and Monitor it
+  holds, however many there are: when they outgrow the screen, scroll the
+  band, or fold a row to hide its subtree.
 - **The fold state.** Each row stays as it was left for the rest of the
-  session, kept in the mod's `$.state` by key: an agent's id, fixed keys
-  for 🎮 and 🧵, and a grouped row's parent's key with `/more`.
+  session, kept in the mod's `$.state` by key: an agent's id, and fixed
+  keys for 🎮 and 🧵.
   When an agent ends (it leaves Claude Code's agent list, or completes,
-  fails or is killed), its fold and its grouped rows' go, so no later row
+  fails or is killed), its fold goes, so no later row
   takes a fold it never had; 🎮's and 🧵's last the session.
 - **The clicks.** A click on an agent's label (its kind, name and progress
   update) switches the transcript to that agent, as Claude Code's tasks
@@ -242,8 +245,7 @@ binary, then the changelog" --cols 200`):
 
   As in `💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · $ npm
   test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output`. Claude Code
-  offers mods no way to open one task's own view. 🎮 and the grouped
-  rows have no label click, and the session's name takes none. On
+  offers mods no way to open one task's own view. 🎮 has no label click, and the session's name takes none. On
   🎮's label 📦 the
   project, 🌿 the branch and 🔀 the pull request link to them on GitHub,
   when the `origin` remote is on GitHub; otherwise they are plain text.
@@ -265,16 +267,16 @@ binary, then the changelog" --cols 200`):
   paused, not 🟢: its 🛫 column is what it waits on, 💻 a shell, 📡 a
   Monitor, 💤 an agent under it, or 📋 for anything else, and how long
   since its last record ([State](#state)), not a work clock. It is live:
-  it keeps its row and its progress update, counts toward the cap, and
-  never goes while it waits.
+  it keeps its row and its progress update, and never goes while it
+  waits.
 - **Shells and Monitors.** Each background shell (a Bash call run in the
   background, or moved there past its timeout) and each Monitor that a
   thread started and has not heard the end of is a leaf under that
   thread: under 🧵 for the main thread's, under the agent for an
-  agent's, after its agents and `… N more`, in the order they opened. Its label is 💻 for a shell or 📡 for a Monitor,
+  agent's, after its agents, in the order they opened. Its label is 💻 for a shell or 📡 for a Monitor,
   🟢, then the call's `description`, else the first line of its
   `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
-  has run. It counts against no cap and does not fold; a click on it
+  has run. It does not fold; a click on it
   shows it as a toast, with its whole command and its output file (see
   the clicks above), which the folds keep with its label. Once the thread hears its
   end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at
@@ -284,7 +286,7 @@ binary, then the changelog" --cols 200`):
   the panel inputs' `corpus/02-parked`,
   whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
   shell and a Monitor of the main thread's, at 120 columns (`--agents
-  corpus/02-parked --cap 10 --background` and the progress above, `--cols
+  corpus/02-parked --background` and the progress above, `--cols
   120`):
 
   ```
@@ -308,11 +310,6 @@ binary, then the changelog" --cols 200`):
   stood, ⚫ and its figures as they ended, for `finished-within` seconds
   after its last record (120 as the mod ships), and its parents stay
   drawn with it; then it goes, and the turn's receipt holds it.
-- **The grouped row.** Past `subagent-rows` live subagent rows, running,
-  paused or finished within `finished-within` (6 as the mod ships), the later siblings fold into their parent's `… N more`,
-  which sums them and their subagents, 🟢 and how many of them run in its
-  🛫 column; every row drawn keeps its parents. A grouped row's 🎯 is
-  weighted by each agent's ▴, its ⌛ is the agents' ⌛ summed.
 
 The subagents' `live` in `rows` picks when they are drawn: `"running"`
 while a turn runs, `"always"` between turns too, `"never"` not at all;
@@ -550,18 +547,21 @@ its next turn runs on and no 🛫, and 💳 stays under the footer line
 
 Background subagents keep running, and spending, after the turn that
 started them ends, so they stay in the tree under 🧵, each with its 🟢 or
-🟡, past the cap folded into `… N more` as while a turn runs. The ones
+🟡, every one drawn as while a turn runs. The ones
 that ended stay for `finished-within` seconds, ⚫, and then are left to
 the turn's receipt. With subagents running between turns (`--phase done
---agents corpus/01-mixed --cap 3`, above the prompt):
+--agents corpus/01-mixed`, above the prompt):
 
 ```
-  ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵    ⚫ main        🧬O⁵🐇           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎩 🟢 Clover      🧬O⁵🐇  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍 🟢 Marigold …  🧬O⁵🐇  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ …     4 more              🟢   3   💰 0.1                 🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+  ⊟ 🎮        📦repo 🌿golden-clean                                        💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    ⚫ main                                        🧬O⁵🐇           💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎩 🟢 Clover                                      🧬O⁵🐇  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🐇  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+     ├─ 👥 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ├─ 🔩 🟢 Bluebell                                    🧬So🐌  🤖 333   💰 0.1           🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
+     ├─ 📐 🟢 Thistle                                     🧬O⁵🐇  🚦 4.7m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
+     ├─ 🐚 🟢 sleep 300 && make test                                                                                             ⌛  2m
+     ╰─ 👥 🟡 Quince                                      🧬O⁵🐇  🥚  30s
 ```
 
 🎤 stays a second after the stamp lands (`CONFIG.receiptHoldMs`), so the
@@ -678,7 +678,7 @@ completed, failed or been killed, with no agent under it still at work.
 One still running or paused is owed a row instead: the mod keeps it,
 and the first receipt stamped after it ends draws it, even when it
 wrote nothing in that turn, as an agent that ends between turns does. The receipt's tree is drawn whole: no
-`… N more` cap, no fold marks and every agent opened. 🏁
+fold marks and every agent opened. 🏁
 marks 🎤 and each agent, and 🧵 keeps its ⚫. 🎤 is followed by
 the prompt the turn answered, 🧵 and each agent by the first line of the
 last text it wrote. With 🎮 stamped, the tree hangs from it; a turn that

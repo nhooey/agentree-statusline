@@ -66,9 +66,6 @@
     // them all under 🧵.
     "subagents": {"place": "above", "live": "always", "transcript": true}
   },
-  // How many subagent rows the band's tree draws at most; the later
-  // siblings past it are summed on their parent's "… N more" row.
-  "subagent-rows": 6,
   // How many seconds a tree row that finished, a subagent or a background
   // shell or Monitor, stays drawn where it stood, ended, its parents with
   // it, before it goes.  Counted from when it finished; 0 drops it at

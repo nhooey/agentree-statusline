@@ -81,9 +81,6 @@ export type BandOpts = {
   /** When the band's tree draws the subagents, `rows.subagents.live`;
    * "running" where absent. */
   readonly agents?: Live;
-  /** The most subagent rows the tree draws, `subagent-rows`;
-   * SUBAGENT_ROWS where absent. */
-  readonly cap?: number;
   /** How many seconds the tree keeps a row that finished drawn,
    * `finished-within`; none where absent. */
   readonly linger?: number;
@@ -584,7 +581,6 @@ function treeInput(fig: Dict, session: Row | null, main: Row | null,
       linger: opts.linger ?? 0,
       spending: docSpending(fig),
       home: typeof doc.home === "string" ? doc.home : "" } : null,
-    cap: opts.cap ?? SUBAGENT_ROWS,
     folds: opts.folds,
     repo: typeof fig.github === "string" ? fig.github : null,
     sessionName: tr.session_name,
@@ -600,9 +596,6 @@ export function rootDrawn(place: unknown, live: unknown, phase: Phase,
   return place === "above" && !hidden(hide, "session") &&
     (phase === "running" ? live !== "never" : live === "always");
 }
-
-/** The most subagent rows the tree draws where no option says. */
-export const SUBAGENT_ROWS = 6;
 
 /** The workspace parts the tree's root draws on its label (treeOf), which
  * the 💳 row then leaves out: 📦 the project, 🌿 the branch, 🔀 the PR. */

@@ -264,9 +264,11 @@ before it goes: a subagent that ended, and a background shell or Monitor
 that closed. The rows above a finished one stay drawn with it, so it
 keeps its place in the tree. It counts from when the row finished, the
 agent's last record or the record that closed the task, so a reload does
-not start it again. The defaults say 120; 0 drops a row at once. A
-finished subagent counts toward `subagent-rows` as a live one
-does ([The subagent rows](layout.md#the-subagent-rows)).
+not start it again. The defaults say 120; 0 drops a row at once.
+
+The tree draws every row it holds, however many subagents there are;
+scroll the band, or fold a row (⊟ ⊞) to hide its subtree
+([The tree](layout.md#the-tree)).
 
 The log's `config options:` line lists every option a layer above the
 defaults gave, each with its value and layer.
