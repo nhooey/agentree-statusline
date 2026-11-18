@@ -170,7 +170,6 @@ test('with no configuration file the options are the defaults', () => {
       account: { place: 'footer', live: 'always', transcript: false },
       subagents: { place: 'above', live: 'always', transcript: true },
     },
-    subagentRows: 6,
     finishedWithin: 120,
     accountPlace: 'row',
     planUsage: true,

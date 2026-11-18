@@ -839,7 +839,7 @@ async function bandNow($: $, isWorking: boolean, place: Place):
     ...bandScoped(st, fig, cols, o.hide,
       { rate: await read($, rate), phase: running ? 'running' : 'done',
         live: liveOf(o), place, places: rowPlacesOf(o), inset, indent,
-        agents: o.rows.subagents.live, cap: o.subagentRows,
+        agents: o.rows.subagents.live,
         linger: o.finishedWithin,
         folds: place === 'above' ? await read($, folds) : {} })]
 }

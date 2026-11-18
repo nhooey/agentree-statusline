@@ -123,17 +123,11 @@ export const OPTIONS = {
     "doc-table": null,
     "doc": "Each row the mod draws, 🎤 `turn`, 🧵 `agent`, 🎮 `session`, the 🔖 `tag` lines, the 💳 `account` row and the `subagents`' rows: `place`, whether it is drawn `above` the prompt or under Claude Code's `footer` line; `live`, whether it is drawn `never`, while a turn is `running` or `always`; and `transcript`, whether a turn's end stamps it into the transcript. Above the prompt the rows are a tree, 🎮 the root, then 🧵 with 🎤 and the subagents under it; under the footer line they go in one order: 💳, 🎤, 🧵, 🎮. The subagents are always above the prompt and always stamped, the receipt of a turn that ran any drawing them under 🧵, and `always` as shipped: between turns the running and paused ones stay in the tree, and the ended ones are left to the turn's receipt.",
   },
-  "subagent-rows": {
-    "type": "int",
-    "minimum": 0,
-    "doc-table": null,
-    "doc": "How many subagent rows the band's tree draws at most. Past it, the later siblings under one parent are summed on that parent's `… N more` row; every shown row's parents stay.",
-  },
   "finished-within": {
     "type": "int",
     "minimum": 0,
     "doc-table": null,
-    "doc": "How many seconds a row of the band's tree that finished stays drawn where it stood, ended, its parents with it, before it goes: a subagent that ended, and a background shell or Monitor that closed. Counted from when it finished, its last record or the record that closed it; 0 drops it at once. A finished subagent row counts toward `subagent-rows` as a live one does.",
+    "doc": "How many seconds a row of the band's tree that finished stays drawn where it stood, ended, its parents with it, before it goes: a subagent that ended, and a background shell or Monitor that closed. Counted from when it finished, its last record or the record that closed it; 0 drops it at once.",
   },
   "account-place": {
     "type": "enum",
@@ -267,7 +261,6 @@ export type Options = {
       readonly transcript: boolean;
     };
   };
-  readonly subagentRows: number;
   readonly finishedWithin: number;
   readonly accountPlace: "row" | "tail";
   readonly planUsage: boolean;

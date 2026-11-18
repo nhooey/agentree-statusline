@@ -409,7 +409,7 @@ function receiptTree(st: Settings, turn: Row | null, session: Row,
       mainPhase: E_PHASE_END, mainInbox: 0,
       mainProgress: ran?.mainProgress ?? "",
       turnPhase: E_PHASE_DONE, turnPrompt: prompt,
-      agents: ran?.agents ?? null, cap: Infinity, stamped: true,
+      agents: ran?.agents ?? null, stamped: true,
     }, hide);
   const ran = main && agents ? tree(main, agents) : [];
   return ran.some((r) => r.scope === "agent") ? ran
