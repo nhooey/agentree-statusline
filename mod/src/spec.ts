@@ -83,7 +83,7 @@ export const E_RATE = "🛫";          // 🛫  the token RATE — how fast 🧩
                                      // in tokens per second.  On the status line beside 🎯
                                      // in column 2, and on the agent panel's rows, where
                                      // the figure is the panel's own samples rather than
-                                     // the transcript's.  Not 🚀, which is E_EFF_XHIGH,
+                                     // the transcript's.  Not 🚀, which is E_EFF_MAX,
                                      // two cells along, and not ✈️ U+2708 U+FE0F, under
                                      // which a digit is seen painted over the cell's
                                      // slash.  That is the glyph rules' warning made
@@ -95,7 +95,7 @@ export const E_RATE = "🛫";          // 🛫  the token RATE — how fast 🧩
 export const E_COST = "💰";          // cost
 export const E_DIFF = "💾";          // +adds/-removes
 // The effort has no fixed mark: it is the ladder glyph alone, against the
-// model spec, "🧬O⁵🏃".  The context-window size has no cell: the window is a
+// model spec, "🧬O⁵🐇".  The context-window size has no cell: the window is a
 // constant for the session, and 🧠's percentage is that constant read as a
 // level, so a figure for it would never say anything 🧠 does not.
 // A glyph this file needs from that region comes from the Unicode 6.0 range,
@@ -119,12 +119,12 @@ export const E_PREPAID = "💵";       // prepaid credits, extra usage and the g
 export const E_EXTRA = "💸";         // (agents/plans/open/credit-balances.md).  ⛅ U+26C5 is
 export const E_PASSES = "🎫";        // the one cloud drawn two columns wide with no
                                      // variation selector; ☁ and 🛰 draw one.
-export const E_EFF_LOW = "🐢";       // effort ladder, legible as a picture: the pace of the
-export const E_EFF_MED = "🚶";       // thing doing the work.  The picture is
-export const E_EFF_HIGH = "🏃";      // the whole cell, against the model spec, on both
-export const E_EFF_XHIGH = "🚀";     // readouts.  All five single-codepoint and EAW-Wide (the
-export const E_EFF_MAX = "🔥";       // 🎚/🎛 sliders are not, and would shift everything to
-                                     // their right by a column on some terminals).
+export const E_EFF_LOW = "🐌";       // effort ladder, legible as a picture: the pace of the
+export const E_EFF_MED = "🐢";       // thing doing the work, from a snail to a rocket.  The
+export const E_EFF_HIGH = "🐇";      // picture is the whole cell, against the model spec, on
+export const E_EFF_XHIGH = "🏃";     // both readouts.  All five single-codepoint and EAW-Wide
+export const E_EFF_MAX = "🚀";       // (the 🎚/🎛 sliders are not, and would shift everything
+                                     // to their right by a column on some terminals).
 export const E_STY = "🎨";           // output style
 export const E_SUM = "Σ";            // Greek capital sigma, ONE column — the n-ary summation
                                      // U+2211 sits inside the 2190-2BFF range this file
@@ -782,7 +782,7 @@ export const LMIN_PATH = 10;
 export const LEFT_GAP = 2;           // columns between 📦 project, 📁 path and 🌿 branch
 export const W_STY = 6;              // 🎨 + the style name's first 4 characters
 export const W_MOD = 4;              // the model cell past its icon: the two-character
-                                     // spec and the effort's glyph, "O⁵🏃".  Held whether
+                                     // spec and the effort's glyph, "O⁵🐇".  Held whether
                                      // or not the glyph is drawn, so the 💰 beside it does
                                      // not move with the effort — see renderModelCost.
 export const VAL_W = 5;              // a metric's first value field: "▴4.8M", "200/s",
