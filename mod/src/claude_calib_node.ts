@@ -32,7 +32,7 @@ export interface CalibEnv {
   readonly projectsDir: string;   // ~/.claude/projects
   readonly stateDir: string;      // the private state directory
   readonly now: number;           // time.time()
-  // CODING_AGENT_USAGE_LINE_CLAUDE_CALIB_CACHE, for planted fixtures.
+  // AGENTREE_STATUSLINE_CLAUDE_CALIB_CACHE, for planted fixtures.
   readonly calibCacheOverride?: string;
   // The files the scan visits, in order; projectFiles by default.
   readonly glob?: (projectsDir: string) => string[];

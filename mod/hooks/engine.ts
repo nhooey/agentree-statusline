@@ -304,9 +304,9 @@ export type Places = { home: string; stateDir: string; projectsDir: string }
 
 export async function placesOf($: $): Promise<Places> {
   const home = (await $.env.get('HOME')) ?? ''
-  const state = (await $.env.get('CODING_AGENT_USAGE_LINE_STATE_DIR')) ||
+  const state = (await $.env.get('AGENTREE_STATUSLINE_STATE_DIR')) ||
     ((await $.env.get('XDG_STATE_HOME')) || home + '/.local/state') +
-      '/coding-agent-usage-line'
+      '/agentree-statusline'
   const config = (await $.env.get('CLAUDE_CONFIG_DIR')) || home + '/.claude'
   return { home, stateDir: state, projectsDir: config + '/projects' }
 }

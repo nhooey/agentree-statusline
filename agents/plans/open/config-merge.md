@@ -121,14 +121,14 @@ shape.
 
 | Layer | Path | Committed |
 |---|---|---|
-| user-global | `$XDG_CONFIG_HOME/coding-agent-usage-line/config.jsonc`, else `~/.config/coding-agent-usage-line/config.jsonc` | n/a |
-| project | `<root>/.config/coding-agent-usage-line/config.jsonc` | yes: what the project wants for everyone |
-| project, local | `<root>/.config/coding-agent-usage-line/config.local.jsonc` | no: one person's, ignored by `/.config/**/*.local.*` |
+| user-global | `$XDG_CONFIG_HOME/agentree-statusline/config.jsonc`, else `~/.config/agentree-statusline/config.jsonc` | n/a |
+| project | `<root>/.config/agentree-statusline/config.jsonc` | yes: what the project wants for everyone |
+| project, local | `<root>/.config/agentree-statusline/config.local.jsonc` | no: one person's, ignored by `/.config/**/*.local.*` |
 
 The local file sits above the committed one within the project layer, as
 Claude Code's own `.claude/settings.local.json` sits above
-`.claude/settings.json`. `CODING_AGENT_USAGE_LINE_CONFIG_DIR` overrides the
-user-global directory, for the tests, as `CODING_AGENT_USAGE_LINE_STATE_DIR`
+`.claude/settings.json`. `AGENTREE_STATUSLINE_CONFIG_DIR` overrides the
+user-global directory, for the tests, as `AGENTREE_STATUSLINE_STATE_DIR`
 does for state.
 
 **Finding the root.** Each port starts from the session's directory and walks
@@ -159,7 +159,7 @@ file is a few hundred bytes, far under `$.fs.read`'s 4 MiB, and a file over
 64 KiB is refused with a warning rather than read. `HOME` and
 `XDG_CONFIG_HOME` come from `$.env.get`, as `edges.ts` reads `HOME` today;
 `claude plugin validate` lists the names the module reads, so the new
-`CODING_AGENT_USAGE_LINE_CONFIG_DIR` joins them.
+`AGENTREE_STATUSLINE_CONFIG_DIR` joins them.
 
 **Reading them in Python.** The stdlib only: `os.path.isfile`, `open`,
 `json.loads` after the comment strip, in a new module,
@@ -542,7 +542,7 @@ and `npm test`.
      each case's flags, still read an argv; CM6 decides whether they take
      `options()` or stay a test's reading of a case's flags.
 4. **The Python reads the files.** `config.py`: the walk, JSONC, the merge,
-   the warnings, `--show-config`, `CODING_AGENT_USAGE_LINE_CONFIG_DIR`;
+   the warnings, `--show-config`, `AGENTREE_STATUSLINE_CONFIG_DIR`;
    `tests/config.py` and the shared cases.
 
    **Status 2026-10-20: done.** As built:
@@ -587,7 +587,7 @@ and `npm test`.
    - The tests never read this machine's files: a new test override,
      `CODING_AGENT_USAGE_LINE_PROJECT_DIR`, starts the walk in a given
      directory, and run-cases.py sets it to the case's repository and
-     `CODING_AGENT_USAGE_LINE_CONFIG_DIR` to scratch. `tests/config.py`
+     `AGENTREE_STATUSLINE_CONFIG_DIR` to scratch. `tests/config.py`
      plants files at every place a developer's own could be (the three
      user-file names and a project file above the status payloads'
      directory), checks a case of each suite still matches its golden,
@@ -621,9 +621,9 @@ and `npm test`.
      checks `usage-source` as Claude's panel does (`agent` `"claude"`;
      the shared cases run with none). `readConfig` keeps the result
      (`configNow()`) and logs one line of the files and the keys each
-     gave, then one line per warning, to `agentree.log`. It runs once
-     per load, from `start()` in `register.tsx`, not awaited. No notice
-     yet: the notice and the re-reads are step 6's.
+     gave, then one line per warning, to `agentree-statusline.log`. It
+     runs once per load, from `start()` in `register.tsx`, not awaited.
+     No notice yet: the notice and the re-reads are step 6's.
    - `CODING_AGENT_USAGE_LINE_PROJECT_DIR`, the Python's test override,
      is not read: the mod's tests set `$.session.root` instead.
    - `mod/test/config.test.ts` runs the 35 cases with no flags over a
@@ -682,9 +682,10 @@ and `npm test`.
    - The notice: `$.ui.notice` is a line under a tool call's open dialog
      in this engine (2.1.303's types: `notice(tool_use_id, text)`), with
      no call to hang a file's warning on, so the notice is a `$.ui.log`
-     line in the transcript, `agentree: config <the first warning>
-     (and N more in agentree.log)`, once per file and `mtimeMs` per
-     load. Not a toast, as decided.
+     line in the transcript,
+     `agentree-statusline: config <the first warning> (and N more in
+     agentree-statusline.log)`, once per file and `mtimeMs` per load. Not a
+     toast, as decided.
    - `right-edge` is derived in both ports: `_NOT_DERIVED_YET` is gone,
      and the Python derives from `live-place` though it is not one of its
      options (`options._merged_value`), so the panel's default is 2. The
@@ -741,7 +742,7 @@ The rows table set in this project only:
 1. The user-global file has no `rows`, so the defaults hold everywhere
    else: 🎤 `turn` live `"running"`, every other row live `"always"`, and
    only 🎤 `turn` and the tag lines stamped into the transcript.
-2. This repository gets `.config/coding-agent-usage-line/config.local.jsonc`
+2. This repository gets `.config/agentree-statusline/config.local.jsonc`
    (see [Decided](#decided-2026-10-20), 8 and 9):
 
    ```jsonc
@@ -780,14 +781,14 @@ The rows table set in this project only:
    settings: secrets (`ANTHROPIC_ADMIN_KEY`, `OPENAI_ADMIN_KEY`,
    `CLAUDE_OAUTH_ACCESS_TOKEN`, `CODEX_USAGE_*`), other programs' own
    (`TERM*`, `TMUX`, `XDG_STATE_HOME`, `CODEX_HOME`), and the test
-   overrides (`CODING_AGENT_USAGE_LINE_STATE_DIR`, `_NOW`, `_CLAUDE_*`,
+   overrides (`AGENTREE_STATUSLINE_STATE_DIR`, `_NOW`, `_CLAUDE_*`,
    `_FIGURES_OUT`).
 3. **Lists replace** across layers.
 4. **The notice:** one `$.ui.notice` per file change, and the log.
 5. **The mod's timings** stay constants in `config.ts`, out of the spec.
 6. **The project files,** XDG style inside the project (pi0's `config-dir`
    proposal, which cosmiconfig also searches):
-   `.config/coding-agent-usage-line/config.jsonc`, committed, and
+   `.config/agentree-statusline/config.jsonc`, committed, and
    `config.local.jsonc` beside it, one person's own. A worktree that has no local file
    reads the main checkout's, found through the git common dir, so
    settings made once follow every worktree.
@@ -796,7 +797,7 @@ The rows table set in this project only:
    root `.config/` (mise's `.config/mise.local.toml` included), and no
    `.config/` deeper in the tree.
 8. **This repository's rows** go in its
-   `.config/coding-agent-usage-line/config.local.jsonc`: the user's own
+   `.config/agentree-statusline/config.local.jsonc`: the user's own
    preference, not one for everyone who clones it. All five there are
    live `"always"`, and the three cost rows are stamped too.
 9. **The rows table** replaces `sticky`, `bandPlace` and the hide paths
@@ -834,8 +835,8 @@ The rows table set in this project only:
 18. **The defaults are a file, and it governs.** Every option a file may
     set has its default in `mod/defaults/config.jsonc`, in exactly the
     shape of a user's `config.jsonc`, with a short comment per option, so
-    a user copies it to `~/.config/coding-agent-usage-line/config.jsonc`
-    (or a project's `.config/coding-agent-usage-line/`), edits the copy,
+    a user copies it to `~/.config/agentree-statusline/config.jsonc`
+    (or a project's `.config/agentree-statusline/`), edits the copy,
     and a `diff` against the repository's file shows only their changes.
     The format stays JSONC (Decided 11; TOML was considered and dropped).
     - **Where:** in `mod/`, because the marketplace installs the plugin

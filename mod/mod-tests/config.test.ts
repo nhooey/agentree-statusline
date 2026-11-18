@@ -21,13 +21,13 @@ const HOME = '/home/fixture'
 const STATE = '/state'
 const CLAUDE = '/claude'
 const PROJECT = '/work/p'
-const D = '/.config/coding-agent-usage-line/'
+const D = '/.config/agentree-statusline/'
 const USER_FILE = HOME + D + 'config.jsonc'
 const PROJECT_FILE = PROJECT + D + 'config.jsonc'
 // The only places a path the mod asks for may be.
 const PLACES = [HOME, STATE, CLAUDE, PROJECT]
 const ENV: { [name: string]: string } = {
-  HOME, CODING_AGENT_USAGE_LINE_STATE_DIR: STATE, CLAUDE_CONFIG_DIR: CLAUDE,
+  HOME, AGENTREE_STATUSLINE_STATE_DIR: STATE, CLAUDE_CONFIG_DIR: CLAUDE,
 }
 
 type World = { files: Map<string, string>; asked: string[]; names: string[];
@@ -245,7 +245,7 @@ test('the mod asks for no path outside the world it is handed',
     expect(w.asked).toContain(PROJECT_FILE)
     expect(w.asked).toContain(USER_FILE)
     for (const name of ['HOME', 'XDG_CONFIG_HOME',
-      'CODING_AGENT_USAGE_LINE_CONFIG_DIR']) {
+      'AGENTREE_STATUSLINE_CONFIG_DIR']) {
       expect(w.names).toContain(name)
     }
     // And the defaults file, in the mod's own folder.
@@ -270,11 +270,11 @@ test('a wrong defaults file is drawn in the footer and logged once',
     expect(log).not.toContain('config options: ')
     expect(w.logged.filter((n) => n.includes('"account" is missing')).length)
       .toBe(1)
-    const hint = await $.ui.mount({ plugin: 'agentree',
+    const hint = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'PromptHint', props: { isDraft: false,
         isWorking: false, hint: '-- INSERT --' } })
     const drawn = JSON.stringify(await hint.drawn())
-    expect(drawn).toContain('⚠ agentree:the defaults file is wrong: ')
+    expect(drawn).toContain('⚠ agentree-statusline:the defaults file is wrong: ')
     expect(drawn).toContain('\\"account\\" is missing')
   })
 
@@ -299,7 +299,7 @@ test('a defaults file changed on disk waits for the next load of the mod',
     expect(log).not.toContain('the defaults file is wrong')
     expect(log.split('the defaults file changed on disk').length - 1)
       .toBe(1)
-    const hint = await $.ui.mount({ plugin: 'agentree',
+    const hint = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'PromptHint', props: { isDraft: false,
         isWorking: false, hint: '-- INSERT --' } })
     expect(JSON.stringify(await hint.drawn())).not.toContain(

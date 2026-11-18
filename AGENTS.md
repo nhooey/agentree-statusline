@@ -1,10 +1,10 @@
-# agentree
+# agentree-statusline
 
 Three readouts for Claude Code that show a session's cost, its plan usage,
 where the time went and what each subagent is doing, all on one grid. They
-are the `agentree` mod in `mod/` (TypeScript), which draws the rows above
-the prompt and under the footer line. The Python under `tools/` is
-development tooling only. See `README.md`.
+are the `agentree-statusline` mod in `mod/` (TypeScript), which draws the
+rows above the prompt and under the footer line. The Python under `tools/`
+is development tooling only. See `README.md`.
 
 ## Build and test
 

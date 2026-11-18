@@ -11,7 +11,7 @@ in [`mod/defaults/config.jsonc`](../mod/defaults/config.jsonc).
 | leave a column out | `"hide"` — see [Hiding](#hiding) |
 | move a row, or stop drawing it | `"rows"` — see [What a file holds](#what-a-file-holds) |
 | set an option for every session, or for one project | a [configuration file](#configuration-files) |
-| see which file set what | the mod's log, `agentree.log` in the state directory |
+| see which file set what | the mod's log, `agentree-statusline.log` in the state directory |
 
 ## Settings
 
@@ -136,16 +136,16 @@ is written anywhere else. To change settings,
 copy it to your user file, or to a project's, and edit the copy:
 
 ```sh
-mkdir -p ~/.config/coding-agent-usage-line
-cp mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
+mkdir -p ~/.config/agentree-statusline
+cp mod/defaults/config.jsonc ~/.config/agentree-statusline/config.jsonc
 # or, for one project:
-cp mod/defaults/config.jsonc <root>/.config/coding-agent-usage-line/config.jsonc
+cp mod/defaults/config.jsonc <root>/.config/agentree-statusline/config.jsonc
 ```
 
 A diff of the two is then exactly what you changed from the defaults:
 
 ```sh
-diff mod/defaults/config.jsonc ~/.config/coding-agent-usage-line/config.jsonc
+diff mod/defaults/config.jsonc ~/.config/agentree-statusline/config.jsonc
 ```
 
 A full copy sets every option, so a later change to a default in the
@@ -180,9 +180,9 @@ A setting comes from the first of these that has it:
 
 | Layer | Where |
 |---|---|
-| `project-local` | `<root>/.config/coding-agent-usage-line/config.local.jsonc`: one person's, not committed |
-| `project` | `<root>/.config/coding-agent-usage-line/config.jsonc`: committed, for everyone |
-| `user` | `$CODING_AGENT_USAGE_LINE_CONFIG_DIR/config.jsonc`, else `$XDG_CONFIG_HOME/coding-agent-usage-line/config.jsonc`, else `~/.config/coding-agent-usage-line/config.jsonc` |
+| `project-local` | `<root>/.config/agentree-statusline/config.local.jsonc`: one person's, not committed |
+| `project` | `<root>/.config/agentree-statusline/config.jsonc`: committed, for everyone |
+| `user` | `$AGENTREE_STATUSLINE_CONFIG_DIR/config.jsonc`, else `$XDG_CONFIG_HOME/agentree-statusline/config.jsonc`, else `~/.config/agentree-statusline/config.jsonc` |
 | `default` | `mod/defaults/config.jsonc` in the repository, which the plugin carries |
 
 The project `<root>` is found by walking up from the session's root,
@@ -207,11 +207,11 @@ load (a session's start or a `/reload-plugins`), again on `session.start`,
 and every 30 seconds while idle, a stat of each file, reading again only
 when one has come, gone or changed, or `/cd` has moved the session's root;
 a change draws every row again under the new options, with no reload. Each
-read writes what each file gave and every warning to `agentree.log` in
-the state directory, one line each, and a read that changes the options
-writes them too, each with its layer. A file with a warning also gets one
-notice line in the transcript, `agentree: config <path>: …`, once per
-change to the file.
+read writes what each file gave and every warning to
+`agentree-statusline.log` in the state directory, one line each, and a read
+that changes the options writes them too, each with its layer. A file with
+a warning also gets one notice line in the transcript,
+`agentree-statusline: config <path>: …`, once per change to the file.
 
 Under the files the mod has one layer of its own, `mod`: `SETTINGS` in
 `mod/hooks/config.ts`, for a setting it draws with that is not the
@@ -310,12 +310,12 @@ it. On a narrow terminal the credits leave the row before 📅 and 🕐.
 
 | Variable | Effect |
 |---|---|
-| `CODING_AGENT_USAGE_LINE_CONFIG_DIR` | The user-global [configuration](#configuration-files) directory. Default `$XDG_CONFIG_HOME/coding-agent-usage-line`, or `~/.config/coding-agent-usage-line`. |
-| `CODING_AGENT_USAGE_LINE_STATE_DIR` | Where caches, the mod's log and per-session state live. Default `$XDG_STATE_HOME/coding-agent-usage-line`, or `~/.local/state/coding-agent-usage-line`. |
-| `CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST` | Read an exported Claude Usage Tracker store from this path instead of the running app's preferences. |
+| `AGENTREE_STATUSLINE_CONFIG_DIR` | The user-global [configuration](#configuration-files) directory. Default `$XDG_CONFIG_HOME/agentree-statusline`, or `~/.config/agentree-statusline`. |
+| `AGENTREE_STATUSLINE_STATE_DIR` | Where caches, the mod's log and per-session state live. Default `$XDG_STATE_HOME/agentree-statusline`, or `~/.local/state/agentree-statusline`. |
+| `AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST` | Read an exported Claude Usage Tracker store from this path instead of the running app's preferences. |
 | `ANTHROPIC_ADMIN_KEY`, `CLAUDE_OAUTH_ACCESS_TOKEN` | Credentials for the sources that need them. See [Usage sources](usage-sources.md#sources). |
 
-`CODING_AGENT_USAGE_LINE_CLAUDE_CALIB_CACHE` supplies a prepared
+`AGENTREE_STATUSLINE_CLAUDE_CALIB_CACHE` supplies a prepared
 calibration, for the tests; it is not for everyday use.
 
 No environment variable is a setting: an option is a key of a

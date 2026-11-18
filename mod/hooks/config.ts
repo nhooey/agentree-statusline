@@ -14,7 +14,7 @@ import type { Value } from '../src/config.ts'
 export const CONFIG = {
   // The version the mod's caches are keyed by: a change to the
   // accounting is a new version.
-  version: "agentree 0.2.0",
+  version: "agentree-statusline 0.2.0",
   // How often a live agent's fold, and the main transcript's, is saved, so
   // a reload reads on from it.
   foldSaveMs: 60_000,
@@ -78,6 +78,6 @@ export const CONFIG = {
 // One more layer under the configuration files, named "mod": a setting
 // the mod draws with that is not the options' default and that no file
 // gives.  Empty: a person's settings are in their own file,
-// ~/.config/coding-agent-usage-line/config.jsonc (docs/options.md), which
+// ~/.config/agentree-statusline/config.jsonc (docs/options.md), which
 // the band and the agent panel both read.
 export const SETTINGS: { readonly [option: string]: Value } = {}

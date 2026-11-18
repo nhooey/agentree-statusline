@@ -1,5 +1,6 @@
-// The defaults of the agentree mod: every option a configuration file
-// may set, with the value the mod uses when no file sets it.
+// The defaults of the agentree-statusline mod: every option a
+// configuration file may set, with the value the mod uses when no file
+// sets it.
 //
 // The mod reads this file at every run, and nothing else holds these
 // values: a key missing here, one that is no option, or a value of the
@@ -8,8 +9,8 @@
 // mod/src/options_spec.ts and docs/options.md.
 //
 // To change a setting, write only that key in your own file,
-// ~/.config/coding-agent-usage-line/config.jsonc (or a project's
-// .config/coding-agent-usage-line/config.jsonc), such as
+// ~/.config/agentree-statusline/config.jsonc (or a project's
+// .config/agentree-statusline/config.jsonc), such as
 //
 //   {"totals": false}
 //

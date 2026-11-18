@@ -314,7 +314,7 @@ hours or 7 days). Both come from the [usage source's](usage-sources.md)
 reading.
 
 **The machine's cost** is a scan of every transcript under
-`~/.claude/projects/` (override with `CODING_AGENT_USAGE_LINE_CLAUDE_PROJECTS_DIR`)
+`~/.claude/projects/` (override with `AGENTREE_STATUSLINE_CLAUDE_PROJECTS_DIR`)
 and every agent file beside them, deduplicated on request id and priced per
 model. Agent files are included because the account percentage includes agent
 use. Files last modified more than a day before the weekly window opened are

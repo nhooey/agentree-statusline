@@ -4,7 +4,7 @@
 
 /** How many lines the log file keeps, the newest last. */
 export const LOG_KEPT = 500;
-export const LOG_NAME = "agentree.log";
+export const LOG_NAME = "agentree-statusline.log";
 
 /** What was thrown, as one line's tail: the message, and where it was
  * thrown from when the error says. */

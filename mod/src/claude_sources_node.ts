@@ -59,13 +59,13 @@ export function configAccountId(env: Env): string {
 // its own schedule and keeps the answer in its UserDefaults.  Read through
 // `defaults export` rather than by opening the .plist, because a running
 // app's preferences live in cfprefsd and reach the file when cfprefsd
-// feels like it.  CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST names an
+// feels like it.  AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST names an
 // exported store to read instead.
 export class ClaudeUsageTrackerSource {
   static readonly DOMAIN = "HamedElfayome.Claude-Usage";
   static readonly PLIST =
     "~/Library/Preferences/HamedElfayome.Claude-Usage.plist";
-  static readonly ENV = "CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST";
+  static readonly ENV = "AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST";
 
   env: Env;
 

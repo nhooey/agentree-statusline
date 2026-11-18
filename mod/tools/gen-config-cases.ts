@@ -65,7 +65,7 @@ export type Case = { id: string; about: string; tree: Tree;
 export type DefaultsCase = { id: string; about: string; path: string;
   text: string; expected: string | null };
 
-const D = ".config/coding-agent-usage-line/";
+const D = ".config/agentree-statusline/";
 const USER = "home/" + D + "config.jsonc";
 const PROJECT = "home/p/" + D + "config.jsonc";
 const LOCAL = "home/p/" + D + "config.local.jsonc";
@@ -97,12 +97,12 @@ const INPUTS: Input[] = [
       [LOCAL]: '{"account": "l"}', ...GIT }),
   input("config-dir-over-xdg", "the tests' directory over XDG's",
     { "cfg/config.jsonc": '{"account": "cfg"}',
-      "xdg/coding-agent-usage-line/config.jsonc": '{"account": "xdg"}',
+      "xdg/agentree-statusline/config.jsonc": '{"account": "xdg"}',
       [USER]: '{"account": "home"}' }, undefined,
-    { CODING_AGENT_USAGE_LINE_CONFIG_DIR: "${ROOT}/cfg",
+    { AGENTREE_STATUSLINE_CONFIG_DIR: "${ROOT}/cfg",
       XDG_CONFIG_HOME: "${ROOT}/xdg" }),
   input("xdg-over-home", "XDG_CONFIG_HOME over ~/.config",
-    { "xdg/coding-agent-usage-line/config.jsonc": '{"account": "xdg"}',
+    { "xdg/agentree-statusline/config.jsonc": '{"account": "xdg"}',
       [USER]: '{"account": "home"}' }, undefined,
     { XDG_CONFIG_HOME: "${ROOT}/xdg" }),
   input("xdg-relative-ignored", "a relative XDG_CONFIG_HOME is ignored",

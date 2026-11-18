@@ -55,7 +55,7 @@ async function trackerOf($: $, store: unknown): Promise<Dict> {
  * is binary and a running app's preferences reach it late. */
 async function readTracker($: $, home: string): Promise<Dict | null> {
   const override =
-    await $.env.get('CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST')
+    await $.env.get('AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST')
   if (override) {
     const path = override.startsWith('~/') ? home + override.slice(1)
       : override

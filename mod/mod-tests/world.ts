@@ -22,7 +22,7 @@ export const WINDOW = 1_000_000
 // The world's user file (world): the look these tests draw, the
 // tracker's store, five figures hidden, and 🎤, 🧵 and 🎮 drawn while a
 // turn runs and stamped into the transcript.
-export const USER_FILE = HOME + '/.config/coding-agent-usage-line/config.jsonc'
+export const USER_FILE = HOME + '/.config/agentree-statusline/config.jsonc'
 export const USER_SETTINGS = {
   'usage-source': 'claude-usage-tracker',
   'hide': ['*.plan.five_hour', '*.context.share', '*.tokens.cache',
@@ -117,16 +117,16 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const docs: Dict[] = []
   const spending: unknown[] = []
   on('state.set', ($, e: any, next) => {
-    if (e.plugin === 'agentree' && e.key === 'status') docs.push(e.value)
-    if (e.plugin === 'agentree' && e.key === 'spending') {
+    if (e.plugin === 'agentree-statusline' && e.key === 'status') docs.push(e.value)
+    if (e.plugin === 'agentree-statusline' && e.key === 'spending') {
       spending.push(e.value)
     }
     return next(e)
   })
   mock.env(on, {
-    HOME, CODING_AGENT_USAGE_LINE_STATE_DIR: STATE,
+    HOME, AGENTREE_STATUSLINE_STATE_DIR: STATE,
     CLAUDE_CONFIG_DIR: '/claude',
-    CODING_AGENT_USAGE_LINE_CLAUDE_TRACKER_PLIST: '/tracker.plist',
+    AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST: '/tracker.plist',
     // The terminal's variables, none by default: Claude Code's colour
     // level is then under true colour, and the 256 set is drawn.
     ...terminal,
