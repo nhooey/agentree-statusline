@@ -75,7 +75,7 @@ footer`):
 
 ```
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-  📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+  📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
 The footer's first line is Claude Code's, drawn by Claude Code, so its
@@ -129,19 +129,22 @@ instead, taking it up.
 left, what is the project's: 📦 project, 🌿 branch, 📁 directory, 🔀 PR and
 🎨 output style, less 📦 🌿 🔀 while the tree's root draws them on its
 label. Then, flush right where the other rows end, what is
-global: 💳 and each window's share, 🔋 the 5-hour and 🪫 the weekly, each
-with 🔜 and the time until it resets, then 🦊 the weekly Fable window
-(Claude Code's `seven_day_overage_included`) where the usage source has
-one, then the other weekly windows that the option
-[`weekly-windows`](options.md#what-a-file-holds) turns on, all off by
-default: 🎼 `seven_day_opus`, 🎭 `seven_day_sonnet`, 🍳
-`seven_day_omelette`, 🔌 `seven_day_oauth_apps` and 🤝 `seven_day_cowork`,
-in that order; then four blank columns and 📅 and 🕐, the date and time
-now. Each window after 🪫 has a 🔜 of its own only where it resets at
-another time than 🪫; where they reset together, 🪫's 🔜 stands for both,
-`🪫 87٪ 🔜 1.9d  🦊 4٪  🎼 30٪  🎭 56٪ 🔜 3.9d`, unless 🪫 is hidden. A
-window the source does not give is not drawn. A reading 10 minutes old or more has each share
-followed by 🧊 and its age, `🪫 87٪ 🧊3h 🔜 1.9d`, in the text rather than
+global: 💳 and each window's share, 🔋 the 5-hour and 🪫 the weekly, then
+🦊 the weekly Fable window (Claude Code's `seven_day_overage_included`)
+where the usage source has one, then the other weekly windows that the
+option [`weekly-windows`](options.md#what-a-file-holds) turns on, all off
+by default: 🎼 `seven_day_opus`, 🎭 `seven_day_sonnet`, 🍳
+`seven_day_omelette`, 🔌 `seven_day_oauth_apps` and 🤝 `seven_day_cowork`;
+then four blank columns and 📅 and 🕐, the date and time now. The
+windows that reset at the same time are a group, led by one 🔜 and the
+time until they reset, its windows one blank apart in the order above,
+and the groups two blanks apart, the soonest reset first, so the first 🔜
+comes right after 💳:
+`💳 🔜 6.7m 🔋 15٪  🔜 1.9d 🪫 87٪ 🦊 4٪ 🎼 30٪  🔜 3.9d 🎭 56٪`. A hidden
+window leaves its group, and a group with no window left leaves its 🔜:
+with 🔋 hidden, `💳 🔜 1.9d 🪫 87٪ 🦊 4٪`. A window the source does not
+give is not drawn. A reading 10 minutes old or more has each share
+followed by 🧊 and its age, `🔜 1.9d 🪫 87٪ 🧊3h`, in the text rather than
 a colour, since [the footer's tail](#the-footers-tail) draws in Claude
 Code's one style. It draws nothing in the columns: its figures are the
 plan's own, read from the configured [usage source](usage-sources.md), and
@@ -513,7 +516,7 @@ rows under it, with the prompt between them left out (`--part above`, then
   ╰⊟ 🧵    🟢 main   💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
      ╰─ 🎤 🟢 turn…  💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-                              💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+                              💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
 At 80:
@@ -523,7 +526,7 @@ At 80:
   ╰⊟ 🧵    🟢 main       💰  35   🧠 115k  11٪  ⌛9.3h  🔋 3.8٪   🪫 8.45٪
      ╰─ 🎤 🟢 turn  Wh…  💰 6.4   🧠 -42k  -4٪  ⌛  8m  🔋 1.2٪   🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-          💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+          💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
 The 💳 row sheds its pieces to fit, as [The rows](#the-rows) says: 📁 at
@@ -542,7 +545,7 @@ its next turn runs on and no 🛫, and 💳 stays under the footer line
   ⊟ 🎮     📦repo 🌿golden-clean           💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
   ╰─ 🧵 ⚫ main           🧬O⁵🐇           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-  📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+  📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
 Background subagents keep running, and spending, after the turn that
@@ -599,8 +602,8 @@ which take the paths in the option `hide`, from the
 --hide '*.work'                 💾 on every row
 --hide turn.time.eta            ⛳ on the 🎤 row only
 --hide account.workspace        📦 🌿 📁 🔀 🎨 on the 💳 row
---hide account.plan.fable       🦊 and its 🔜 on the 💳 row
---hide account.plan.opus        🎼 and its 🔜, where weekly-windows turns it on
+--hide account.plan.fable       🦊 on the 💳 row, and its 🔜 where no window shares it
+--hide account.plan.opus        🎼 likewise, where weekly-windows turns it on
 --hide session.workspace.name   the session's name on 🎮
 --hide '*.state.rate'           🛫 everywhere
 --hide '*.chat.progress'        every thread's latest text in the tree
@@ -619,7 +622,7 @@ the footer line:
   ╰⊟ 🧵    🟢 main                      🧬O⁵🐇  🤖   3m  💰  35           🧠 115k  🧩 ▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
      ╰─ 🎤 🟢 turn  Why does the elap…  🧬O⁵🐇  🛫 200   💰 6.4           🧠- 42k  🧩 ▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-  📁~/src/statusline-fixture/deep/tree                                                                     💳 🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+  📁~/src/statusline-fixture/deep/tree                                                                     💳 🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
 ## The receipt
@@ -1244,7 +1247,7 @@ so `right-edge` follows to 2, the edge of Claude Code's footer container
 
 ```
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
-  📦repo 🌿golden-clean  📁~/src/statusline-fixture/deep/tree                                💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+  📦repo 🌿golden-clean  📁~/src/statusline-fixture/deep/tree                                💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
   🎤 🟢 turn  Why …  🧬O⁵🐇  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
   🧵 🟢 main         🧬O⁵🐇  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
   🎮                                  💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
@@ -1255,7 +1258,7 @@ Every row above the prompt, with `"rows": {"account": {"place":
 own line (`--part above --rows` set so, `--right-edge 5`):
 
 ```
-  📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
+  📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
   ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
   ╰⊟ 🧵    🟢 main        🧬O⁵🐇  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
      ╰─ 🎤 🟢 turn  Why…  🧬O⁵🐇  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
@@ -1269,7 +1272,7 @@ line, plain and dim, after Claude Code's ` · `, whatever
 `rows.account.place` says (`--part tail`):
 
 ```
-  -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle) · ⠀📁~/src/statusline-fixture/deep/tree 💳 🔋 ⠀15٪ 🔜 6.7m ⠀🪫 ⠀87٪ 🔜 1.9d 📅 2026-08-16 ⠀🕐 02:23:20
+  -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle) · ⠀📁~/src/statusline-fixture/deep/tree 💳 🔜 6.7m 🔋 ⠀15٪ ⠀🔜 1.9d 🪫 ⠀87٪ 📅 2026-08-16 ⠀🕐 02:23:20
 ```
 
 Claude Code trims the tail's leading spaces and draws a run of spaces as

@@ -695,7 +695,44 @@ test("a plan reading STALE_MARK_S old marks each 💳 figure with 🧊 and " +
   };
   assert.doesNotMatch(read(now - 60), /🧊/);
   assert.doesNotMatch(read(now - STALE_MARK_S + 1), /🧊/);
-  // Three hours old: after each window's figure, before its 🔜.
-  assert.match(read(now - 3 * 3600), /🔋 +\S+٪ 🧊3h 🔜/);
-  assert.match(read(now - 3 * 3600), /🪫 +\S+٪ 🧊3h 🔜/);
+  // Three hours old: right after each window's share, after its group's
+  // 🔜, and before the next group's.
+  assert.match(read(now - 3 * 3600),
+    /💳 🔜 \S+ 🔋 +\S+٪ 🧊3h  🔜 \S+ 🪫 +\S+٪ 🧊3h {4}📅/);
 });
+
+/** The 💳 row's windows, from 💳 to before 📅, as its own row draws them
+ * and as the footer's tail does, which must agree. */
+function accountWindows(id: string, hide: string[]): string {
+  const st = settings({});
+  const fig = document(id);
+  const cut = (s: string): string => s.slice(s.indexOf("💳"),
+    s.indexOf("📅")).trimEnd();
+  const row = cut(stripAnsi(join(inZone(fig, () =>
+    accountLine(st, fig, hide, 240)))));
+  assert.equal(cut(inZone(fig, () => accountText(st, fig, hide))), row);
+  return row;
+}
+
+test("each 🔜 leads the 💳 windows that reset then, the soonest first", () => {
+  assert.equal(accountWindows("status/01-baseline", []),
+    "💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪");
+  // A weekly window resetting with 🪫 joins its group, a blank after it;
+  // one resetting later is a group of its own, after.
+  assert.equal(accountWindows("status/weekly-windows", []),
+    "💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪ 🎼  30٪  🔜 3.9d 🎭  56٪");
+  assert.equal(accountWindows("status/fable-own-reset", []),
+    "💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪  🔜 2.9d 🦊  12٪");
+});
+
+test("a hidden 💳 window leaves its group, and an empty group its 🔜",
+  () => {
+    // 🔋 hidden: the first 🔜 is 🪫's, right after 💳.
+    assert.equal(accountWindows("status/fable-own-reset",
+      ["*.plan.five_hour"]), "💳 🔜 1.9d 🪫  87٪  🔜 2.9d 🦊  12٪");
+    // 🪫 hidden: its 🔜 stays for the window that resets with it.
+    assert.equal(accountWindows("status/weekly-windows", ["*.plan.week"]),
+      "💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🎼  30٪  🔜 3.9d 🎭  56٪");
+    assert.equal(accountWindows("status/weekly-windows",
+      ["account.plan.sonnet"]), "💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪ 🎼  30٪");
+  });

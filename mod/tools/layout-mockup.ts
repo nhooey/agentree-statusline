@@ -111,9 +111,10 @@ type Sample = {
 /** One sample session: a turn that asked why the build is slow, the main
  * thread answering it, and two agents it started. */
 export function sample(st: Settings): Sample {
-  const account: Row = { scope: "account", label: accountLabel(st, 15.0,
-    87.0, durFmt(st, 6.7 * 60), durFmt(st, 1.8 * 86400), "2026-10-19",
-    "13:06:02"), cells: {} };
+  const account: Row = { scope: "account", label: accountLabel(st, [
+    { key: "five_hour", pct: 15.0, reset: durFmt(st, 6.7 * 60), at: 6.7 * 60 },
+    { key: "week", pct: 87.0, reset: durFmt(st, 1.8 * 86400),
+      at: 1.8 * 86400 }], "2026-10-19", "13:06:02"), cells: {} };
   const turn: Row = { scope: "turn", label: turnLabel(),
   cells: cells(st, { model: ["claude-opus-5-5", "high"], cost: 0.21,
     ctx: ["+", 34_000, 3], tok: [28_000, 7_100], cache: 95,
