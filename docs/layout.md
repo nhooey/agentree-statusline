@@ -67,9 +67,9 @@ tests/fixtures/figures/status/01-baseline.json --cols 160 --part above
 --inset 2 --right-edge 5 --rate 200 --plain`):
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main               🧬O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ╰─ 🎤🟢 turn            🧬O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    🟢 main        🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Why…  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
 ```
 
 and, past the prompt, under the footer line (the same with `--part
@@ -169,7 +169,7 @@ whether a survey held the band when it was drawn.
 ### The tree
 
 Above the prompt the rows are a tree of the session's threads: 🎮 the
-root, with the session's name (📛) and where it works (📦 🌿 🔀) on its
+root, with the session's name and where it works (📦 🌿 🔀) on its
 label; under it 🧵
 main, the main thread; under 🧵 first 🎤, the turn the main thread is
 working, then the subagents it started, each under the thread that
@@ -186,19 +186,29 @@ render above with `--agents 01-mixed@220 --cap 3 --progress "Checking the
 binary, then the changelog" --cols 200`):
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                                               💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main  Checking the binary, then the changelog   🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤🟢 turn  Why does the elapsed row report two …  🧬O⁵🏃  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-     ├─ 🎩🟢 Clover                                       🧬O⁵🏃  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍🟢 Marigold  Running the suite                  🧬O⁵🏃  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥🟢 Willow                                       🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                                                  🟢   3   💰 0.1                         🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+  ⊟ 🎮        📦repo 🌿golden-clean                                        💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    🟢 main  Checking the binary, then the chang…  🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤 🟢 turn  Why does the elapsed row report two…  🧬O⁵🏃  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+     ├─ 🎩 🟢 Clover                                      🧬O⁵🏃  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🏃  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+     ├─ 👥 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ╰⊞ …     4 more                                              🟢   3   💰 0.1                         🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
 
 - **The lines.** `├─` and `╰─` join a row to its parent, `│` carries a
   parent's line past its children, three columns a level. The lines are
   the start of each row's label, so every figure keeps its column at
   every depth. The labels start at the left, as every row's do.
+- **The columns.** Only the lines and each row's kind glyph (🎮 🧵 🎤
+  🎩 🔍 💻 📡 …) move with its depth. Every state circle stands in one
+  column, a blank past the deepest kind glyph drawn, and every name
+  three columns after it, so the names, the text after them and every
+  figure line up on every row. The column moves when a deeper row
+  appears or goes. A grouped row's `…` or `✅` stands where a kind glyph
+  would, and its `N more` or `N done` in the names' column; on 🎮 the
+  session's name stands there, then 📦 🌿 🔀, and with no name 📦
+  does. On a narrow terminal the blanks before the circle stay and the
+  name after it is cut with `…`.
 - **The fold marks.** A row with children has `⊟` (opened) or `⊞`
   (folded) in place of its `─`, 🎮's before its label; a click on the mark
   folds or opens its row. A folded agent keeps its own figures and draws
@@ -235,7 +245,7 @@ binary, then the changelog" --cols 200`):
   As in `💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · $ npm
   test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output`. Claude Code
   offers mods no way to open one task's own view. 🎮 and the grouped
-  rows have no label click, and 📛 the session's name takes none. On
+  rows have no label click, and the session's name takes none. On
   🎮's label 📦 the
   project, 🌿 the branch and 🔀 the pull request link to them on GitHub,
   when the `origin` remote is on GitHub; otherwise they are plain text.
@@ -244,8 +254,8 @@ binary, then the changelog" --cols 200`):
 - **The labels.** 🧵 and 🎤 draw their state's circle (🟢 working, 🟡
   waiting, ⚫ between turns) and their name, and an agent its
   [subagent row's](#the-subagent-rows) head and name, with only its own
-  counts before the name and no blank slots, since depth already moves
-  each name. A thread's latest text follows its name, dim, cut with `…`
+  counts between the circle and the name and no blank slots for the
+  counts other rows have. A thread's latest text follows its name, dim, cut with `…`
   where the label ends: the first line of the last text the thread wrote,
   an ETA report left out, so a progress update while it works and its
   final answer once it has ended. The hide path `chat.progress` hides it.
@@ -276,24 +286,26 @@ binary, then the changelog" --cols 200`):
   📡 counts to these rows; a folded one hides them and counts them. With
   the panel corpus's `02-parked@220`,
   whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
-  shell and a Monitor of the main thread's, at 120 columns:
+  shell and a Monitor of the main thread's, at 120 columns (`--agents
+  02-parked@220 --cap 10 --background` and the progress above, `--cols
+  120`):
 
   ```
-  ⊟ 🎮 📦repo 🌿golden-clean…  💰 35                🧩▴2.7M ▾841k  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main  Chec…  🧬O⁵🏃  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤🟢 turn  W…  🧬O⁵🏃  💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-     ├⊟ 🎩🟡 Parsley   🧬O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 20m ⛳  29m 🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .022٪
-     │  ╰─ 🔍🟢 Chive  🧬O⁵🏃  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   ⌛ 20m ⛳  29m 🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├⊟ 🔩🟡 Pine      🧬O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 17m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .022٪
-     │  ╰─ 💻🟢 Build the docs site                                ⌛2.1m
-     ├⊟ 🔩🟡 Poppy     🧬O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 21k ▾1.2k  ⌛ 17m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .02٪  🪫  .033٪
-     │  ├─ 📡🟢 Watch the CI checks                                ⌛2.1m
-     │  ╰─ 💻🟢 Build the docs site                                ⌛2.1m
-     ├─ 🔍🟢 Sage      🧬O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 15m ⛳  +8m 🤖⠦⠀ 🔧⠶⠄ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
-     ├─ 🔍🟢 Sorrel    🧬O⁵🏃  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   ⌛ 15m ⛳  +5m 🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
-     ├─ 📐🟡 Peony     🧬O⁵🏃  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   ⌛ 10m ⛳  15m 🤖⠶⠀ 🔧⠀⠀ 🚦⠶⠀  🔋  .01٪  🪫  .011٪
-     ├─ 💻🟢 Run the plugin tests                                  ⌛6.2m
-     ╰─ 📡🟢 Watch PR #38 for comments                             ⌛ 25m
+  ⊟ 🎮           📦repo 🌿golden-clean…  💰  35                 🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵       🟢 main  Checkin…  🧬O⁵🏃  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤    🟢 turn  Why doe…  🧬O⁵🏃  💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
+     ├⊟ 🎩    🟡 Parsley         🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 20m ⛳  29m  🔋  .02٪  🪫  .022٪
+     │  ╰─ 🔍 🟢 Chive           🧬O⁵🏃  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 20m ⛳  29m  🔋  .01٪  🪫  .011٪
+     ├⊟ 🔩    🟡 Pine            🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 17m          🔋  .02٪  🪫  .022٪
+     │  ╰─ 💻 🟢 Build the docs site                                            ⌛2.1m
+     ├⊟ 🔩    🟡 Poppy           🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 21k ▾1.2k  ⌛ 17m          🔋  .02٪  🪫  .033٪
+     │  ├─ 📡 🟢 Watch the CI checks                                            ⌛2.1m
+     │  ╰─ 💻 🟢 Build the docs site                                            ⌛2.1m
+     ├─ 🔍    🟢 Sage            🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +8m  🔋  .02٪  🪫  .022٪
+     ├─ 🔍    🟢 Sorrel          🧬O⁵🏃  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +5m  🔋  .02٪  🪫  .022٪
+     ├─ 📐    🟡 Peony           🧬O⁵🏃  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 10m ⛳  15m  🔋  .01٪  🪫  .011٪
+     ├─ 💻    🟢 Run the plugin tests                                           ⌛6.2m
+     ╰─ 📡    🟢 Watch PR #38 for comments                                      ⌛ 25m
   ```
 - **The grouped rows.** `✅ N done`, last under 🧵 while a turn runs,
   sums the subagents that ended since the turn opened; its 🛫 column is ✅ and how long ago
@@ -429,15 +441,16 @@ line with none, each row standing alone.
 - **🧵**, the main thread: its mark, its circle, `main` and the first
   line of the last text it wrote. While messages wait for its next turn
   (typed while it works, an agent's SendMessage, a task notification), 📨
-  and how many after its circle, `🧵🟢 📨3 main`, as an agent row's
+  and how many after its circle, `🧵 🟢 📨3 main`, as an agent row's
   [📨](#inbox) counts its own. The receipt's 🧵 row leaves the 📨 out.
-- **🎮**, the session: its mark, 📛 and the session's name, then, above
-  the prompt, 📦 🌿 🔀, which the 💳 row keeps elsewhere. The name is
-  the one /rename gives the session, read off the main transcript: its latest `custom-title`
+- **🎮**, the session: its mark, and in the names' column the
+  session's name, then, above the prompt, 📦 🌿 🔀, which the 💳 row
+  keeps elsewhere. The name is the one /rename gives the session, read
+  off the main transcript: its latest `custom-title`
   record, else its latest `agent-name`. It is drawn in the session's
   colour, its latest `agent-color` (/color), as the palette's nearest
   colour, and cream (`F_CRM`) with none (or `default`); with no name
-  there is no 📛. A later record wins, so a /rename shows on the next
+  📦 stands in its place. A later record wins, so a /rename shows on the next
   read.
 
   | Claude Code's colour | Drawn in |
@@ -464,7 +477,7 @@ line with none, each row standing alone.
 A label keeps at least 12 columns before columns drop: an agent row's head
 on the [subagent rows](#the-subagent-rows) and the first letters of its name. It
 sheds its ranked parts whole before anything is cut, least important
-first: 🎨, then 🔀, then 📁 on a label that has them, then 📛 and the
+first: 🎨, then 🔀, then 📁 on a label that has them, then the
 session's name on 🎮's; 📦 and 🌿 are only ever cut. A part leaves whole
 rather than showing as `📁~/sr…`. What is left is cut with `…`. Which
 columns drop on a narrow terminal is worked out without a label's spill,
@@ -503,9 +516,9 @@ rows under it, with the prompt between them left out (`--part above`, then
 `--part footer`, each with `--cols 100 --inset 2 --right-edge 5`):
 
 ```
-  ⊟ 🎮 📦repo 🌿golde…  💰 35                🧩▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main          💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
-     ╰─ 🎤🟢 turn       💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
+  ⊟ 🎮        📦re…  💰  35                 🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    🟢 main   💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  ⌛9.3h          🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤 🟢 turn…  💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  ⌛  8m          🔋 1.2٪   🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
                               💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -513,9 +526,9 @@ rows under it, with the prompt between them left out (`--part above`, then
 At 80:
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-c…  💰 35                ⌛9.3h  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main             💰 35   🧠115k  11٪  ⌛9.3h  🔋 3.8٪   🪫 8.45٪
-     ╰─ 🎤🟢 turn          💰6.4   🧠-42k  -4٪  ⌛  8m  🔋 1.2٪   🪫 1.56٪
+  ⊟ 🎮        📦repo …   💰  35                 ⌛9.3h  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    🟢 main       💰  35   🧠 115k  11٪  ⌛9.3h  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Wh…  💰 6.4   🧠 -42k  -4٪  ⌛  8m  🔋 1.2٪   🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
           💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -533,8 +546,8 @@ its next turn runs on and no 🛫, and 💳 stays under the footer line
 (`--phase done`, above the prompt and under the footer line):
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰─ 🧵⚫ main               🧬O⁵🏃           💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  ⊟ 🎮     📦repo 🌿golden-clean           💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰─ 🧵 ⚫ main           🧬O⁵🏃           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -547,12 +560,12 @@ no `✅ N done`. With subagents running between turns (`--phase done
 --agents 01-mixed@220 --cap 3`, above the prompt):
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵⚫ main               🧬O⁵🏃           💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎩🟢 Clover          🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍🟢 Marigold  Run…  🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥🟢 Willow          🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                     🟢   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+  ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    ⚫ main        🧬O⁵🏃           💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎩 🟢 Clover      🧬O⁵🏃  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold …  🧬O⁵🏃  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+     ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ╰⊞ …     4 more              🟢   3   💰 0.1                 🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
 ```
 
 🎤 stays a second after the stamp lands (`CONFIG.receiptHoldMs`), so the
@@ -592,7 +605,7 @@ which take the paths in the option `hide`, from the
 --hide account.workspace        📦 🌿 📁 🔀 🎨 on the 💳 row
 --hide account.plan.fable       🦊 and its 🔜 on the 💳 row
 --hide account.plan.opus        🎼 and its 🔜, where weekly-windows turns it on
---hide session.workspace.name   📛 and the session's name on 🎮
+--hide session.workspace.name   the session's name on 🎮
 --hide '*.state.rate'           🛫 everywhere
 --hide '*.chat.progress'        every thread's latest text in the tree
 --hide tag.plan                 🔋 🪫 and 💳 on the turn tag lines
@@ -606,9 +619,9 @@ Hiding 🔋 (`*.plan.five_hour`), 🧠's share of the window
 the footer line:
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                                       💰 35            🧩▴2.7M ▾841k  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🪫 8.45٪
-  ╰⊟ 🧵🟢 main                                    🧬O⁵🏃  🤖   3m  💰 35   🧠 115k  🧩▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
-     ╰─ 🎤🟢 turn                                 🧬O⁵🏃  🛫 200   💰6.4   🧠- 42k  🧩▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
+  ⊟ 🎮        📦repo 🌿golden-clean                      💰  35                    🧩 ▴2.7M ▾841k  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🪫 8.45٪
+  ╰⊟ 🧵    🟢 main                      🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  🧩 ▴2.7M ▾841k  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Why does the elap…  🧬O⁵🏃  🛫 200   💰 6.4           🧠- 42k  🧩 ▴525k ▾151k  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🪫 1.56٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                                     💳 🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -620,7 +633,7 @@ place of Claude Code's `✻ <word> for <duration>`: the rows whose
 `transcript` is set in `rows`, as they stood when it ended, frozen and dim,
 in their colours, then the turn's tag. Every receipt has one shape: its
 rows as the band's tree draws them, each with its tree label (see
-[Labels](#labels)), 🎤's being `🎤🏁 turn` and the first words of the
+[Labels](#labels)), 🎤's being `🎤 🏁 turn` and the first words of the
 prompt the turn answered. As the mod ships that is 🎤 alone, since 🧵 and
 🎮 stay live on screen. At 160 columns, from a cost document
 (`usage-dev figures
@@ -628,7 +641,7 @@ tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part receipt
 --inset 2 --right-edge 5 --plain`):
 
 ```
-  🎤🏁 turn  And this one?                    💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
+  🎤 🏁 turn  And this one?                💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
@@ -641,8 +654,8 @@ tests/fixtures/figures/status/18-agents.json`):
 
 ```
   🎮                                       💰 0.2                 🧩 ▴ 27k ▾4.4k  🎯96٪  ⌛1.2h         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .04٪  🪫  .059٪
-  ╰─ 🧵⚫ main            🧬O⁵🏃           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
-     ╰─ 🎤🏁 turn  And this one?           💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
+  ╰─ 🧵    ⚫ main        🧬O⁵🏃           💰 0.0   🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
+     ╰─ 🎤 🏁 turn  And this one?          💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
@@ -680,14 +693,12 @@ case that had ended, with the ones still running owed to a later
 receipt:
 
 ```
-  🧵⚫ main  All four suites pass                         🧬O⁵🏃           💰 0.0           🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
-  ├─ 🎤🏁 turn  And this one?                                              💰 0.2           🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
-  ├─ 🔍🏁 Daisy                                           🧬O⁵🏃  ✅  42m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
-  ├─ 🔩🏁 Fern                                            🧬O⁵🏃  ❌  32m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ├─ 🔩🏁 Kale                                            🧬O⁵🏃  🛑  23m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-  ╰─ 🔍🏁 Elm                                             🧬O⁵🏃  💥  18m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-
-🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
+  🧵    ⚫ main  All four suites pass                     🧬O⁵🏃           💰 0.0           🧠  41k   4٪  🧩 ▴  6k ▾700   🎯97٪  ⌛  1h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋  .01٪  🪫  .012٪
+  ├─ 🎤 🏁 turn  And this one?                                             💰 0.2           🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
+  ├─ 🔍 🏁 Daisy                                          🧬O⁵🏃  ✅  42m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛8.3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .02٪  🪫  .022٪
+  ├─ 🔩 🏁 Fern                                           🧬O⁵🏃  ❌  32m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ├─ 🔩 🏁 Kale                                           🧬O⁵🏃  🛑  23m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+  ╰─ 🔍 🏁 Elm                                            🧬O⁵🏃  💥  18m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
@@ -701,7 +712,7 @@ is under theirs, and every turn's receipt stays in the transcript to
 scroll back to. A blank row stands above the receipt, one before its tag
 line and one after it.
 
-- **🎤** is the turn just answered, `🎤🏁 turn` and its prompt: what it
+- **🎤** is the turn just answered, `🎤 🏁 turn` and its prompt: what it
   cost, its context's growth, its tokens, how long it ran, the last ETA it reported
   (kept after the turn ends, to compare with when it did end) and its share
   of each window. The model and 🛫 are not drawn: they were the turn's
@@ -1238,9 +1249,9 @@ so `right-edge` follows to 2, the edge of Claude Code's footer container
 ```
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📦repo 🌿golden-clean  📁~/src/statusline-fixture/deep/tree                                💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
-  🎤🟢 turn  Why does the …  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-  🧵🟢 main                  🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-  🎮                                          💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  🎤 🟢 turn  Why …  🧬O⁵🏃  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  🧵 🟢 main         🧬O⁵🏃  🤖   3m  💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+  🎮                                  💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
 ```
 
 Every row above the prompt, with `"rows": {"account": {"place":
@@ -1249,9 +1260,9 @@ own line (`--part above --rows` set so, `--right-edge 5`):
 
 ```
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
-  ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main               🧬O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ╰─ 🎤🟢 turn            🧬O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+  ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    🟢 main        🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ╰─ 🎤 🟢 turn  Why…  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
 ```
 
 ### The footer's tail

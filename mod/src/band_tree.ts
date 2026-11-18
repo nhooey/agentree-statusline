@@ -8,7 +8,11 @@
 // where 🧵 is not drawn, 🎤 and the subagents hang from 🎮.  Every row
 // is a row of the one grid (grid.ts): the hierarchy is in the label
 // alone, as `├─` `╰─` `│` lines three columns a level, so every figure
-// keeps its column on every row.
+// keeps its column on every row.  Only the lines and each row's kind
+// glyph move with its depth: the state circles stand in one column, a
+// blank past the deepest kind glyph drawn, and the names three columns
+// further on, so names and what follows them line up on every row
+// (alignHeads).
 //
 // After a thread's agents come its open background shells (💻) and
 // Monitors (📡), each a leaf row with its call's label and how long it has
@@ -45,17 +49,17 @@ import {
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
   E_TREE_MID, E_TURN, E_SESSION, E_IDLE,
 } from "./spec.ts";
-import { durFmt, grade, padVal } from "./formatting.ts";
+import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
-import { paint, pressed, span, spans } from "./spans.ts";
+import { paint, pressed, span, width } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
 import type { Dict } from "./py.ts";
 import { squash } from "./claude_records.ts";
 import type { BgTask } from "./claude_records.ts";
 import type { Limits } from "./claude_sources.ts";
 import {
-  agentCells, agentElapsed, agentLabel, inheritedEtas, parked, runningParents,
-  treeShape,
+  A_STATE_W, agentCells, agentElapsed, agentLabel, inheritedEtas, parked,
+  runningParents, treeShape,
 } from "./agent_row.ts";
 import type { Eta } from "./agent_row.ts";
 import {
@@ -113,7 +117,8 @@ export type TreeAgents = {
  * kept, by key.  `repo` is the repository's address on GitHub, which 📦 🌿
  * 🔀 link to; null or absent, they link nowhere.  `sessionName` and
  * `sessionColour` are the session's name and Claude Code's colour for it,
- * drawn on 🎮's label before 📦 (sessionNamePieces); absent, none.
+ * drawn on 🎮's label in the names' column, before 📦
+ * (sessionNamePieces); absent, none.
  * `stamped` draws the tree as the turn's receipt stamps it: the agents as
  * stampedNodes picks them, every row opened, no fold marks, `cap`,
  * `folds` and `repo` not read, and nothing pressing. */
@@ -316,7 +321,8 @@ export function bgRows(open: readonly BgTask[], gone: readonly BgTask[],
 }
 
 /** A thread's head, its kind glyph and its state circle in two columns,
- * then a blank, under `name.kind`. */
+ * then a blank, under `name.kind`; alignHeads sets the circle in its
+ * column. */
 function headPiece(st: Settings, kind: string, phase: string): Piece {
   return { path: "name.kind",
     spans: [span(kind), span(padVal(st, 2, phase, true)), span(" ")],
@@ -412,14 +418,51 @@ export function treeRows(st: Settings, inp: TreeInput,
     const folded = top.length > 0 && foldShut(folds, fold.key, fold.shut);
     drawNode({ folded, kids: folded ? [] : top, fold,
       row: { ...inp.session, label: [
-        { path: "name.label", spans: [span(E_SESSION + " ")], drop: 0 },
+        { path: "name.label", spans: [span(E_SESSION)], drop: 0 },
         ...sessionNamePieces(inp.sessionName ?? "", inp.sessionColour ?? ""),
         ...linked(ws, stamped ? null : inp.repo ?? null,
           inp.workspace)] } }, [], out, !stamped);
   } else {
     for (const n of top) drawNode(n, [], out, !stamped);
   }
-  return out;
+  return alignHeads(st, out);
+}
+
+/** The blank between the deepest kind glyph and the state circles. */
+const LIGHT_GAP = 1;
+
+/** The tree's rows with their heads set in columns: every state circle
+ * in the one column LIGHT_GAP past the end of the deepest kind glyph
+ * drawn, so it moves as a deeper row comes or goes, and every name
+ * A_STATE_W and a blank after it.  A row's kind glyph is the first span
+ * after its tree line; a row whose head is a `name.kind` piece has a
+ * circle after it, and the rest, 🎮 and the grouped rows, set what
+ * follows their glyph in the names' column.  The blanks press what the
+ * glyph presses, so a row's click covers its head whole. */
+function alignHeads(st: Settings, rows: readonly Row[]): Row[] {
+  const heads = rows.map((r) => {
+    const at = r.label[0]?.path === "tree" ? 1 : 0;
+    const head = r.label[at];
+    if (!head?.spans.length) return null;
+    return { at, lit: head.path === "name.kind",
+      end: width(r.label.slice(0, at).flatMap((p) => p.spans), st.widths) +
+        visWidth(head.spans[0].text, st.widths) };
+  });
+  const ends = heads.flatMap((h) => h ? [h.end] : []);
+  if (!ends.length) return [...rows];
+  const light = Math.max(...ends) + LIGHT_GAP;
+  return rows.map((r, i) => {
+    const h = heads[i];
+    if (!h) return r;
+    const pad = (h.lit ? light : light + A_STATE_W + 1) - h.end;
+    const head = r.label[h.at];
+    const [glyph, ...rest] = head.spans;
+    const blank = { ...span(" ".repeat(pad)),
+      ...(glyph.press ? { press: glyph.press } : {}) };
+    const label = [...r.label];
+    label[h.at] = { ...head, spans: [glyph, blank, ...rest] };
+    return { ...r, label };
+  });
 }
 
 /** Where on GitHub each of 🎮's workspace pieces links, by its path, under
@@ -559,7 +602,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
           shut: true };
         const folded = foldShut(folds, fold.key, fold.shut);
         out.push(groupNode(st, a, rest.map((k) => byId.get(k)!),
-          E_MORE + " " + rest.length + " more", "more", fold, folded,
+          E_MORE, rest.length + " more", "more", fold, folded,
           folded ? [] : ids.slice(i).map((k) => agentNode(k, false))));
         break;
       }
@@ -581,7 +624,7 @@ function agentNodes(st: Settings, a: TreeAgents, cap: number,
       const fold = { key: groupFold(MAIN_FOLD, "done"), shut: true };
       const folded = foldShut(folds, fold.key, fold.shut);
       nodes.push(groupNode(st, a, done.map((k) => byId.get(k)!),
-        E_MODE_DONE + " " + done.length + " done", "done", fold, folded,
+        E_MODE_DONE, done.length + " done", "done", fold, folded,
         folded ? [] : done.map((k) => ({ row: agentRow(k), folded: false,
           kids: [] }))));
     }
@@ -692,15 +735,18 @@ function spendOn<C extends { readonly [key: string]: readonly Span[] }>(
 }
 
 /** A grouped row that sums `tasks`, kept under `fold`, folded or opened
- * over `kids`: `… N more` past the cap, or `✅ N done`.  Its 🛫 column says 🟢 and how many of them run, or ✅ and how
- * long since the last of them ended; 💰, the column after it, 🧩 💾 and
- * the plan's shares are their sums, 🎯 their cache rates weighed by their
- * ▴, ⌛ their ages summed and 🤖 🔧 🚦 their split of it, as proportions of themselves, as
+ * over `kids`: `… N more` past the cap, or `✅ N done`, `glyph` in the
+ * kind glyphs' place and `name` in the names' column (alignHeads).  Its
+ * 🛫 column says 🟢 and how many of them run, or ✅ and how long since
+ * the last of them ended; 💰, the column after it, 🧩 💾 and the plan's
+ * shares are their sums, 🎯 their cache rates weighed by their ▴, ⌛
+ * their ages summed and 🤖 🔧 🚦 their split of it, as proportions of
+ * themselves, as
  * 🎮's agent-seconds are.  No model, 🧠 or ⛳: they are each agent's
  * own. */
 function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
-  name: string, kind: "more" | "done", fold: Fold, folded: boolean,
-  kids: readonly Node[]): Node {
+  glyph: string, name: string, kind: "more" | "done", fold: Fold,
+  folded: boolean, kids: readonly Node[]): Node {
   const num = (v: unknown): number => typeof v === "number" ? v : 0;
   const billed = tasks.filter((t) => (t.usage.parts as unknown[]).length);
   const sum = (f: (t: TreeTask) => number, of = tasks): number =>
@@ -763,6 +809,6 @@ function groupNode(st: Settings, a: TreeAgents, tasks: readonly TreeTask[],
   for (const k of Object.keys(cells)) if (!cells[k].length) delete cells[k];
   if (billed.length) Object.assign(cells, spendOn(st, a, billed, {}));
   return { folded, kids, fold, row: { scope: "agent", cells,
-    label: [{ path: "name.label", spans: spans(span(name, "F_BLU")),
-      drop: 0 }] } };
+    label: [{ path: "name.label",
+      spans: [span(glyph, "F_BLU"), span(name, "F_BLU")], drop: 0 }] } };
 }

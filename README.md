@@ -20,13 +20,13 @@ account, just over the agent panel, whose rows Claude Code draws itself.
 Here the two places are drawn together, the prompt between them left out:
 
 ```
-  ⊟ 🎮 📦repo 🌿golden-clean                  💰 35                🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
-  ╰⊟ 🧵🟢 main  Checking t…  🧬O⁵🏃  🤖   3m  💰 35   🧠115k  11٪  🧩▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
-     ├─ 🎤🟢 turn            🧬O⁵🏃  🛫 200   💰6.4   🧠-42k  -4٪  🧩▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
-     ├─ 🎩🟢 Clover          🧬O⁵🏃  🤖  13m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-     ├─ 🔍🟢 Marigold  Run…  🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥🟢 Willow          🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
-     ╰⊞ … 4 more                     🟢   3   💰0.1                🧩▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
+  ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
+  ╰⊟ 🧵    🟢 main  Che…  🧬O⁵🏃  🤖   3m  💰  35   🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
+     ├─ 🎤 🟢 turn  Why…  🧬O⁵🏃  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
+     ├─ 🎩 🟢 Clover      🧬O⁵🏃  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
+     ├─ 🔍 🟢 Marigold …  🧬O⁵🏃  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
+     ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ╰⊞ …     4 more              🟢   3   💰 0.1                 🧩 ▴ 20k ▾1.7k  🎯95٪  ⌛ 14m         🤖⠦⠀ 🔧⠄⠀ 🚦⠶⠀  🔋  .02٪  🪫  .027٪
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔋  15٪ 🔜 6.7m  🪫  87٪ 🔜 1.9d    📅 2026-08-16  🕐 02:23:20
 ```
@@ -42,7 +42,7 @@ Read these three first:
 
 | Row | Label | Scope | Place |
 |---|---|---|---|
-| 🎮 | the mark, then 📛 the session's name in its colour (once /rename names it), 📦 🌿 🔀 | the main thread and every agent | above the prompt, the tree's root |
+| 🎮 | the mark, then the session's name in its colour (once /rename names it) in the names' column, 📦 🌿 🔀 | the main thread and every agent | above the prompt, the tree's root |
 | 🧵 | the mark, its state, 📨 with the messages waiting for its next turn, `main` and the first line of its latest text | the main thread alone | above the prompt, under 🎮 |
 | subagents | each one's head, name and the first line of its latest text | each subagent alone | above the prompt, under the thread that started it; between turns, those running or paused |
 | 🎤 | the mark, its state and the prompt typed last | the turn | above the prompt, under 🧵, first, while a turn runs |
@@ -68,7 +68,7 @@ work is stamped on the first receipt after it ends
 ([Layout](docs/layout.md#the-receipt)).
 
 ```
-                         🎤                   💰0.2   🧠+21k +10٪  🧩▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
+  🎤 🏁 turn  And this one?                💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
 
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
