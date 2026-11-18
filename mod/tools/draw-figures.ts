@@ -63,10 +63,11 @@ import type { Span } from "../src/spans.ts";
 import { stripEnd } from "../src/exact.ts";
 import type { Dict } from "../src/py.ts";
 import {
-  FOOTER_JOIN, ROW_NAMES, accountLine, bandLines, bandRows, footerTail,
-  rootDrawn,
+  FOOTER_JOIN, ROW_NAMES, accountLine, bandLines, bandRows, drawnIn,
+  footerTail, rootDrawn,
 } from "../src/band.ts";
-import type { Live, Phase, Place } from "../src/band.ts";
+import type { Phase } from "../src/band.ts";
+import type { Live, Place } from "../src/options_spec.ts";
 import { receiptLines, stampedOf, startLine } from "../src/receipt.ts";
 import { RIGHT_EDGE } from "../src/spec.ts";
 import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
@@ -209,7 +210,8 @@ const band = (place?: Place): Span[][] =>
     ? { rate, phase, live, place, places, indent: inset, agents }
     : { rate, phase, live, place, places, inset, agents });
 // The tree's root draws 📦 🌿 🔀, and the 💳 row leaves them out.
-const rooted = rootDrawn(rows.session.place, rows.session.live, phase, hide);
+const rooted = rootDrawn(rows.session.place as Place,
+  rows.session.live as Live, phase, hide);
 const account = (place?: Place): Span[][] => {
   const row = place === "above"
     ? accountLine(st, fig, hide, cols, home, inset, rooted)
@@ -218,8 +220,7 @@ const account = (place?: Place): Span[][] => {
 };
 // The account row where `place` is its place and the phase draws it.
 const accountIn = (place: Place): Span[][] =>
-  rows.account.place === place && (rows.account.live === "always" ||
-    (rows.account.live === "running" && phase === "running"))
+  rows.account.place === place && drawnIn(rows.account.live as Live, phase)
     ? account(place) : [];
 let lines: Span[][];
 if (part === "band") {

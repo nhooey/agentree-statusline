@@ -219,6 +219,15 @@ export const OPTIONS = {
   },
 } as const;
 
+/** When the mod draws a row, its `rows.<row>.live`: "never"; "running",
+ * while a turn runs; "always", while a turn runs and kept after it ends
+ * (drawnIn).  Whether the receipt stamps it is apart (receiptLines). */
+export type Live = "never" | "running" | "always";
+
+/** Where the mod draws a row, its `rows.<row>.place`: "above", in the band
+ * above the prompt, or "footer", under Claude Code's footer line. */
+export type Place = "above" | "footer";
+
 // The merged value of each option, by the camel case of its
 // name.
 export type Options = {
@@ -231,33 +240,33 @@ export type Options = {
   readonly subscriptDecimals: boolean;
   readonly rows: {
     readonly turn: {
-      readonly place: "above" | "footer";
-      readonly live: "never" | "running" | "always";
+      readonly place: Place;
+      readonly live: Live;
       readonly transcript: boolean;
     };
     readonly agent: {
-      readonly place: "above" | "footer";
-      readonly live: "never" | "running" | "always";
+      readonly place: Place;
+      readonly live: Live;
       readonly transcript: boolean;
     };
     readonly session: {
-      readonly place: "above" | "footer";
-      readonly live: "never" | "running" | "always";
+      readonly place: Place;
+      readonly live: Live;
       readonly transcript: boolean;
     };
     readonly tag: {
-      readonly place: "above" | "footer";
-      readonly live: "never" | "running" | "always";
+      readonly place: Place;
+      readonly live: Live;
       readonly transcript: boolean;
     };
     readonly account: {
-      readonly place: "above" | "footer";
-      readonly live: "never" | "running" | "always";
+      readonly place: Place;
+      readonly live: Live;
       readonly transcript: boolean;
     };
     readonly subagents: {
-      readonly place: "above" | "footer";
-      readonly live: "never" | "running" | "always";
+      readonly place: Place;
+      readonly live: Live;
       readonly transcript: boolean;
     };
   };
