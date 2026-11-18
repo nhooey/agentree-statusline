@@ -1,5 +1,5 @@
 {
-  description = "coding-agent-usage-line: the usage-band mod for Claude Code";
+  description = "Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.";
 
   inputs = {
     # Rolling, for a current Node: the mod's tests run TypeScript straight
@@ -42,9 +42,9 @@
       ];
 
       agent-skill-flake.devshellSkills = {
-        name = "coding-agent-usage-line";
+        name = "agentree";
         motd = ''
-          {bold}{14}📊 Entering the coding-agent-usage-line dev shell{reset}
+          {bold}{14}📊 Entering the agentree dev shell{reset}
           Run {bold}menu{reset} to list available commands.
         '';
       };
@@ -113,7 +113,7 @@
           # Every suite tests/all.sh runs that a build can (nix/check-tests.sh
           # names those left out), with the fixture generators checked too.
           checks.tests =
-            pkgs.runCommand "coding-agent-usage-line-tests"
+            pkgs.runCommand "agentree-tests"
               {
                 nativeBuildInputs = [
                   nodejs

@@ -1,11 +1,11 @@
 ---
 name: coding-agent-usage-line-report-eta
-description: Report a running ETA while working on any task expected to take more than about a minute, as the main agent or as a subagent. Use it at the start of such a task. coding-agent-usage-line reads the report from the transcript and draws it on the agent's row in the agent panel, and on the status line, as a countdown and a progress bar.
+description: Report a running ETA while working on any task expected to take more than about a minute, as the main agent or as a subagent. Use it at the start of such a task. agentree reads the report from the transcript and draws it on the agent's row in the agent panel, and on the status line, as a countdown and a progress bar.
 ---
 
 # Report an ETA
 
-The `usage-band` plugin, which draws the line, gives every session and
+The `agentree` plugin, which draws the line, gives every session and
 subagent the short form of this report as context, through its
 SessionStart and SubagentStart hooks; the text is the plugin's
 `mod/hooks/eta-instruction.md`. This skill holds the full rules and

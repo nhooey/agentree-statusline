@@ -330,7 +330,7 @@ async function spendingVia($: $, session: string, doc: Dict, tr: Transcript,
   const kind = payerOf(cred, [pyFloat(lim.session_pct),
     pyFloat(lim.weekly_pct)], owned, now)
   const held = keptSpending((await $.state.get(
-    { plugin: 'usage-band', key: 'spending' })).value)
+    { plugin: 'agentree', key: 'spending' })).value)
   const was = keptFor(held, session) ? held : keptSpending(
     await $.store.get(spendingKey(session)).catch(() => undefined))
   const asOf = typeof credits.as_of === 'number' ? credits.as_of : null
@@ -342,13 +342,13 @@ async function spendingVia($: $, session: string, doc: Dict, tr: Transcript,
     : payingCredit(spell.kind, owned, now)
   const bracket = nextBracket(was.bracket, session, credit, asOf)
   if (spell !== was.spell || bracket !== was.bracket) {
-    await $.state.set({ plugin: 'usage-band', key: 'spending' },
+    await $.state.set({ plugin: 'agentree', key: 'spending' },
       { spell, bracket })
     await $.store.set(spendingKey(session), { spell, bracket,
       saved_at: now }).catch((err) => log($, 'spending not kept', err))
   } else if (was !== held) {
     // Read back from the store: the in-session copy again.
-    await $.state.set({ plugin: 'usage-band', key: 'spending' },
+    await $.state.set({ plugin: 'agentree', key: 'spending' },
       { spell, bracket })
   }
   const acc = (doc.accounting as Dict | undefined)?.session

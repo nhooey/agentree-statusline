@@ -7,7 +7,7 @@ folded into. Each section opens
 with a real render, then says what every cell is. The
 [legend](../README.md#legend) in the README names every glyph.
 
-The mod, `usage-band` in [`mod/`](../mod/README.md), draws inside Claude
+The mod, `agentree` in [`mod/`](../mod/README.md), draws inside Claude
 Code's own screen: the band's tree of threads above the prompt, the 💳 row
 under the footer line, the receipt and the turn's tags. The subagent rows,
 one per subagent, hang in the band's tree, drawn by

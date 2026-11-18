@@ -117,8 +117,8 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const docs: Dict[] = []
   const spending: unknown[] = []
   on('state.set', ($, e: any, next) => {
-    if (e.plugin === 'usage-band' && e.key === 'status') docs.push(e.value)
-    if (e.plugin === 'usage-band' && e.key === 'spending') {
+    if (e.plugin === 'agentree' && e.key === 'status') docs.push(e.value)
+    if (e.plugin === 'agentree' && e.key === 'spending') {
       spending.push(e.value)
     }
     return next(e)

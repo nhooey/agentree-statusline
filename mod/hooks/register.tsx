@@ -75,21 +75,21 @@ import { instructEta } from './eta_instruction.ts'
 type $ = EngineInterface
 
 // Bumped by each load, so the timer an earlier load started stops.
-const generation = atom({ plugin: 'usage-band', key: 'generation' } as const, 0)
-const status = atom({ plugin: 'usage-band', key: 'status' } as const, null)
-const rate = atom({ plugin: 'usage-band', key: 'rate' } as const, null)
-const filed = atom({ plugin: 'usage-band', key: 'filed' } as const, 0)
+const generation = atom({ plugin: 'agentree', key: 'generation' } as const, 0)
+const status = atom({ plugin: 'agentree', key: 'status' } as const, null)
+const rate = atom({ plugin: 'agentree', key: 'rate' } as const, null)
+const filed = atom({ plugin: 'agentree', key: 'filed' } as const, 0)
 // Bumped by each receipt filed under its turn's answer (underAnswer), so
 // the answers draw again only then, and not on every receipt.
-const answered = atom({ plugin: 'usage-band', key: 'answered' } as const, 0)
-const clockNow = atom({ plugin: 'usage-band', key: 'now' } as const, 0)
-const held = atom({ plugin: 'usage-band', key: 'held' } as const, false)
+const answered = atom({ plugin: 'agentree', key: 'answered' } as const, 0)
+const clockNow = atom({ plugin: 'agentree', key: 'now' } as const, 0)
+const held = atom({ plugin: 'agentree', key: 'held' } as const, false)
 // Bumped by each read of the configuration files that changes the
 // options, so every drawing that reads it draws again with them.
-const configured = atom({ plugin: 'usage-band', key: 'configured' } as const,
+const configured = atom({ plugin: 'agentree', key: 'configured' } as const,
   0)
 // The band tree's folds the person left, by key (band_tree.ts).
-const folds = atom({ plugin: 'usage-band', key: 'folds' } as const, {})
+const folds = atom({ plugin: 'agentree', key: 'folds' } as const, {})
 
 /** The store's key for a start line: its prompt's text. */
 export const startKey = (text: string) =>
@@ -1062,7 +1062,7 @@ export const register: Register = on => {
   // Claude Code's closing line, `✻ <word> for <duration>`, drawn as the
   // turn's receipt: 🔺🔖 its tag beside 🎤, then 📅 🕐 beside 🎮, dim, on
   // the band's columns, once stamped.  Drawn here rather than as a
-  // `$.ui.log` line, which comes with Claude Code's `⏺ usage-band:` before
+  // `$.ui.log` line, which comes with Claude Code's `⏺ agentree:` before
   // it and a blank row after.  Until then one blank row: a Box one row high around a space, rather than an
   // empty Text, which Ink measures as no row at all.
   on('ui.render', { component: 'TurnDuration' }, async ($, e) => {
@@ -1151,7 +1151,7 @@ export const register: Register = on => {
           <Box flexDirection="column">
             {row}
             <Text color="#ff5f5f" wrap="truncate-end">
-              {`⚠ usage-band: the defaults file is wrong: ${fault}`}
+              {`⚠ agentree:the defaults file is wrong: ${fault}`}
             </Text>
           </Box>
         )

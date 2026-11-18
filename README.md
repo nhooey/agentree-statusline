@@ -1,16 +1,16 @@
-# coding-agent-usage-line
+# agentree
 
-[![tests](https://github.com/nhooey/claude-code-usage-statusline/actions/workflows/tests.yml/badge.svg)](https://github.com/nhooey/claude-code-usage-statusline/actions/workflows/tests.yml)
+[![tests](https://github.com/nhooey/agentree-statusline/actions/workflows/tests.yml/badge.svg)](https://github.com/nhooey/agentree-statusline/actions/workflows/tests.yml)
 
-Three readouts for [Claude Code](https://claude.com/claude-code) that show what
-your session is costing, how much of your plan it has used, where the time went,
-and what every subagent is doing. They share one grid, so every figure stays on
-the same screen column on every row, and you can switch tabs and compare
-sessions at a glance.
+Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.
+
+It is a mod for [Claude Code](https://claude.com/claude-code). Its rows
+share one grid, so every figure stays on the same screen column on every
+row, and you can switch tabs and compare sessions at a glance.
 
 ## Above the prompt and under the footer line
 
-Drawn by the `usage-band` mod in [`mod/`](mod/README.md), one scope a row.
+Drawn by the `agentree` mod in [`mod/`](mod/README.md), one scope a row.
 Above the prompt, the session's threads as a tree: 🎮 the session at its
 root, then 🧵 the main thread with, under it, 🎤 its turn while it runs
 and the subagents it started, and under each thread the background
@@ -87,7 +87,7 @@ The readouts are a Claude Code mod, which needs only Claude Code: there is
 nothing to install beyond a clone.
 
 ```sh
-git clone https://github.com/nhooey/claude-code-usage-statusline.git ~/src/claude-code-usage-statusline
+git clone https://github.com/nhooey/agentree-statusline.git ~/src/agentree-statusline
 ```
 
 The rows above the prompt and under the footer line, and the receipt, are
@@ -95,9 +95,9 @@ the mod's. Install it from
 the clone, which Claude Code then reads in place:
 
 ```sh
-cd ~/src/claude-code-usage-statusline
+cd ~/src/agentree-statusline
 claude plugin marketplace add "$PWD"
-claude plugin install usage-band@claude-code-usage-statusline
+claude plugin install agentree@agentree-statusline
 ```
 
 Its settings, such as the usage source and what it hides, are in the
@@ -118,14 +118,14 @@ echo '{"mark-spacing": false}' > ~/.config/coding-agent-usage-line/config.jsonc
 A project's settings go in its own `.config/coding-agent-usage-line/`
 instead; see [Configuration files](docs/options.md#configuration-files).
 
-For ⛳ ETAs, the `usage-band` plugin gives each session and subagent the ETA
+For ⛳ ETAs, the `agentree` plugin gives each session and subagent the ETA
 instruction at its start, the short form in
 [`mod/hooks/eta-instruction.md`](mod/hooks/eta-instruction.md). Link the
 skill as well, which holds the full rules and what `recurse` asks for; where
 the plugin is not enabled, also tell agents to use the skill:
 
 ```sh
-ln -s ~/src/claude-code-usage-statusline/skills/coding-agent-usage-line-report-eta ~/.claude/skills/
+ln -s ~/src/agentree-statusline/skills/coding-agent-usage-line-report-eta ~/.claude/skills/
 echo 'For any task you expect to take more than about a minute, as the main agent or as a subagent, follow the `coding-agent-usage-line-report-eta` skill.' >> ~/.claude/CLAUDE.md
 ```
 

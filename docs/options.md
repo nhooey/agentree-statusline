@@ -11,7 +11,7 @@ in [`mod/defaults/config.jsonc`](../mod/defaults/config.jsonc).
 | leave a column out | `"hide"` — see [Hiding](#hiding) |
 | move a row, or stop drawing it | `"rows"` — see [What a file holds](#what-a-file-holds) |
 | set an option for every session, or for one project | a [configuration file](#configuration-files) |
-| see which file set what | the mod's log, `usage-band.log` in the state directory |
+| see which file set what | the mod's log, `agentree.log` in the state directory |
 
 ## Settings
 
@@ -207,10 +207,10 @@ load (a session's start or a `/reload-plugins`), again on `session.start`,
 and every 30 seconds while idle, a stat of each file, reading again only
 when one has come, gone or changed, or `/cd` has moved the session's root;
 a change draws every row again under the new options, with no reload. Each
-read writes what each file gave and every warning to `usage-band.log` in
+read writes what each file gave and every warning to `agentree.log` in
 the state directory, one line each, and a read that changes the options
 writes them too, each with its layer. A file with a warning also gets one
-notice line in the transcript, `usage-band: config <path>: …`, once per
+notice line in the transcript, `agentree: config <path>: …`, once per
 change to the file.
 
 Under the files the mod has one layer of its own, `mod`: `SETTINGS` in

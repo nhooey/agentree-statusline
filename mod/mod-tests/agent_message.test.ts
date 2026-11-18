@@ -154,7 +154,7 @@ const textOf = (tree: Drawn) => pieces(tree).map((p) => p[0]).join('')
 
 async function drawn($: any, props: RenderPropsOf['UserMessage']):
   Promise<Drawn> {
-  const ui = await $.ui.mount({ plugin: 'usage-band', surface: 'terminal',
+  const ui = await $.ui.mount({ plugin: 'agentree', surface: 'terminal',
     component: 'UserMessage', props,
     viewport: { columns: COLS, rows: 40 } })
   return await ui.drawn() as Drawn
@@ -174,7 +174,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     const w = world(on)
     w.agents = [agent('a1', 'general-purpose',
       'Reclaim the right-edge columns'), agent('a2', 'Explore', 'Look')]
-    const ui = await $.ui.mount({ plugin: 'usage-band', surface,
+    const ui = await $.ui.mount({ plugin: 'agentree', surface,
       component: 'UserMessage', props: FROM,
       viewport: { columns: COLS, rows: 40 } })
     const tree = await ui.drawn() as Drawn
@@ -336,7 +336,7 @@ for (const isExpanded of [false, true]) {
       w.agents = [agent('a1', 'general-purpose', 'Count the transcript'),
         agent('a2', 'general-purpose', 'Reclaim the right-edge columns')]
       w.replies = { a1: 'Still counting.', a2: TEXT }
-      const ui = await $.ui.mount({ plugin: 'usage-band',
+      const ui = await $.ui.mount({ plugin: 'agentree',
         surface: 'terminal', component: 'UserMessage',
         props: { ...FROM, isExpanded },
         viewport: { columns: COLS, rows: 40 } })

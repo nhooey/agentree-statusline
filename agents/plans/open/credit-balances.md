@@ -166,7 +166,7 @@ and its plan windows:
   reading that found them paying, the moment before which is unknown;
   every other pool has paid since the session began. The mod keeps the
   spell, and the first reading of the paying credit for the measured
-  fall, in `$.state` (`usage-band`'s `spending`) for the session and in
+  fall, in `$.state` (`agentree`'s `spending`) for the session and in
   `$.store` under `spending:<session id>`, so a `/reload-plugins`, a
   restart or a `--resume` counts on from them rather than from the
   reload; until the reloaded mod has read the credits, the kept spell

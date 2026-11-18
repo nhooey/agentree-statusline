@@ -14,7 +14,7 @@
 set -euo pipefail
 
 mod="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-work="$(mktemp -d "${TMPDIR:-/tmp}/usage-band-test.XXXXXX")"
+work="$(mktemp -d "${TMPDIR:-/tmp}/agentree-test.XXXXXX")"
 trap 'rm -rf "$work"' EXIT
 
 mkdir -p "$work/.claude-plugin"

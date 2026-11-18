@@ -20,7 +20,7 @@
 //
 // Pure: the edge (hooks/edges.ts) reads the environment and the kept
 // credits, and keeps the spell and the bracket between documents in
-// `$.state` (`usage-band`'s `spending`) and in `$.store` under the
+// `$.state` (`agentree`'s `spending`) and in `$.store` under the
 // session's spendingKey, each read back through keptSpending, so a reload
 // of the mod, a restart or a `--resume` counts on from them.
 
