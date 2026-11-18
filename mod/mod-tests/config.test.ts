@@ -270,11 +270,11 @@ test('a wrong defaults file is drawn in the footer and logged once',
     expect(log).not.toContain('config options: ')
     expect(w.logged.filter((n) => n.includes('"account" is missing')).length)
       .toBe(1)
-    const hint = await $.ui.mount({ plugin: 'usage-band',
+    const hint = await $.ui.mount({ plugin: 'agentree',
       surface: 'terminal', component: 'PromptHint', props: { isDraft: false,
         isWorking: false, hint: '-- INSERT --' } })
     const drawn = JSON.stringify(await hint.drawn())
-    expect(drawn).toContain('⚠ usage-band: the defaults file is wrong: ')
+    expect(drawn).toContain('⚠ agentree:the defaults file is wrong: ')
     expect(drawn).toContain('\\"account\\" is missing')
   })
 
@@ -299,7 +299,7 @@ test('a defaults file changed on disk waits for the next load of the mod',
     expect(log).not.toContain('the defaults file is wrong')
     expect(log.split('the defaults file changed on disk').length - 1)
       .toBe(1)
-    const hint = await $.ui.mount({ plugin: 'usage-band',
+    const hint = await $.ui.mount({ plugin: 'agentree',
       surface: 'terminal', component: 'PromptHint', props: { isDraft: false,
         isWorking: false, hint: '-- INSERT --' } })
     expect(JSON.stringify(await hint.drawn())).not.toContain(

@@ -25,7 +25,7 @@ export type SpendingKept = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'usage-band': {
+    'agentree': {
       /** Bumped by each load, so the timer an earlier load started stops. */
       generation: number;
       /** The band's last status document, or null before the first. */

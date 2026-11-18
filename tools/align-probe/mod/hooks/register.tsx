@@ -2,7 +2,7 @@ import type { EngineInterface, Register } from 'claude-code'
 
 // The mockup draws every row; this mod only puts them where the design
 // would.  Plain text: the question is widths, not colour.
-const MOCKUP = '/Users/nhooey/git/github/nhooey/claude-code-usage-statusline/mod/tools/layout-mockup.ts'
+const MOCKUP = '/Users/nhooey/git/github/nhooey/agentree-statusline/mod/tools/layout-mockup.ts'
 
 async function rows($: EngineInterface, part: string, cols: number, phase = 'running') {
   const r = await $.process.run(['node', MOCKUP, '--plain', '--part', part,

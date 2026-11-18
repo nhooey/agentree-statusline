@@ -234,7 +234,7 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   the plan's week, are left to the keys.
 - **Drawn under `auto` over Claude Code's own reading** while it is at most
   seven minutes old; past that, `auto` goes on as above.
-- **A failed ask** keeps the last reading, is written to `usage-band.log`
+- **A failed ask** keeps the last reading, is written to `agentree.log`
   once per distinct failure (`plan usage failed: HTTP 429`), and the next ask,
   from any session on the account, waits: two minutes after the first
   failure in a row, doubling with each failure after it up to an hour, or as
@@ -270,7 +270,7 @@ account and a session key, and neither is read.
 
 The app keeps its profiles in the Keychain from version 3.3 on, which the mod
 does not read, so its preferences hold no `profiles_v3` and the source gives no
-reading. The mod writes that to `usage-band.log` once a load, as
+reading. The mod writes that to `agentree.log` once a load, as
 `tracker: Claude Usage.app's settings have no profiles_v3, …`.
 
 The Fable-weekly percentage becomes the weekly Fable window
@@ -366,7 +366,7 @@ since its file API cannot.
 
 ## Diagnostics
 
-The mod writes what it read and why a figure is blank to `usage-band.log`
+The mod writes what it read and why a figure is blank to `agentree.log`
 in the state directory: a source that failed and when it is asked again, the
 plan usage's window keys, the tracker's missing profiles. A `cmd:` source is
 logged as `cmd`, without its path.

@@ -14,7 +14,7 @@ import type { Value } from '../src/config.ts'
 export const CONFIG = {
   // The version the mod's caches are keyed by: a change to the
   // accounting is a new version.
-  version: "usage-band 0.2.0",
+  version: "agentree 0.2.0",
   // How often a live agent's fold, and the main transcript's, is saved, so
   // a reload reads on from it.
   foldSaveMs: 60_000,

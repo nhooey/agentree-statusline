@@ -639,7 +639,7 @@ export function phaseRows(rows: BandRows, phase: Phase,
 
 /** The 💳 row's label as one line of plain text after the workspace (📦
  * 🌿 📁, and 🔀 🎨 where the session has them),
- * "📦claude-code-usage-statusline 🌿master  📁~/git/📦  💳 🔜 4.8h 🔋 1٪
+ * "📦agentree-statusline 🌿master  📁~/git/📦  💳 🔜 4.8h 🔋 1٪
  * 🔜 9.8h 🪫 49٪  📅 2026-10-19  🕐 22:12:44", each piece hidden by its own
  * path, the workspace's under `account.workspace`, with `home` shortening
  * the 📁 directory as the band's does; ""

@@ -1,4 +1,4 @@
-// The defaults of the usage-band mod: every option a configuration file
+// The defaults of the agentree mod: every option a configuration file
 // may set, with the value the mod uses when no file sets it.
 //
 // The mod reads this file at every run, and nothing else holds these

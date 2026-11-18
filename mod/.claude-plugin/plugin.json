@@ -1,7 +1,10 @@
 {
-  "name": "usage-band",
-  "version": "0.5.85",
-  "description": "The usage line's grid in Claude Code's own screen: the band above the prompt, the receipt on each turn's closing line, and the turn's tag under its prompt",
+  "name": "agentree",
+  "version": "0.5.86",
+  "description": "Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.",
   "author": { "name": "Neil Hooey" },
+  "homepage": "https://github.com/nhooey/agentree-statusline",
+  "repository": "https://github.com/nhooey/agentree-statusline",
+  "keywords": ["claude-code", "statusline", "subagents", "cost-tracking", "token-usage"],
   "types": "./types/index.d.ts"
 }

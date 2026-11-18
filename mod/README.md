@@ -1,7 +1,7 @@
 # mod
 
 The whole project: the Claude accounting, the usage-source reader and the
-cells under `src/`, and the Claude Code mod, `usage-band`, that draws them
+cells under `src/`, and the Claude Code mod, `agentree`, that draws them
 (the [redesign](../agents/plans/closed/redesign.md)).
 
 Node 23.6 or later runs the sources directly, with no build, so the code
@@ -21,7 +21,7 @@ the cases under `tests/fixtures/`: committed data, or written by the generators 
 
 ## The mod
 
-This folder is the mod. `.claude-plugin/plugin.json` names it `usage-band`,
+This folder is the mod. `.claude-plugin/plugin.json` names it `agentree`,
 `hooks/register.tsx` is its hooks module, and `types/index.d.ts` its
 `$.state` contract. It draws four places, and writes one:
 
@@ -97,7 +97,7 @@ mod's store keeps). `hooks/configuration.ts` reads the
 files at each load, on `session.start`, and every 30 seconds on the tick,
 a stat of each file, reading again only one that has changed, or the
 files of a new root after a `/cd`; a change draws everything again, with
-no `/reload-plugins`. Each read goes to `usage-band.log` (the files, the
+no `/reload-plugins`. Each read goes to `agentree.log` (the files, the
 options a layer above the defaults gave, and every warning), and a file
 with a warning gets one notice line in the transcript per change.
 
@@ -166,7 +166,7 @@ then every agent the turn ran that had finished, 🏁, from the
 band's last status document (`--agents` with `--status` draws it;
 [docs/layout.md](../docs/layout.md#the-receipt)). The receipt is Text in the transcript rather
 than a `$.ui.log` line, which Claude Code draws as its own notice,
-`⏺ usage-band:` before it and a blank row after, in plain dim text.
+`⏺ agentree:` before it and a blank row after, in plain dim text.
 
 Claude Code writes a turn's records to the transcript only after its Stop
 hooks have run, after the mod hears `turn.complete`, so the stamp waits
@@ -190,12 +190,12 @@ For every session, installed from this repository's marketplace
 (`.claude-plugin/marketplace.json` at its root):
 
     claude plugin marketplace add "$PWD"
-    claude plugin install usage-band@claude-code-usage-statusline
+    claude plugin install agentree@agentree-statusline
 
 or from GitHub, in a session:
 
-    /plugin marketplace add nhooey/claude-code-usage-statusline
-    /plugin install usage-band@claude-code-usage-statusline
+    /plugin marketplace add nhooey/agentree-statusline
+    /plugin install agentree@agentree-statusline
 
 Installed from a local marketplace, the mod is read from `mod/` itself: a
 change here takes effect at the next session start or `/reload-plugins`,
@@ -216,7 +216,7 @@ symbolic link: the loader refuses a module that resolves outside the
 folder it loads.
 
     rsync -a --delete --exclude node_modules --exclude test \
-      --exclude tools mod/ ~/.claude/dev-mods/<session id>/usage-band/
+      --exclude tools mod/ ~/.claude/dev-mods/<session id>/agentree/
 
 and in the session, `/reload-plugins`. To remove it, delete that folder
 and `/reload-plugins` again.
@@ -234,10 +234,10 @@ drawing up instead of failing Claude Code's event; what they catch is
 logged, with what was thrown and where. Each line names its time and the
 first eight characters of its session's id, and goes two ways:
 
-- `usage-band.log` in the state directory
-  (`~/.local/state/coding-agent-usage-line/usage-band.log` by default),
+- `agentree.log` in the state directory
+  (`~/.local/state/coding-agent-usage-line/agentree.log` by default),
   always: the newest 500 lines from every session.
-- Claude Code's debug log, as `[usage-band] $.ui.log (to debug):` lines,
+- Claude Code's debug log, as `[agentree] $.ui.log (to debug):` lines,
   when Claude Code runs with `--debug-file <path>` (or `--debug`), beside
   the engine's own lines about the mod's hooks: when each settled, and
   each `$` call that failed.

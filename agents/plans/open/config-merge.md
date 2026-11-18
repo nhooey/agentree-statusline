@@ -621,7 +621,7 @@ and `npm test`.
      checks `usage-source` as Claude's panel does (`agent` `"claude"`;
      the shared cases run with none). `readConfig` keeps the result
      (`configNow()`) and logs one line of the files and the keys each
-     gave, then one line per warning, to `usage-band.log`. It runs once
+     gave, then one line per warning, to `agentree.log`. It runs once
      per load, from `start()` in `register.tsx`, not awaited. No notice
      yet: the notice and the re-reads are step 6's.
    - `CODING_AGENT_USAGE_LINE_PROJECT_DIR`, the Python's test override,
@@ -682,8 +682,8 @@ and `npm test`.
    - The notice: `$.ui.notice` is a line under a tool call's open dialog
      in this engine (2.1.303's types: `notice(tool_use_id, text)`), with
      no call to hang a file's warning on, so the notice is a `$.ui.log`
-     line in the transcript, `usage-band: config <the first warning>
-     (and N more in usage-band.log)`, once per file and `mtimeMs` per
+     line in the transcript, `agentree: config <the first warning>
+     (and N more in agentree.log)`, once per file and `mtimeMs` per
      load. Not a toast, as decided.
    - `right-edge` is derived in both ports: `_NOT_DERIVED_YET` is gone,
      and the Python derives from `live-place` though it is not one of its
