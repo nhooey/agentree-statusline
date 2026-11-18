@@ -727,9 +727,12 @@ function spendOn<C extends { readonly [key: string]: readonly Span[] }>(
   st: Settings, a: TreeAgents, tasks: readonly TreeTask[], cells: C):
   C | (C & { spend: Span[] }) {
   const pay = a.spending;
+  if (!pay) return cells;
+  // A usage is read by key with a default, as an agent's cells read it:
+  // none, or one without parts, bills nothing.
   const parts = tasks.flatMap((t) =>
-    t.usage.parts as [number | null, number][]);
-  if (!pay || !parts.length) return cells;
+    (t.usage?.parts ?? []) as [number | null, number][]);
+  if (!parts.length) return cells;
   return { ...cells, spend: CELLS.spend(st, PAYER_GLYPHS[pay.kind],
     partsSince(parts, pay.since)) };
 }

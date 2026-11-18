@@ -245,10 +245,10 @@ tests/fixtures/
 | `figures/` | 230 | 43 | 2,473 | 435 |
 | `state/`, `agent-state/`, `inbox-state/` | 90 | 1 | 221 | 12 |
 | `tests/golden/` | 230 | 0 | 235 | 0 |
-| `panel/` | 22 | 1 | 2,684 | 150 |
+| `panel/` | 22 | 1 | 2,684 | 176 |
 | `receipt/` | 1 | 0 | 146 | 0 |
 | `render/` | 2 | 1 | 1,810 | 300 |
-| `rows/` | 2 | 2 | 3,022 | 950 |
+| `rows/` | 2 | 2 | 3,022 | 1,332 |
 | `grid/` | 2 | 2 | 5,315 | 2,000 |
 | `calib/` | 4 | 4 | 4,225 | 1,300 |
 | `formatting/` | 3 | 3 | 2,601 | 1,000 |
@@ -258,8 +258,10 @@ tests/fixtures/
 | **Total** | **750** | **221** | **25,700** | **8,900** |
 
 `figures/` and the saved folds are measured (the 43 documents without
-their `null` keys are 435 KB). The other "after" sizes are estimates
-from the repeats counted above; each step measures its own.
+their `null` keys are 435 KB). `panel/` and `rows/` are measured with
+`du -k` after `TF5`, `rows/` with the tree cases `TF5` adds. The other
+"after" sizes are estimates from the repeats counted above; each step
+measures its own.
 
 ### The session-name pull request under this layout
 
@@ -379,15 +381,18 @@ generator to Node only where a step below keeps its family.
    - `panel/` stays as `TF5`'s inputs; its drawn rows are read by no
      test.
 
-5. **`TF5` The panel's inputs as tree cases.** `panel/` keeps one file,
-   `inputs.json`: the prepared tasks of the corpus sessions and of the
-   hand-made groups that reach an agent cell nothing else does
-   (`states`, `eta`, `counts`, `gauges`, `missing`, `who`).
-   `gen-row-cases.ts` draws each as the band's tree at one width, into
-   `rows/`. The groups that vary only the width, the `--hide` paths,
-   the terminal or a switch (`widths`, `hide`, `tight`, `subdec`,
-   `tmux`, `iterm`, `unknown`, `corpus-*`) go: the grid's cases cover
-   widths and hiding, and the profiles are `rows/`'s sample.
+5. **`TF5` The panel's inputs as tree cases.** Done. `panel/` keeps one
+   file, `inputs.json`: the prepared tasks of the corpus sessions and of
+   the hand-made groups that reach an agent cell nothing else does
+   (`states`, `eta`, `counts`, `tree`, `gauges`, `figures`, `missing`,
+   `who`), by group and name, one case a line, each set of tasks once.
+   `gen-row-cases.ts` draws each as the band's tree at 160 columns, into
+   `rows/`, beside the three corpus sessions it draws at every width.
+   The groups that vary only the width, the `--hide` paths, the
+   terminal or a switch (`widths`, `hide`, `tight`, `subdec`, `tmux`,
+   `iterm`, `unknown`, `corpus-*`) are gone: the grid's cases cover
+   widths and hiding, and the profiles are `rows/`'s sample. `panel/`
+   is 176 KB (`du -k`), and `rows/` 1,332 KB with the 111 tree cases.
 
 6. **`TF6` The differential families, written once.** For the families
    the TypeScript now writes alone (`records`, `calib`, `render/cells`,

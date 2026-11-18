@@ -223,7 +223,7 @@ test("a turn that ran subagents stamps them under 🧵, with 🎤 🏁 first, " 
   // No agents in the document, or none the turn ran: the same.
   assert.deepEqual(receipt(status), flat);
   // Bluebell and Thistle ended in the turn; the rest it ran still run.
-  const doc = corpusAgents("01-mixed@220", "All four suites pass");
+  const doc = corpusAgents("corpus/01-mixed", "All four suites pass");
   const ran = { ...status, agents: { ...doc,
     tasks: (doc.tasks as TreeTask[]).map((t) =>
       ["r2", "r3"].includes(String(t.task.id))

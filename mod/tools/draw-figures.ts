@@ -41,10 +41,11 @@
 // for the band's last one, as the mod keeps it.
 //
 // --agents CASE draws the subagents of the case of
-// tests/fixtures/panel/corpus.json whose id is CASE, such as
-// "03-tree@220", in the band's tree above the prompt, each task's `label`
-// standing for its latest progress update; --progress is the main
-// thread's.  The corpus's clock is the figures documents'.  --cap is
+// tests/fixtures/panel/inputs.json whose id, `<group>/<name>`, is CASE,
+// such as "corpus/03-tree" or "states/queued", in the band's tree above
+// the prompt, each task's `label` standing for its latest progress
+// update; --progress is the main thread's.  The inputs' clock is the
+// figures documents'.  --cap is
 // subagent-rows.  With --part receipt they go in the --status document,
 // and the receipt stamps the turn's agents under 🧵.  --background gives
 // the threads open shells and Monitors, as the rows' cases do

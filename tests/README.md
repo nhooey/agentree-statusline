@@ -37,7 +37,7 @@ fixtures/
   transcripts/subagent/  sessions with agents, for the fold and calibration
                          fixtures; see Subagent row cases below
   figures/<suite>/       the figures documents the cases name; see Figures
-  panel/<group>.json     prepared subagent tasks; see Subagent row cases
+  panel/inputs.json      prepared subagent tasks; see Subagent row cases
                          below
   records/ calib/ render/ claude/
                          calls of the accounting, the calibration, the cells
@@ -292,28 +292,20 @@ tasks under `panel/`.
 | `04-bare` | no agent files: its tasks were shells and a remote agent |
 | `05-empty` | no agent files and no tasks |
 
-**Prepared tasks**, `fixtures/panel/<group>.json`, committed data: the
-prepared `(task, usage, meta, shares)` records, the `Limits`, `cols` (the
-terminal's width), `now` and, where there are any, the `--hide` paths
-`hide`; a group is one terminal profile and one setting of the two switches.
-`corpus*.json` hold the inputs prepared from
-these sessions' task lists, with 🥚 a queued task, shells, a remote agent,
-a status never seen, tasks with no id or not an object, a worktree's 🌿
-and a label that repeats the description, at 220, 160, 120, 92, 60 and
-unknown, and 01 and 03 again at 220 and 120 under `--no-mark-spacing`,
-`--subscript-decimals` and the `tmux`, `iterm`, unknown and true-colour
-terminals. The rest are made by hand for
-what the corpus does not reach: `states`, `eta`, `counts`, `tree`,
-`gauges`, `figures`, `who` (the name, branch and activity), `widths` (one
-mixed panel from 400 columns down to 20), `hide` (the mixed panel under `--hide` paths), `missing` (no usage, a partial
-one, no meta or shares, tasks that are skipped), and the mixed panel again
-under each switch and terminal (`tight`, `subdec`, `tmux`, `iterm`,
-`unknown`). Each case also holds the rows an agent panel drew from them,
-which no test reads. `mod/tools/gen-row-cases.ts` draws `corpus.json`'s
-tasks as the band's tree (see Row cases below), and
-`mod/tools/draw-figures.ts` draws one of its cases by id; the other groups
-are inputs for tree cases still to come, step `TF5` of
-[the fixture plan](../agents/plans/test-fixture-simplification.md).
+**Prepared tasks**, `fixtures/panel/inputs.json`, committed data: by group
+and name, one case a line, each case's prepared `(task, usage, meta,
+shares)` records, at the figures documents' clock. The `corpus` group holds
+the inputs prepared from these sessions' task lists, with 🥚 a queued task,
+shells, a remote agent, a status never seen, tasks with no id or not an
+object, a worktree's 🌿 and a label that repeats the description. The rest
+are made by hand for what the corpus does not reach: `states`, `eta`,
+`counts`, `tree` (depths, siblings, a missing parent and a loop),
+`gauges`, `figures` (the model, cache, context and share cells), `who`
+(the name, branch and activity) and `missing` (no usage, a partial one, no
+meta or shares, tasks that are skipped). No two cases hold the same tasks.
+`mod/tools/gen-row-cases.ts` draws each case as the band's tree, three of
+the corpus's at every width and the rest at one (see Row cases below), and
+`mod/tools/draw-figures.ts --agents <group>/<name>` draws one by hand.
 `tests/fixtures/claude/agent-usage.json`
 holds each session's agents' usage, field for field, which
 `mod/test/band_tree.test.ts` holds `agentUsageOf` to.
@@ -369,7 +361,10 @@ status document's start line. Out come the spans of each row; the first case
 of each kind in a file also has its rows joined into escape codes, since
 `fixtures/formatting/spans.json` pins the joining for the rest. The matrix is
 200, 155, 120 and 80 columns, both phases, three hide sets at 155 and a 🛫 at
-200; HOME is `${HOME}`, the placeholder the documents' paths are written
+200. The tree cases draw `status/01-baseline` above the prompt with the
+subagents of each [prepared task](#subagent-row-cases) case, three of the
+corpus's at every width and the rest at 160 columns. HOME is `${HOME}`,
+the placeholder the documents' paths are written
 under, and each clock is drawn in the document's own zone. `unknown.json`
 holds the whole matrix. The other profiles hold a sample, the cases a profile
 can change: each status document at 155 columns in both phases, and every

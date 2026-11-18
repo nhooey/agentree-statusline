@@ -23,9 +23,7 @@ All examples below are the programs' own output against the test fixtures
 (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile),
 with colour stripped: `usage-dev figures` for the mod's rows,
 from `tests/fixtures/figures/`, with the subagents of a case of
-`tests/fixtures/panel/corpus.json` where the tree has some (`--agents`),
-and the renderer's cases in `tests/fixtures/panel/` for the subagent rows
-alone.
+`tests/fixtures/panel/inputs.json` where the tree has some (`--agents`).
 Colour and brightness carry meaning of their own — see
 [Colour and brightness](#colour-and-brightness).
 
@@ -182,7 +180,7 @@ line keep their own order, 🎤 then 🧵, and so does the receipt of a turn
 that ran no subagent; one that ran any stamps the same tree, its agents
 without their shells or Monitors ([The receipt](#the-receipt)).
 With three subagents running and four more folded past a cap of 3 (the
-render above with `--agents 01-mixed@220 --cap 3 --progress "Checking the
+render above with `--agents corpus/01-mixed --cap 3 --progress "Checking the
 binary, then the changelog" --cols 200`):
 
 ```
@@ -284,10 +282,10 @@ binary, then the changelog" --cols 200`):
   how long it ran, for `finished-linger` seconds after the record that
   closed it (5 as the mod ships), and then leaves. An opened thread leaves its 💻
   📡 counts to these rows; a folded one hides them and counts them. With
-  the panel corpus's `02-parked@220`,
+  the panel inputs' `corpus/02-parked`,
   whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
   shell and a Monitor of the main thread's, at 120 columns (`--agents
-  02-parked@220 --cap 10 --background` and the progress above, `--cols
+  corpus/02-parked --cap 10 --background` and the progress above, `--cols
   120`):
 
   ```
@@ -557,7 +555,7 @@ started them ends, so they stay in the tree under 🧵, each with its 🟢 or
 🟡, past the cap folded into `… N more` as while a turn runs. The ones
 that ended are left to the turn's receipt: between turns the tree draws
 no `✅ N done`. With subagents running between turns (`--phase done
---agents 01-mixed@220 --cap 3`, above the prompt):
+--agents corpus/01-mixed --cap 3`, above the prompt):
 
 ```
   ⊟ 🎮        📦repo 🌿golden-clean        💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
@@ -687,7 +685,7 @@ marks 🎤 and each agent, and 🧵 keeps its ⚫. 🎤 is followed by
 the prompt the turn answered, 🧵 and each agent by the first line of the
 last text it wrote. With 🎮 stamped, the tree hangs from it; a turn that
 ran no subagent, or one whose agents are hidden (`--hide agent`), stamps
-its rows as above, 🧵 among them only where `rows` stamps it. At 200 columns, the same with `--agents 01-mixed@220
+its rows as above, 🧵 among them only where `rows` stamps it. At 200 columns, the same with `--agents corpus/01-mixed
 --progress "All four suites pass"` and `--cols 200`: the agents of the
 case that had ended, with the ones still running owed to a later
 receipt:
@@ -793,7 +791,7 @@ receipt's.
 One row per task the session runs: an Agent tool call, a fork, a background
 shell, a workflow agent, a teammate. At 160 columns with a right edge of 5,
 a running agent in each state, finished ones, one not yet started, a shell
-and a teammate (the `01-mixed@160` case of `tests/fixtures/panel/corpus.json`):
+and a teammate (the `corpus/01-mixed` case of `tests/fixtures/panel/inputs.json`):
 
 ```
 🔍🟢 Marigold  Runnin…  🧬O⁵🏃  🔧  11m  💰0.1   🧠 32k  16٪  🧩▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
