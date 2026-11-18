@@ -2,9 +2,10 @@
 //
 // tests/fixtures/formatting/ is committed data: each call's inputs and
 // result under each terminal environment, mark spacing and subscript
-// setting.  This builds the same Settings from the same environment and
-// flags, runs the same call through the TypeScript and compares.  A call
-// that raises is {"raises": true}, and the TypeScript must throw.
+// setting, values.json's written once (cases_once.ts).  This builds the
+// same Settings from the same environment and flags, runs the same call
+// through the TypeScript and compares.  A call that raises is
+// {"raises": true}, and the TypeScript must throw.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -14,6 +15,7 @@ import type { Env, Settings } from "../src/formatting.ts";
 import * as sp from "../src/spans.ts";
 import { TRUE_COLOURS } from "../src/spec.ts";
 import { enc, revive } from "./formatting_codec.ts";
+import { readCases } from "./cases_once.ts";
 
 const DIR = path.join(import.meta.dirname, "..", "..", "tests", "fixtures",
   "formatting");
@@ -31,7 +33,7 @@ function attempt(fn: () => unknown): unknown {
 }
 
 function load(name: string): Case {
-  return JSON.parse(fs.readFileSync(path.join(DIR, name + ".json"),
+  return readCases(fs.readFileSync(path.join(DIR, name + ".json"),
     "utf-8"));
 }
 

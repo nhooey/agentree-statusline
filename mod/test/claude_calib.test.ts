@@ -1,8 +1,9 @@
 // claude_calib.ts, case by case.
 //
 // tests/fixtures/calib/ holds each call's inputs and result as committed
-// data; this runs the same call through the TypeScript and compares the
-// two with deepEqual.  A call written {"raises": true} must throw.
+// data, written once (cases_once.ts); this runs the same call through
+// the TypeScript and compares the two with deepEqual.  A call written
+// {"raises": true} must throw.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
@@ -16,6 +17,7 @@ import type { Limits } from "../src/claude_sources.ts";
 import { isDict } from "../src/py.ts";
 import { stateName, statePath } from "../src/state.ts";
 import { STATE_KINDS } from "../src/state_spec.ts";
+import { readCases } from "./cases_once.ts";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)),
   "../..");
@@ -63,7 +65,7 @@ function attempt<T>(fn: () => T): T | typeof RAISES {
 }
 
 function load(name: string): Case[] {
-  return revive(JSON.parse(fs.readFileSync(path.join(DIR, name + ".json"),
+  return revive(readCases(fs.readFileSync(path.join(DIR, name + ".json"),
     "utf-8"))).cases;
 }
 
