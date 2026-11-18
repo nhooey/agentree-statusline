@@ -34,7 +34,7 @@ import {
   decodeGit, decodeLimits, decodePayload, decodeTranscript, decodeTurn,
 } from "./figures.ts";
 import {
-  CELLS, ETA_LIVE_S, SIDE_MARKS, accountLabel, cacheRate, hms, inheritEta,
+  CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, inheritEta, liveFinishes,
   mainDoing, mainLabel, projectName, sessionLabel, turnLabel, untilReset,
   workspacePieces, ymd,
 } from "./cells.ts";
@@ -236,10 +236,8 @@ function spendCell(st: Settings, fig: Dict,
 function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
   if (!tr.start_s) return [];
   now = etaNow(tr, now);
-  const live = tr.agent_etas
-    .filter(([, last]) => last !== null && now - last <= ETA_LIVE_S)
-    .map(([f]) => f);
-  const shown = inheritEta(tr.eta, live, tr.turn_s);
+  const shown = inheritEta(tr.eta,
+    liveFinishes(tr.agent_etas, now, tr.turn_s), tr.turn_s);
   // Signed off: its own report is zero and no live agent pushed the
   // finish past it.
   const signedOff = tr.eta.length > 0 && tr.eta[1] === 0 &&

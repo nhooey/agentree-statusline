@@ -623,6 +623,40 @@ test("⛳ stops at the turn's end, and a sign-off at zero is not drawn idle",
     assert.match(text(busy.turn.cells.eta), /^⛳ +\+10m$/);
   });
 
+test("an ∞ ⛳ reads ∞ on 🎤 and 🤖, answering or idle, and a live agent's " +
+  "∞ makes 🤖's ∞", () => {
+  const st = settings({});
+  const fig = document("status/01-baseline");
+  const now = ((fig.clock as Dict).now as number);
+  const text = (spans: readonly Span[] | undefined) =>
+    (spans ?? []).map((s) => s.text).join("");
+  // The turn opened three hours ago.
+  const turn_s = now - 10800;
+  const at = (eta: number[], agent_etas: number[][], idle_at: number) => {
+    const f = { ...fig, transcript: { ...(fig.transcript as Dict), eta,
+      agent_etas, idle_at, turn_s } };
+    return inZone(f, () => bandRows(st, f, { rate: null,
+      phase: idle_at ? "done" as const : "running" as const }));
+  };
+  for (const idle of [0, now - 300]) {
+    const own = at([now - 3600, Infinity], [], idle);
+    assert.match(text(own.turn.cells.eta), /^⛳ +∞$/u);
+    assert.match(text(own.main.cells.eta), /^⛳ +∞$/u);
+  }
+  // An agent at ∞ waits on a person, so its silence past ETA_LIVE_S
+  // still holds 🤖 open within the turn; a finite one that silent, or an
+  // ∞ from before the turn, an agent that may have died unseen, does not.
+  for (const last of [now, now - 7200]) {
+    const kid = at([now - 60, 120], [[Infinity, last]], 0);
+    assert.match(text(kid.turn.cells.eta), /^⛳ +1m$/u);
+    assert.match(text(kid.main.cells.eta), /^⛳ +∞$/u);
+  }
+  for (const gone of [[now + 600, now - 7200], [Infinity, now - 14400]]) {
+    const rows = at([now - 60, 120], [gone], 0);
+    assert.match(text(rows.main.cells.eta), /^⛳ +1m$/u, String(gone));
+  }
+});
+
 test("🎤 carries the model and 🛫, and a running tool's time in 🛫's column", () => {
   const st = settings({});
   const fig = document("status/01-baseline");

@@ -31,7 +31,7 @@
 //     the field missing.  No shared case pins those inputs.
 
 import { sha256Hex } from "./sha256.ts";
-import { E_FOLD, E_ETA_REPORT } from "./spec.ts";
+import { E_FOLD, E_ETA_INF, E_ETA_REPORT } from "./spec.ts";
 import {
   daysIn, isDict, PY_SPACE, pyAsciiDigits, pyDig, pyFloatRepr, pyGet, pyHas,
   pyLen, pyOr, pyStrip, pyTruthy,
@@ -1167,8 +1167,9 @@ export function turnTimes(t: Turn): [number, number] {
 //
 // The skill's path is the part matched, and the flag may be missing.
 // Backticks and bold around the line are forgiven.  A run of
-// figure-and-unit pairs (`6h30m`) is one figure, and a few words after a
-// dash are not read.
+// figure-and-unit pairs (`6h30m`) is one figure, E_ETA_INF in its place
+// is an agent waiting on something with no time estimate, and a few words
+// after a dash are not read.
 //
 // Its ^ and $ are at a "\n" alone, as re.MULTILINE's are; JavaScript's m
 // flag also breaks at "\r", U+2028 and U+2029, so the line ends are spelt
@@ -1177,7 +1178,7 @@ export const ETA_SKILL = "coding-agent-usage-line-report-eta";
 export const ETA_PART = String.raw`\p{Nd}+(?:\.\p{Nd}+)? ?[smh]`;
 export const ETA_LINE = new RegExp(
   String.raw`(?<![^\n])[ \t\x60*]*(?:${E_ETA_REPORT}` +
-  String.raw`[ \t]*)?skills/${ETA_SKILL}: ETA (${ETA_PART}` +
+  String.raw`[ \t]*)?skills/${ETA_SKILL}: ETA (${E_ETA_INF}|${ETA_PART}` +
   String.raw`(?:[ \t]*${ETA_PART})*)(?:[ \t]+[—–\-][ \t]` +
   String.raw`[^\n]*?)?[ \t\x60*]*(?![^\n])`, "gu");
 export const ETA_SPLIT = /(\p{Nd}+(?:\.\p{Nd}+)?) ?([smh])/gu;
@@ -1185,6 +1186,7 @@ export const ETA_UNIT_S: Readonly<Record<string, number>> =
   { s: 1.0, m: 60.0, h: 3600.0 };
 
 /** (epoch, seconds left) off the LAST ETA report in `records`, or [].
+ * An E_ETA_INF report has Infinity left.
  *
  * Only what the agent itself wrote counts: the text blocks of assistant
  * records.  A tool result that quotes the line, or the skill's text
@@ -1203,8 +1205,9 @@ export function etaReport(records: readonly unknown[]): number[] {
         .matchAll(ETA_LINE)].map((m) => m[1]);
       const epoch = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
       if (hits.length && epoch !== null) {
-        let secs = 0;
-        for (const [, n, unit] of hits[hits.length - 1].matchAll(ETA_SPLIT)) {
+        const hit = hits[hits.length - 1];
+        let secs = hit === E_ETA_INF ? Infinity : 0;
+        for (const [, n, unit] of hit.matchAll(ETA_SPLIT)) {
           secs += parseFloat(pyAsciiDigits(n)) * ETA_UNIT_S[unit];
         }
         last = [epoch, secs];
@@ -1220,6 +1223,17 @@ export function etaReport(records: readonly unknown[]): number[] {
 export function etaFinish(eta: readonly number[]): number | null {
   if (eta.length === 0) return null;
   return eta[0] + eta[1];
+}
+
+/** An ETA report as a fold saves it.  JSON has no infinity, so an
+ * E_ETA_INF report's seconds left are saved as null. */
+export function etaJson(eta: readonly number[]): (number | null)[] {
+  return eta.map((x) => Number.isFinite(x) ? x : null);
+}
+
+/** An ETA report as etaJson saved it, its null seconds left Infinity. */
+export function etaOfJson(eta: readonly (number | null)[]): number[] {
+  return eta.map((x) => x ?? Infinity);
 }
 
 /** The tool a subagent hands its final report back with.  The call ends

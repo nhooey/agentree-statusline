@@ -53,7 +53,7 @@ export const STATE_KINDS = {
     "prefix": "claude-main-fold-",
     "key": ["transcript"],
     "suffix": "",
-    "format": 9,
+    "format": 10,
     "part_bytes": 1000000,
     "check_bytes": 4096,
   },
@@ -73,7 +73,7 @@ export const STATE_KINDS = {
     "prefix": "claude-agent-fold-",
     "key": ["transcript"],
     "suffix": "",
-    "format": 6,
+    "format": 7,
     "check_bytes": 4096,
   },
   // The agent panel's inbox: for each file of a session that can send

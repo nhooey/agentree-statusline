@@ -7,5 +7,7 @@ quote, with a number and a unit (s, m or h) in place of `<n><s|m|h>`:
 - The figure is the wall-clock time left on your whole task, not the total.
 - Write it once you have a plan, after each milestone, and whenever your
   estimate changes by a quarter or more; write `ETA 0s` when you finish.
+- Write `ETA ∞` while waiting on anything with no time estimate, but not on
+  subagents.
 - When told to `recurse`, load the `coding-agent-usage-line-report-eta`
   skill with the Skill tool and follow it.

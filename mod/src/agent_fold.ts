@@ -10,7 +10,7 @@
 // file, and else the other.
 import type { AgentFold, AgentRaw } from "./claude_records.ts";
 import {
-  bgInfoJson, bgInfoOf, newAgentFold, pyJoin,
+  bgInfoJson, bgInfoOf, etaJson, etaOfJson, newAgentFold, pyJoin,
 } from "./claude_records.ts";
 import { sha256Hex } from "./sha256.ts";
 import { stateName } from "./state.ts";
@@ -50,7 +50,7 @@ export function agentFoldText(f: AgentFold, seq: number, tail: string):
   const e = f.etaState;
   return JSON.stringify({
     format: AGENT_FOLD_FORMAT, seq, pos: f.pos, tail, pid: f.pid,
-    eta: [e[0], e[1], e[2], e[3]], span: f.spanState, work: f.work,
+    eta: [etaJson(e[0]), e[1], e[2], e[3]], span: f.spanState, work: f.work,
     pending: [...f.pending].map(([k, [t, name]]) => [k, t, name]),
     tools: f.tools, waiting: f.waiting, recs: f.recs, wrote: [...f.wrote],
     added: f.added, removed: f.removed, compactions: f.compactions,
@@ -75,7 +75,7 @@ export function agentFoldOf(text: string | null):
     }
     const recs = o.recs as AgentRaw[];
     const f: AgentFold = { ...newAgentFold(), pid: o.pid,
-      etaState: [o.eta[0], Boolean(o.eta[1]), o.eta[2], o.eta[3]],
+      etaState: [etaOfJson(o.eta[0]), Boolean(o.eta[1]), o.eta[2], o.eta[3]],
       spanState: [o.span[0], o.span[1]], work: o.work,
       pending: new Map(o.pending.map(
         ([k, t, name]: [string, number, string]) => [k, [t, name]])),

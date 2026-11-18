@@ -227,3 +227,33 @@ test("a head over its cap is not saved", () => {
   assert.equal(mf.foldSave(f, mf.foldMeta(new Uint8Array(0), 0),
     mf.newSaveMark(), 1000, 1000), null);
 });
+
+// JSON has no infinity: an ∞ report is saved, and read back, as one, on
+// the thread and on its turn.
+test("an ∞ report saves and reads back as ∞", () => {
+  const stamp = "2026-11-16T12:00:00.000Z";
+  const recs = [{ type: "user", userType: "external", timestamp: stamp,
+    uuid: "u1", promptId: "p1",
+    message: { role: "user", content: "do a thing" } },
+  { type: "assistant", timestamp: stamp, uuid: "a1", requestId: "r1",
+    message: { id: "m1", model: "claude-opus-4-5", role: "assistant",
+      content: [{ type: "text",
+        text: "⛳ skills/coding-agent-usage-line-report-eta: ETA ∞" }],
+      stop_reason: "end_turn", usage: { input_tokens: 1,
+        output_tokens: 1 } } }];
+  const bytes = new TextEncoder().encode(
+    recs.map((r) => JSON.stringify(r) + "\n").join(""));
+  const f = mf.newMainFold();
+  foldMain(f, cr._recordsOf(bytes));
+  const want = [Date.parse(stamp) / 1000, Infinity];
+  assert.deepEqual(f.tr.etaState[0], want);
+  assert.equal(f.tr.etaState[1], false, "parked, not done");
+  assert.deepEqual(f.tu.turns.at(-1)?.eta, want);
+  const got = mf.foldSave(f, mf.foldMeta(bytes, bytes.length))!;
+  const files = new Map<string, string>([...got.parts.map(
+    ([i, t]) => [mf.partName(i), t] as [string, string]),
+  [got.slot, got.head]]);
+  const back = mf.foldLoad((n) => files.get(n) ?? null)!;
+  assert.deepEqual(back.fold.tr.etaState[0], want);
+  assert.deepEqual(back.fold.tu.turns.at(-1)?.eta, want);
+});

@@ -52,6 +52,11 @@ Braille gauge cells (`E_GAUGE`) are Neutral, but have no emoji form for a
 terminal to widen, and U+2800 holds a gauge's width at a zero share. Both
 are `E_*` constants, so `probe-advance.sh` measures them.
 
+⛳'s figure ∞ (`E_ETA_INF`, U+221E) breaks rule 2 too: it is Ambiguous, but
+it is the figure an agent writes in its report, and the readout draws what
+was written. `visWidth` counts it one column, and `probe-advance.sh`
+measures it.
+
 ## Diagnosing a misaligned row
 
 **Measure, don't infer.** A width deduced from which row looks wrong has been

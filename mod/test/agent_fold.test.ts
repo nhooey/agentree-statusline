@@ -124,3 +124,24 @@ test("a saved fold is read on from its slot and saved to the other", () => {
     last.replace('"seq":1,', '"seq":2,'));
   fs.rmSync(state, { recursive: true });
 });
+
+// JSON has no infinity: an ∞ report is saved, and read back, as one; in
+// the message that ends the turn, it parks the agent.
+test("an ∞ report parks the agent, and saves and reads back as ∞", () => {
+  const stamp = "2026-11-16T12:00:00.000Z";
+  const recs = [{ type: "user", timestamp: stamp,
+    message: { content: "do a thing" } },
+  { type: "assistant", timestamp: stamp, message: { id: "m1",
+    content: [{ type: "text",
+      text: "⛳ skills/coding-agent-usage-line-report-eta: ETA ∞" }],
+    stop_reason: "end_turn" } }];
+  const f = cr.newAgentFold();
+  cr.foldAgentBytes(f, new TextEncoder().encode(
+    recs.map((r) => JSON.stringify(r) + "\n").join("")), true);
+  const want = [Date.parse(stamp) / 1000, Infinity];
+  assert.deepEqual(f.etaState[0], want);
+  assert.equal(f.etaState[1], false, "parked, not done");
+  const [, , g] = agentFoldOf(agentFoldText(f, 1, "t"))!;
+  assert.deepEqual(g.etaState[0], want);
+  assert.equal(g.etaState[1], false);
+});

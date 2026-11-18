@@ -31,6 +31,8 @@ For example, a task with about four minutes to go gets a line with `ETA 4m`.
 - Write it once you have a plan, again after each milestone, and whenever
   your estimate changes by a quarter or more.
 - Write one last line with an ETA of 0s when you finish.
+- Write `ETA ∞` while waiting on anything with no time estimate, but not on
+  subagents.
 - If you end your turn to wait on background work, put the line in that
   last message. A turn that ends without one reads as finished.
 - Never write the line for any other reason.
@@ -69,6 +71,7 @@ For example, a task with about four minutes to go gets a line with `ETA 4m`.
 
    Where only some subagents gate later work, add that work after the
    ones it waits on, and take the longest path through the whole plan.
+   The aggregate is ∞ if any path through the plan is.
 4. Write the aggregate as your ETA line in your own reply. If you have a
    parent agent, also send it the same number; the message is in addition
    to your own line, never in place of it.

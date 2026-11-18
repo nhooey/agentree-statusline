@@ -6,6 +6,7 @@ import * as ar from "../src/agent_row.ts";
 import {
   foldAgentBytes, newAgentFold, NO_LIMITS,
 } from "../src/claude_records.ts";
+import { inheritEta } from "../src/cells.ts";
 import { agentUsageOf } from "../src/subagent_tasks.ts";
 
 test("a waiting agent is paused, on its shell, its Monitor, its agents, " +
@@ -113,4 +114,61 @@ test("a SubagentHandback ends the agent as a 0s sign-off does; resumed, it " +
   assert.ok(ar.parked("completed", m.eta, T0 + 14 * 60, false,
     m.background));
   assert.equal(ar.agentState("completed", m, false, T0 + 14 * 60)[0], "🟡");
+});
+
+test("an ∞ report reads ∞, never counted down or over, and parks the " +
+  "agent", () => {
+  const st = fm.settings({}, true, false, 5);
+  const NOW = 1786847000;
+  const own = [NOW - 600, Infinity];
+  const cell = (status: string, at: number): string => (ar.agentCells(st,
+    { id: "w", status, startTime: (NOW - 900) * 1000 },
+    { eta: own, last_epoch: NOW - 600 }, {}, {}, NO_LIMITS, at)
+    .eta ?? []).map((s) => s.text).join("");
+  for (const at of [NOW, NOW + 86400]) {
+    assert.match(cell("running", at), /^⛳ +∞$/u);
+    assert.match(cell("completed", at), /^⛳ +∞$/u);
+  }
+  assert.ok(ar.parked("completed", own, NOW + 86400, false, []));
+  assert.deepEqual(ar.agentState("completed", { eta: own, pending: [],
+    background: [] }, false, NOW + 86400), ["🟡", "⛳"]);
+});
+
+test("an ended agent draws no ∞: killed, failed, or completed with " +
+  "nothing left to wait on", () => {
+  const st = fm.settings({}, true, false, 5);
+  const NOW = 1786847000;
+  const cell = (status: string, own: number[], shown: number[] | false):
+    string => (ar.agentCells(st,
+    { id: "e", status, startTime: (NOW - 900) * 1000 },
+    { eta: own, last_epoch: NOW - 600 }, {}, {}, NO_LIMITS, NOW,
+    shown as never).eta ?? []).map((s) => s.text).join("");
+  for (const status of ["killed", "failed"]) {
+    assert.equal(cell(status, [NOW - 600, Infinity], false), "", status);
+  }
+  // Signed off itself, with a stale ∞ from below and no agent it waits on.
+  assert.equal(cell("completed", [NOW - 600, 0], [NOW - 900, Infinity]), "");
+  // A finite overrun on an ended row still stays, frozen.
+  assert.match(cell("killed", [NOW - 840, 60], false), /^⛳ +\+3m$/u);
+});
+
+test("a parent reads ∞ while an agent it waits on does", () => {
+  const NOW = 1786847000;
+  const task = (id: string) => ({ id, status: "running",
+    startTime: (NOW - 900) * 1000 });
+  const etas = ar.inheritedEtas([
+    [task("p"), { eta: [NOW - 60, 300] }, {}, {}],
+    [task("q"), { eta: [] }, {}, {}],
+    [task("c"), { eta: [NOW - 30, Infinity] }, { parentAgentId: "p" }, {}],
+    [task("d"), { eta: [NOW - 30, Infinity] }, { parentAgentId: "q" }, {}],
+  ]);
+  for (const id of ["p", "q"]) {
+    const [at, left] = etas.get(id)!;
+    assert.ok(Number.isFinite(at), id);
+    assert.equal(left, Infinity, id);
+  }
+  // With no start and no report of its own, still an epoch to count from.
+  const [at, left] = inheritEta([], [Infinity], null);
+  assert.ok(Number.isFinite(at));
+  assert.equal(left, Infinity);
 });

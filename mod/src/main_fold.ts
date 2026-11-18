@@ -16,8 +16,8 @@ import type {
   TurnsFold,
 } from "./claude_records.ts";
 import {
-  bgInfoJson, bgInfoOf, foldTranscript, foldTurns, newTranscriptFold,
-  newTurnsFold,
+  bgInfoJson, bgInfoOf, etaJson, etaOfJson, foldTranscript, foldTurns,
+  newTranscriptFold, newTurnsFold,
 } from "./claude_records.ts";
 import { sha256Hex } from "./sha256.ts";
 import { STATE_KINDS } from "./state_spec.ts";
@@ -104,7 +104,7 @@ function turnJson(t: TurnBuild): unknown {
     out: t.out, ctx: t.ctx, n: t.n, usd: t.usd, an: t.an, aids: t.aids,
     t0: t.t0, t1: t.t1, parts: t.parts, tools: t.tools, waits: t.waits,
     am: t.am, at: t.at, pid: t.pid, tidx: t.tidx, la: t.la, lr: t.lr,
-    eta: t.eta, dur: t.dur ?? null, compact: t.compact ?? null };
+    eta: etaJson(t.eta), dur: t.dur ?? null, compact: t.compact ?? null };
 }
 
 function turnOf(o: any): TurnBuild {
@@ -112,7 +112,7 @@ function turnOf(o: any): TurnBuild {
     cr: o.cr, out: o.out, ctx: o.ctx, n: o.n, usd: o.usd, an: o.an,
     aids: o.aids, t0: o.t0, t1: o.t1, parts: o.parts, tools: o.tools,
     waits: o.waits, am: o.am, at: o.at, pid: o.pid, tidx: o.tidx, la: o.la,
-    lr: o.lr, eta: o.eta };
+    lr: o.lr, eta: etaOfJson(o.eta) };
   if (o.dur !== null) t.dur = o.dur;
   if (o.compact !== null) t.compact = o.compact;
   return t;
@@ -185,7 +185,7 @@ function headText(f: MainFold, meta: FoldMeta, counts: readonly number[],
       user_ts: tr.userTs, user_text: tr.userText, asst_ts: tr.asstTs,
       asst_text: tr.asstText, pending: pendingJson(tr.pending),
       first: tr.first, open_at: tr.openAt, prev: tr.prev,
-      eta: [e[0], e[1], e[2], e[3]], queued: tr.queued,
+      eta: [etaJson(e[0]), e[1], e[2], e[3]], queued: tr.queued,
       compactions: tr.compactions, background: [...tr.background],
       bg_info: bgInfoJson(tr.bgInfo),
       idle_at: tr.idleAt, last_seen: tr.lastSeen,
@@ -354,7 +354,7 @@ export function foldOfSaved(
     tr.openAt = h.open_at;
     tr.prev = h.prev;
     const eta: EtaState = h.eta;
-    tr.etaState[0] = eta[0];
+    tr.etaState[0] = etaOfJson(eta[0]);
     tr.etaState[1] = eta[1];
     tr.etaState[2] = eta[2];
     tr.etaState[3] = eta[3];

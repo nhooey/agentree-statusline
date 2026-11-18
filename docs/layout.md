@@ -666,13 +666,17 @@ That is an agent parking on background work, and Claude Code marks it completed 
 An agent that has ended (completed with nothing left to wait on, killed or failed) is read at its last record and stops there, as its ⌛ does: an overrun it never signed off stays frozen, in amber, at what it was when the agent ended.
 One that ended on its own `0s` sign-off, with no child pushing past it, draws no ⛳ at all, as the main thread's sign-off isn't drawn once the thread is idle.
 
+A report of `ETA ∞` is an agent waiting on something with no time estimate, such as a person.
+Its row reads `∞`, neither counted down nor running over, until the next report, and a row waiting on a descendant that reads `∞` reads `∞` too.
+A row that has ended (killed, failed, or completed with nothing left to wait on) draws no `∞`: what it waited on no longer holds it.
+
 **Inherited up the tree.** A parent isn't done until the children it is waiting on are, so a row counts to the latest finish among its own estimate and those of its running descendants, recursively.
 Its own wins when its own plan runs longer, and a finished child counts for nothing.
 Each agent reports its own conceptual ETA for its whole task, including rounds of subagents it plans to start later, which only it knows about.
 It doesn't add up its children's reports; the maximum here keeps its row from finishing before any of them.
 
 The 🧵 row in the tree carries the same cell for the main thread, as the root of that tree: its last report in the answer to the current prompt, counted from that prompt, pushed out to the latest finish of any agent still answering.
-An agent that has written nothing for half an hour is taken for dead rather than late.
+An agent that has written nothing for half an hour is taken for dead rather than late, unless its last report is `∞` and it has written since the prompt: an agent waiting on a person is silent, and one silent since an earlier prompt may have ended unseen.
 A new prompt clears the main thread's own report, and so does the answer ending.
 Its late `+` follows the same colour rule as a row's: bright red past the main thread's own `0s` sign-off, amber past an estimate, and amber again when a live agent's later finish is the one it ran past.
 The 🎤 row's ⛳ is the turn's own last report alone, and the receipt keeps it after the turn ends.
