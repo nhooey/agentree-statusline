@@ -69,11 +69,11 @@
   // How many subagent rows the band's tree draws at most; the later
   // siblings past it are summed on their parent's "… N more" row.
   "subagent-rows": 6,
-  // How many seconds a tree row that finished stays drawn where it stood,
-  // ended: a subagent before it goes into "✅ N done", a background shell
-  // or Monitor before it goes.  Counted from when it finished; 0 moves it
-  // at once.
-  "finished-linger": 5,
+  // How many seconds a tree row that finished, a subagent or a background
+  // shell or Monitor, stays drawn where it stood, ended, its parents with
+  // it, before it goes.  Counted from when it finished; 0 drops it at
+  // once.
+  "finished-within": 120,
   // Where the 💳 account is drawn: "row", a row of its own where
   // rows.account.place puts it, in its colours, or "tail", at the footer
   // line's right end, plain and dim, whatever rows.account.place says.

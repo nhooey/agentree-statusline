@@ -258,13 +258,14 @@ paused ones under 🧵 then, and leaves the ones that ended to the turn's
 receipt ([Between turns](layout.md#between-turns)). `"running"` draws
 them only while a turn runs.
 
-`finished-linger` is how many seconds a row of the band's tree that
-finished stays drawn where it stood, ⚫ and its figures as they ended: a
-subagent that ended, before it goes into `✅ N done`, and a background
-shell or Monitor that closed, before it goes. It counts from when the row
-finished, the agent's last record or the record that closed the task, so
-a reload does not start it again. The defaults say 5; 0 moves a row at
-once. A lingering subagent counts toward `subagent-rows` as a live one
+`finished-within` is how many seconds a row of the band's tree that
+finished stays drawn where it stood, ⚫ and its figures as they ended,
+before it goes: a subagent that ended, and a background shell or Monitor
+that closed. The rows above a finished one stay drawn with it, so it
+keeps its place in the tree. It counts from when the row finished, the
+agent's last record or the record that closed the task, so a reload does
+not start it again. The defaults say 120; 0 drops a row at once. A
+finished subagent counts toward `subagent-rows` as a live one
 does ([The subagent rows](layout.md#the-subagent-rows)).
 
 The log's `config options:` line lists every option a layer above the

@@ -140,7 +140,7 @@ different on one readout, the table says so.
 | 🎤 | Turn | the turn; above the prompt while it runs | ✓ | | ✓ |
 | 🧵 | Main thread | the main thread alone; in the band's tree under 🎮; on the receipt when `rows` stamps it, or over the subagents the turn ran | ✓ | | ✓ |
 | 🎮 | Session | the main thread and every agent; the root of the band's tree above the prompt; on the receipt when `rows` stamps it | ✓ | | ✓ |
-| ⊟ ⊞ | Fold | in the band's tree, a row with children, opened or folded; `✅ N done` and `… N more` are folded | ✓ | | |
+| ⊟ ⊞ | Fold | in the band's tree, a row with children, opened or folded; `… N more` is folded | ✓ | | |
 
 ### Chat and project
 

@@ -202,8 +202,8 @@ binary, then the changelog" --cols 200`):
   column, a blank past the deepest kind glyph drawn, and every name
   three columns after it, so the names, the text after them and every
   figure line up on every row. The column moves when a deeper row
-  appears or goes. A grouped row's `…` or `✅` stands where a kind glyph
-  would, and its `N more` or `N done` in the names' column; on 🎮 the
+  appears or goes. A grouped row's `…` stands where a kind glyph
+  would, and its `N more` in the names' column; on 🎮 the
   session's name stands there, then 📦 🌿 🔀, and with no name 📦
   does. On a narrow terminal the blanks before the circle stay and the
   name after it is cut with `…`.
@@ -212,12 +212,12 @@ binary, then the changelog" --cols 200`):
   folds or opens its row. A folded agent keeps its own figures and draws
   👶🏻 and how many agents are hidden under it, and 💻 📡 how many of its
   own shells and Monitors; 🧵 folded hides 🎤 with its agents, and
-  counts its own shells and Monitors with 💻 📡. The grouped rows below
-  start folded and every other row opened; opened, `… N more` lists the
-  agents past the cap and `✅ N done` the agents that ended.
+  counts its own shells and Monitors with 💻 📡. The grouped row below
+  starts folded and every other row opened; opened, `… N more` lists the
+  agents past the cap.
 - **The fold state.** Each row stays as it was left for the rest of the
   session, kept in the mod's `$.state` by key: an agent's id, fixed keys
-  for 🎮 and 🧵, and a grouped row's parent's key with `/more` or `/done`.
+  for 🎮 and 🧵, and a grouped row's parent's key with `/more`.
   When an agent ends (it leaves Claude Code's agent list, or completes,
   fails or is killed), its fold and its grouped rows' go, so no later row
   takes a fold it never had; 🎮's and 🧵's last the session.
@@ -265,22 +265,21 @@ binary, then the changelog" --cols 200`):
   paused, not 🟢: its 🛫 column is what it waits on, 💻 a shell, 📡 a
   Monitor, 💤 an agent under it, or 📋 for anything else, and how long
   since its last record ([State](#state)), not a work clock. It is live:
-  it keeps its row and its progress update, counts toward the cap, and is
-  never in `✅ N done`.
+  it keeps its row and its progress update, counts toward the cap, and
+  never goes while it waits.
 - **Shells and Monitors.** Each background shell (a Bash call run in the
   background, or moved there past its timeout) and each Monitor that a
   thread started and has not heard the end of is a leaf under that
   thread: under 🧵 for the main thread's, under the agent for an
-  agent's, after its agents and `… N more`, in the order they opened, and
-  before `✅ N done`. Its label is 💻 for a shell or 📡 for a Monitor,
+  agent's, after its agents and `… N more`, in the order they opened. Its label is 💻 for a shell or 📡 for a Monitor,
   🟢, then the call's `description`, else the first line of its
   `command`, else `shell` or `monitor`; its one figure is ⌛, how long it
   has run. It counts against no cap and does not fold; a click on it
   shows it as a toast, with its whole command and its output file (see
   the clicks above), which the folds keep with its label. Once the thread hears its
   end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at
-  how long it ran, for `finished-linger` seconds after the record that
-  closed it (5 as the mod ships), and then leaves. An opened thread leaves its 💻
+  how long it ran, for `finished-within` seconds after the record that
+  closed it (120 as the mod ships), and then leaves. An opened thread leaves its 💻
   📡 counts to these rows; a folded one hides them and counts them. With
   the panel inputs' `corpus/02-parked`,
   whose Pine waits on a shell and Poppy on a Monitor and a shell, and a
@@ -305,22 +304,21 @@ binary, then the changelog" --cols 200`):
      ├─ 💻    🟢 Run the plugin tests                                           ⌛6.2m
      ╰─ 📡    🟢 Watch PR #38 for comments                                      ⌛ 25m
   ```
-- **The grouped rows.** `✅ N done`, last under 🧵 while a turn runs,
-  sums the subagents that ended since the turn opened; its 🛫 column is ✅ and how long ago
-  the last one ended. A subagent that ends keeps its own row where it
-  stood, ⚫ and its figures as they ended, for `finished-linger` seconds
-  after its last record (5 as the mod ships), and only then goes into
-  `✅ N done`. Past `subagent-rows` live subagent rows, running, paused or
-  lingering (6 as the mod ships), the later siblings fold into their parent's `… N more`,
+- **Finished agents.** A subagent that ends keeps its own row where it
+  stood, ⚫ and its figures as they ended, for `finished-within` seconds
+  after its last record (120 as the mod ships), and its parents stay
+  drawn with it; then it goes, and the turn's receipt holds it.
+- **The grouped row.** Past `subagent-rows` live subagent rows, running,
+  paused or finished within `finished-within` (6 as the mod ships), the later siblings fold into their parent's `… N more`,
   which sums them and their subagents, 🟢 and how many of them run in its
   🛫 column; every row drawn keeps its parents. A grouped row's 🎯 is
   weighted by each agent's ▴, its ⌛ is the agents' ⌛ summed.
 
 The subagents' `live` in `rows` picks when they are drawn: `"running"`
 while a turn runs, `"always"` between turns too, `"never"` not at all;
-the mod ships `"always"`. Between turns only the running and paused
-subagents are drawn, with no `✅ N done`: the turn's receipt holds the
-ones that ended ([Between turns](#between-turns)). Their `place` is
+the mod ships `"always"`. Between turns the running and paused subagents
+are drawn, and the ones that ended for `finished-within` seconds: the
+turn's receipt holds the ones that ended ([Between turns](#between-turns)). Their `place` is
 always `"above"`. With 🎮 placed under the footer
 line the tree has no root, and 🧵 is its top row, with 🎤 under it; with
 🧵 placed there, 🎤 and then the subagents hang from 🎮, and with both
@@ -553,8 +551,8 @@ its next turn runs on and no 🛫, and 💳 stays under the footer line
 Background subagents keep running, and spending, after the turn that
 started them ends, so they stay in the tree under 🧵, each with its 🟢 or
 🟡, past the cap folded into `… N more` as while a turn runs. The ones
-that ended are left to the turn's receipt: between turns the tree draws
-no `✅ N done`. With subagents running between turns (`--phase done
+that ended stay for `finished-within` seconds, ⚫, and then are left to
+the turn's receipt. With subagents running between turns (`--phase done
 --agents corpus/01-mixed --cap 3`, above the prompt):
 
 ```
@@ -680,7 +678,7 @@ completed, failed or been killed, with no agent under it still at work.
 One still running or paused is owed a row instead: the mod keeps it,
 and the first receipt stamped after it ends draws it, even when it
 wrote nothing in that turn, as an agent that ends between turns does. The receipt's tree is drawn whole: no
-`… N more` cap, no `✅ N done`, no fold marks and every agent opened. 🏁
+`… N more` cap, no fold marks and every agent opened. 🏁
 marks 🎤 and each agent, and 🧵 keeps its ⚫. 🎤 is followed by
 the prompt the turn answered, 🧵 and each agent by the first line of the
 last text it wrote. With 🎮 stamped, the tree hangs from it; a turn that

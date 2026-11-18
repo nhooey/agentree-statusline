@@ -273,7 +273,7 @@ export async function statusDoc($: $, places: Places): Promise<Dict> {
   // The mod's alone: the subagents and the progress updates the band's
   // tree draws (subagents.ts), and the main thread's open background
   // shells and Monitors, which it draws under 🧵, and the ones it last
-  // closed, which it keeps drawn for `finished-linger`; and the home
+  // closed, which it keeps drawn for `finished-within`; and the home
   // folder, which a shell's toast draws as `~` in its output file.
   const ended = path && fold ? endedTasks(fold.tr.bgEnded) : []
   const agents = path && fold ? {

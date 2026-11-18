@@ -129,11 +129,11 @@ export const OPTIONS = {
     "doc-table": null,
     "doc": "How many subagent rows the band's tree draws at most. Past it, the later siblings under one parent are summed on that parent's `… N more` row; every shown row's parents stay.",
   },
-  "finished-linger": {
+  "finished-within": {
     "type": "int",
     "minimum": 0,
     "doc-table": null,
-    "doc": "How many seconds a row of the band's tree that finished stays drawn where it stood, ended: a subagent that ended, before it goes into `✅ N done`, and a background shell or Monitor that closed, before it goes. Counted from when it finished, its last record or the record that closed it; 0 moves it at once. A lingering subagent row counts toward `subagent-rows` as a live one does.",
+    "doc": "How many seconds a row of the band's tree that finished stays drawn where it stood, ended, its parents with it, before it goes: a subagent that ended, and a background shell or Monitor that closed. Counted from when it finished, its last record or the record that closed it; 0 drops it at once. A finished subagent row counts toward `subagent-rows` as a live one does.",
   },
   "account-place": {
     "type": "enum",
@@ -268,7 +268,7 @@ export type Options = {
     };
   };
   readonly subagentRows: number;
-  readonly finishedLinger: number;
+  readonly finishedWithin: number;
   readonly accountPlace: "row" | "tail";
   readonly planUsage: boolean;
   readonly weeklyWindows: {

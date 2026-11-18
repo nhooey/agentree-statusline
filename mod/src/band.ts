@@ -85,7 +85,7 @@ export type BandOpts = {
    * SUBAGENT_ROWS where absent. */
   readonly cap?: number;
   /** How many seconds the tree keeps a row that finished drawn,
-   * `finished-linger`; none where absent. */
+   * `finished-within`; none where absent. */
   readonly linger?: number;
   /** The band's tree's folds, by key (band_tree.ts); each row's default
    * where absent. */
@@ -530,9 +530,9 @@ function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
 /** The band's rows above the prompt, as the tree draws them
  * (band_tree.ts): of 🎮, 🎤 and 🧵, those `places` puts above and the
  * phase draws, whose scope `hide` leaves, and the subagents of the
- * document's `agents` where `opts.agents` draws them.  Between turns
- * the tree draws no `✅ N done`, so only the running and paused agents
- * stay: the turn that ended has its receipt.  🎮's 📦 🌿 🔀 link under
+ * document's `agents` where `opts.agents` draws them, those that ended
+ * for `finished-within` seconds after: the turn that ended has its
+ * receipt.  🎮's 📦 🌿 🔀 link under
  * the document's `github`, the repository's address on GitHub, where it
  * has one; its 📛 is the transcript's session name, in its colour. */
 export function treeOf(st: Settings, fig: Dict, rows: BandRows,

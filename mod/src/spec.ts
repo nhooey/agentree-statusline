@@ -1143,7 +1143,7 @@ export const E_TREE_BAR = "│";         // │  an ancestor whose siblings go o
 // Only these lines and a row's kind glyph move with its depth: the state
 // circles stand in one column, a blank past the deepest kind glyph drawn,
 // and the names three columns after it, 🎮's session name and a grouped
-// row's `N more` or `N done` with them.
+// row's `N more` with them.
 export const E_TREE_LAST = "╰";        // ╰  the band's last child
 export const E_TREE_DASH = "─";        // ─  a branch to a row with no children
 export const E_FOLD_OPEN = "⊟";        // ⊟  a row whose children are showing

@@ -38,8 +38,8 @@ export async function agentsDoc($: $, transcript: string, tr: Transcript,
   const pathOf = new Map<string, string>()
   for (const f of files) pathOf.set(agentLabelId(f.path), f.path)
   // An agent the list has let go is drawn only where its file's last
-  // record is in the turn, for `✅ N done`; a workflow's agents, which the
-  // list never has, not at all.
+  // record is in the turn, for `finished-within` and the turn's receipt;
+  // a workflow's agents, which the list never has, not at all.
   const ids = new Set(byId.keys())
   for (const [id, path] of pathOf) {
     const seen = folds.get(path)?.lastSeen ?? null

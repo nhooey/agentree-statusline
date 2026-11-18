@@ -24,7 +24,7 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  bgPath, bgText, foldShut, groupFold, MAIN_FOLD, pruneFolds, treeRows,
+  bgPath, bgText, foldShut, groupFold, pruneFolds, treeRows,
   workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
@@ -296,9 +296,6 @@ test("a grouped row draws its glyph where a kind glyph stands and its " +
     assert.equal(colOf(l, "…"), colOf(l, "⊞") + 2);
     assert.equal(colOf(l, "more") - 2, colOf(lines[1], "main"));
   }
-  const done = tree("corpus/01-mixed", {}, [], NOW - 3600)
-    .find((l) => l.includes("done"))!;
-  assert.match(done, /^   ╰⊞ ✅ {4}4 done/u);
 });
 
 test("🎮 draws the session's name in the names' column, before 📦, in " +
@@ -440,16 +437,11 @@ test("a folded agent draws ⊞ and counts every agent hidden under it", () => {
   assert.ok(!lines.some((l) => l.includes("Twig")));
 });
 
-test("✅ N done sums the agents that ended since the turn opened, under " +
-  "🧵 main", () => {
+test("the agents that ended past finished-within draw no row and no " +
+  "grouped row", () => {
   const lines = tree("corpus/01-mixed", {}, [], NOW - 3600);
-  const done = lines.find((l) => l.includes("done"))!;
-  assert.match(done, /^   ╰⊞ ✅ +4 done +✅  18m/u);
-  // Only those since the turn opened.
-  assert.match(tree("corpus/01-mixed", {}, [], 1786845500).find((l) =>
-    l.includes("done"))!, /✅ +2 done/u);
   assert.ok(!lines.some((l) => l.includes("Daisy")));
-  assert.ok(!tree("corpus/01-mixed").some((l) => l.includes("done")));
+  assert.ok(!lines.some((l) => l.includes("done")));
 });
 
 test("each thread's latest text follows its name, working or ended, and " +
@@ -473,7 +465,7 @@ test("🎤 draws the prompt typed last after its name, and chat.prompt " +
 
 test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +
   "and for how long since its last record, its progress update drawn, " +
-  "counted toward the cap and not in ✅ N done", () => {
+  "counted toward the cap and kept", () => {
   const turn = NOW - 3600;
   const waiting = { p1: "waiting", x1: "waiting" };
   const lines = tree("corpus/02-parked", { cap: 10 }, [], turn, waiting);
@@ -482,9 +474,8 @@ test("a waiting agent is paused and live: 🟡, its 🛫 what it waits on " +
   assert.match(row("Pine"), /🔩 +🟡 💻1 Pine .*💻  16m/u);
   // Yarrow waits on nothing its transcript names.
   assert.match(row("Yarrow"), /🔍 +🟡 Yarrow .*📋  13m/u);
-  assert.match(tree("corpus/02-parked", {}, [], turn).find((l) =>
-    l.includes("done"))!, /✅ +1 done/u);
-  assert.ok(!lines.some((l) => l.includes("done")));
+  assert.ok(!tree("corpus/02-parked", {}, [], turn).some((l) =>
+    l.includes("Yarrow")));
   // Each takes a row under the cap like any other live agent.
   const capped = tree("corpus/02-parked", { cap: 7 }, [], turn, waiting);
   assert.ok(capped.some((l) => /… +1 more/u.test(l)));
@@ -541,10 +532,9 @@ test("each open shell and Monitor is a leaf under the thread that " +
   const poppy = at("Poppy");
   assert.match(lines[poppy + 1], /^│  ├─ 📡 +🟢 Watch the CI checks +⌛2\.1m$/u);
   assert.match(lines[poppy + 2], /^│  ╰─ 💻 +🟢 Build the docs site +⌛2\.1m$/u);
-  // Before ✅ N done, which stays last under 🧵.
+  // Last under 🧵, with no agents that ended after them.
   const done = bgTree("corpus/01-mixed", {}, [], NOW - 3600);
-  assert.match(done.at(-2)!, /📡 +🟢 Watch PR #38/u);
-  assert.match(done.at(-1)!, /✅ +4 done/u);
+  assert.match(done.at(-1)!, /📡 +🟢 Watch PR #38/u);
 });
 
 /** The tree over 01-mixed's agents, Elm's last record `ago` seconds
@@ -565,16 +555,41 @@ function lingerTree(ago: number, linger: number, cap = 10): string[] {
     .trimEnd());
 }
 
-test("an agent that ended under finished-linger ago keeps its own row, " +
-  "ended, and goes into ✅ N done once it has lingered", () => {
-  const kept = lingerTree(2, 5);
+test("an agent that ended under finished-within ago keeps its own row, " +
+  "ended, and is gone once past it", () => {
+  const kept = lingerTree(100, 120);
   assert.ok(kept.some((l) => /^├─ \S+ +⚫ Elm/u.test(l)), kept.join("\n"));
-  assert.match(kept.at(-1)!, /✅ +3 done/u);
-  // Past it, Elm is in ✅ N done, as with no linger at all.
-  for (const lines of [lingerTree(6, 5), lingerTree(2, 0)]) {
+  assert.ok(!kept.some((l) => l.includes("done")), kept.join("\n"));
+  // Past it, Elm is gone, as with no window at all.
+  for (const lines of [lingerTree(121, 120), lingerTree(2, 0)]) {
     assert.ok(!lines.some((l) => l.includes("Elm")), lines.join("\n"));
-    assert.match(lines.at(-1)!, /✅ +4 done/u);
+    assert.ok(!lines.some((l) => l.includes("done")), lines.join("\n"));
   }
+});
+
+test("an ended parent stays drawn, ended, while a child it started " +
+  "finished within finished-within, and goes with it", () => {
+  // corpus/03-tree's g1 ended long ago; g2, under it, `ago` seconds ago.
+  const lines = (ago: number): string[] => {
+    const doc = corpusAgents("corpus/03-tree", "");
+    const tasks = (doc.tasks as TreeTask[]).map((t) => t.task.id === "g2"
+      ? { ...t, usage: { ...t.usage, last_seen: NOW - ago,
+        last_epoch: NOW - ago } } : t);
+    const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
+    const rows = treeRows(ST, { session: null, main: blank("main"),
+      turn: blank("turn"), workspace: null, mainPhase: "🟢", mainInbox: 0,
+      mainProgress: "", turnPhase: "🟢", agents: { tasks, limits: LIMITS,
+        now: NOW, turnStart: NOW - 3600, linger: 120 }, cap: 20 }, []);
+    const keys = fixedKeys(ST, 200, []);
+    return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
+  };
+  const kept = lines(30);
+  const parent = kept.findIndex((l) => l.includes("Gourd"));
+  assert.match(kept[parent], /^├⊟ 🎩 +⚫ Gourd/u, kept.join("\n"));
+  assert.match(kept[parent + 1], /^│  ╰─ 🔍 +⚫ Garlic/u, kept.join("\n"));
+  const gone = lines(200);
+  assert.ok(!gone.some((l) => l.includes("Gourd") || l.includes("Garlic")),
+    gone.join("\n"));
 });
 
 test("a lingering agent row counts toward subagent-rows as a live one " +
@@ -585,7 +600,7 @@ test("a lingering agent row counts toward subagent-rows as a live one " +
 });
 
 test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
-  "stopped, for finished-linger, and then goes", () => {
+  "stopped, for finished-within, and then goes", () => {
   const gone = (ago: number) => (d: Dict): Dict => ({ ...d,
     main_background: [(d.main_background as BgTask[])[1]],
     main_background_ended: [{ ...(d.main_background as BgTask[])[0],
@@ -670,9 +685,10 @@ function bandTree(phase: Phase, agents: Live): string[] {
 }
 
 test("between turns live \"always\" keeps the running agents under 🧵 " +
-  "and draws no ✅ N done, which the running turn draws", () => {
+  "and draws no grouped row of the ended ones, as the running turn " +
+  "draws none", () => {
   const running = bandTree("running", "always");
-  assert.ok(running.some((l) => /✅ +4 done/u.test(l)));
+  assert.ok(!running.some((l) => l.includes("done")));
   const done = bandTree("done", "always");
   assert.match(done[1], /^╰⊟ 🧵 +⚫ main/u);
   assert.ok(done.some((l) => /🔍 +🟢 Marigold/u.test(l)));
@@ -749,8 +765,6 @@ test("every row with children presses its fold, under its key, with its " +
   assert.ok(head.spans.every((s) => s.press?.kind === "view"));
   assert.deepEqual(rows[0].label[1].spans.map((s) => s.press),
     [undefined, undefined]);
-  const done = treeOfCase("corpus/01-mixed", {}, NOW - 3600);
-  assert.deepEqual(pressesOf(done.at(-1)!), ["fold:main/done:true"]);
 });
 
 test("each open shell's and Monitor's label toasts what the band knows " +
@@ -838,20 +852,11 @@ test("🎮 and 🧵 fold everything under them", () => {
   assert.match(main[1], /^╰⊞ 🧵 +🟢 main/u);
 });
 
-test("an opened … N more lists its agents under it, and an opened ✅ N " +
-  "done the agents that ended", () => {
+test("an opened … N more lists its agents under it", () => {
   const more = tree("corpus/03-tree", { cap: 2, folds: { "main/more": false } });
   const at = more.findIndex((l) => /… +1 more/u.test(l));
   assert.match(more[at], /^   ╰⊟ … +1 more/u);
   assert.match(more[at + 1], /^      ╰─ 🔍 +🟢 Moss/u);
-  const done = tree("corpus/01-mixed", { folds: { "main/done": false } }, [],
-    NOW - 3600);
-  const d = done.findIndex((l) => l.includes("4 done"));
-  assert.match(done[d], /^   ╰⊟ ✅ +4 done/u);
-  assert.equal(done.length, d + 5);
-  for (const name of ["Daisy", "Fern", "Kale", "Elm"]) {
-    assert.ok(done.slice(d + 1).some((l) => l.includes(name)), name);
-  }
 });
 
 test("🎮's 📦 🌿 🔀 link to the repository, its branch and its pull " +
@@ -876,17 +881,17 @@ test("🎮's 📦 🌿 🔀 link to the repository, its branch and its pull " +
 test("an ended agent's folds go, its grouped rows' with them, and 🎮's " +
   "and 🧵's stay", () => {
   const folds = { session: true, main: false, "main/more": false,
-    "main/done": false, t1: true, "t1/more": false, t2: true, gone: true,
+    t1: true, "t1/more": false, t2: true, gone: true,
     "gone/more": false };
   const tasks = [{ id: "t1", status: "running" },
     { id: "t2", status: "completed" }, { id: "t3", status: "failed" }];
   assert.deepEqual(pruneFolds(folds, tasks), { session: true, main: false,
-    "main/more": false, "main/done": false, t1: true, "t1/more": false });
+    "main/more": false, t1: true, "t1/more": false });
   const kept = { session: true, t1: false };
   assert.equal(pruneFolds(kept, tasks), kept);
   assert.equal(groupFold("t1", "more"), "t1/more");
-  assert.equal(foldShut({}, "main/done", true), true);
-  assert.equal(foldShut({ "main/done": false }, "main/done", true), false);
+  assert.equal(foldShut({}, "main/more", true), true);
+  assert.equal(foldShut({ "main/more": false }, "main/more", true), false);
 });
 
 test("the repository's address on GitHub is read off its remote, in each " +
@@ -1012,7 +1017,8 @@ test("stamped, no row presses anything", () => {
 
 /** The tree over corpus/02-parked's agents at `now`, with Sage (s1) ended
  * as `status` on its own last report `eta` and its last record 200s
- * before NOW, as plain lines. */
+ * before NOW, kept by a finished-within long enough to draw it, as plain
+ * lines. */
 function endedTree(status: string, eta: readonly number[],
   now: number): string[] {
   const doc = corpusAgents("corpus/02-parked", "");
@@ -1023,8 +1029,7 @@ function endedTree(status: string, eta: readonly number[],
   const rows = treeRows(ST, { session: null, main: null, turn: null,
     workspace: null, mainPhase: "🟢", mainInbox: 0, mainProgress: "",
     turnPhase: "🟢", agents: { tasks, limits: LIMITS, now,
-      turnStart: NOW - 3600 }, cap: 10,
-    folds: { [groupFold(MAIN_FOLD, "done")]: false } }, []);
+      turnStart: NOW - 3600, linger: 3600 }, cap: 10 }, []);
   const keys = fixedKeys(ST, 200, []);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, []))));
 }

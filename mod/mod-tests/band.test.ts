@@ -87,7 +87,7 @@ const PLACES = { turn: OPTIONS.rows.turn.place,
   agent: OPTIONS.rows.agent.place, session: OPTIONS.rows.session.place }
 // When the band's tree draws the subagents, and how many at most.
 const AGENTS = { agents: OPTIONS.rows.subagents.live,
-  cap: OPTIONS.subagentRows }
+  cap: OPTIONS.subagentRows, linger: OPTIONS.finishedWithin }
 // How far in every row starts, above the prompt, under the footer line and
 // in the receipt.
 const INSET = OPTIONS.hintInset
@@ -976,12 +976,12 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
     { ...opts, place: 'above', indent: INSET })
   const below = bandLines(BAND_ST, doc, COLS, HIDE,
     { ...opts, place: 'footer', inset: INSET })
-  // 🎮, then 🧵, and under it 🎤 and the fixture's fork, ended this turn.
-  expect([above.length, below.length]).toEqual([4, 0])
+  // 🎮, then 🧵, and under it 🎤; the fixture's fork ended past
+  // finished-within, so it is gone.
+  expect([above.length, below.length]).toEqual([3, 0])
   expect(text(above[0])).toMatch(/^ *⊟ 🎮 +📦/u)
   expect(text(above[1])).toMatch(/^ *╰⊟ 🧵/u)
-  expect(text(above[2])).toMatch(/^ *   ├─ 🎤/u)
-  expect(text(above[3])).toMatch(/^ *   ╰⊞ ✅ +1 done/u)
+  expect(text(above[2])).toMatch(/^ *   ╰─ 🎤/u)
   expect(await drawnRows(ui.above)).toEqual(expected(above))
   // The 💳 row alone under the footer line, a row of its own by default,
   // without the 📦 🌿 🔀 the tree's root draws.
@@ -1068,7 +1068,7 @@ test('the main thread\'s open background shell is in the document and ' +
     .toBe(true)
 })
 
-test('a shell that closed stays drawn, ended, for finished-linger, and ' +
+test('a shell that closed stays drawn, ended, for finished-within, and ' +
   'goes when it runs out with no read in between', async ($, on) => {
   const w = world(on)
   const path = withShell(w, '2026-08-16T01:44:00Z')
@@ -1083,6 +1083,9 @@ test('a shell that closed stays drawn, ended, for finished-linger, and ' +
   bytes.set(was)
   bytes.set(extra, was.length)
   w.files.set(path, bytes)
+  // A window short enough that no tick reads a document before it ends.
+  w.files.set(CWD + '/.config/coding-agent-usage-line/config.local.jsonc',
+    encoder.encode('{"finished-within": 5}'))
   await start($, w, 'terminal', path)
   const agents = lastDoc(w).agents as Dict
   expect(agents.main_background).toEqual([])
@@ -1241,7 +1244,7 @@ test('above the prompt the rows are plain, and the band logs its widths ' +
     // footer line takes one.
     const buttons = await band.findAll({ type: 'Button' })
     expect(buttons.map((b) => b.key).sort()).toEqual(['fold:main',
-      'fold:main/done', 'fold:session', 'view:main', 'view:turn'])
+      'fold:session', 'view:main', 'view:turn'])
     expect(buttons.every((b) => b.props?.plain === true &&
       b.props?.hotkey === undefined)).toBe(true)
     expect(await (await footer($)).findAll({ type: 'Button' })).toEqual([])
@@ -2770,8 +2773,8 @@ const PARENT: AgentInfo = { id: 'p1', type: 'Explore', name: 'Parent',
 const KID: AgentInfo = { id: 'c1', type: 'Explore', name: 'Kid',
   description: 'Look closer', status: 'running', parentId: 'p1' }
 
-test('a press on a fold mark folds its row and opens it again, and the ' +
-  'grouped rows open', async ($, on) => {
+test('a press on a fold mark folds its row and opens it again', async ($,
+  on) => {
   const { w } = clicking(on, [PARENT, KID])
   await start($, w, 'terminal', STATUS)
   const { band, want } = await clickBand($, w)
@@ -2788,12 +2791,6 @@ test('a press on a fold mark folds its row and opens it again, and the ' +
   expect(folded.some((r) => r.text.includes('Kid'))).toBe(false)
   await band.press({ key: 'fold:p1' })
   expect(await drawnRows(band)).toEqual(want({ p1: false }))
-  // `✅ N done` starts folded; opened, it lists the agent that ended.
-  expect(opened.some((r) => r.text.includes('fork'))).toBe(false)
-  await band.press({ key: 'fold:main/done' })
-  const done = await drawnRows(band)
-  expect(done).toEqual(want({ p1: false, 'main/done': false }))
-  expect(done.length).toBe(opened.length + 1)
   // 🎮 folds the whole tree under it.
   await band.press({ key: 'fold:session' })
   const root = await drawnRows(band)
@@ -2860,14 +2857,12 @@ async ($, on) => {
   expect(ran).toEqual([])
 })
 
-test('an agent that ends takes its fold with it, and 🧵\'s grouped row ' +
-  'keeps its own', async ($, on) => {
+test('an agent that ends takes its fold with it', async ($, on) => {
   const listed = [PARENT, KID]
   const { w } = clicking(on, listed)
   await start($, w, 'terminal', STATUS)
   const { band, want } = await clickBand($, w)
   await band.press({ key: 'fold:p1' })
-  await band.press({ key: 'fold:main/done' })
   expect((await drawnRows(band)).some((r) => r.text.includes('Kid')))
     .toBe(false)
   // The parent ends while its kid runs on: it is still drawn, for the
@@ -2876,10 +2871,9 @@ test('an agent that ends takes its fold with it, and 🧵\'s grouped row ' +
   await w.clock.advance(CONFIG.tickMs)
   await settle()
   const after = await drawnRows(band)
-  expect(after.length).toBe(want({ 'main/done': false }).length)
-  expect(after.some((r) => /├⊟ 🔍.* Parent/u.test(r.text))).toBe(true)
+  expect(after.length).toBe(want({}).length)
+  expect(after.some((r) => /[├╰]⊟ 🔍.* Parent/u.test(r.text))).toBe(true)
   expect(after.some((r) => r.text.includes('Kid'))).toBe(true)
-  expect(after.some((r) => /⊟ ✅ +1 done/u.test(r.text))).toBe(true)
 })
 
 /** A transcript line holding SendMessage's answer that its message waits

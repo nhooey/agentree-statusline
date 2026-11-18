@@ -831,7 +831,7 @@ export type BgTask = {
 
 /** The background tasks a thread has heard the end of, by task id, each
  * with its `end`, the latest BG_ENDED_KEEP of them, for the band's tree
- * to keep a closed task's row drawn a while (`finished-linger`).  The
+ * to keep a closed task's row drawn a while (`finished-within`).  The
  * mod's alone: no save writes them, so a fold read back has none. */
 export type BgEnded = Map<string, BgTask>;
 

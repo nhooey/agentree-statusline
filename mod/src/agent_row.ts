@@ -281,51 +281,6 @@ export function renderDoing(st: Settings, status: string, usage: unknown,
 // The tree.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** Each task id's parent and depth on the tree: a finished parent is
- * stepped over to the first unfinished one above it. */
-export function treeShape(prepared: readonly Prepared[]):
-  Map<string, [string, number]> {
-  const rows = new Map<string, [Dict, unknown, unknown]>();
-  for (const [t, u, m] of prepared) {
-    if (hasId(t)) rows.set(pyStr(t.id), [t, u, pyOr(m, {})]);
-  }
-  const busy = runningParents(prepared);
-  const raw = new Map<string, string>();
-  for (const [tid, [, , m]] of rows) {
-    raw.set(tid, strOr(pyGet(m, "parentAgentId")));
-  }
-  const done = (tid: string): boolean => {
-    const [t, u] = rows.get(tid)!;
-    const status = strOr(t.status);
-    return status === "completed" && !parked(status, ua(u, "eta"),
-      busy.has(tid), ua(u, "background", []));
-  };
-  const up = (tid: string): string => {
-    let p = raw.get(tid)!;
-    const seen = new Set([tid]);
-    while (rows.has(p) && !seen.has(p)) {
-      if (!done(p)) return p;
-      seen.add(p);
-      p = raw.get(p)!;
-    }
-    return "";
-  };
-  const parent = new Map<string, string>();
-  for (const tid of rows.keys()) parent.set(tid, up(tid));
-  const out = new Map<string, [string, number]>();
-  for (const tid of rows.keys()) {
-    let depth = 1, p = parent.get(tid)!;
-    const seen = new Set([tid]);
-    while (p && !seen.has(p)) {
-      seen.add(p);
-      depth += 1;
-      p = parent.get(p)!;
-    }
-    out.set(tid, [parent.get(tid)!, depth]);
-  }
-  return out;
-}
-
 /** Each task's ETA, pushed out to the latest finish below it on the
  * tree. */
 export function inheritedEtas(prepared: readonly Prepared[]):
