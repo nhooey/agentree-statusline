@@ -6,7 +6,6 @@ import {
   measuredFall, nextBracket, nextSpell, partsSince, payerOf, payingCredit,
   keptFor, keptSpending, spendingKey, spendingOf, spendingStale, turnSince,
 } from "../src/spending.ts";
-import type { Credential } from "../src/spending.ts";
 import { CELLS } from "../src/cells.ts";
 import { bandRows, treeOf } from "../src/band.ts";
 import { settings } from "../src/formatting.ts";
@@ -20,26 +19,24 @@ const st = settings({}, true, false);
 const NOW = 1_793_800_000;
 const text = (spans: readonly Span[]) => spans.map((s) => s.text).join("");
 
-const PLAN: Credential = { remote: false, apiKey: false, elsewhere: false };
-const KEY: Credential = { ...PLAN, apiKey: true };
-const WEB: Credential = { ...PLAN, remote: true };
 const extra = { id: "x", kind: "extra", remaining: 12, granted: 50,
   spent: 38 };
 const promo = { id: "p", kind: "promo", remaining: 150, granted: 200,
   expires_at: NOW + 86400 };
 
 test("the payer: the cloud credit on the web, a key's promotional credit " +
-  "then prepaid, and extra usage once a window is full", () => {
-  assert.equal(payerOf(WEB, [100, 100], [extra], NOW), "cloud");
-  assert.equal(payerOf(KEY, [null, null], [promo], NOW), "promo");
-  assert.equal(payerOf(KEY, [null, null],
+  "then prepaid, extra usage once a window is full, none elsewhere", () => {
+  assert.equal(payerOf("remote", [100, 100], [extra], NOW), "cloud");
+  assert.equal(payerOf("key", [null, null], [promo], NOW), "promo");
+  assert.equal(payerOf("key", [null, null],
     [{ ...promo, remaining: 0 }], NOW), "prepaid");
-  assert.equal(payerOf(KEY, [null, null],
+  assert.equal(payerOf("key", [null, null],
     [{ ...promo, expires_at: NOW - 1 }], NOW), "prepaid");
-  assert.equal(payerOf(PLAN, [99, 40], [extra], NOW), null);
-  assert.equal(payerOf(PLAN, [100, 40], [extra], NOW), "extra");
-  assert.equal(payerOf(PLAN, [40, 100], [], NOW), null);
-  assert.equal(payerOf({ ...KEY, elsewhere: true }, [], [promo], NOW), null);
+  assert.equal(payerOf("plan", [99, 40], [extra], NOW), null);
+  assert.equal(payerOf("plan", [100, 40], [extra], NOW), "extra");
+  assert.equal(payerOf("plan", [40, 100], [], NOW), null);
+  assert.equal(payerOf("elsewhere", [], [promo], NOW), null);
+  assert.equal(payerOf("elsewhere", [100, 100], [extra], NOW), null);
 });
 
 test("the paying credit: the first of its kind with a balance", () => {

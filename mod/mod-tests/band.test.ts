@@ -76,6 +76,7 @@ import {
 } from '../hooks/plan_usage.ts'
 import { claudeOauthReading } from '../src/sources.ts'
 import { TRACKER_NO_PROFILES } from '../hooks/usage.ts'
+import { credentialOf } from '../hooks/edges.ts'
 
 const COLS = 150
 // The options the mod draws with here: the user file over the defaults.
@@ -930,6 +931,34 @@ test('the credits are asked of the usage endpoint once per 5 minutes, ' +
     expect(kept()[0]).toContain('"remaining":3')
   })
 
+test('the credential\'s kind: Bedrock or Vertex over the web, the web ' +
+  'over a key, a key over the plan; a variable set empty, 0 or false is ' +
+  'off', async () => {
+    const BEDROCK = { CLAUDE_CODE_USE_BEDROCK: '1' }
+    const VERTEX = { CLAUDE_CODE_USE_VERTEX: 'true' }
+    const REMOTE = { CLAUDE_CODE_REMOTE: 'true' }
+    const KEY = { ANTHROPIC_API_KEY: 'sk-ant-test' }
+    const cases = [
+      [{}, 'plan'],
+      [KEY, 'key'],
+      [REMOTE, 'remote'],
+      [BEDROCK, 'elsewhere'],
+      [VERTEX, 'elsewhere'],
+      [{ ...REMOTE, ...KEY }, 'remote'],
+      [{ ...BEDROCK, ...KEY }, 'elsewhere'],
+      [{ ...VERTEX, ...KEY }, 'elsewhere'],
+      [{ ...BEDROCK, ...REMOTE }, 'elsewhere'],
+      [{ ...VERTEX, ...REMOTE }, 'elsewhere'],
+      [{ ...BEDROCK, ...VERTEX, ...REMOTE, ...KEY }, 'elsewhere'],
+      [{ CLAUDE_CODE_USE_BEDROCK: '0', CLAUDE_CODE_REMOTE: 'false',
+        ANTHROPIC_API_KEY: 'FALSE' }, 'plan'],
+      [{ CLAUDE_CODE_USE_BEDROCK: '', ...KEY }, 'key'],
+      [{ CLAUDE_CODE_USE_VERTEX: 'False', CLAUDE_CODE_REMOTE: 'yes' },
+        'remote'],
+    ] as const
+    for (const [env, kind] of cases) expect(credentialOf(env)).toBe(kind)
+  })
+
 test('a plan login under its windows bills its rows to nothing',
   async ($, on) => {
     const w = world(on)
@@ -951,6 +980,28 @@ test('a Claude Code on the web session bills its rows to the cloud credit',
       { rate: null, phase: 'running', ...AGENTS }).flat())
     expect(drawn).toContain(spec.E_CLOUD)
   })
+
+test('an API key with no promotional credit bills its rows to the ' +
+  'prepaid balance', async ($, on) => {
+    const w = world(on, undefined, false, true,
+      { ANTHROPIC_API_KEY: 'sk-ant-test' })
+    await start($, w, 'terminal', STATUS)
+    const doc = lastDoc(w)
+    const spending = doc.spending as Dict
+    expect(spending.kind).toBe('prepaid')
+    const drawn = text(bandLines(BAND_ST, doc, COLS, HIDE,
+      { rate: null, phase: 'running', ...AGENTS }).flat())
+    expect(drawn).toContain(spec.E_PREPAID)
+  })
+
+for (const name of ['CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX']) {
+  test(`${name} bills an API key's rows to nothing`, async ($, on) => {
+    const w = world(on, undefined, false, true,
+      { [name]: '1', ANTHROPIC_API_KEY: 'sk-ant-test' })
+    await start($, w, 'terminal', STATUS)
+    expect(lastDoc(w).spending).toBeUndefined()
+  })
+}
 
 /** A world whose plan login has its 5-hour window full and extra usage on,
  * so 💸 pays. */

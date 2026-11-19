@@ -32,6 +32,7 @@ import {
   nextSpell, payerOf, payingCredit, spendingKey, spendingOf, spendingStale,
 } from '../src/spending.ts'
 import { FOLDS_PREFIX, foldsStale } from '../src/band_tree.ts'
+import type { Credential } from '../src/spending.ts'
 import { decodeLimits, decodeTurn } from '../src/figures.ts'
 import { joinPath, toFloat } from '../src/exact.ts'
 import { isDict } from '../src/py.ts'
@@ -315,6 +316,30 @@ export async function pruneSessions($: $, now: number): Promise<void> {
   }
 }
 
+/** The environment variables the session's credential is read from,
+ * undefined where unset. */
+type CredentialEnv = {
+  readonly CLAUDE_CODE_USE_BEDROCK?: string
+  readonly CLAUDE_CODE_USE_VERTEX?: string
+  readonly CLAUDE_CODE_REMOTE?: string
+  readonly ANTHROPIC_API_KEY?: string
+}
+
+/** The kind of the session's credential, from its environment: elsewhere
+ * with Bedrock or Vertex on, else remote with CLAUDE_CODE_REMOTE on, else
+ * a key with ANTHROPIC_API_KEY on, else the plan.  A variable is on when
+ * set to anything but empty, `0` or `false` in any letter case. */
+export function credentialOf(env: CredentialEnv): Credential {
+  const on = (v: string | undefined): boolean =>
+    v !== undefined && v !== '' && v !== '0' && v.toLowerCase() !== 'false'
+  if (on(env.CLAUDE_CODE_USE_BEDROCK) || on(env.CLAUDE_CODE_USE_VERTEX)) {
+    return 'elsewhere'
+  }
+  if (on(env.CLAUDE_CODE_REMOTE)) return 'remote'
+  if (on(env.ANTHROPIC_API_KEY)) return 'key'
+  return 'plan'
+}
+
 /** The document's `spending`: the pool paying for the session other than
  * the plan, by the session's credential, its plan windows and the kept
  * credits, and what the open turn, the main thread and the session have
@@ -326,13 +351,11 @@ export async function pruneSessions($: $, now: number): Promise<void> {
 async function spendingVia($: $, session: string, doc: Dict, tr: Transcript,
   turns: readonly Turn[] | null, credits: Dict, now: number):
   Promise<Dict | null> {
-  const on = (v: string | undefined): boolean =>
-    v !== undefined && v !== '' && v !== '0' && v.toLowerCase() !== 'false'
-  const elsewhere = on(await $.env.get('CLAUDE_CODE_USE_BEDROCK')) ||
-    on(await $.env.get('CLAUDE_CODE_USE_VERTEX'))
-  const cred = { remote: on(await $.env.get('CLAUDE_CODE_REMOTE')),
-    apiKey: !elsewhere && on(await $.env.get('ANTHROPIC_API_KEY')),
-    elsewhere }
+  const cred = credentialOf({
+    CLAUDE_CODE_USE_BEDROCK: await $.env.get('CLAUDE_CODE_USE_BEDROCK'),
+    CLAUDE_CODE_USE_VERTEX: await $.env.get('CLAUDE_CODE_USE_VERTEX'),
+    CLAUDE_CODE_REMOTE: await $.env.get('CLAUDE_CODE_REMOTE'),
+    ANTHROPIC_API_KEY: await $.env.get('ANTHROPIC_API_KEY') })
   const lim = decodeLimits(doc.limits)
   const owned = credits.credits
   const kind = payerOf(cred, [toFloat(lim.session_pct),
