@@ -79,7 +79,7 @@ done, and move a plan to [closed](../closed/) when its last node is.
 | `RP6` | **Done.** Docs for the new layout | `RP3`, `RP4`, `RP5` | none | `docs/layout.md`, `docs/options.md`, `mod/README.md` |
 | `RP7` | **Done, with the user's own `rows` kept.** The user's file, by hand | `RP5` | none | `~/.config/agentree-statusline/config.jsonc` |
 | `RP8` | The acceptance check, live | `RP6`, `RP7` | none | none |
-| `AR1` | **Built; the user's live run pending.** The trial: what a subagent's end and a `/compact` raise, logged | none | none | `mod/hooks/register.tsx` |
+| `AR1` | **Done.** The trial: what a subagent's end and a `/compact` raise, logged | none | none | `mod/hooks/register.tsx` |
 | `AR2` | A subagent's figures, from its own records | `AR1` | none | `mod/src/receipt.ts`, `mod/hooks/edges.ts` |
 | `AR3` | A subagent's receipt, filed and drawn; the options | `AR2` | none | `mod/hooks/register.tsx`, `spec/options.jsonc`, `mod/defaults/config.jsonc` |
 | `AR4` | The `/compact` receipt | `AR1` | `AR3` | `mod/hooks/register.tsx`, `mod/src/receipt.ts` |
