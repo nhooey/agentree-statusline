@@ -161,15 +161,19 @@ With `plan-usage` on, the mod's own ask below stands in for this fallback, which
 Claude Code gives the mod only the plan's week (`seven_day`) through `$.session.usage()`, so the weekly Fable window that 🦊 draws on the 💳 row, the five-hour window and the per-model weeks would need the Claude Usage Tracker or another app.
 With `plan-usage` on, the default, the mod asks the account's usage endpoint for them itself, as Claude Usage.app does:
 
-- **One request a minute** to `https://api.anthropic.com/api/oauth/usage`, with the header `anthropic-beta: oauth-2025-04-20`, and once at each load.
+- **One request a minute** to `https://api.anthropic.com/api/oauth/usage`, with the header `anthropic-beta: oauth-2025-04-20`, and once at each load; sooner when Claude Code's own week disagrees, as below.
 - **With the session's own credential, via the engine.** The mod asks `$.session.authorize()` for an opaque handle and passes it to `$.http.fetch`, which sets the credential header itself, over https to Anthropic's host only.
   The mod never sees the credential, and reads no keychain or credential file.
 - **Only for a signed-in subscription.** With no first-party credential (a third-party provider, a gateway, no login) or with an API key, nothing is asked.
   With `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set, Claude Code refuses the request.
 - **Never on a drawing's path.** Each status document takes the reading kept, and an ask that is due starts after it, whose answer the next document takes.
-  The reading is kept in the mod's store under the signed-in account, so every session on the account shares one ask a minute.
+  The reading is kept in the mod's store under the signed-in account, so every session on the account shares the minute's ask.
 - **One session asks at a time.** The ask is made under a lock directory, `plan-usage-<hash>.lock` in the state directory, which `mkdir` makes atomically: the session that makes it asks, and the others take its answer from the store.
   A lock left for over 30 seconds, by a session that died holding it, is taken over.
+- **Sooner when Claude Code's own week disagrees.** Claude Code's `seven_day` comes with every response, so it moves first when the week does, as when the limit is reset.
+  Where its percent, rounded to a whole one, differs from the kept reading's, or its reset is a minute or more from the kept reading's, the ask is made at the next document instead of at the minute's end, the Fable window and the others with it.
+  It is made once per such week: an answer that leaves it disagreeing is not asked again until the week moves or the minute comes round.
+  Such asks are at least 30 seconds apart, take another session's answer where it was given since the week was seen or already agrees with it, and never cut a failure's wait short.
 - **The per-model weeks from the answer's `limits` list too.** The answer nulls its per-model `seven_day_*` keys and lists those weeks as `weekly_scoped` entries with a model scope instead.
   Each is read as the window for its model, over the key of the same name: Fable (or Mythos) as `seven_day_overage_included`, which 🦊 draws, Opus as `seven_day_opus`, Sonnet as `seven_day_sonnet`, Design as `seven_day_omelette`, and another model as `seven_day_<its id, else its name>`, drawn nowhere.
   A model is told by a display name equal to the word or a model id holding it, as Claude Usage.app tells it.

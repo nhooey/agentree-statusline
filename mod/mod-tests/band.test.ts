@@ -70,7 +70,11 @@ import {
 import type { Span } from '../src/spans.ts'
 import * as spec from '../src/spec.ts'
 import type { Dict } from '../src/py.ts'
-import { backoffAfter, retryAfter } from '../hooks/plan_usage.ts'
+import {
+  backoffAfter, nativeWeek, PLAN_USAGE_RECHECK_GAP, readingWeek, recheckDue,
+  retryAfter, weekKey, weeksDisagree,
+} from '../hooks/plan_usage.ts'
+import { claudeOauthReading } from '../src/sources.ts'
 import { TRACKER_NO_PROFILES } from '../hooks/usage.ts'
 
 const COLS = 150
@@ -707,6 +711,152 @@ test('a Retry-After is read as seconds or an HTTP date, held to between ' +
       .toBe(600)
     expect(retryAfter('soon', 0)).toBe(null)
     expect(retryAfter(undefined, 0)).toBe(null)
+  })
+
+test('Claude Code\'s own week disagrees with the kept one by its percent ' +
+  'rounded to a whole one, or by its reset\'s minute', async () => {
+    const reset = Date.parse('2026-08-18T01:00:00+00:00') / 1000
+    const kept = readingWeek(claudeOauthReading(PLAN_ANSWER, 0))!
+    expect(kept).toEqual({ pct: 24, reset })
+    const native = (pct: number, at: number | undefined = reset) =>
+      nativeWeek({ rate_limits: { seven_day: { used_percentage: pct,
+        resets_at: at } } })!
+    expect(native(24.3)).toEqual({ pct: 24.3, reset })
+    expect(nativeWeek({ rate_limits: {} })).toBe(null)
+    expect(nativeWeek({ rate_limits: { seven_day: undefined } })).toBe(null)
+    // Equal once rounded: no disagreement, and one key.
+    expect(weeksDisagree(native(24.3), kept)).toBe(false)
+    expect(weeksDisagree(native(23.5), kept)).toBe(false)
+    expect(weekKey(native(23.5))).toBe(weekKey(native(24.4)))
+    // A reset a fraction of a second apart is the same reset, either side
+    // of a half minute too.
+    expect(weeksDisagree(native(24, reset + 0.4), kept)).toBe(false)
+    expect(weeksDisagree(native(24, reset + 29.6),
+      { pct: 24, reset: reset + 30 })).toBe(false)
+    // Another percent, or another reset, as after a reset of the limit.
+    expect(weeksDisagree(native(25), kept)).toBe(true)
+    expect(weeksDisagree(native(24, reset + 7 * 86400), kept)).toBe(true)
+    // A reset not known on one side is not compared.
+    const unknown = nativeWeek({ rate_limits: { seven_day: {
+      used_percentage: 24 } } })!
+    expect(unknown).toEqual({ pct: 24, reset: null })
+    expect(weeksDisagree(unknown, { pct: 24, reset: reset + 7 * 86400 }))
+      .toBe(false)
+  })
+
+test('a disagreeing week asks again ahead of the minute, but not while an ' +
+  'ask is under way, a failure\'s wait is not over, the same week was ' +
+  'already answered, or within the gap of the last such ask', async () => {
+    const reset = Date.parse('2026-08-18T01:00:00+00:00') / 1000
+    const kept = { reading: claudeOauthReading(PLAN_ANSWER, 0),
+      fetched_at: 0 }
+    const at = (pct: number, r = reset) => ({ pct, reset: r })
+    const idle = { answered: null, recheckedAt: null, asking: false }
+    const now = 100
+    // Equal after rounding: no ask.
+    expect(recheckDue(at(24.4), kept, idle, now)).toBe(false)
+    // Another percent, or another reset: an ask.
+    expect(recheckDue(at(31), kept, idle, now)).toBe(true)
+    expect(recheckDue(at(24, reset + 7 * 86400), kept, idle, now)).toBe(true)
+    // Nothing to compare: no ask.
+    expect(recheckDue(null, kept, idle, now)).toBe(false)
+    expect(recheckDue(at(31), {}, idle, now)).toBe(false)
+    // An ask under way: no second.
+    expect(recheckDue(at(31), kept, { ...idle, asking: true }, now))
+      .toBe(false)
+    // Inside a failure's wait, a 429's Retry-After among them: no ask.
+    expect(recheckDue(at(31), { ...kept, retry_at: now + 1 }, idle, now))
+      .toBe(false)
+    expect(recheckDue(at(31), { ...kept, retry_at: now }, idle, now))
+      .toBe(true)
+    // The same week an ask since it changed already answered: no ask.
+    expect(recheckDue(at(31), kept, { ...idle, answered: weekKey(at(31)) },
+      now)).toBe(false)
+    expect(recheckDue(at(32), kept, { ...idle, answered: weekKey(at(31)) },
+      now)).toBe(true)
+    // Within the gap of the last such ask: no ask; after it, one.
+    const last = now - PLAN_USAGE_RECHECK_GAP
+    expect(recheckDue(at(31), kept, { ...idle, recheckedAt: last + 1 }, now))
+      .toBe(false)
+    expect(recheckDue(at(31), kept, { ...idle, recheckedAt: last }, now))
+      .toBe(true)
+  })
+
+test('under plan-usage, Claude Code\'s own week disagreeing with the kept ' +
+  'one, as after the limit is reset, is asked for again ahead of the ' +
+  'minute, the Fable week with it, and a disagreement the answer leaves ' +
+  'standing is not asked again', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    // The session's 87٪ was there when the endpoint answered 24٪: no ask
+    // for it until the minute's own, at 60 s.
+    await w.clock.advance(31_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(1)
+    await w.clock.advance(30_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    // The limit reset: Claude Code's next response names the new week.
+    const week = '2026-08-25T01:00:00+00:00'
+    w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 1.4,
+      resetsAt: week }]
+    w.oauth.body = JSON.stringify({ ...PLAN_ANSWER,
+      seven_day: { utilization: 1.0, resets_at: week },
+      seven_day_overage_included: { utilization: 0.0, resets_at: week } })
+    // The next document, at 90 s, asks, half a minute before the minute's.
+    await w.clock.advance(30_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(3)
+    // Claude Code moves on to 3٪ while the endpoint still says 1٪: the
+    // document at 120 s draws the answer's weeks, the Fable one with them,
+    // and asks once more, the gap since the last such ask over.
+    w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 3,
+      resetsAt: week }]
+    await w.clock.advance(30_000)
+    await settle()
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^1(\.|$)/)
+    expect(String(limits.fable_pct)).toMatch(/^0(\.|$)/)
+    expect(w.oauth.asked.length).toBe(4)
+    // That answer left the 3٪ disagreeing: not asked for again, and the
+    // next ask is the minute's own, at 180 s.
+    await w.clock.advance(30_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(4)
+    await w.clock.advance(30_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(5)
+  })
+
+test('under plan-usage, a disagreeing week takes another session\'s ' +
+  'answer that already agrees with it, and asks nothing', async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    // The limit reset, and another session's recheck has asked for the
+    // new week already, before this one sees it at 90 s.
+    const week = '2026-08-25T01:00:00+00:00'
+    const answer = { ...PLAN_ANSWER,
+      seven_day: { utilization: 1.0, resets_at: week },
+      seven_day_overage_included: { utilization: 0.0, resets_at: week } }
+    const at = w.clock.now() / 1000
+    w.store.set('plan-usage:default', {
+      reading: claudeOauthReading(answer, at), fetched_at: at })
+    w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 1.4,
+      resetsAt: week }]
+    await w.clock.advance(30_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    // The document after draws that answer's weeks.
+    await w.clock.advance(30_000)
+    await settle()
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^1(\.|$)/)
+    expect(String(limits.fable_pct)).toMatch(/^0(\.|$)/)
+    expect(w.oauth.asked.length).toBe(2)
   })
 
 test('the plan-usage ask is taken under a lock directory, left alone ' +

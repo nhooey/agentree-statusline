@@ -138,7 +138,7 @@ export const OPTIONS = {
   "plan-usage": {
     "type": "bool",
     "doc-table": null,
-    "doc": "Ask the account's usage endpoint for the plan's windows, the weekly Fable one and the per-model weeks among them, once a minute, as Claude Usage.app does, and draw them under `usage-source` `auto` in place of Claude Code's own reading, which names only the plan's week. One request a minute to api.anthropic.com, sent by Claude Code with the session's own credential (the mod never sees it), and only for a signed-in subscription; see [Usage sources](usage-sources.md).",
+    "doc": "Ask the account's usage endpoint for the plan's windows, the weekly Fable one and the per-model weeks among them, once a minute, as Claude Usage.app does, and draw them under `usage-source` `auto` in place of Claude Code's own reading, which names only the plan's week. One request a minute to api.anthropic.com, and sooner when Claude Code's own week disagrees with the last answer, sent by Claude Code with the session's own credential (the mod never sees it), and only for a signed-in subscription; see [Usage sources](usage-sources.md).",
   },
   // A record merges per field across layers, so a file that turns one
   // window on leaves the others off.  Not entries in the defaults'
