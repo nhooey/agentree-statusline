@@ -46,7 +46,7 @@ import { creditCell } from "./credits.ts";
 import { PAYER_GLYPHS } from "./spending.ts";
 import type { Spending } from "./spending.ts";
 import { treeRows } from "./band_tree.ts";
-import type { Folds, TreeInput } from "./band_tree.ts";
+import type { Folds, TreeAgents, TreeInput } from "./band_tree.ts";
 import type { TreeTask } from "./subagent_tasks.ts";
 import { draw, hidden, layout } from "./grid.ts";
 import type { Piece, Row } from "./grid.ts";
@@ -562,7 +562,6 @@ function treeInput(fig: Dict, session: Row | null, main: Row | null,
   const when = opts.agents ?? "running";
   const shown = doc !== undefined &&
     (running ? when !== "never" : when === "always");
-  const now = (fig.clock as Dict).now as number;
   return {
     session, main, turn,
     workspace: workspaceOf(fig, ""),
@@ -573,19 +572,32 @@ function treeInput(fig: Dict, session: Row | null, main: Row | null,
       ? doc.main_progress : "",
     turnPhase: running ? E_PHASE_RUN : E_PHASE_END,
     turnPrompt: tr.user_text,
-    agents: shown ? { tasks: (doc.tasks ?? []) as TreeTask[],
-      limits: decodeLimits(fig.limits), now,
-      turnStart: running ? tr.turn_s || null : null,
-      mainBackground: (doc.main_background ?? []) as BgTask[],
-      mainEnded: (doc.main_background_ended ?? []) as BgTask[],
-      linger: opts.linger ?? 0,
-      spending: docSpending(fig),
-      home: typeof doc.home === "string" ? doc.home : "" } : null,
+    agents: shown ? treeAgents(fig, running, opts.linger ?? 0) : null,
     folds: opts.folds,
     repo: typeof fig.github === "string" ? fig.github : null,
     sessionName: tr.session_name,
     sessionColour: tr.session_color,
   };
+}
+
+/** The subagents of a status figures document as the band's tree draws
+ * them (TreeAgents), while a turn runs where `running`, keeping a row
+ * that finished `linger` seconds; null where the document has none.
+ * Whether the tree draws them at all is the phase's and the options'
+ * (treeInput). */
+export function treeAgents(fig: Dict, running: boolean, linger: number):
+  TreeAgents | null {
+  const doc = fig.agents as Dict | undefined;
+  if (doc === undefined) return null;
+  const tr = decodeTranscript(fig.transcript);
+  return { tasks: (doc.tasks ?? []) as TreeTask[],
+    limits: decodeLimits(fig.limits), now: (fig.clock as Dict).now as number,
+    turnStart: running ? tr.turn_s || null : null,
+    mainBackground: (doc.main_background ?? []) as BgTask[],
+    mainEnded: (doc.main_background_ended ?? []) as BgTask[],
+    linger,
+    spending: docSpending(fig),
+    home: typeof doc.home === "string" ? doc.home : "" };
 }
 
 /** Whether the band's tree draws its root, 🎮, now: `rows.session`'s

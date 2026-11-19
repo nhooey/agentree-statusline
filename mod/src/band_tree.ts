@@ -48,6 +48,7 @@ import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
 import type { Settings } from "./formatting.ts";
 import { paint, pressed, span, width } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
+import { isDict } from "./py.ts";
 import type { Dict } from "./py.ts";
 import { BG_LABEL_MAX, BG_NEWLINE, squash } from "./claude_records.ts";
 import type { BgTask } from "./claude_records.ts";
@@ -148,22 +149,68 @@ export function foldShut(folds: Folds, key: string, shut: boolean): boolean {
   return Object.hasOwn(folds, key) ? folds[key] : shut;
 }
 
-/** The statuses of an agent that has ended. */
-const ENDED: ReadonlySet<string> = new Set(["completed", "failed", "killed"]);
-
-/** `folds` less the fold of every agent that has ended: an agent `tasks`
- * no longer has, or has completed, failed or killed.  🎮's and 🧵's
- * stay.  `folds` itself where nothing is dropped. */
-export function pruneFolds(folds: Folds,
-  tasks: readonly { readonly id?: unknown; readonly status?: unknown }[]):
+/** `folds` less the fold of every agent row the tree no longer draws:
+ * each key that is not in `drawn` (drawnAgents), so no later row takes a
+ * fold it never had.  🎮's and 🧵's stay.  `folds` itself where nothing
+ * is dropped. */
+export function pruneFolds(folds: Folds, drawn: ReadonlySet<string>):
   Folds {
-  const live = new Set(tasks.filter((t) =>
-    !ENDED.has(String(t.status ?? ""))).map((t) => String(t.id)));
   const keep = (key: string): boolean =>
-    key === ROOT_FOLD || key === MAIN_FOLD || live.has(key);
+    key === ROOT_FOLD || key === MAIN_FOLD || drawn.has(key);
   const kept = Object.entries(folds).filter(([k]) => keep(k));
   return kept.length === Object.keys(folds).length ? folds
     : Object.fromEntries(kept);
+}
+
+/** The `$.store` key a conversation's folds are kept under, by its
+ * session id, the transcript file's name, which a restart, a `--resume`
+ * and a `--continue` of it go on under. */
+export function foldsKey(session: string): string {
+  return FOLDS_PREFIX + session;
+}
+
+export const FOLDS_PREFIX = "folds:";
+
+/** How long a conversation's folds are kept after they last changed, by a
+ * press or a prune: 31 days, as the store's other per-session entries
+ * are, so the store, one JSON file for every session, stays small. */
+export const FOLDS_KEEP_S = 31 * 86400;
+
+/** `value`'s folds where every one is a boolean, else null. */
+function boolFolds(value: unknown): Folds | null {
+  if (!isDict(value)) return null;
+  const folds = Object.entries(value);
+  return folds.every(([, v]) => typeof v === "boolean")
+    ? Object.fromEntries(folds) as Folds : null;
+}
+
+/** A store entry, `{session, folds, saved_at}`, read back: its folds where
+ * it is `session`'s and every fold a boolean, else null, so a value of
+ * another shape, or none, is a load with nothing kept. */
+export function keptFolds(value: unknown, session: string): Folds | null {
+  return isDict(value) && value.session === session
+    ? boolFolds(value.folds) : null;
+}
+
+/** The folds `$.state` holds, and the session they are of. */
+export type HeldFolds = { readonly session: string; readonly folds: Folds };
+
+/** `$.state`'s folds read back: `{session, folds}` as this version keeps
+ * them; a plain Folds, as an earlier version kept them, of no session
+ * (""); and anything else, none. */
+export function heldFolds(value: unknown): HeldFolds {
+  if (isDict(value) && typeof value.session === "string") {
+    return { session: value.session, folds: boolFolds(value.folds) ?? {} };
+  }
+  return { session: "", folds: boolFolds(value) ?? {} };
+}
+
+/** Whether a store entry of folds is past keeping at `now`: saved more
+ * than FOLDS_KEEP_S ago, or of no shape that says when. */
+export function foldsStale(value: unknown, now: number): boolean {
+  const at = isDict(value) ? value.saved_at : null;
+  return typeof at !== "number" || !Number.isFinite(at) ||
+    now - at > FOLDS_KEEP_S;
 }
 
 /** A row's fold: the key it is kept under and whether the row starts
@@ -487,16 +534,21 @@ function ended(t: Dict, u: Dict, busy: ReadonlySet<string>,
     u.background);
 }
 
-/** The subagents as the tree's nodes under 🧵 main: each live agent under
- * the agent that started it, in the order they started; an ended agent
- * only for `a.linger` seconds after it ended, as it stood, or where a
- * live one hangs under it.  Every such agent is drawn; folding a row
- * hides its subtree.  After each thread's agents, its open shells and
- * Monitors (bgNode), and the closed ones that linger. */
-function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
-  const prepared = preparedOf(a.tasks);
-  const busy = runningParents(prepared);
-  const etas = inheritedEtas(prepared);
+/** The subagents as forestOf places them. */
+type Forest = {
+  readonly byId: ReadonlyMap<string, TreeTask>;
+  readonly busy: ReadonlySet<string>;
+  readonly shownKids: (id: string) => string[];
+};
+
+/** The subagents of `a` as the tree places them: each by its id, the ids
+ * with an agent at work under them (runningParents), and the agents
+ * drawn under each thread, by its id, "" for 🧵, in the order they
+ * started.  An agent is drawn while at work, paused (parked) included;
+ * once it has ended, for `a.linger` seconds after, or while one drawn
+ * hangs under it. */
+function forestOf(a: TreeAgents): Forest {
+  const busy = runningParents(preparedOf(a.tasks));
   const byId = new Map(a.tasks.map((t) => [String(t.task.id), t]));
   // Each agent under the one that started it, else under "" for 🧵: an
   // agent drawn keeps every agent above it drawn (live).
@@ -535,6 +587,34 @@ function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
   };
   const shownKids = (id: string): string[] =>
     (kidsOf.get(id) ?? []).filter(live);
+  return { byId, busy, shownKids };
+}
+
+/** The ids of the agents the tree draws from `a` with every row opened
+ * (forestOf): those whose folds pruneFolds keeps.  A row hidden under a
+ * folded one is still drawn, so it keeps its fold for when that opens. */
+export function drawnAgents(a: TreeAgents): ReadonlySet<string> {
+  const { shownKids } = forestOf(a);
+  const out = new Set<string>();
+  const walkKids = (id: string): void => {
+    for (const k of shownKids(id)) {
+      if (out.has(k)) continue;
+      out.add(k);
+      walkKids(k);
+    }
+  };
+  walkKids("");
+  return out;
+}
+
+/** The subagents as the tree's nodes under 🧵 main: the agents forestOf
+ * draws, each under the agent that started it, an ended one as it stood.
+ * Folding a row hides its subtree.  After each thread's agents, its open
+ * shells and Monitors (bgNode), and the closed ones that linger. */
+function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
+  const { byId, busy, shownKids } = forestOf(a);
+  const etas = inheritedEtas(preparedOf(a.tasks));
+  const linger = a.linger ?? 0;
   const under = (id: string): string[] =>
     shownKids(id).flatMap((k) => [k, ...under(k)]);
   // A thread's open shells and Monitors, the main thread's under "".

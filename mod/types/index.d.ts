@@ -23,6 +23,13 @@ export type SpendingKept = {
   } | null;
 };
 
+/** The `folds` value: the band tree's folds by key, and the session id
+ * they are of. */
+export type FoldsHeld = {
+  readonly session: string;
+  readonly folds: { readonly [key: string]: boolean };
+};
+
 declare module 'claude-code' {
   interface PluginState {
     'agentree-statusline': {
@@ -47,11 +54,15 @@ declare module 'claude-code' {
       /** Bumped by each read of the configuration files that changes the
        * options, so every drawing draws again with them. */
       configured: number;
-      /** The folds of the band's tree the person left, by key: an agent's
-       * id, "session" for 🎮, "main" for 🧵; true folded, false opened.
-       * A key absent is its row's default.  An agent's goes once it
-       * ends. */
-      folds: { [key: string]: boolean };
+      /** The folds of the band's tree the person left, and the session id
+       * they are of.  `folds` by key: an agent's id, "session" for 🎮,
+       * "main" for 🧵; true folded, false opened.  A key absent is its
+       * row's default.  An agent's goes once the tree would no longer
+       * draw its row.  `$.store` keeps a copy under `folds:<session id>`
+       * for a restart or a resume, read back through keptFolds.  Read
+       * back through heldFolds, which takes a plain map of folds, as an
+       * earlier version kept them, as of no session. */
+      folds: FoldsHeld | { [key: string]: boolean };
       /** Which credit pays for the session other than the plan and since
        * when, and the first reading of its balance for the 🎮 row's
        * measured fall (src/spending.ts), as the last document found them,
