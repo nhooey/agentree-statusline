@@ -4,19 +4,13 @@
 
 Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.
 
-It is a mod for [Claude Code](https://claude.com/claude-code). Its rows
-share one grid, so every figure stays on the same screen column on every
-row, and you can switch tabs and compare sessions at a glance.
+It is a mod for [Claude Code](https://claude.com/claude-code).
+Its rows share one grid, so every figure stays on the same screen column on every row, and you can switch tabs and compare sessions at a glance.
 
 ## Above the prompt and under the footer line
 
-Drawn by the `agentree-statusline` mod in [`mod/`](mod/README.md), one
-scope a row. Above the prompt, the session's threads as a tree: 🎮 the
-session at its root, then 🧵 the main thread with, under it, 🎤 its turn while it runs
-and the subagents it started, and under each thread the background
-shells (💻) and Monitors (📡) it has open; under Claude Code's own footer
-line, the 💳
-account, just over the agent panel, whose rows Claude Code draws itself.
+Drawn by the `agentree-statusline` mod in [`mod/`](mod/README.md), one scope a row.
+Above the prompt, the session's threads as a tree: 🎮 the session at its root, then 🧵 the main thread with, under it, 🎤 its turn while it runs and the subagents it started, and under each thread the background shells (💻) and Monitors (📡) it has open; under Claude Code's own footer line, the 💳 account, just over the agent panel, whose rows Claude Code draws itself.
 Here the two places are drawn together, the prompt between them left out:
 
 ```
@@ -37,12 +31,9 @@ Here the two places are drawn together, the prompt between them left out:
 Read these three first:
 
 * **🎮 💰 35**: the session has cost $35 at API prices.
-* **💳 🔜 6.7m 🔋 15٪**: the account has used 15٪ of its 5-hour window, which
-  resets in 6.7 minutes. 🪫 is the same for the weekly window, and 🦊,
-  where the account has one, for the weekly Fable window; each 🔜 leads
-  the windows that reset then, the soonest first.
-* **🧵 🧠115k 11٪**: the main thread's context holds 115k tokens, 11٪ of the
-  window.
+* **💳 🔜 6.7m 🔋 15٪**: the account has used 15٪ of its 5-hour window, which resets in 6.7 minutes.
+  🪫 is the same for the weekly window, and 🦊, where the account has one, for the weekly Fable window; each 🔜 leads the windows that reset then, the soonest first.
+* **🧵 🧠115k 11٪**: the main thread's context holds 115k tokens, 11٪ of the window.
 
 | Row | Label | Scope | Place |
 |---|---|---|---|
@@ -52,24 +43,15 @@ Read these three first:
 | 🎤 | the mark, its state and the prompt typed last | the turn | above the prompt, under 🧵, first, while a turn runs |
 | 💳 | 📁 Directory · 🎨 Style · 💳 Account · 🔋 🪫 🦊 Windows · 🔜 Resets · 📅 Date · 🕐 Clock | the account and where the session works | under the footer line |
 
-Each row's place is `rows` in the
-[configuration files](docs/options.md#configuration-files); see
-[Layout](docs/layout.md#the-rows).
+Each row's place is `rows` in the [configuration files](docs/options.md#configuration-files); see [Layout](docs/layout.md#the-rows).
 
-Every row's figures, left to right: 🧬 Model · 🛫 Rate or Doing · 💰 Cost ·
-🧠 Context · 🧩 Tokens · 🎯 Hits · ⌛ Elapsed · ⛳ ETA · 🤖 Thinking · 🔧 Tools ·
-🚦 Waiting · 🔋 5-hour · 🪫 Weekly · 💾 Diff.
+Every row's figures, left to right: 🧬 Model · 🛫 Rate or Doing · 💰 Cost · ⛅ 🎁 💵 💸 [Credit paying](docs/layout.md#column-by-column) · 🧠 Context · 🧩 Tokens · 🎯 Hits · ⌛ Elapsed · ⛳ ETA · 🤖 Thinking · 🔧 Tools · 🚦 Waiting · 🔋 5-hour · 🪫 Weekly · 💾 Diff.
 
 ## Prompt receipt
 
-Stamped by the mod as each turn ends, in place of Claude Code's `✻ Worked for
-…` line, and kept in the transcript: the 🎤 row as it stood when the turn
-ended, dim, then the turn's tag. 🧵 and 🎮 stay live on screen, and
-`rows` can stamp them too. A turn that ran subagents stamps the band's
-tree instead: 🧵, under it 🎤 and then every agent the turn ran that
-had finished, 🏁, each under the agent that started it; one still at
-work is stamped on the first receipt after it ends
-([Layout](docs/layout.md#the-receipt)).
+Stamped by the mod as each turn ends, in place of Claude Code's `✻ Worked for …` line, and kept in the transcript: the 🎤 row as it stood when the turn ended, dim, then the turn's tag.
+🧵 and 🎮 stay live on screen, and `rows` can stamp them too.
+A turn that ran subagents stamps the band's tree instead: 🧵, under it 🎤 and then every agent the turn ran that had finished, 🏁, each under the agent that started it; one still at work is stamped on the first receipt after it ends ([Layout](docs/layout.md#the-receipt)).
 
 ```
   🎤 🏁 turn  And this one?                💰 0.2   🧠 +21k +10٪  🧩 ▴ 18k ▾3.5k  🎯97٪  ⌛  3m         🤖⠶⠄ 🔧⠦⠀ 🚦⠀⠀  🔋  .03٪  🪫  .043٪
@@ -77,22 +59,18 @@ work is stamped on the first receipt after it ends
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
 
-The prompt that opened the turn carries the same tag under it, 🔻🔖, with
-the account's limits as the turn started, so the two lines side by side
-show what the turn took from each plan window.
+The prompt that opened the turn carries the same tag under it, 🔻🔖, with the account's limits as the turn started, so the two lines side by side show what the turn took from each plan window.
 
 ## Install
 
-The readouts are a Claude Code mod, which needs only Claude Code: there is
-nothing to install beyond a clone.
+The readouts are a Claude Code mod, which needs only Claude Code: there is nothing to install beyond a clone.
 
 ```sh
 git clone https://github.com/nhooey/agentree-statusline.git ~/src/agentree-statusline
 ```
 
-The rows above the prompt and under the footer line, and the receipt, are
-the mod's. Install it from
-the clone, which Claude Code then reads in place:
+The rows above the prompt and under the footer line, and the receipt, are the mod's.
+Install it from the clone, which Claude Code then reads in place:
 
 ```sh
 cd ~/src/agentree-statusline
@@ -100,29 +78,20 @@ claude plugin marketplace add "$PWD"
 claude plugin install agentree-statusline@agentree-statusline
 ```
 
-Its settings, such as the usage source and what it hides, are in the
-[configuration files](docs/options.md#configuration-files);
-[`mod/README.md`](mod/README.md) has the rest.
+Its settings, such as the usage source and what it hides, are in the [configuration files](docs/options.md#configuration-files); [`mod/README.md`](mod/README.md) has the rest.
 
-Every setting's default is in one file,
-[`mod/defaults/config.jsonc`](mod/defaults/config.jsonc), which the mod
-reads at every load. To change a setting, write only that key in your own
-file; every key it leaves out keeps the default, and follows the defaults
-file as it changes:
+Every setting's default is in one file, [`mod/defaults/config.jsonc`](mod/defaults/config.jsonc), which the mod reads at every load.
+To change a setting, write only that key in your own file; every key it leaves out keeps the default, and follows the defaults file as it changes:
 
 ```sh
 mkdir -p ~/.config/agentree-statusline
 echo '{"mark-spacing": false}' > ~/.config/agentree-statusline/config.jsonc
 ```
 
-A project's settings go in its own `.config/agentree-statusline/`
-instead; see [Configuration files](docs/options.md#configuration-files).
+A project's settings go in its own `.config/agentree-statusline/` instead; see [Configuration files](docs/options.md#configuration-files).
 
-For ⛳ ETAs, the `agentree-statusline` plugin gives each session and
-subagent the ETA instruction at its start, the short form in
-[`mod/hooks/eta-instruction.md`](mod/hooks/eta-instruction.md). Link the
-skill as well, which holds the full rules and what `recurse` asks for; where
-the plugin is not enabled, also tell agents to use the skill:
+For ⛳ ETAs, the `agentree-statusline` plugin gives each session and subagent the ETA instruction at its start, the short form in [`mod/hooks/eta-instruction.md`](mod/hooks/eta-instruction.md).
+Link the skill as well, which holds the full rules and what `recurse` asks for; where the plugin is not enabled, also tell agents to use the skill:
 
 ```sh
 ln -s ~/src/agentree-statusline/skills/coding-agent-usage-line-report-eta ~/.claude/skills/
@@ -131,10 +100,9 @@ echo 'For any task you expect to take more than about a minute, as the main agen
 
 ## Legend
 
-The legend has one table per topic. Each glyph has a name, and a ✓ marks each
-readout that draws it: the mod's rows, above the prompt and under the
-footer line, the subagent rows and the receipt. Where a glyph means something
-different on one readout, the table says so.
+The legend has one table per topic.
+Each glyph has a name, and a ✓ marks each readout that draws it: the mod's rows, above the prompt and under the footer line, the subagent rows and the receipt.
+Where a glyph means something different on one readout, the table says so.
 
 ### Rows
 
@@ -203,19 +171,16 @@ different on one readout, the table says so.
 | 🚦 | Waiting | time waiting on you, or on agents it started | ✓ | ✓ | ✓ |
 | ⠄ ⠆ ⠦ ⠶ | Gauge | that figure's share of the three | ✓ | ✓ | ✓ |
 
-* **🤖 🔧 🚦 are gauges** with eight dots between the three, so
-  `🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀` means five eighths thinking, two in tools and one waiting.
-  On the main thread's row and a subagent's they share out ⌛. The 🎤 and 🎮
-  rows sum agent-seconds, which can outrun the wall clock, so there they are
-  proportions of themselves.
-* **Each row counts its own thread.** A parent waiting on the agents it
-  started reads that time as 🚦. So do `AskUserQuestion`, `ExitPlanMode` and
-  `Agent` calls.
-* **⛳ comes from a skill.** Agents report their time left through the
-  [`coding-agent-usage-line-report-eta`](skills/coding-agent-usage-line-report-eta/SKILL.md)
-  skill (see [ETA](docs/layout.md#eta)). ⛳ is blank until a report
-  arrives and after the answer finishes. A parent's ETA is never earlier
-  than that of any agent it still has running.
+* **🤖 🔧 🚦 are gauges** with eight dots between the three, so `🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀` means five eighths thinking, two in tools and one waiting.
+  On the main thread's row and a subagent's they share out ⌛.
+  The 🎤 and 🎮 rows sum agent-seconds, which can outrun the wall clock, so there they are proportions of themselves.
+* **Each row counts its own thread.**
+  A parent waiting on the agents it started reads that time as 🚦.
+  So do `AskUserQuestion`, `ExitPlanMode` and `Agent` calls.
+* **⛳ comes from a skill.**
+  Agents report their time left through the [`coding-agent-usage-line-report-eta`](skills/coding-agent-usage-line-report-eta/SKILL.md) skill (see [ETA](docs/layout.md#eta)).
+  ⛳ is blank until a report arrives and after the answer finishes.
+  A parent's ETA is never earlier than that of any agent it still has running.
 
 ### Plan windows
 
@@ -229,11 +194,11 @@ different on one readout, the table says so.
 | 💯 | Full | a full 100٪ | ✓ | ✓ | ✓ |
 | `?` | Unknown | a share that cannot be derived yet | ✓ | ✓ | ✓ |
 
-* **The 💳 row's shares are the plan's own figure.** They come from Claude
-  Code or another [usage source](docs/usage-sources.md).
-* **Every other row's are estimates.** The program prices the row's requests
-  and divides by a dollars-per-percent rate calibrated from this machine's
-  history. See [Accounting](docs/accounting.md).
+* **The 💳 row's shares are the plan's own figure.**
+  They come from Claude Code or another [usage source](docs/usage-sources.md).
+* **Every other row's are estimates.**
+  The program prices the row's requests and divides by a dollars-per-percent rate calibrated from this machine's history.
+  See [Accounting](docs/accounting.md).
 
 ### Background tasks
 
@@ -242,21 +207,17 @@ different on one readout, the table says so.
 | 💻 | Shells | background shells it started and has not heard the end of | | ✓ | |
 | 📡 | Monitors | Monitors it started and has not heard the end of | | ✓ | |
 
-Both are drawn while the agent runs and while it is paused, and not once it
-has failed or been killed. Paused, the state mark after 🟡 still says which
-one it waits on; the count says how many.
+Both are drawn while the agent runs and while it is paused, and not once it has failed or been killed.
+Paused, the state mark after 🟡 still says which one it waits on; the count says how many.
 
-In the band's tree each open shell and Monitor is also a row of its own,
-under the thread that started it (🧵 main or the agent), after its
-agents: 💻 or 📡, the call's description (else its command's first line)
-and ⌛ how long it has run. It leaves when the thread hears its end. The
-counts then stand only on a folded row, whose shells' rows are hidden.
+In the band's tree each open shell and Monitor is also a row of its own, under the thread that started it (🧵 main or the agent), after its agents: 💻 or 📡, the call's description (else its command's first line) and ⌛ how long it has run.
+It leaves when the thread hears its end.
+The counts then stand only on a folded row, whose shells' rows are hidden.
 
 ### Agent kind
 
-These glyphs open a subagent row. Each is named
-for the agent type it
-stands for; `other` covers every other type, custom agents included.
+These glyphs open a subagent row.
+Each is named for the agent type it stands for; `other` covers every other type, custom agents included.
 
 | Glyph | Name | Glyph | Name |
 |---|---|---|---|
@@ -269,8 +230,7 @@ stands for; `other` covers every other type, custom agents included.
 
 ### Agent state
 
-A subagent row's phase follows its kind; what the agent is doing within it fills
-the 🛫 column, with how long it has been doing it.
+A subagent row's phase follows its kind; what the agent is doing within it fills the 🛫 column, with how long it has been doing it.
 
 | Glyph | Name | Meaning |
 |---|---|---|
@@ -295,10 +255,8 @@ the 🛫 column, with how long it has been doing it.
 | ⚫ | 🛑 | Killed | stopped |
 | ⚫ 🟡 | 💥 | API error | its last answer died on an API error once Claude Code's retries ran out; paused or ended as it otherwise would be |
 
-Claude Code calls an agent completed both when it has finished and when it has
-ended its turn to wait. The row reads the agent's transcript and its children
-to tell the two apart; in the mod, Claude Code's agent list says `waiting` for
-the second, and the row is paused whatever the transcript holds.
+Claude Code calls an agent completed both when it has finished and when it has ended its turn to wait.
+The row reads the agent's transcript and its children to tell the two apart; in the mod, Claude Code's agent list says `waiting` for the second, and the row is paused whatever the transcript holds.
 
 ### Subagent rows
 
@@ -316,38 +274,32 @@ the second, and the row is paused whatever the transcript holds.
 
 ## Three rules the display follows
 
-* **Figures never move.** Every value has a fixed width and gets a unit
-  instead of more digits, as in `1.2k`, `4.5M` or `1.5h`. A number stays in
-  the same place from the first prompt to the thousandth.
-* **Brightness shows the unit.** A figure with a unit is shaded by it, in
-  its own hue: dim for a bare count or seconds and minutes, normal for `k`
-  or hours, bright for `M` or days, so `841k` and `8.4M` read apart at a
-  glance. A reset countdown runs the other way, bright inside the hour.
-  Cost has no unit letter and stays dim under $1. Percentages already have
-  a ceiling, so they follow separate rules.
-* **Agents are counted.** On the 🎤 and 🎮 rows, the tokens, costs, plan
-  shares and times include every subagent, fork and workflow agent, each
-  priced at its own model's rates. The 🧵 row is the main thread alone,
-  and its 🧠 tells you when *this* context window needs compacting. Each
-  subagent row counts its own agent alone.
+* **Figures never move.**
+  Every value has a fixed width and gets a unit instead of more digits, as in `1.2k`, `4.5M` or `1.5h`.
+  A number stays in the same place from the first prompt to the thousandth.
+* **Brightness shows the unit.**
+  A figure with a unit is shaded by it, in its own hue: dim for a bare count or seconds and minutes, normal for `k` or hours, bright for `M` or days, so `841k` and `8.4M` read apart at a glance.
+  A reset countdown runs the other way, bright inside the hour.
+  Cost has no unit letter and stays dim under $1.
+  Percentages already have a ceiling, so they follow separate rules.
+* **Agents are counted.**
+  On the 🎤 and 🎮 rows, the tokens, costs, plan shares and times include every subagent, fork and workflow agent, each priced at its own model's rates.
+  The 🧵 row is the main thread alone, and its 🧠 tells you when *this* context window needs compacting.
+  Each subagent row counts its own agent alone.
 
-On a narrow terminal each row's label is shortened first, down to 12
-columns; then whole columns drop from every row at once, least important
-first, so the grid never breaks. [Layout](docs/layout.md) covers every cell
-in detail.
+On a narrow terminal each row's label is shortened first, down to 12 columns; then whole columns drop from every row at once, least important first, so the grid never breaks.
+[Layout](docs/layout.md) covers every cell in detail.
 
 ## Customizing
 
-`hide` in a [configuration file](docs/options.md#configuration-files),
-`scope[.group[.metric]]`, hides a row, a group of cells or one cell, the
-same path on every readout. The defaults hide nothing, as in the renders
-above. See [Hiding](docs/layout.md#hiding).
+`hide` in a [configuration file](docs/options.md#configuration-files), `scope[.group[.metric]]`, hides a row, a group of cells or one cell, the same path on every readout.
+The defaults hide nothing, as in the renders above.
+See [Hiding](docs/layout.md#hiding).
 
 [Options](docs/options.md) lists every option.
 
-The 💳 row's figures come from the usage source the mod is configured with
-(`usage-source`, `auto` by default). Besides the rate limits Claude Code
-reports, it can take them from:
+The 💳 row's figures come from the usage source the mod is configured with (`usage-source`, `auto` by default).
+Besides the rate limits Claude Code reports, it can take them from:
 
 * the Claude Usage Tracker app
 * an organization API
