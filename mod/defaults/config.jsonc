@@ -12,7 +12,7 @@
 // ~/.config/agentree-statusline/config.jsonc (or a project's
 // .config/agentree-statusline/config.jsonc), such as
 //
-//   {"totals": false}
+//   {"mark-spacing": false}
 //
 // A key it does not set comes from here, and follows this file as it
 // changes.  A key that is no option refuses the whole file, with a
