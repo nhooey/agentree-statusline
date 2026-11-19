@@ -1160,6 +1160,8 @@ export const E_KIND_GUIDE = "📚";      // 📚  claude-code-guide
 export const E_KIND_SETUP = "📟";      // 📟  statusline-setup
 export const E_KIND_FORK = "🍴";       // 🍴  fork
 export const E_KIND_OTHER = "👥";      // 👥  local_agent, and any other kind.
+                                       //    Emoji_Presentation=Yes and a single
+                                       //    code point, chosen for that.
                                        //    Measured by tests/probe-advance.sh:
                                        //    advance=2 in bare Ghostty, not under
                                        //    tmux -- a reading, like the other three
