@@ -20,6 +20,13 @@
 // processes: the session whose `mkdir` lands asks, and the others take its
 // answer from the store a minute later.  A lock older than
 // PLAN_USAGE_LOCK_STALE seconds is a session's that died holding it.
+//
+// Claude Code's own reading of the plan's week comes with every response,
+// so it moves first when the week does, as when the limit is reset.  Where
+// it disagrees with the week kept, and no ask since it changed has
+// answered it, the ask is made at once rather than at the minute's end:
+// still never inside a failure's wait, nor within PLAN_USAGE_RECHECK_GAP
+// seconds of the last such ask.
 import type { EngineInterface } from 'claude-code'
 
 import {
@@ -27,6 +34,7 @@ import {
 } from '../src/sources.ts'
 import type { Reading } from '../src/sources.ts'
 import { isDict, pyGet } from '../src/py.ts'
+import type { Dict } from '../src/py.ts'
 import { sha256Hex } from '../src/sha256.ts'
 import { placesOf, runVia } from './engine.ts'
 import { log } from './log.ts'
@@ -53,12 +61,91 @@ export const PLAN_USAGE_LOCK_STALE = 30
 /** Seconds a reading stands in for Claude Code's own: past two failures'
  * waits and the ask after them, the native reading is the fresher. */
 export const PLAN_USAGE_FRESH = 7 * 60
+/** The fewest seconds between two asks that Claude Code's own week,
+ * disagreeing with the one kept, makes ahead of the minute. */
+export const PLAN_USAGE_RECHECK_GAP = 30
 
 /** What `$.store` keeps per account: the reading, when it was asked for,
  * and, after a failure, how many failed in a row and when the next ask may
  * be. */
-type Kept = { reading?: Reading; fetched_at?: number; retry_at?: number;
-  failures?: number }
+export type Kept = { reading?: Reading; fetched_at?: number;
+  retry_at?: number; failures?: number }
+
+/** The plan's week as two readings are compared by: its used percent and
+ * its reset, in seconds since the epoch, null where not known. */
+export type Week = { pct: number; reset: number | null }
+
+/** A finite number `v`, else null. */
+function finite(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+/** Claude Code's own week in the status line's payload `raw`, its
+ * `rate_limits.seven_day`; null where it names none. */
+export function nativeWeek(raw: unknown): Week | null {
+  const limits = isDict(raw) ? pyGet(raw, 'rate_limits') : null
+  const item = isDict(limits) ? pyGet(limits, 'seven_day') : null
+  const pct = isDict(item) ? finite(pyGet(item, 'used_percentage')) : null
+  return pct === null ? null
+    : { pct, reset: finite(pyGet(item as Dict, 'resets_at')) }
+}
+
+/** The week of the reading `reading`, its seven_day window; null where it
+ * has none with a used percent. */
+export function readingWeek(reading: unknown): Week | null {
+  const buckets = isDict(reading) ? pyGet(reading, 'buckets') : null
+  for (const bucket of Array.isArray(buckets) ? buckets : []) {
+    const windows = isDict(bucket) ? pyGet(bucket, 'windows') : null
+    for (const w of Array.isArray(windows) ? windows : []) {
+      if (!isDict(w) || pyGet(w, 'id') !== 'seven_day') continue
+      const pct = finite(pyGet(w, 'used_percent'))
+      if (pct !== null) return { pct, reset: finite(pyGet(w, 'resets_at')) }
+    }
+  }
+  return null
+}
+
+/** The week `w` as compared: its percent rounded to a whole one, as the
+ * endpoint gives it, and its reset to the nearest minute, since two
+ * sources stamp one reset a fraction of a second apart. */
+function compared(w: Week): [number, number | null] {
+  return [Math.round(w.pct),
+    w.reset === null ? null : Math.floor((w.reset + 30) / 60)]
+}
+
+/** A key for the week `w`, the same for two weeks that compare equal. */
+export function weekKey(w: Week): string {
+  const [pct, reset] = compared(w)
+  return pct + '/' + (reset ?? '')
+}
+
+/** Whether the weeks `a` and `b` disagree: their percents, each rounded
+ * to a whole one, differ, or their resets, where both are known, fall in
+ * different minutes. */
+export function weeksDisagree(a: Week, b: Week): boolean {
+  const [pa, ra] = compared(a)
+  const [pb, rb] = compared(b)
+  return pa !== pb || (ra !== null && rb !== null && ra !== rb)
+}
+
+/** Whether Claude Code's own week `native` calls for an ask now, ahead of
+ * the minute: it disagrees with the week of the reading `kept`; no ask
+ * since it changed has answered it (`answered`, the weekKey of the last
+ * week an ask answered); no ask is under way; no failure's wait is going
+ * on; and PLAN_USAGE_RECHECK_GAP seconds have passed since the last such
+ * ask, at `recheckedAt`. */
+export function recheckDue(native: Week | null, kept: Kept,
+  s: { answered: string | null; recheckedAt: number | null;
+    asking: boolean }, now: number): boolean {
+  const held = readingWeek(kept.reading)
+  if (native === null || held === null || s.asking) return false
+  if (!weeksDisagree(native, held) || weekKey(native) === s.answered) {
+    return false
+  }
+  if (typeof kept.retry_at === 'number' && now < kept.retry_at) return false
+  const at = s.recheckedAt
+  return at === null || now - at >= PLAN_USAGE_RECHECK_GAP || now < at
+}
 
 /** The seconds to wait after the `failures`th failed ask in a row: the
  * first wait doubled for each failure before it, held to the most. */
@@ -84,6 +171,13 @@ const plan = {
   errors: new Set<string>(),
   // This load's own last answer, and when, for the credits to read.
   answer: null as { raw: unknown; at: number } | null,
+  // Claude Code's own week as last seen, by its weekKey, and when it was
+  // first seen so; the last such week an ask made after it was seen
+  // answered; and when an ask was last made for a disagreement.
+  native: null as string | null,
+  nativeSince: 0,
+  answered: null as string | null,
+  recheckedAt: null as number | null,
 }
 
 /** The keys of the answer `raw` that hold a window's utilization, by
@@ -115,21 +209,42 @@ export function windowLine(
 
 /** The account's plan windows as last asked for, while fresh, else null;
  * and, once PLAN_USAGE_EVERY has passed since the store was last looked
- * at, an ask started behind it.  `who` is the signed-in account. */
-export function planUsageVia($: $, who: string, now: number):
-  Reading | null {
+ * at, or sooner where Claude Code's own week `native` disagrees with the
+ * kept one (recheckDue), an ask started behind it.  `who` is the
+ * signed-in account. */
+export function planUsageVia($: $, who: string, now: number,
+  native: Week | null = null): Reading | null {
   const key = 'plan-usage:' + (who || 'default')
   if (key !== plan.key) {
     plan.key = key
     plan.kept = {}
     plan.checkedAt = null
+    plan.answered = null
+    plan.recheckedAt = null
+  }
+  const seen = native === null ? null : weekKey(native)
+  if (seen !== plan.native) {
+    plan.native = seen
+    plan.nativeSince = now
   }
   const due = plan.checkedAt === null ||
     now - plan.checkedAt >= PLAN_USAGE_EVERY || now < plan.checkedAt
-  if (due && !plan.asking) {
+  const recheck = !due && recheckDue(native, plan.kept, plan, now)
+  if ((due || recheck) && !plan.asking) {
     plan.asking = true
     plan.checkedAt = now
-    void ask($, key, now).catch(() => {}).finally(() => {
+    if (recheck) plan.recheckedAt = now
+    // A recheck takes another session's reading only where it was asked
+    // for since the week was seen.
+    const since = plan.nativeSince
+    void ask($, key, now, recheck ? since : null).then(() => {
+      // The week is answered by a reading asked for since it was seen.
+      const at = plan.kept.fetched_at
+      if (seen !== null && plan.key === key && typeof at === 'number' &&
+          at >= since) {
+        plan.answered = seen
+      }
+    }).catch(() => {}).finally(() => {
       plan.asking = false
     })
   }
@@ -159,14 +274,16 @@ export function retryAfter(value: string | undefined, now: number):
 }
 
 /** The store's reading for `key`, and whether it is fresh: another
- * session asked within the minute, or a failure's wait is not over. */
-async function keptIfFresh($: $, key: string, now: number):
-  Promise<{ kept: Kept; fresh: boolean }> {
+ * session asked within the minute, or, for a recheck, at or after `since`;
+ * or a failure's wait is not over. */
+async function keptIfFresh($: $, key: string, now: number,
+  since: number | null): Promise<{ kept: Kept; fresh: boolean }> {
   const stored = await $.store.get(key).catch(() => undefined)
   const kept: Kept = isDict(stored) ? stored as Kept : {}
   const fetched = kept.fetched_at
-  const fresh = (typeof fetched === 'number' &&
-      now - fetched < PLAN_USAGE_EVERY && now >= fetched) ||
+  const fresh = (typeof fetched === 'number' && now >= fetched &&
+      (since === null ? now - fetched < PLAN_USAGE_EVERY
+        : fetched >= since)) ||
     (typeof kept.retry_at === 'number' && now < kept.retry_at)
   return { kept, fresh }
 }
@@ -195,9 +312,12 @@ async function takeLock($: $, dir: string, now: number): Promise<boolean> {
  * within the minute or a failure's wait is not over, else, under the lock,
  * the endpoint's answer, kept; a failure logged once and waited out by
  * every session, for a wait that doubles with each failure in a row, or
- * for the answer's `Retry-After` where that is longer. */
-async function ask($: $, key: string, now: number): Promise<void> {
-  const first = await keptIfFresh($, key, now)
+ * for the answer's `Retry-After` where that is longer.  A recheck, with
+ * `since`, takes the store's reading only where it was asked for at or
+ * after `since`. */
+async function ask($: $, key: string, now: number, since: number | null):
+  Promise<void> {
+  const first = await keptIfFresh($, key, now, since)
   plan.kept = first.kept
   if (first.fresh) return
   const auth = await $.session.authorize().catch(() => null)
@@ -207,7 +327,7 @@ async function ask($: $, key: string, now: number): Promise<void> {
   if (!await takeLock($, dir, now).catch(() => false)) return
   try {
     // Another session may have asked between the look and the lock.
-    const again = await keptIfFresh($, key, now)
+    const again = await keptIfFresh($, key, now, since)
     plan.kept = again.kept
     if (again.fresh) return
     await askHeld($, key, now, auth.handle, again.kept)

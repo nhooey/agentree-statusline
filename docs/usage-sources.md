@@ -222,6 +222,16 @@ account's usage endpoint for them itself, as Claude Usage.app does:
   atomically: the session that makes it asks, and the others take its answer
   from the store. A lock left for over 30 seconds, by a session that died
   holding it, is taken over.
+- **Sooner when Claude Code's own week disagrees.** Claude Code's
+  `seven_day` comes with every response, so it moves first when the week
+  does, as when the limit is reset. Where its percent, rounded to a whole
+  one, or its reset's minute differs from the kept reading's, the ask is
+  made at the next document instead of at the minute's end, the Fable
+  window and the others with it. It is made once per such week: an answer
+  that leaves it disagreeing is not asked again until the week moves or
+  the minute comes round. Such asks are at least 30 seconds apart, take
+  another session's answer given since the week was seen, and never cut a
+  failure's wait short.
 - **The per-model weeks from the answer's `limits` list too.** The answer
   nulls its per-model `seven_day_*` keys and lists those weeks as
   `weekly_scoped` entries with a model scope instead. Each is read as the
