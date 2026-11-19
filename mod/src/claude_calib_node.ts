@@ -9,8 +9,8 @@
 import * as fs from "node:fs";
 import * as crypto from "node:crypto";
 import { isDict, pyGet, pyHas } from "./py.ts";
-import { expandUser, pyJsonLoads } from "./sources_node.ts";
-import { cmpStr, pyJoin } from "./claude_records.ts";
+import { expandUser } from "./sources_node.ts";
+import { cmpStr, joinPath, parseJson } from "./exact.ts";
 import { writeAtomic } from "./claude_records_node.ts";
 import { statePath } from "./state.ts";
 import {
@@ -64,7 +64,7 @@ function scandir(dir: string): [string, boolean][] {
       let isDir = e.isDirectory();
       if (e.isSymbolicLink()) {
         try {
-          isDir = fs.statSync(pyJoin(dir, e.name)).isDirectory();
+          isDir = fs.statSync(joinPath(dir, e.name)).isDirectory();
         } catch {
           isDir = false;
         }
@@ -92,7 +92,7 @@ function rlistdir(dir: string): string[] {
   for (const [n] of scandir(dir).filter(([, d]) => d)) {
     if (n.startsWith(".")) continue;
     out.push(n);
-    for (const y of rlistdir(pyJoin(dir, n))) out.push(pyJoin(n, y));
+    for (const y of rlistdir(joinPath(dir, n))) out.push(joinPath(n, y));
   }
   return out;
 }
@@ -106,36 +106,37 @@ const AGENT = /^agent-[\s\S]*\.jsonl$/;
  * `<dir>/*\/*\/subagents/**\/agent-*.jsonl`: paths spelt as it spells them,
  * in the order it visits them. */
 export function projectFiles(projectsDir: string): string[] {
-  const base = splitHead(pyJoin(projectsDir, "*"));
+  const base = splitHead(joinPath(projectsDir, "*"));
   const out: string[] = [];
-  const projects = glob1(base, ANY, true).map((n) => pyJoin(base, n));
+  const projects = glob1(base, ANY, true).map((n) => joinPath(base, n));
   for (const p of projects) {
-    for (const n of glob1(p, JSONL, false)) out.push(pyJoin(p, n));
+    for (const n of glob1(p, JSONL, false)) out.push(joinPath(p, n));
   }
   for (const p of projects) {
     for (const s of glob1(p, ANY, true)) {
-      const sub = pyJoin(pyJoin(p, s), "subagents");
+      const sub = joinPath(joinPath(p, s), "subagents");
       try {
         fs.lstatSync(sub);
       } catch {
         continue;
       }
       for (const r of ["", ...rlistdir(sub)]) {
-        const d = pyJoin(sub, r);
-        for (const n of glob1(d, AGENT, false)) out.push(pyJoin(d, n));
+        const d = joinPath(sub, r);
+        for (const n of glob1(d, AGENT, false)) out.push(joinPath(d, n));
       }
     }
   }
   return out;
 }
 
-/** os.path.getmtime as a float of seconds, as Python builds it from the
- * nanosecond stamp, or null where it raises. */
+/** os.path.getmtime: the mtime as a float of seconds, built from the
+ * nanosecond stamp, or null where it cannot be read. */
 export function _mtime(path: string): number | null {
   try {
     const ns = fs.statSync(path, { bigint: true }).mtimeNs;
     const s = ns / 1000000000n, rem = ns % 1000000000n;
-    // Python truncates toward zero and adds the remainder; so does BigInt.
+    // Whole seconds truncated toward zero, as BigInt divides, and the
+    // remainder added.
     return Number(s) + Number(rem) * 1e-9;
   } catch {
     return null;
@@ -313,7 +314,7 @@ export function _windowCosts(sessStart: Naive | null,
  * for the snapshot's scope, which the mod shares. */
 export function calibrationCachePath(snap: Snapshot, env: CalibEnv): string {
   if (env.calibCacheOverride) return expandUser(env.calibCacheOverride);
-  return pyJoin(env.stateDir, _calibrationCacheName(snap));
+  return joinPath(env.stateDir, _calibrationCacheName(snap));
 }
 
 /** The cached scan, if it is younger than `ttl` seconds (any age for a
@@ -329,7 +330,7 @@ export function _readCalibCache(windows: string, snap: Snapshot,
       const mt = _mtime(path);
       if (mt === null || mt <= env.now - ttl) return null;
     }
-    d = pyJsonLoads(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
+    d = parseJson(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true })
       .decode(fs.readFileSync(path)));
   } catch {
     return null;
@@ -349,7 +350,7 @@ export function _readPrevCalib(snap: Snapshot, env: CalibEnv):
   try {
     const mt = _mtime(path);
     if (mt === null) return [null, null];
-    const d = pyJsonLoads(new TextDecoder("utf-8",
+    const d = parseJson(new TextDecoder("utf-8",
       { fatal: true, ignoreBOM: true }).decode(fs.readFileSync(path)));
     return isDict(d) ? [d, env.now - mt] : [null, null];
   } catch {

@@ -12,8 +12,9 @@ import * as path from "node:path";
 import {
   accountHigh, cachedReading, claudeOauthReading, creditsReading, cacheName, claudeUsageTracker, commandReading, epoch,
   hasReading, isCacheName, nativeReading, normalise, number, periodBounds,
-  HIGHS_PERIOD, HIGHS_SOURCE, oauthLimitWindows, pyJsonLoads,
+  HIGHS_PERIOD, HIGHS_SOURCE, oauthLimitWindows,
 } from "../src/sources_node.ts";
+import { parseJson } from "../src/exact.ts";
 import type { Dict } from "../src/sources_node.ts";
 import { colour, met, shown } from "../src/credits.ts";
 import { isDict, pyGet, pyTruthy } from "../src/py.ts";
@@ -29,7 +30,7 @@ const FIXTURES = path.join(import.meta.dirname, "..", "..", "tests",
 // The fixtures carry NaN, so they are read the way Python's json.loads
 // reads JSON.
 function load(name: string): any {
-  return pyJsonLoads(fs.readFileSync(path.join(FIXTURES, name), "utf8"));
+  return parseJson(fs.readFileSync(path.join(FIXTURES, name), "utf8"));
 }
 
 // Plain objects, so deepEqual compares values and not prototypes, and
@@ -272,7 +273,7 @@ test("collect: scenarios over one state directory", async () => {
                   AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST: tracker,
                   CLAUDE_CONFIG_DIR: config };
     const put = (value: unknown) =>
-      pyJsonLoads(JSON.stringify(value).replaceAll("${DIR}", dir));
+      parseJson(JSON.stringify(value).replaceAll("${DIR}", dir));
     const scrub = (value: unknown) =>
       JSON.parse(JSON.stringify(canon(value)).replaceAll(dir, "${DIR}"));
     try {
@@ -310,7 +311,7 @@ test("collect: scenarios over one state directory", async () => {
         const files: Dict[] = [];
         for (const entry of fs.readdirSync(stateDir).sort()) {
           if (!entry.endsWith(".json")) continue;
-          const value = pyJsonLoads(fs.readFileSync(
+          const value = parseJson(fs.readFileSync(
             path.join(stateDir, entry), "utf8")) as Dict;
           assert.equal(entry, cacheName(value.agent as string,
                                         value.source as string,

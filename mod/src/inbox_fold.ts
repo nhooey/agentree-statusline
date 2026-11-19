@@ -9,9 +9,8 @@
 // a sequence number, since $.fs.write truncates and then writes and a
 // reader can see the file torn.  The readers that take a path are
 // claude_records_node.ts's inboxFoldCounts.
-import {
-  cmpStr, inboxDeliveriesOf, inboxSendsOf, pyJoin,
-} from "./claude_records.ts";
+import { inboxDeliveriesOf, inboxSendsOf } from "./claude_records.ts";
+import { cmpStr, joinPath } from "./exact.ts";
 import { sha256Hex } from "./sha256.ts";
 import { stateName } from "./state.ts";
 import { STATE_KINDS } from "./state_spec.ts";
@@ -48,7 +47,7 @@ export function newInboxEntry(): InboxEntry {
 /** The directory a session's inbox fold is saved in, under the state
  * directory `stateDir`. */
 export function inboxFoldDir(stateDir: string, transcript: string): string {
-  return pyJoin(stateDir, stateName("inbox-fold", transcript));
+  return joinPath(stateDir, stateName("inbox-fold", transcript));
 }
 
 /** Fold `data`, the whole lines of a file from `e.pos` on, into `e`;

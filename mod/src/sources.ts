@@ -12,11 +12,11 @@
 // experimental-claude-oauth's answer is read here (claudeOauthReading); the
 // mod makes its request with the session's own credential.
 //
-// The reading follows Python's rules, which this file spells out: float()
-// on strings, str() on JSON values, json.loads' NaN and Infinity,
-// datetime.fromisoformat as 3.9 parses it, and "%.6f"'s half-even
-// rounding.  They are at the top, under "Python's semantics"; truthiness,
-// dict.get and strip() are in py.ts, shared with the other modules.
+// The reading's exact forms, a float read from a string, a JSON value as
+// text and NaN and Infinity in JSON, are exact.ts's, shared with the other
+// modules; the "%.6f" tie handling is `pct` in claude_sources.ts and the
+// microsecond half-even rounding is `splitTimestamp` here, under
+// "Timestamps".
 //
 // The I/O, the cache files, running a command and reading the tracker, is
 // in sources_node.ts for Node and in the mod's handlers for the mod, which
@@ -26,10 +26,10 @@
 import { sha256Hex } from "./sha256.ts";
 
 import type { Dict } from "./py.ts";
+import { isDict, pyGet, pyTruthy } from "./py.ts";
 import {
-  daysFromCivil, daysIn, isDict, pyAsciiDigits, pyFloatRepr, pyGet, pyStrip,
-  pyTruthy, utf8,
-} from "./py.ts";
+  daysFromCivil, daysIn, parseJson, stableJson, toFloat, utf8, valueText,
+} from "./exact.ts";
 
 export type { Dict };
 export type Reading = Dict;
@@ -40,225 +40,11 @@ export const VALID_SOURCES = [
 ] as const;
 
 // ════════════════════════════════════════════════════════════════════════════
-// Python's semantics.
+// Timestamps.
 // ════════════════════════════════════════════════════════════════════════════
 
-const DIGITS = "[0-9](?:_?[0-9])*";
-const PY_FLOAT = new RegExp(
-  "^[+-]?(?:(?:" + DIGITS + "(?:\\.(?:" + DIGITS + ")?)?|\\." + DIGITS +
-  ")(?:[eE][+-]?" + DIGITS + ")?|inf|infinity|nan)$", "i");
-
-// float(text), or null where float() raises ValueError.  Like float(), it
-// reads any Unicode decimal digit as its ASCII one.
-export function pyFloatText(text: string): number | null {
-  const s = pyStrip(pyAsciiDigits(text));
-  if (!PY_FLOAT.test(s)) return null;
-  const body = s.replace(/^[+-]/, "").toLowerCase();
-  const sign = s.startsWith("-") ? -1 : 1;
-  if (body === "nan") return NaN;
-  if (body === "inf" || body === "infinity") return sign * Infinity;
-  return Number(s.replaceAll("_", ""));
-}
-
-// float(value), or null where float() raises TypeError or ValueError.
-// Bytes come from a plist's <data>; float() reads them as ASCII.
-export function pyFloat(value: unknown): number | null {
-  if (typeof value === "boolean") return value ? 1 : 0;
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return pyFloatText(value);
-  if (value instanceof Uint8Array) {
-    if (value.some((b) => b > 127)) return null;
-    return pyFloatText(String.fromCharCode(...value));
-  }
-  return null;
-}
-
-// str() of a JSON value.  JSON's 5 and 5.0 are one number here, so a whole
-// number prints as Python's int would; that is the one place it can differ.
-export function pyStr(value: unknown): string {
-  if (typeof value === "string") return value;
-  return pyRepr(value);
-}
-
-function pyRepr(value: unknown): string {
-  if (value === null || value === undefined) return "None";
-  if (value === true) return "True";
-  if (value === false) return "False";
-  if (typeof value === "number") {
-    return Number.isInteger(value) ? BigInt(value).toString()
-      : pyFloatRepr(value);
-  }
-  if (typeof value === "string") {
-    const quote = value.includes("'") && !value.includes('"') ? '"' : "'";
-    let out = "";
-    for (const ch of value) {
-      const code = ch.codePointAt(0)!;
-      if (ch === "\\" || ch === quote) out += "\\" + ch;
-      else if (ch === "\n") out += "\\n";
-      else if (ch === "\r") out += "\\r";
-      else if (ch === "\t") out += "\\t";
-      else if (code < 32 || code === 127) {
-        out += "\\x" + code.toString(16).padStart(2, "0");
-      } else out += ch;
-    }
-    return quote + out + quote;
-  }
-  if (Array.isArray(value)) return "[" + value.map(pyRepr).join(", ") + "]";
-  if (isDict(value)) {
-    return "{" + Object.entries(value)
-      .map(([k, v]) => pyRepr(k) + ": " + pyRepr(v)).join(", ") + "}";
-  }
-  return String(value);
-}
-
-// json.loads: JSON, plus the NaN, Infinity and -Infinity Python reads and
-// writes.  JSON.parse refuses those, so a command printing one would be a
-// failed reading rather than a reading with that one field missing.
-export function pyJsonLoads(text: string): unknown {
-  let i = 0;
-  const fail = (): never => {
-    throw new SyntaxError("invalid JSON at " + i);
-  };
-  const ws = () => {
-    while (i < text.length && " \t\n\r".includes(text[i])) i++;
-  };
-  const NUMBER = /-?(?:0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
-  const value = (): unknown => {
-    ws();
-    const ch = text[i];
-    if (ch === "{") {
-      i++;
-      const obj: Dict = Object.create(null);
-      ws();
-      if (text[i] === "}") { i++; return obj; }
-      for (;;) {
-        ws();
-        if (text[i] !== '"') fail();
-        const key = string();
-        ws();
-        if (text[i++] !== ":") fail();
-        obj[key] = value();
-        ws();
-        const sep = text[i++];
-        if (sep === "}") return obj;
-        if (sep !== ",") fail();
-      }
-    }
-    if (ch === "[") {
-      i++;
-      const arr: unknown[] = [];
-      ws();
-      if (text[i] === "]") { i++; return arr; }
-      for (;;) {
-        arr.push(value());
-        ws();
-        const sep = text[i++];
-        if (sep === "]") return arr;
-        if (sep !== ",") fail();
-      }
-    }
-    if (ch === '"') return string();
-    for (const [word, val] of [["true", true], ["false", false],
-                               ["null", null], ["NaN", NaN],
-                               ["Infinity", Infinity],
-                               ["-Infinity", -Infinity]] as const) {
-      if (text.startsWith(word, i)) { i += word.length; return val; }
-    }
-    NUMBER.lastIndex = i;
-    const m = NUMBER.exec(text);
-    if (!m) fail();
-    i += m![0].length;
-    return Number(m![0]);
-  };
-  const string = (): string => {
-    i++;
-    let out = "";
-    for (;;) {
-      if (i >= text.length) fail();
-      const ch = text[i++];
-      if (ch === '"') return out;
-      if (ch < " ") fail();
-      if (ch !== "\\") { out += ch; continue; }
-      const esc = text[i++];
-      const simple: Dict = { '"': '"', "\\": "\\", "/": "/", b: "\b",
-                             f: "\f", n: "\n", r: "\r", t: "\t" };
-      if (esc !== undefined && Object.hasOwn(simple, esc)) {
-        out += simple[esc];
-      } else if (esc === "u") {
-        const hex = text.slice(i, i + 4);
-        if (!/^[0-9a-fA-F]{4}$/.test(hex)) fail();
-        out += String.fromCharCode(parseInt(hex, 16));
-        i += 4;
-      } else fail();
-    }
-  };
-  const result = value();
-  ws();
-  if (i !== text.length) fail();
-  return result;
-}
-
-// json.dumps with ensure_ascii, the separators and sort_keys given.  A
-// whole number is written as an int; `floats` names the keys held as
-// floats, which json.dumps writes with ".0".
-export function pyJsonDumps(value: unknown, sortKeys = false,
-                            floats: readonly string[] = [],
-                            key = ""): string {
-  if (value === null || value === undefined) return "null";
-  if (value === true) return "true";
-  if (value === false) return "false";
-  if (typeof value === "number") {
-    if (Number.isNaN(value)) return "NaN";
-    if (!Number.isFinite(value)) return value > 0 ? "Infinity" : "-Infinity";
-    if (Number.isInteger(value) && !floats.includes(key)) {
-      return BigInt(value).toString();
-    }
-    return pyFloatRepr(value);
-  }
-  if (typeof value === "string") {
-    let out = '"';
-    for (let j = 0; j < value.length; j++) {
-      const c = value.charCodeAt(j);
-      const ch = value[j];
-      if (ch === '"') out += '\\"';
-      else if (ch === "\\") out += "\\\\";
-      else if (ch === "\n") out += "\\n";
-      else if (ch === "\r") out += "\\r";
-      else if (ch === "\t") out += "\\t";
-      else if (ch === "\b") out += "\\b";
-      else if (ch === "\f") out += "\\f";
-      else if (c < 32 || c > 126) {
-        out += "\\u" + c.toString(16).padStart(4, "0");
-      } else out += ch;
-    }
-    return out + '"';
-  }
-  if (Array.isArray(value)) {
-    return "[" + value.map((v) => pyJsonDumps(v, sortKeys, floats))
-      .join(",") + "]";
-  }
-  if (isDict(value)) {
-    const keys = Object.keys(value);
-    if (sortKeys) keys.sort(comparePy);
-    return "{" + keys.map((k) => pyJsonDumps(k) + ":" +
-      pyJsonDumps(value[k], sortKeys, floats, k)).join(",") + "}";
-  }
-  throw new TypeError("not JSON serializable");
-}
-
-// Python sorts strings by code point; JavaScript's < compares UTF-16 units,
-// which differ above U+FFFF.
-function comparePy(a: string, b: string): number {
-  const x = [...a].map((c) => c.codePointAt(0)!);
-  const y = [...b].map((c) => c.codePointAt(0)!);
-  for (let j = 0; j < Math.min(x.length, y.length); j++) {
-    if (x[j] !== y[j]) return x[j] - y[j];
-  }
-  return x.length - y.length;
-}
-
-// Python rounds a timestamp's fraction to whole microseconds, half to even,
-// before it turns it into a datetime, so x.9999996 is the NEXT second.  A
+// A timestamp as whole seconds and microseconds, its fraction rounded to
+// whole microseconds, half to even, so x.9999996 is the NEXT second.  A
 // JavaScript Date would truncate it to the millisecond below.
 export function splitTimestamp(t: number): [number, number] {
   let secs = Math.floor(t);
@@ -269,13 +55,13 @@ export function splitTimestamp(t: number): [number, number] {
   return [secs, us];
 }
 
-// datetime.fromisoformat as Python 3.9's C implementation parses:
-// YYYY-MM-DD, any one separator, HH[:MM[:SS[.fff[fff]]]], and an offset
-// of +HH:MM[:SS[.ffffff]].  Newer Pythons accept more (a bare "Z", basic
-// formats); a reading that leans on those is unavailable.  The C walks
-// UTF-8 bytes with a NUL after the last, and so does this, so its corner
-// cases land the same way.  The result is Unix seconds, a naive time read
-// as UTC, as epoch() reads it; null where fromisoformat raises.
+// An ISO 8601 timestamp, as datetime.fromisoformat's C implementation in
+// 3.9 parses one: YYYY-MM-DD, any one separator, HH[:MM[:SS[.fff[fff]]]],
+// and an offset of +HH:MM[:SS[.ffffff]].  Nothing more (a bare "Z", basic
+// formats) is read; a reading that leans on those is unavailable.  This
+// walks UTF-8 bytes with a NUL after the last, so its corner cases land
+// where that implementation's do.  The result is Unix seconds, a naive
+// time read as UTC, as epoch() reads it; null where the text is refused.
 export function fromIsoformat(text: string): number | null {
   const head = text.slice(0, 10);
   if (/[^\x00-\x7f]/.test(head)) return null;
@@ -393,7 +179,7 @@ export function epoch(value: unknown): number | null {
 export function number(value: unknown, upper: number | null = null):
     number | null {
   if (typeof value === "boolean") return null;
-  const n = pyFloat(value);
+  const n = toFloat(value);
   if (n === null || !Number.isFinite(n) || n < 0) return null;
   if (upper !== null && n > upper) return null;
   return n;
@@ -728,7 +514,7 @@ export function nativeWindows(value: unknown): Dict[] {
   const raw = isDict(value) ? pyGet(value, "rate_limits", value) : {};
   const windows: Dict[] = [];
   if (!isDict(raw)) return windows;
-  const sourceBucket = pyStr(pyTruthy(raw.limit_id) ? raw.limit_id
+  const sourceBucket = valueText(pyTruthy(raw.limit_id) ? raw.limit_id
                              : "default");
   const others: string[] = WEEKLY_WINDOWS.map(([, id]) => id);
   const weekly = ["seven_day", FABLE_WINDOW, ...others];
@@ -745,9 +531,9 @@ export function nativeWindows(value: unknown): Dict[] {
     windows.push({
       id: key, duration_seconds: duration, used_percent: usage,
       resets_at: pyGet(item, "resets_at", pyGet(item, "reset_at")),
-      bucket_id: pyStr(firstTruthy(pyGet(item, "bucket_id"),
+      bucket_id: valueText(firstTruthy(pyGet(item, "bucket_id"),
                                    pyGet(item, "limit_id"), sourceBucket)),
-      heading: pyStr(firstTruthy(pyGet(item, "heading"), sourceBucket)),
+      heading: valueText(firstTruthy(pyGet(item, "heading"), sourceBucket)),
     });
   }
   return windows;
@@ -808,7 +594,7 @@ export function commandInput(context: unknown): string {
     const value = epoch(pyGet(ctx, key));
     if (value !== null) safe[key] = value;
   }
-  return pyJsonDumps(safe, false, ["period_start", "period_end"]);
+  return stableJson(safe, { floats: ["period_start", "period_end"] });
 }
 
 // A command's stdout, as a reading: strict UTF-8, one JSON value, and the
@@ -817,7 +603,7 @@ export function commandOutput(output: Uint8Array): Reading {
   let value: unknown;
   try {
     const text = utf8(output, true, true);
-    value = pyJsonLoads(text);
+    value = parseJson(text);
   } catch {
     return {};
   }
@@ -1067,7 +853,7 @@ function accountOf(reading: Dict): string {
 function highKey(bucket: Dict, window: Dict, reset: number): string {
   const name = (d: Dict) => {
     const v = pyGet(d, "id");
-    return pyTruthy(v) ? pyStr(v) : "";
+    return pyTruthy(v) ? valueText(v) : "";
   };
   return name(bucket) + "\0" + name(window) + "\0" +
     String(Math.floor((reset + 30) / 60));
@@ -1256,7 +1042,7 @@ async function collectOne(agent: string, spec: string | null,
 }
 
 export function identity(values: unknown[]): string[] {
-  return values.map((x) => (pyTruthy(x) ? pyStr(x) : ""));
+  return values.map((x) => (pyTruthy(x) ? valueText(x) : ""));
 }
 
 export function cacheName(agent: string, source: string, account: string,

@@ -12,7 +12,7 @@
 // tests' is Node.  So that a figure it cannot have is missing rather than
 // a failed render, the edge passes null for what it could not read.
 import { CTX_1M, CTX_DEF, RATE_SAMPLES, RATE_TICK_S } from "./spec.ts";
-import { pyFormatF, pyIntDigits, pyIsDigit } from "./py.ts";
+import { digitsInt, general, isDigits } from "./exact.ts";
 import type { Dict } from "./py.ts";
 import {
   cacheShares, NO_CACHE_SHARES, NO_GIT, NO_LIMITS, openTurn,
@@ -95,7 +95,7 @@ export async function detectGit(git: GitRun): Promise<Git> {
  * omits it. */
 export function ctxWindowFor(size: string, name: string): number {
   // str.isdigit and int(): any script's decimal digits.
-  if (pyIsDigit(size) && pyIntDigits(size) > 0) return pyIntDigits(size);
+  if (isDigits(size) && digitsInt(size) > 0) return digitsInt(size);
   const low = name.toLowerCase();
   return low.includes("1m") || low.includes("1000000") ? CTX_1M : CTX_DEF;
 }
@@ -116,27 +116,10 @@ export function windowFor(turns: readonly Turn[], published: number):
 // The shares.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** "%g" % v: six significant digits, trailing zeros dropped, and an
- * exponent past them; Python rounds half to even, as pyFormatF does. */
-export function pyG(v: number): string {
-  if (!Number.isFinite(v)) {
-    return Number.isNaN(v) ? "nan" : v > 0 ? "inf" : "-inf";
-  }
-  if (v === 0) return Object.is(v, -0) ? "-0" : "0";
-  const exp = parseInt(Math.abs(v).toExponential(5).split("e")[1], 10);
-  const strip = (s: string) =>
-    s.includes(".") ? s.replace(/0+$/, "").replace(/\.$/, "") : s;
-  if (exp >= -4 && exp < 6) return strip(pyFormatF(v, 5 - exp));
-  const [m, e] = v.toExponential(5).split("e");
-  const n = parseInt(e, 10);
-  return strip(m) + "e" + (n < 0 ? "-" : "+") +
-    String(Math.abs(n)).padStart(2, "0");
-}
-
 /** A percentage as the limit rows carry it, or "" for a missing figure:
  * nothing rounded, "%g" so a whole one reads "15". */
 export function _pctStr(v: number | null): string {
-  return v === null ? "" : pyG(v);
+  return v === null ? "" : general(v);
 }
 
 /** What _withShares adds to the status document: the turn the receipt

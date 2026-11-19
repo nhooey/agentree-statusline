@@ -3,7 +3,7 @@
 // transcript.
 import type { EngineInterface } from 'claude-code'
 
-import { utf8 } from '../src/py.ts'
+import { utf8 } from '../src/exact.ts'
 import {
   DEFAULTS_REL, DefaultsError, FILE_LAYERS, MOD_LAYER, abspath,
   find as findConfig, load as loadConfig, merge as mergeConfig, optionsOf,
@@ -23,7 +23,7 @@ type $ = EngineInterface
 
 /** `$.fs` as src/config.ts's walk reaches it: a stat or a read that fails
  * is null, and a file is read as bytes and decoded strictly with its
- * byte-order mark kept, as Python's open(…, encoding="utf-8") reads it,
+ * byte-order mark kept, as a file opened with encoding "utf-8" reads,
  * so a file the panel finds unreadable or not JSON the band does too. */
 function configFs($: $): ConfigFs {
   return {

@@ -13,11 +13,12 @@ import {
 } from "./agent_fold.ts";
 import {
   _agentDir, _agentStatePath, _readAgentBytes, _recordsOf, agentLabelOf,
-  agentOffsetsOf, agentReadingOf, agentRecordsOf, cmpStr,
+  agentOffsetsOf, agentReadingOf, agentRecordsOf,
   copyAgentFold, foldAgentBytes, inboxDeliveriesOf, inboxSendsOf,
-  inboxTally, markedRecordsOf, newAgentFold, pyJoin, pyJsonDumps,
+  inboxTally, markedRecordsOf, newAgentFold,
   transcriptOf, turnsOf, _settled, SETTLE_POLL_S, SETTLE_S,
 } from "./claude_records.ts";
+import { cmpStr, joinPath, stableJson } from "./exact.ts";
 import {
   foldInboxEntry, INBOX_CHECK_BYTES, INBOX_SLOTS, inboxFoldDir,
   inboxFoldLoad, inboxFoldText, inboxTailDigest, newInboxEntry,
@@ -53,8 +54,8 @@ export function _records(path: string): Rec[] {
  * `subagents/agent-<id>.jsonl` for the Agent tool, forks, and agents that
  * agents spawned; `subagents/workflows/wf_<id>/agent-<id>.jsonl` for a
  * workflow's agents.  The workflow's `journal.jsonl` carries no usage and
- * is not matched.  Walked as Python's recursive glob walks: hidden
- * names are skipped, and a directory is entered through a symlink. */
+ * is not matched.  Walked as a recursive glob walks: hidden names are
+ * skipped, and a directory is entered through a symlink. */
 export function agentFiles(transcript: string): string[] {
   const d = _agentDir(transcript);
   if (!d || !isDir(d)) return [];
@@ -68,7 +69,7 @@ export function agentFiles(transcript: string): string[] {
     }
     for (const name of names) {
       if (name.startsWith(".")) continue;
-      const p = pyJoin(dir, name);
+      const p = joinPath(dir, name);
       if (AGENT_NAME.test(name)) out.push(p);
       if (isDir(p)) walk(p);
     }
@@ -129,7 +130,7 @@ export function agentFoldFile(dir: string, path: string): AgentFold | null {
     };
     const { folds, newest } = foldCandidates(names.map((n) => {
       try {
-        return fs.readFileSync(pyJoin(dir, n), "utf-8");
+        return fs.readFileSync(joinPath(dir, n), "utf-8");
       } catch {
         return null;
       }
@@ -146,7 +147,7 @@ export function agentFoldFile(dir: string, path: string): AgentFold | null {
     fs.closeSync(fd);
   }
   if (fold.pos > start) {
-    writeAtomic(pyJoin(dir, names[(seq + 1) % 2]),
+    writeAtomic(joinPath(dir, names[(seq + 1) % 2]),
       agentFoldText(fold, seq + 1, tail));
   }
   if (whole === data.length) return fold;
@@ -198,7 +199,7 @@ export function writeAtomic(path: string, text: string): boolean {
 
 /** The byte offset the last Stop reported each agent file up to, or null
  * when no Stop has written one for this session.  See _foldAgents for what
- * the distinction buys.  A value must be an int, and Python's bool is one. */
+ * the distinction buys.  A value must be an int, and a bool counts as one. */
 export function agentOffsets(transcript: string,
   stateDir: string): Map<string, number> | null {
   try {
@@ -226,7 +227,8 @@ export function publishAgentOffsets(transcript: string,
     if (a.offset >= (held.get(a.path) ?? a.offset + 1)) continue;
     if (a.offset > (ext.get(a.path) ?? 0)) ext.set(a.path, a.offset);
   }
-  writeAtomic(_agentStatePath(transcript, stateDir), pyJsonDumps(ext));
+  writeAtomic(_agentStatePath(transcript, stateDir),
+    stableJson(ext, { spaced: true }));
 }
 
 /** An agent file's id and name: the id off `agent-<id>.jsonl`, and the
@@ -356,7 +358,7 @@ export function inboxFoldCounts(stateDir: string, transcript: string,
   const dir = inboxFoldDir(stateDir, transcript);
   const [entries, seq] = inboxFoldLoad(INBOX_SLOTS.map((n) => {
     try {
-      return fs.readFileSync(pyJoin(dir, n), "utf-8");
+      return fs.readFileSync(joinPath(dir, n), "utf-8");
     } catch {
       return null;
     }
@@ -396,7 +398,7 @@ export function inboxFoldCounts(stateDir: string, transcript: string,
     return got === null ? [] : [...got[0].got, ...got[2]];
   });
   if (changed) {
-    writeAtomic(pyJoin(dir, INBOX_SLOTS[(seq + 1) % 2]),
+    writeAtomic(joinPath(dir, INBOX_SLOTS[(seq + 1) % 2]),
       inboxFoldText(entries, seq + 1));
   }
   return out;

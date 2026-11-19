@@ -37,9 +37,8 @@ import type { Settings } from "./formatting.ts";
 import { ink, paint, span, spans } from "./spans.ts";
 import type { Span } from "./spans.ts";
 import {
-  pyAsciiDigits, pyFormatF, pyIntStr, pyRstrip, pySlice,
-} from "./py.ts";
-import { pyFloat } from "./sources.ts";
+  asciiDigits, charSlice, firstMax, fixed, intText, stripEnd, toFloat,
+} from "./exact.ts";
 import { etaFinish } from "./claude_records.ts";
 import type { AgentEta, Git, Transcript } from "./claude_records.ts";
 import { hidden } from "./grid.ts";
@@ -99,7 +98,7 @@ export function modelLabel(modelId: string): string {
   const low = (modelId || "").toLowerCase();
   const fam = (MODEL_FAMILIES as readonly string[])
     .find((f) => low.includes(f.toLowerCase())) ?? "";
-  if (!fam) return pySlice(modelId, null, VAL_W);
+  if (!fam) return charSlice(modelId, null, VAL_W);
   const tail = low.slice(low.indexOf(fam.toLowerCase()) + fam.length);
   const m = MODEL_VERSION.exec(tail);
   if (!m) return fam;
@@ -114,11 +113,11 @@ export function modelSpec(modelId: string): string {
   const fam = sp < 0 ? label : label.slice(0, sp);
   const ver = sp < 0 ? "" : label.slice(sp + 1);
   if (ver) {
-    const d = pySlice(ver, null, 1);
-    return pySlice(fam, null, 1) + (/^\p{Nd}$/u.test(d)
-      ? Array.from(E_SUP_DIGITS)[Number(pyAsciiDigits(d))] : d);
+    const d = charSlice(ver, null, 1);
+    return charSlice(fam, null, 1) + (/^\p{Nd}$/u.test(d)
+      ? Array.from(E_SUP_DIGITS)[Number(asciiDigits(d))] : d);
   }
-  return pySlice(fam, null, 2);
+  return charSlice(fam, null, 2);
 }
 
 const EFFORT_GLYPHS: Readonly<Record<string, string>> = {
@@ -166,7 +165,7 @@ export function mainDoing(tr: Transcript): [string, number] {
 export function costText(st: Settings, costUsd: string,
   mark: string = st.sCost): Span[] {
   if (!costUsd || costUsd === "null") return [];
-  const c = pyFloat(costUsd);
+  const c = toFloat(costUsd);
   // json reads NaN and 1e400 as floats; both are dropped.
   if (c === null || !Number.isFinite(c)) return [];
   return [span(mark),
@@ -179,15 +178,15 @@ export function costText(st: Settings, costUsd: string,
  * still not fit, its decimal goes. */
 function cost(st: Settings, usd: number | null, est = false): Span[] {
   if (usd === null) return [];
-  if (!est) return costText(st, pyFormatF(usd, 4));
+  if (!est) return costText(st, fixed(usd, 4));
   const room = visWidth(st.sCost, st.widths) + 4 - visWidth(E_COST, st.widths);
   // moneyFig's unit column kept where it fits, so the figure stands where
   // an exact one would.
   const whole = moneyFig(st, usd);
   let fig = "~" + whole;
-  if (visWidth(fig, st.widths) > room) fig = "~" + pyRstrip(whole);
+  if (visWidth(fig, st.widths) > room) fig = "~" + stripEnd(whole);
   if (visWidth(fig, st.widths) > room && usd >= K - K / 2000.0) {
-    fig = "~" + pyFormatF(usd / K, 0) + "k";
+    fig = "~" + fixed(usd / K, 0) + "k";
   }
   return [span(E_COST),
     span(padVal(st, room, fig), "F_YEL", magDim(usd, MAG_COST))];
@@ -199,7 +198,7 @@ function cost(st: Settings, usd: number | null, est = false): Span[] {
 function spend(st: Settings, mark: string | null, usd: number | null):
   Span[] {
   if (mark === null || usd === null) return [];
-  return costText(st, pyFormatF(usd, 4), mark);
+  return costText(st, fixed(usd, 4), mark);
 }
 
 /** ctx, 🧠: the context's size and its share of the window, the share
@@ -209,7 +208,7 @@ function spend(st: Settings, mark: string | null, usd: number | null):
 function ctx(st: Settings, tokens: number, window = 0,
   est = false): Span[] {
   if (tokens <= 0) return [];
-  const pct = window > 0 ? pyIntStr(tokens * 100 / window) + E_PCT : "";
+  const pct = window > 0 ? intText(tokens * 100 / window) + E_PCT : "";
   const size = humanize(st, tokens);
   const style = grade("count", "F_PNK", size, st.colourMode);
   const fig = paint(style, padVal(st, 4, size));
@@ -217,7 +216,7 @@ function ctx(st: Settings, tokens: number, window = 0,
   // An estimate's size and its blank become one field.
   if (est) {
     return [span(st.sCtx), { ...fig,
-      text: padVal(st, 5, "~" + pyRstrip(fig.text.trimStart())) }, share];
+      text: padVal(st, 5, "~" + stripEnd(fig.text.trimStart())) }, share];
   }
   return [span(st.sCtx), fig, span(" "), share];
 }
@@ -229,9 +228,9 @@ function ctx(st: Settings, tokens: number, window = 0,
 function ctxGrowth(st: Settings, tokens: number,
   points: number | null): Span[] {
   const sign = tokens < 0 ? "-" : "+";
-  const size = padVal(st, 4, sign + pyRstrip(humanize(st, Math.abs(tokens))));
+  const size = padVal(st, 4, sign + stripEnd(humanize(st, Math.abs(tokens))));
   const pct = points === null ? ""
-    : padVal(st, 4, sign + pyIntStr(Math.abs(points)) + E_PCT);
+    : padVal(st, 4, sign + intText(Math.abs(points)) + E_PCT);
   const room = aCtxW(st) - visWidth(st.sCtx, st.widths);
   const gap = visWidth(size + " " + pct, st.widths) > room ? "" : " ";
   // The points a span of their own, so a hidden `context.share` can drop
@@ -271,7 +270,7 @@ function cache(st: Settings, pct: unknown): Span[] {
   if (p < 0) return [];
   // The bare 🎯: the cell draws no paint pad after it.
   return [span(E_CACHE),
-    paint(cacheColor(p), (p >= 100 ? E_HUNDRED : padVal(st, 2, pyIntStr(p))) +
+    paint(cacheColor(p), (p >= 100 ? E_HUNDRED : padVal(st, 2, intText(p))) +
       E_PCT)];
 }
 
@@ -291,7 +290,7 @@ export type EtaReading = null | readonly [] | readonly [number, number];
 
 /** (share done, seconds left) off the latest ETA and the elapsed time;
  * `eta` is (epoch, seconds left), or null for no transcript.  `startMs`
- * is whatever the task record held, read as pyFloat reads it: what it
+ * is whatever the task record held, read as toFloat reads it: what it
  * cannot read is no start. */
 export function etaReading(eta: readonly number[] | null | undefined,
   startMs: unknown, now: number, status = "running",
@@ -302,7 +301,7 @@ export function etaReading(eta: readonly number[] | null | undefined,
   if (end !== null && (status === "killed" || status === "failed")) {
     t = Math.min(t, end);
   }
-  const ms = pyFloat(startMs);
+  const ms = toFloat(startMs);
   let t0 = ms === null ? null : ms / 1000.0;
   const [at, said] = eta;
   // A report older than the start is a resumed agent: read from the
@@ -328,14 +327,6 @@ export function liveFinishes(agentEtas: readonly AgentEta[], now: number,
   return agentEtas.filter(([f, last]) => last !== null &&
     (now - last <= ETA_LIVE_S ||
       (f === Infinity && !!turnS && last >= turnS))).map(([f]) => f);
-}
-
-/** The largest of xs, the first of equals, and a NaN only where it comes
- * first.  xs not empty. */
-function firstMax(xs: readonly number[]): number {
-  let m = xs[0];
-  for (const x of xs.slice(1)) if (x > m) m = x;
-  return m;
 }
 
 /** `own` ETA, pushed out to the latest of the descendants' `finishes`.
@@ -440,7 +431,7 @@ function split(st: Settings, elapsed: number | null, modelS: number | null,
 function limit(st: Settings, emoji: string, pctS: string,
   share: number | null, colour: string, billed = true, dim = false,
   digits = 3): Span[] {
-  if (!pctS || pyFloat(pctS) === null || !billed) return [];
+  if (!pctS || toFloat(pctS) === null || !billed) return [];
   const style = ink(colour, dim);
   const fp = digits - 1;
   // The point holds one column on every row (see decAlign); 💯 takes the
@@ -479,7 +470,7 @@ export function diffFig(st: Settings, added: string,
 
   // int(float(v)): an infinity or a NaN is "?".
   const n = (v: string): number | null => {
-    const f = pyFloat(v);
+    const f = toFloat(v);
     return f === null || !Number.isFinite(f) ? null : Math.trunc(f);
   };
 
@@ -498,7 +489,7 @@ export function diffFig(st: Settings, added: string,
 /** diff, 💾: lines added and removed, blank when neither: none changed,
  * or none counted. */
 function diff(st: Settings, added: unknown, removed: unknown): Span[] {
-  const a = pyIntStr(added as number), r = pyIntStr(removed as number);
+  const a = intText(added as number), r = intText(removed as number);
   if (a === "0" && r === "0") return [];
   return diffFig(st, a, r);
 }
@@ -535,22 +526,22 @@ export function renderKind(agentType: string, taskKind: string): string {
 
 /** 👶🏻 and how many agents hang under a row. */
 export function renderKids(n: number): Span[] {
-  return !n ? [] : [span(E_KIDS), span(pyIntStr(n), "F_CRM")];
+  return !n ? [] : [span(E_KIDS), span(intText(n), "F_CRM")];
 }
 
 /** 🤏 and how often an agent's window has been compacted. */
 export function renderCompactions(n: number): Span[] {
-  return !n ? [] : [span(E_ROW_COMPACT), span(pyIntStr(n), "F_PNK")];
+  return !n ? [] : [span(E_ROW_COMPACT), span(intText(n), "F_PNK")];
 }
 
 /** 📨 and how many messages wait for a thread's next tool round. */
 export function renderInbox(n: number): Span[] {
-  return !n ? [] : [span(E_INBOX), span(pyIntStr(n), "F_CYN")];
+  return !n ? [] : [span(E_INBOX), span(intText(n), "F_CYN")];
 }
 
 /** 💻 or 📡 and how many shells or Monitors a thread has running. */
 export function renderBackground(mark: string, n: number): Span[] {
-  return !n ? [] : [span(mark), span(pyIntStr(n), "F_CRM")];
+  return !n ? [] : [span(mark), span(intText(n), "F_CRM")];
 }
 
 /** A part of a row's label, with the path --hide names it by; see Piece. */
@@ -707,7 +698,7 @@ export function mainLabel(inbox = 0): Piece[] {
 export function projectName(git: Git, projectDir: string): string {
   if (!git.in_git) return "[none]";
   const base = (p: string): string => {
-    const t = pyRstrip(p, "/");
+    const t = stripEnd(p, "/");
     return t.slice(t.lastIndexOf("/") + 1);
   };
   const n = base(git.main_root || git.toplevel) || base(projectDir);
@@ -828,8 +819,8 @@ export function turnLine(st: Settings, arrow: string, promptId: string,
 /** turnHead's tag, "🔺🔖 8f37748e #12", "" with neither part. */
 export function turnTag(arrow: string, promptId: string,
   turnIndex: number | null): string {
-  const parts = [...(promptId ? [pySlice(promptId, null, TURN_ID_HEX)] : []),
-    ...(turnIndex !== null ? ["#" + pyIntStr(turnIndex)] : [])];
+  const parts = [...(promptId ? [charSlice(promptId, null, TURN_ID_HEX)] : []),
+    ...(turnIndex !== null ? ["#" + intText(turnIndex)] : [])];
   return parts.length ? arrow + E_TURN_ID + " " + parts.join(" ") : "";
 }
 

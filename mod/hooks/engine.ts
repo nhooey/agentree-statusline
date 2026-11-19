@@ -11,7 +11,7 @@
 // what was saved to disk.
 import type { EngineInterface } from 'claude-code'
 
-import { pyJoin } from '../src/claude_records.ts'
+import { joinPath } from '../src/exact.ts'
 
 type $ = EngineInterface
 
@@ -285,7 +285,7 @@ export async function listDir($: $, dir: string) {
 export async function agentWalk($: $, dir: string, out: Listed[]): Promise<void> {
   for (const e of await listDir($, dir)) {
     if (e.name.startsWith('.')) continue
-    const p = pyJoin(dir, e.name)
+    const p = joinPath(dir, e.name)
     if (e.kind === 'dir') await agentWalk($, p, out)
     else if (AGENT_NAME.test(e.name)) {
       out.push({ path: p, size: e.size, mtimeMs: e.mtimeMs })

@@ -51,7 +51,7 @@ import {
 import type { Env, Settings } from "../src/formatting.ts";
 import { join, span } from "../src/spans.ts";
 import type { Span, SpanLike } from "../src/spans.ts";
-import { pyRstrip } from "../src/py.ts";
+import { stripEnd } from "../src/exact.ts";
 import {
   CELLS, accountLabel, mainLabel, piece, renderKind, sessionLabel,
   turnHead, turnLabel,
@@ -202,7 +202,7 @@ export function readouts(st: Settings, cols: number,
 
 /** A drawn line as the terminal gets it, less its trailing blanks. */
 function line(x: SpanLike): string {
-  return pyRstrip(join(x));
+  return stripEnd(join(x));
 }
 
 const dim = (t: string): Span => span(t, null, true);

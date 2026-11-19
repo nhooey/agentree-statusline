@@ -19,7 +19,7 @@ import type { EngineInterface } from 'claude-code'
 
 import {
   _recordsOf, agentRecordsOf, backgroundTasks, EMPTY_TRANSCRIPT, endedTasks,
-  pyJoin, readPayload, transcriptFinish, turnStartText,
+  readPayload, transcriptFinish, turnStartText,
 } from '../src/claude_records.ts'
 import type {
   AgentEta, AgentRec, Git, Payload, Rec, Transcript, Turn,
@@ -33,7 +33,7 @@ import {
 } from '../src/spending.ts'
 import { FOLDS_PREFIX, foldsStale } from '../src/band_tree.ts'
 import { decodeLimits, decodeTurn } from '../src/figures.ts'
-import { pyFloat } from '../src/sources.ts'
+import { joinPath, toFloat } from '../src/exact.ts'
 import { isDict } from '../src/py.ts'
 import { seedLimitsSnapshot } from '../src/claude_calib.ts'
 import {
@@ -126,7 +126,7 @@ export async function transcriptPath($: $, places: Places):
   }
   for (const p of await listDir($, places.projectsDir)) {
     if (p.kind !== 'dir') continue
-    const path = pyJoin(pyJoin(places.projectsDir, p.name), id + '.jsonl')
+    const path = joinPath(joinPath(places.projectsDir, p.name), id + '.jsonl')
     if (await fileSize($, path) !== null) {
       found.session = id
       found.path = path
@@ -335,8 +335,8 @@ async function spendingVia($: $, session: string, doc: Dict, tr: Transcript,
     elsewhere }
   const lim = decodeLimits(doc.limits)
   const owned = credits.credits
-  const kind = payerOf(cred, [pyFloat(lim.session_pct),
-    pyFloat(lim.weekly_pct)], owned, now)
+  const kind = payerOf(cred, [toFloat(lim.session_pct),
+    toFloat(lim.weekly_pct)], owned, now)
   const held = keptSpending((await $.state.get(
     { plugin: 'agentree-statusline', key: 'spending' })).value)
   const was = keptFor(held, session) ? held : keptSpending(

@@ -7,9 +7,10 @@ import type { EngineInterface } from 'claude-code'
 
 import {
   _agentDir, _agentStatePath, _recordsOf, agentLabelOf, agentOffsetsOf,
-  agentReadingOf, agentRecordsOf, cmpStr, foldAgentBytes, newAgentFold,
-  pyJoin, transcriptFoldWith, turnsFinish, turnsFoldWith,
+  agentReadingOf, agentRecordsOf, foldAgentBytes, newAgentFold,
+  transcriptFoldWith, turnsFinish, turnsFoldWith,
 } from '../src/claude_records.ts'
+import { cmpStr, joinPath } from '../src/exact.ts'
 import type {
   AgentFold, AgentReading, Turn, TurnsFold,
 } from '../src/claude_records.ts'
@@ -163,7 +164,7 @@ async function loadFold($: $, stateDir: string, path: string, size: number):
   const dir = mainFoldDir(stateDir, path)
   const heads = []
   for (const slot of HEAD_SLOTS) {
-    const h = foldHeadOf(await readText($, pyJoin(dir, slot)))
+    const h = foldHeadOf(await readText($, joinPath(dir, slot)))
     if (h) heads.push(h)
   }
   heads.sort((a, b) => b.seq - a.seq)
@@ -180,7 +181,7 @@ async function loadFold($: $, stateDir: string, path: string, size: number):
     }
     const parts: (string | null)[] = []
     for (let i = 0; i < got.counts.length; i++) {
-      parts.push(await readText($, pyJoin(dir, partName(i))))
+      parts.push(await readText($, joinPath(dir, partName(i))))
     }
     const back = await timed($, 'parse', async () => foldOfSaved(got, parts))
     if (back) {
@@ -218,7 +219,7 @@ async function saveMainFold($: $, stateDir: string, path: string,
       return
     }
     for (const [name, text] of save.writes) {
-      await $.fs.write(pyJoin(dir, name), text)
+      await $.fs.write(joinPath(dir, name), text)
     }
     got.mark = save.mark
     got.savedTo = got.offset
@@ -242,7 +243,7 @@ let cutsDropped = false
  * `rm` does, handed only the names a cut was saved under, and `rmdir`
  * then each directory, which leaves one that holds anything else. */
 export async function dropCuts($: $, stateDir: string): Promise<void> {
-  await dropOldDir($, pyJoin(stateDir, CUTS_DIR), CUT_DIR_NAME,
+  await dropOldDir($, joinPath(stateDir, CUTS_DIR), CUT_DIR_NAME,
     CUT_FILE_NAME)
 }
 
@@ -269,10 +270,10 @@ async function dropOldDir($: $, top: string, dirName: RegExp,
   const dirs: string[] = []
   for (const d of await listDir($, top)) {
     if (d.kind !== 'dir' || !dirName.test(d.name)) continue
-    const dir = pyJoin(top, d.name)
+    const dir = joinPath(top, d.name)
     for (const f of await listDir($, dir)) {
       if (f.kind === 'file' && fileName.test(f.name)) {
-        files.push(pyJoin(dir, f.name))
+        files.push(joinPath(dir, f.name))
       }
     }
     dirs.push(dir)
@@ -312,7 +313,7 @@ export async function folderAgents($: $, transcript: string):
   for (const e of await listDir($, dir)) {
     const id = META_NAME.exec(e.name)?.[1]
     if (e.kind !== 'file' || !id) continue
-    const path = pyJoin(dir, e.name)
+    const path = joinPath(dir, e.name)
     if (!metas.has(path)) {
       const text = await readText($, path)
       let meta: unknown = null
@@ -334,7 +335,7 @@ export async function folderAgents($: $, transcript: string):
  * will not read.  A reply is written last, so its end holds it. */
 async function folderReply($: $, transcript: string, id: string):
   Promise<string> {
-  const path = pyJoin(_agentDir(transcript), 'agent-' + id + '.jsonl')
+  const path = joinPath(_agentDir(transcript), 'agent-' + id + '.jsonl')
   try {
     const size = await fileSize($, path)
     if (!size) return ''
@@ -385,7 +386,7 @@ export async function agentReadings($: $, transcript: string):
   const { stateDir } = await placesOf($)
   if (!oldAgentFoldsDropped) {
     oldAgentFoldsDropped = true
-    void dropOldDir($, pyJoin(stateDir, OLD_AGENT_FOLDS_DIR), CUT_DIR_NAME,
+    void dropOldDir($, joinPath(stateDir, OLD_AGENT_FOLDS_DIR), CUT_DIR_NAME,
       OLD_AGENT_FOLD_NAME).catch(() => {})
   }
   const dir = agentFoldDir(stateDir, transcript)
@@ -477,7 +478,7 @@ async function agentTail($: $, path: string, pos: number, size: number):
 async function savedFold($: $, dir: string, path: string, size: number):
   Promise<[AgentFold, number]> {
   const { folds, newest } = foldCandidates(await Promise.all(
-    slotNames(path).map((n) => readText($, pyJoin(dir, n)))))
+    slotNames(path).map((n) => readText($, joinPath(dir, n)))))
   for (const [seq, tail, fold] of folds) {
     try {
       if (fold.pos <= size &&
@@ -506,7 +507,7 @@ async function saveFold($: $, dir: string, path: string, fold: AgentFold,
   if (now - (foldSaved.get(path) ?? -Infinity) < CONFIG.foldSaveMs) return seq
   foldSaved.set(path, now)
   try {
-    await $.fs.write(pyJoin(dir, slotNames(path)[(seq + 1) % 2]),
+    await $.fs.write(joinPath(dir, slotNames(path)[(seq + 1) % 2]),
       agentFoldText(fold, seq + 1, tail))
     return seq + 1
   } catch (err) {

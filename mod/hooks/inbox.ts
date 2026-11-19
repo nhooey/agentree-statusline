@@ -8,8 +8,9 @@
 import type { EngineInterface } from 'claude-code'
 
 import {
-  inboxDeliveriesOf, inboxSendsOf, inboxTally, pyJoin,
+  inboxDeliveriesOf, inboxSendsOf, inboxTally,
 } from '../src/claude_records.ts'
+import { joinPath } from '../src/exact.ts'
 import {
   foldInboxEntry, INBOX_CHECK_BYTES, INBOX_SLOTS, inboxFoldDir,
   inboxFoldLoad, inboxFoldText, inboxTailDigest, newInboxEntry,
@@ -106,7 +107,7 @@ export async function inboxNow($: $, transcript: string,
  * other; else none, after the highest sequence number either holds. */
 async function loadKept($: $, dir: string): Promise<Kept> {
   const [entries, seq] = inboxFoldLoad(await Promise.all(
-    INBOX_SLOTS.map((n) => readText($, pyJoin(dir, n)))))
+    INBOX_SLOTS.map((n) => readText($, joinPath(dir, n)))))
   return { entries, stamps: new Map(), rests: new Map(),
     unchecked: new Set(entries.keys()), seq, dirty: false,
     savedAt: -Infinity }
@@ -183,7 +184,7 @@ async function save($: $, dir: string, k: Kept): Promise<void> {
   if (now - k.savedAt < CONFIG.foldSaveMs) return
   k.savedAt = now
   try {
-    await $.fs.write(pyJoin(dir, INBOX_SLOTS[(k.seq + 1) % 2]),
+    await $.fs.write(joinPath(dir, INBOX_SLOTS[(k.seq + 1) % 2]),
       inboxFoldText(k.entries, k.seq + 1))
     k.seq += 1
     k.dirty = false
