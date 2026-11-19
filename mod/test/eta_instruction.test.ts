@@ -61,3 +61,17 @@ test("the skill states the format line as the instruction does", () => {
     .filter((l) => l.startsWith("⛳ "));
   assert.deepEqual(lines, [formatLine()]);
 });
+
+test("the format line with ∞ in place of the figure parses to no end", () => {
+  const epoch = Date.parse(STAMP) / 1000;
+  for (const tail of ["", " — the user's answer"]) {
+    const written = formatLine().replace(PLACEHOLDER, "∞") + tail;
+    assert.deepEqual(report(written), [epoch, Infinity], written);
+  }
+});
+
+test("the instruction and the skill each say when to write ETA ∞", () => {
+  for (const [name, text] of [["instruction", TEXT], ["skill", SKILL]]) {
+    assert.match(text, /`ETA ∞`/u, name);
+  }
+});

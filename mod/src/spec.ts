@@ -1224,6 +1224,12 @@ export const E_ETA = "⛳";             // ⛳  how long an agent says it has LE
                                        //    Emoji_Presentation=Yes, EAW W.
 export const E_ETA_REPORT = E_ETA;                 // ⛳  the flag the skill's report line opens with,
                                                    //    which ETA_LINE forgives the absence of
+export const E_ETA_INF = "∞";          // ∞  the figure of a report with no end in sight, an
+                                       //    agent waiting on something with no time estimate,
+                                       //    in the report and in ⛳'s readout.  U+221E, Unicode
+                                       //    1.1, one codepoint, EAW A, so visWidth counts it
+                                       //    one column; a terminal that draws it two shifts
+                                       //    the row by one, which probe-advance.sh measures.
 export const E_MODE_ETA = E_ETA;                 // ⛳  paused on nothing it can name, but its last
                                                  //    message said how long it has left
 // The gauge after each of an agent row's 🤖 🔧 🚦: that mark's share of the

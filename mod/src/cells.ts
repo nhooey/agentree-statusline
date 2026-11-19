@@ -18,9 +18,9 @@
 // eta cell reads the clock only where it is handed no `now`.
 import {
   E_ACCT, E_CACHE, E_COST, E_COWORK, E_DATE, E_DIFF, E_DIR, E_DIRTY, E_DOWN,
-  E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX, E_EFF_MED, E_EFF_XHIGH, E_ETA, E_FABLE,
-  E_GAUGE, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_IDLE, E_INBOX, E_KIDS, E_MOD,
-  E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR, E_PROJ, E_RATE,
+  E_EFF_HIGH, E_EFF_LOW, E_EFF_MAX, E_EFF_MED, E_EFF_XHIGH, E_ETA, E_ETA_INF,
+  E_FABLE, E_GAUGE, E_GIT_BAD, E_GIT_OK, E_HUNDRED, E_IDLE, E_INBOX, E_KIDS,
+  E_MOD, E_OAUTH_APPS, E_OMELETTE, E_OPUS, E_PCT, E_PR, E_PROJ, E_RATE,
   E_KIND_CLAUDE, E_KIND_EXPLORE, E_KIND_FORK, E_KIND_GENERAL, E_KIND_GUIDE,
   E_KIND_OTHER, E_KIND_PLAN, E_KIND_REMOTE, E_KIND_SETUP, E_KIND_SHELL,
   E_KIND_TEAMMATE, E_KIND_WORKFLOW,
@@ -41,7 +41,7 @@ import {
 } from "./py.ts";
 import { pyFloat } from "./sources.ts";
 import { etaFinish } from "./claude_records.ts";
-import type { Git, Transcript } from "./claude_records.ts";
+import type { AgentEta, Git, Transcript } from "./claude_records.ts";
 import { hidden } from "./grid.ts";
 import type { Piece } from "./grid.ts";
 
@@ -318,6 +318,18 @@ export function etaReading(eta: readonly number[] | null | undefined,
 // thread's ⛳ open.
 export const ETA_LIVE_S = 1800.0;
 
+/** The finishes of `agentEtas`, (finish, last epoch) pairs, that hold the
+ * main thread's ⛳ open at `now`: those written within ETA_LIVE_S, and an
+ * ∞ written since the turn opened at `turnS`, however long ago, since an
+ * agent waiting on a person is silent.  An ∞ from before the turn is an
+ * agent whose end the main transcript may never see, and does not. */
+export function liveFinishes(agentEtas: readonly AgentEta[], now: number,
+  turnS: number | null): (number | null)[] {
+  return agentEtas.filter(([f, last]) => last !== null &&
+    (now - last <= ETA_LIVE_S ||
+      (f === Infinity && !!turnS && last >= turnS))).map(([f]) => f);
+}
+
 /** The largest of xs, the first of equals, and a NaN only where it comes
  * first.  xs not empty. */
 function firstMax(xs: readonly number[]): number {
@@ -336,15 +348,24 @@ export function inheritEta<E extends readonly number[] | null>(own: E,
   const mine = own && own.length ? etaFinish(own) : null;
   if (mine !== null) ends.push(mine);
   if (!ends.length || (mine !== null && ends.length === 1)) return own;
-  const at = startS ? startS : (own && own.length ? own[0] : firstMax(ends));
-  return [at, firstMax(ends) - at];
+  const top = firstMax(ends);
+  // An ∞ finish is no epoch to count from: the latest finite one is.
+  const at = startS ? startS : own && own.length ? own[0]
+    : firstMax([0, ...ends.filter(Number.isFinite)]);
+  return [at, top - at];
+}
+
+/** ⛳'s figure for `left` seconds left: E_ETA_INF for an ∞ report, which
+ * is never counted down. */
+export function etaLeftFig(st: Settings, left: number, digits = 3): string {
+  return left === Infinity ? E_ETA_INF : durFmt(st, left, digits);
 }
 
 /** eta, ⛳: the time left on `reported`, an (epoch, seconds left) report,
  * [] for none yet or null for no transcript, at `now` (the clock where it
  * is null); see etaReading for `startMs`, when the work began, `status`
  * and `end`.  Late, an amber "+", or a red one when `signedOff`; blank
- * with no live estimate. */
+ * with no live estimate; ∞ for an ∞ report. */
 function eta(st: Settings, reported: readonly number[] | null,
   startMs: unknown, now: number | null, status = "running",
   end: number | null = null, signedOff = false): Span[] {
@@ -356,7 +377,7 @@ function eta(st: Settings, reported: readonly number[] | null,
     return [span(E_ETA), span(padVal(st, A_ETA_FIG_W,
       "+" + durFmt(st, -left)), signedOff ? "F_OVER" : "F_AMB")];
   }
-  const fig = durFmt(st, left);
+  const fig = etaLeftFig(st, left);
   return [span(E_ETA),
     paint(grade("duration", "F_ETA", fig, st.colourMode),
       padVal(st, A_ETA_FIG_W, fig))];

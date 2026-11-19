@@ -375,10 +375,12 @@ export function agentCells(st: Settings, task: Dict, usage: unknown,
     pyTruthy(shownEta) &&
     etaFinish(shownEta!)! <= etaFinish(ownEta!)! + 1e-6;
   // An agent that has ended has its ⛳ read at its end, as its ⌛ is; one
-  // that signed off at zero draws none.
+  // that signed off at zero draws none, and nor does one left at ∞, since
+  // what it waited on no longer holds it.
   const etaNow = end === null ? now : Math.min(t, end);
-  const etaCell = !live && signedOff ? [] : CELLS.eta(st, shownEta,
-    task.startTime, etaNow, status,
+  const endless = pyTruthy(shownEta) && shownEta![1] === Infinity;
+  const etaCell = !live && (signedOff || endless) ? [] : CELLS.eta(st,
+    shownEta, task.startTime, etaNow, status,
     ua(usage, "last_epoch") as number | null, signedOff);
   const elapsed = clocked ? agentElapsed(task.startTime, now, end, first)
     : null;
