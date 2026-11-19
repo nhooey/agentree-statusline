@@ -42,18 +42,18 @@ import {
 import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
-  ROW_NAMES, accountHide, accountLine, bandRows, bandScoped, footerRuler,
-  footerTail,
+  ROW_NAMES, accountHide, accountLine, bandRows, bandScoped, drawnIn,
+  footerRuler, footerTail,
   modeOfHint, rootDrawn, treeAgents,
 } from '../src/band.ts'
-import type { Place, RowsLive, RowsPlace } from '../src/band.ts'
+import type { RowsLive, RowsPlace } from '../src/band.ts'
 import {
   answerText, billedNothing, closingLine, newestBilled, receiptScoped,
   stampedOf, startTag, tagsHidden, turnKey,
   withEngineDuration,
 } from '../src/receipt.ts'
 import type { TurnEnd } from '../src/receipt.ts'
-import type { Options } from '../src/options_spec.ts'
+import type { Options, Place } from '../src/options_spec.ts'
 import { messageBlock, messageSpans, taskOf } from '../src/agent_message.ts'
 import { sha256Hex } from '../src/sha256.ts'
 import type { Dict } from '../src/py.ts'
@@ -933,11 +933,10 @@ function rootedIn(o: Options, running: boolean): boolean {
     running ? 'running' : 'done', o.hide)
 }
 
-/** Whether the 💳 account is drawn now, by rows.account.live: "running"
- * while a turn runs, as the band's rows are. */
+/** Whether the 💳 account is drawn now, by rows.account.live, as the
+ * band's rows are (drawnIn). */
 function accountedIn(o: Options, running: boolean): boolean {
-  const live = o.rows.account.live
-  return live === 'always' || (live === 'running' && running)
+  return drawnIn(o.rows.account.live, running ? 'running' : 'done')
 }
 
 async function home($: $): Promise<string> {

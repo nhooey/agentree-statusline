@@ -51,6 +51,7 @@ import type { TreeTask } from "./subagent_tasks.ts";
 import { draw, hidden, layout } from "./grid.ts";
 import type { Piece, Row } from "./grid.ts";
 import type { Dict } from "./py.ts";
+import type { Live, Place } from "./options_spec.ts";
 
 /** Whether a turn is running, which draws all four rows, or done. */
 export type Phase = "running" | "done";
@@ -93,20 +94,28 @@ export type BandOpts = {
  * "turn", 🤖 "agent", 🎮 "session". */
 export type RowName = "turn" | "agent" | "session";
 
-/** When the band draws a row, its `rows.<row>.live`: "never"; "running",
- * while a turn runs; "always", while a turn runs and kept after it ends.
- * Whether the receipt stamps it is apart (receiptLines). */
-export type Live = "never" | "running" | "always";
-
 /** Each row's Live, by its name. */
 export type RowsLive = { readonly [row in RowName]?: Live };
 
-/** Where the mod draws a row, its `rows.<row>.place`: "above", in the band
- * above the prompt, or "footer", under Claude Code's footer line. */
-export type Place = "above" | "footer";
-
 /** Each row's Place, by its name. */
 export type RowsPlace = { readonly [row in RowName]?: Place };
+
+/** Whether a row whose `live` is `live` is drawn in `phase`, the one rule
+ * for every row the mod draws, the subagents and 💳 among them:
+ *
+ *   live \ phase   running   done
+ *   never          no        no
+ *   running        yes       no
+ *   always         yes       yes */
+export function drawnIn(live: Live, phase: Phase): boolean {
+  return phase === "running" ? live !== "never" : live === "always";
+}
+
+/** Whether `places` puts `row` in `place`, a row absent being "footer". */
+export function placedIn(places: RowsPlace, row: RowName, place: Place):
+  boolean {
+  return (places[row] ?? "footer") === place;
+}
 
 export const ROW_NAMES: readonly RowName[] = ["turn", "agent", "session"];
 
@@ -557,9 +566,8 @@ function treeInput(fig: Dict, session: Row | null, main: Row | null,
   const tr = decodeTranscript(fig.transcript);
   const running = opts.phase === "running";
   const doc = fig.agents as Dict | undefined;
-  const when = opts.agents ?? "running";
   const shown = doc !== undefined &&
-    (running ? when !== "never" : when === "always");
+    drawnIn(opts.agents ?? "running", opts.phase);
   return {
     session, main, turn,
     workspace: workspaceOf(fig, ""),
@@ -601,10 +609,10 @@ export function treeAgents(fig: Dict, running: boolean, linger: number):
 /** Whether the band's tree draws its root, 🎮, now: `rows.session`'s
  * `place` puts it above the prompt and its `live` draws it in `phase`, and
  * `hide` leaves it.  The 💳 row then leaves ROOT_WORKSPACE to it. */
-export function rootDrawn(place: unknown, live: unknown, phase: Phase,
+export function rootDrawn(place: Place, live: Live, phase: Phase,
   hide: readonly string[]): boolean {
   return place === "above" && !hidden(hide, "session") &&
-    (phase === "running" ? live !== "never" : live === "always");
+    drawnIn(live, phase);
 }
 
 /** The workspace parts the tree's root draws on its label (treeOf), which
@@ -638,13 +646,9 @@ export function phaseRows(rows: BandRows, phase: Phase,
   live: RowsLive = {}, place?: Place, places: RowsPlace = {}): Row[] {
   const named: [RowName, Row][] = [["turn", rows.turn], ["agent", rows.main],
     ["session", rows.session]];
-  return named.filter(([name]) => {
-    if (place !== undefined && (places[name] ?? "footer") !== place) {
-      return false;
-    }
-    const when = live[name] ?? "running";
-    return phase === "running" ? when !== "never" : when === "always";
-  }).map(([, row]) => row);
+  return named.filter(([name]) =>
+    (place === undefined || placedIn(places, name, place)) &&
+    drawnIn(live[name] ?? "running", phase)).map(([, row]) => row);
 }
 
 /** The 💳 row's label as one line of plain text after the workspace (📦

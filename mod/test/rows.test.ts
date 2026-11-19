@@ -18,7 +18,7 @@ import { draw } from "../src/grid.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
   FOOTER_GAP, FOOTER_JOIN, MODE_PILLS, TAIL_CUT, accountLine, accountText, footerParts, modeOfHint, bandLines, bandRows, fixedKeys, footerTail,
-  phaseRows,
+  drawnIn, phaseRows, placedIn,
   workspaceOf,
 } from "../src/band.ts";
 import {
@@ -152,6 +152,29 @@ test("the rows under the footer line draw the tree's labels, from the left",
     // 🧵's 📨 between its circle and its name, as the tree draws it.
     assert.match(lines(queued)[1], /^🧵 +🟢 📨3 main /u);
   });
+
+test("a row is drawn while a turn runs unless its live is never, and " +
+  "once it ends only where its live is always", () => {
+  for (const [live, running, done] of [
+    ["never", false, false],
+    ["running", true, false],
+    ["always", true, true],
+  ] as const) {
+    assert.equal(drawnIn(live, "running"), running, live + " running");
+    assert.equal(drawnIn(live, "done"), done, live + " done");
+  }
+});
+
+test("a row absent from the places is under the footer line", () => {
+  const places = { turn: "above", agent: "footer" } as const;
+  for (const [row, place, want] of [
+    ["turn", "above", true], ["turn", "footer", false],
+    ["agent", "above", false], ["agent", "footer", true],
+    ["session", "above", false], ["session", "footer", true],
+  ] as const) {
+    assert.equal(placedIn(places, row, place), want, row + " " + place);
+  }
+});
 
 test("each row's live and transcript pick the band's rows and the receipt's",
   () => {
