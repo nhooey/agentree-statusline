@@ -10,7 +10,7 @@ import * as path from "node:path";
 import { OPTIONS, type Options } from "../src/options_spec.ts";
 import { DEFAULTS_REL, jsonLoads, merge, optionsOf, parseDefaults, stripJsonc }
   from "../src/config.ts";
-import { DOC_TABLES } from "../tools/gen-option-docs.ts";
+import { DOC_TABLES, withOptionTables } from "../tools/gen-option-docs.ts";
 
 const TYPES = ["bool", "int", "string", "enum", "list", "table", "record"];
 // A record's fields: the scalar types, and lists of condition maps
@@ -113,6 +113,16 @@ test("the defaults file holds every option, in the spec's order", () => {
   assert.deepEqual([...data.keys()], Object.keys(OPTIONS));
 });
 
+// gen-option-docs.ts run in memory: docs/options.md's tables are what the
+// spec and the defaults file write.
+test("docs/options.md's option tables are the spec's", () => {
+  const p = path.join(import.meta.dirname, "..", DEFAULTS_REL);
+  const defaults = parseDefaults(p, fs.readFileSync(p, "utf8"));
+  const doc = fs.readFileSync(
+    path.join(import.meta.dirname, "..", "..", "docs", "options.md"), "utf8");
+  assert.equal(withOptionTables(doc, defaults), doc);
+});
+
 test("the records keep their literal values", () => {
   assert.deepEqual(OPTIONS.rows.fields.place.items, ["above", "footer"]);
   assert.equal(OPTIONS["usage-source"].type, "string");
@@ -152,7 +162,10 @@ test("every option is read by the mod", () => {
     .join("\n");
   for (const name of Object.keys(OPTIONS)) {
     const camel = name.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
-    const read = new RegExp(`\\.${camel}\\b|\\{[^}]*\\b${camel}\\b[^}]*\\}\\s*=`);
+    // Off the options themselves, `o` or `options()`: a row's field of the
+    // same name, `o.rows.account`, is not the option `account`.
+    const read = new RegExp(`(?:\\bo|\\boptions\\(\\))\\??\\.${camel}\\b|` +
+      `\\bconst\\s*\\{[^{}]*\\b${camel}\\b[^{}]*\\}\\s*=\\s*o\\b`);
     assert.ok(read.test(code), `${name} is read by nothing`);
   }
 });
