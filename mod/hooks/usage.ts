@@ -24,7 +24,9 @@ import {
 import type { Places } from './engine.ts'
 import { defaultsFault, options } from './configuration.ts'
 import { log } from './log.ts'
-import { planUsageVia, PLAN_USAGE_EVERY, recentAnswer } from './plan_usage.ts'
+import {
+  nativeWeek, planUsageVia, PLAN_USAGE_EVERY, recentAnswer,
+} from './plan_usage.ts'
 
 type $ = EngineInterface
 
@@ -214,7 +216,8 @@ export async function preparedVia($: $, places: Places, raw: Dict,
   // the fallback below then asks nothing, the endpoint being plan_usage's.
   const planOn = o.planUsage && (spec || 'auto') === 'auto'
   const preferred = planOn
-    ? planUsageVia($, await configAccountVia($, places.home), now) : null
+    ? planUsageVia($, await configAccountVia($, places.home), now,
+      nativeWeek(raw)) : null
   const fetch: Fetch = (selected, ctx) =>
     planOn && selected === 'experimental-claude-oauth' ? Promise.resolve({})
       : fetchOne($, places.home, selected, ctx)
