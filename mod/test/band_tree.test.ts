@@ -24,8 +24,9 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  bgPath, bgText, foldShut, pruneFolds, treeRows,
-  workspaceLinks,
+  bgPath, bgText, drawnAgents, foldShut, foldsKey, foldsStale, heldFolds,
+  keptFolds,
+  pruneFolds, treeRows, workspaceLinks,
 } from "../src/band_tree.ts";
 import type { TreeInput } from "../src/band_tree.ts";
 import { stampedSplit } from "../src/band_tree.ts";
@@ -855,15 +856,101 @@ test("🎮's 📦 🌿 🔀 link to the repository, its branch and its pull " +
   { "workspace.project": repo });
 });
 
-test("an ended agent's folds go, and 🎮's and 🧵's stay", () => {
-  const folds = { session: true, main: false, t1: true, t2: true,
+/** A task of the tree with id `id` and status `status`, its last record
+ * `ago` seconds before NOW, started by `parent` ("" for 🧵), with the
+ * background tasks `background` its transcript has not heard the end of. */
+function pruneTask(id: string, status: string, ago: number, parent = "",
+  background: unknown[] = []): TreeTask {
+  return { task: { id, status, startTime: (NOW - 3600) * 1000 },
+    usage: { last_seen: NOW - ago, last_epoch: NOW - ago, eta: null,
+      background },
+    meta: parent ? { parentAgentId: parent } : {},
+    shares: { sess: null, week: null }, progress: "" };
+}
+
+/** The agents `tasks` as the tree draws them at NOW, keeping a row that
+ * finished for 120 seconds, as finished-within ships. */
+function pruneAgents(tasks: TreeTask[]) {
+  return { tasks, limits: LIMITS, now: NOW, turnStart: null, linger: 120 };
+}
+
+test("a fold goes once the tree no longer draws its row: a paused agent, " +
+  "one finished within finished-within and one over an agent at work " +
+  "keep theirs", () => {
+  const drawn = drawnAgents(pruneAgents([
+    pruneTask("run", "running", 5),
+    // Completed with a background shell running: 🟡 paused.
+    pruneTask("paused", "completed", 3000, "", [["bsh1", "bash"]]),
+    // Completed 30 seconds ago, inside finished-within.
+    pruneTask("fresh", "completed", 30),
+    // Killed long ago, drawn for the agent at work under it.
+    pruneTask("parent", "killed", 3000),
+    pruneTask("kid", "running", 5, "parent"),
+    // Completed past finished-within, with nothing under it.
+    pruneTask("old", "completed", 3000),
+    pruneTask("failed", "failed", 3000)]));
+  assert.deepEqual([...drawn].sort(),
+    ["fresh", "kid", "parent", "paused", "run"]);
+  const folds = { session: true, main: false, run: true, paused: true,
+    fresh: true, parent: true, kid: false, old: true, failed: true,
     gone: true };
-  const tasks = [{ id: "t1", status: "running" },
-    { id: "t2", status: "completed" }, { id: "t3", status: "failed" }];
-  assert.deepEqual(pruneFolds(folds, tasks), { session: true, main: false,
-    t1: true });
-  const kept = { session: true, t1: false };
-  assert.equal(pruneFolds(kept, tasks), kept);
+  assert.deepEqual(pruneFolds(folds, drawn), { session: true, main: false,
+    run: true, paused: true, fresh: true, parent: true, kid: false });
+  // Nothing to drop: the same folds back.
+  const kept = { session: true, paused: false };
+  assert.equal(pruneFolds(kept, drawn), kept);
+});
+
+test("a fold kept while its row is drawn goes once finished-within has " +
+  "passed, and 🎮's and 🧵's stay with no agent drawn", () => {
+  const folds = { session: true, main: true, fresh: true };
+  const at = (ago: number) =>
+    drawnAgents(pruneAgents([pruneTask("fresh", "completed", ago)]));
+  assert.equal(pruneFolds(folds, at(119)), folds);
+  assert.deepEqual(pruneFolds(folds, at(121)), { session: true,
+    main: true });
+  assert.deepEqual(pruneFolds(folds, new Set()), { session: true,
+    main: true });
+});
+
+test("an agent hidden under a folded one keeps its fold: the tree draws " +
+  "it once that opens", () => {
+  const a = pruneAgents([pruneTask("p", "running", 5),
+    pruneTask("c", "running", 5, "p"), pruneTask("g", "running", 5, "c")]);
+  assert.deepEqual([...drawnAgents(a)].sort(), ["c", "g", "p"]);
+  const folds = { p: true, c: true };
+  assert.equal(pruneFolds(folds, drawnAgents(a)), folds);
+});
+
+test("a conversation's folds are read back from the store only whole and " +
+  "its own, and an entry past 31 days, or of no time, is stale", () => {
+  const entry = { session: "s1", folds: { session: true, a1: false },
+    saved_at: NOW };
+  assert.equal(foldsKey("s1"), "folds:s1");
+  assert.deepEqual(keptFolds(entry, "s1"), { session: true, a1: false });
+  assert.equal(keptFolds(entry, "s2"), null);
+  assert.equal(keptFolds(undefined, "s1"), null);
+  assert.equal(keptFolds({ ...entry, folds: { a1: "yes" } }, "s1"), null);
+  assert.equal(keptFolds({ ...entry, folds: [true] }, "s1"), null);
+  assert.equal(foldsStale(entry, NOW + 30 * 86400), false);
+  assert.equal(foldsStale(entry, NOW + 32 * 86400), true);
+  assert.equal(foldsStale({ ...entry, saved_at: undefined }, NOW), true);
+  assert.equal(foldsStale(null, NOW), true);
+});
+
+test("$.state's folds are read back with their session, and a plain map " +
+  "of folds, as an earlier version kept them, as of no session", () => {
+  assert.deepEqual(heldFolds({ session: "s1", folds: { a1: true } }),
+    { session: "s1", folds: { a1: true } });
+  // 🎮's fold is keyed "session": a boolean there is a plain map's.
+  assert.deepEqual(heldFolds({ session: true, a1: false }),
+    { session: "", folds: { session: true, a1: false } });
+  assert.deepEqual(heldFolds(undefined), { session: "", folds: {} });
+  assert.deepEqual(heldFolds({ session: "s1", folds: { a1: 1 } }),
+    { session: "s1", folds: {} });
+});
+
+test("a fold's default stands where none is kept", () => {
   assert.equal(foldShut({}, "t1", true), true);
   assert.equal(foldShut({ t1: false }, "t1", true), false);
 });

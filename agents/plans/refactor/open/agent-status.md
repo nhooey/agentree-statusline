@@ -20,7 +20,7 @@ and each reader decides for itself whether the agent is live:
 
 | Where (`master`) | Asks | Answer |
 | --- | --- | --- |
-| `band_tree.ts:162`, `:172` (`ENDED`, `pruneFolds`) | ended? | `completed`, `failed`, `killed` |
+| `band_tree.ts` (`forestOf`, for `drawnAgents` and `pruneFolds`) | fold kept? | drawn: not `ended`, ended under linger, or over a drawn agent |
 | `band_tree.ts:457` (`ended`) | ended? | `failed`, `killed`, or `completed` and not parked |
 | `band_tree.ts:751` (`groupNode`) | clock still running? | `running` or `waiting` |
 | `claude_subagent_render.ts:699` (`agentCells`) | clock still running? | `running` or parked |
@@ -49,11 +49,6 @@ stateDiagram-v2
 
 ## Problems
 
-- **Parked agents lose their folds.** `pruneFolds` drops the fold of a
-  `completed` agent even while `ended` (`band_tree.ts:457`) keeps it
-  drawn as parked, so a row the person folded opens again at the next
-  refresh. Fixing that changes behaviour, so it is its own node,
-  [SM1b](parked-folds.md).
 - **A parked agent's group clock stops.** `groupNode`'s `live` is
   `running || waiting`, `agentCells`' is `running || parked`: a
   `completed` agent parked on an ETA is live on its own row and ended in

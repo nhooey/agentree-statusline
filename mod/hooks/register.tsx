@@ -35,13 +35,16 @@ import { settings } from '../src/formatting.ts'
 import type { Env, Settings } from '../src/formatting.ts'
 import { hexOf } from '../src/spans.ts'
 import type { Press, Span } from '../src/spans.ts'
-import { foldShut, pruneFolds, stampedSplit } from '../src/band_tree.ts'
+import {
+  drawnAgents, foldShut, foldsKey, heldFolds, keptFolds, pruneFolds,
+  stampedSplit,
+} from '../src/band_tree.ts'
 import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
   ROW_NAMES, accountHide, accountLine, bandRows, bandScoped, footerRuler,
   footerTail,
-  modeOfHint, rootDrawn,
+  modeOfHint, rootDrawn, treeAgents,
 } from '../src/band.ts'
 import type { Place, RowsLive, RowsPlace } from '../src/band.ts'
 import {
@@ -66,7 +69,7 @@ import {
   defaultsError, options, optionsFor, readConfig,
 } from './configuration.ts'
 import {
-  costDoc, lastFinishedMs, permissionModeOf, pruneSpending, seen, statusDoc,
+  costDoc, lastFinishedMs, permissionModeOf, pruneSessions, seen, statusDoc,
   transcriptPath, turnsNow,
 } from './edges.ts'
 import { log } from './log.ts'
@@ -95,7 +98,8 @@ const held = atom(
 // options, so every drawing that reads it draws again with them.
 const configured = atom(
   { plugin: 'agentree-statusline', key: 'configured' } as const, 0)
-// The band tree's folds the person left, by key (band_tree.ts).
+// The band tree's folds the person left, by key, and the session they are
+// of, read back through heldFolds (band_tree.ts).
 const folds = atom(
   { plugin: 'agentree-statusline', key: 'folds' } as const, {})
 
@@ -274,20 +278,43 @@ async function refresh($: $): Promise<void> {
         await log($, 'refresh: no status document', err)
         continue
       }
+      // The folds of the conversation the document is of, before the band
+      // draws them.
+      const id = (doc.payload as Dict | undefined)?.session_id
+      const session = typeof id === 'string' ? id : ''
+      try {
+        if (session) await foldsOf($, session)
+      } catch (err) {
+        await log($, 'refresh: the folds were not read', err)
+      }
       try {
         await update($, status, () => doc as FiguresDoc)
         await update($, rate, () => (doc.rate as number | null) ?? null)
       } catch (err) {
         await log($, 'refresh: the band was not updated', err)
       }
-      // An agent that has ended takes its folds with it, so no later row
-      // is drawn under a fold it never had.
+      // A row the tree would no longer draw takes its fold with it, so no
+      // later row is drawn under a fold it never had: an agent paused,
+      // finished under finished-within or over one at work keeps its
+      // fold.  Every row opened, whatever the phase draws, so a fold
+      // outlasts the gap between turns.  Only the document's session's.
       try {
-        const tasks = (doc.agents as Dict | undefined)?.tasks
-        if (Array.isArray(tasks)) {
-          const kept = await read($, folds)
-          if (pruneFolds(kept, tasks as Dict[]) !== kept) {
-            await update($, folds, (f) => pruneFolds(f, tasks as Dict[]))
+        const o = options()
+        const a = o === null ? null : treeAgents(doc, false, o.finishedWithin)
+        if (a !== null) {
+          const drawn = drawnAgents(a)
+          const pruned = (v: unknown): boolean => {
+            const h = heldFolds(v)
+            return h.session === session &&
+              pruneFolds(h.folds, drawn) !== h.folds
+          }
+          if (pruned(await read($, folds))) {
+            await update($, folds, (v) => {
+              const h = heldFolds(v)
+              return pruned(v) ? { ...h, folds: pruneFolds(h.folds, drawn) }
+                : v
+            })
+            await keepFolds($)
           }
         }
       } catch (err) {
@@ -313,6 +340,47 @@ async function refresh($: $): Promise<void> {
   } finally {
     refreshing = null
   }
+}
+
+/** Puts session `id`'s folds in `folds`, from its entry in the store
+ * (keptFolds), once `folds` holds another session's: at the first refresh
+ * of a new process (a restart, a `--resume`, a `--continue`), whose
+ * `$.state` starts empty, and when a /resume or a /clear switches the
+ * session under the process.  Folds of no session yet, as a reload from
+ * a version that kept them in `$.state` alone left them, are kept over
+ * the store's, and the store given them.  A store that will not read
+ * rejects, and `folds` is left as it was, so the next refresh asks
+ * again. */
+async function foldsOf($: $, id: string): Promise<void> {
+  if (heldFolds(await read($, folds)).session === id) return
+  const kept = keptFolds(await $.store.get(foldsKey(id)), id) ?? {}
+  let merged = false
+  await update($, folds, (v) => {
+    const h = heldFolds(v)
+    if (h.session === id) return v
+    merged = h.session === '' && Object.keys(h.folds).length > 0
+    return { session: id, folds: merged ? { ...kept, ...h.folds } : kept }
+  })
+  if (merged) await keepFolds($)
+}
+
+// The store write of the folds under way, which each next one waits on.
+let keeping: Promise<void> = Promise.resolve()
+
+/** Keeps the folds `$.state` holds, as they stand once the writes before
+ * have landed, in the store under their session's foldsKey (heldFolds),
+ * with when, for a restart or a `--resume` to read back (foldsOf), and for
+ * pruneSessions to sweep once it is old.  The writes go one at a time,
+ * each reading the folds afresh, so the last to land is the newest. */
+function keepFolds($: $): Promise<void> {
+  const write = keeping.then(async () => {
+    const h = heldFolds(await read($, folds))
+    const id = h.session || await $.session.id()
+    await $.store.set(foldsKey(id), { session: id, folds: h.folds,
+      saved_at: (await $.clock.now()) / 1000 })
+  })
+  keeping = write.catch(() => {})
+  return write
 }
 
 /** The start line, once a document shows the pending prompt's record:
@@ -754,14 +822,19 @@ function pressKey(p: Press | undefined): string {
 
 /** What a press on a run does, in a Button's onPress: a fold toggles the
  * fold kept under its key, against its row's default where none is kept
- * (the update reads it, so two presses before a redraw both land); a view
+ * (the update reads it, so two presses before a redraw both land), and
+ * keeps the folds in the store (keepFolds); a view
  * switches the transcript, and logs why where it would not; a task shows
  * its text as a toast, for CONFIG.taskToastMs. */
 function onPressOf($: $, p: Press): () => Promise<void> {
   if (p.kind === 'fold') {
     return async () => {
-      await update($, folds, (f) => ({ ...f,
-        [p.key]: !foldShut(f, p.key, p.shut) }))
+      await update($, folds, (v) => {
+        const h = heldFolds(v)
+        return { ...h, folds: { ...h.folds,
+          [p.key]: !foldShut(h.folds, p.key, p.shut) } }
+      })
+      await keepFolds($).catch((err) => log($, 'the folds were not kept', err))
     }
   }
   if (p.kind === 'view') {
@@ -849,7 +922,8 @@ async function bandNow($: $, isWorking: boolean, place: Place):
         live: liveOf(o), place, places: rowPlacesOf(o), inset, indent,
         agents: o.rows.subagents.live,
         linger: o.finishedWithin,
-        folds: place === 'above' ? await read($, folds) : {} })]
+        folds: place === 'above' ? heldFolds(await read($, folds)).folds
+          : {} })]
 }
 
 /** Whether the band's tree draws its root now, whose label carries 📦 🌿
@@ -896,9 +970,9 @@ export const register: Register = on => {
     await start($, 'session.start')
     void reconfigure($).catch((err) => log($, 'config', err))
     void refresh($).catch((err) => log($, 'refresh', err))
-    // The spending kept for sessions that have ended goes.
-    void (async () => pruneSpending($, (await $.clock.now()) / 1000))()
-      .catch((err) => log($, 'spending not pruned', err))
+    // The spending and the folds kept for sessions long ended go.
+    void (async () => pruneSessions($, (await $.clock.now()) / 1000))()
+      .catch((err) => log($, 'session entries not pruned', err))
     return result
   })
 

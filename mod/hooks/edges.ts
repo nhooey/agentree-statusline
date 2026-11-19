@@ -31,6 +31,7 @@ import {
   SPENDING_PREFIX, keptFor, keptSpending, measuredFall, nextBracket,
   nextSpell, payerOf, payingCredit, spendingKey, spendingOf, spendingStale,
 } from '../src/spending.ts'
+import { FOLDS_PREFIX, foldsStale } from '../src/band_tree.ts'
 import { decodeLimits, decodeTurn } from '../src/figures.ts'
 import { pyFloat } from '../src/sources.ts'
 import { isDict } from '../src/py.ts'
@@ -295,13 +296,20 @@ export async function statusDoc($: $, places: Places): Promise<Dict> {
     ...spending ? { spending } : {} }
 }
 
-/** Drop from `$.store` each session's spending entry past keeping at `now`
- * (spendingStale): the entries of sessions that have ended.  Run as a
+/** The store's entries kept per session, by their keys' prefix, each with
+ * when it is past keeping: the spending (spendingKey) and the band tree's
+ * folds (foldsKey). */
+const SESSION_ENTRIES: readonly (readonly [string,
+  (value: unknown, now: number) => boolean])[] = [
+  [SPENDING_PREFIX, spendingStale], [FOLDS_PREFIX, foldsStale]]
+
+/** Drop from `$.store` each session's entry past keeping at `now`
+ * (SESSION_ENTRIES): the entries of sessions that have ended.  Run as a
  * session starts. */
-export async function pruneSpending($: $, now: number): Promise<void> {
+export async function pruneSessions($: $, now: number): Promise<void> {
   for (const key of await $.store.keys()) {
-    if (key.startsWith(SPENDING_PREFIX) &&
-        spendingStale(await $.store.get(key), now)) {
+    const stale = SESSION_ENTRIES.find(([p]) => key.startsWith(p))?.[1]
+    if (stale && stale(await $.store.get(key), now)) {
       await $.store.delete(key)
     }
   }

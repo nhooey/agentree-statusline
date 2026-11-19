@@ -137,8 +137,10 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
   A folded agent keeps its own figures and draws 👶🏻 and how many agents are hidden under it, and 💻 📡 how many of its own shells and Monitors; 🧵 folded hides 🎤 with its agents, and counts its own shells and Monitors with 💻 📡.
   Every row starts opened.
 - **Every row drawn.** The tree draws every agent, shell and Monitor it holds, however many there are: when they outgrow the screen, scroll the band, or fold a row to hide its subtree.
-- **The fold state.** Each row stays as it was left for the rest of the session, kept in the mod's `$.state` by key: an agent's id, and fixed keys for 🎮 and 🧵.
-  When an agent ends (it leaves Claude Code's agent list, or completes, fails or is killed), its fold goes, so no later row takes a fold it never had; 🎮's and 🧵's last the session.
+- **The fold state.** Each row stays as it was left for the rest of the conversation, kept in the mod's `$.state` by key: an agent's id, and fixed keys for 🎮 and 🧵.
+  Each change also keeps the folds in the mod's store under the session's id, so a restart, a `--resume` or a `--continue` of the conversation draws 🎮 and 🧵, and any agent still drawn, as they were left; an entry not written for 31 days is dropped as a session starts.
+  A `/clear` or a forked session starts a new conversation, with every row opened.
+  An agent's fold goes once the tree would no longer draw its row, whatever the phase draws, so no later row takes a fold it never had: one paused, one finished within `finished-within` and one over an agent at work keep theirs; 🎮's and 🧵's last the conversation.
 - **The clicks.** A click on an agent's label (its kind, name and progress update) switches the transcript to that agent, as Claude Code's tasks list does, and one on 🧵 main's or 🎤 turn's goes back to the main conversation, since the turn is the main thread's.
   A click on a shell's or a Monitor's row shows what the band knows of it as a toast for 8 seconds, one line, its parts parted by ` · `:
   - its glyph and kind;

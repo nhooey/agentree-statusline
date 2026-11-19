@@ -2858,23 +2858,159 @@ async ($, on) => {
   expect(ran).toEqual([])
 })
 
-test('an agent that ends takes its fold with it', async ($, on) => {
+/** Whether `rows` draw Parent folded, its kid hidden under it. */
+const parentShut = (rows: { text: string }[]) =>
+  rows.some((r) => /[├╰]⊞ 🔍.* Parent/u.test(r.text)) &&
+  !rows.some((r) => r.text.includes('Kid'))
+
+/** Whether `rows` draw Parent opened, its kid under it. */
+const parentOpen = (rows: { text: string }[]) =>
+  rows.some((r) => /[├╰]⊟ 🔍.* Parent/u.test(r.text)) &&
+  rows.some((r) => r.text.includes('Kid'))
+
+test('an agent that completes while the tree still draws it keeps its ' +
+  'fold, and loses it once its row is gone', async ($, on) => {
   const listed = [PARENT, KID]
   const { w } = clicking(on, listed)
   await start($, w, 'terminal', STATUS)
-  const { band, want } = await clickBand($, w)
+  const { band } = await clickBand($, w)
   await band.press({ key: 'fold:p1' })
-  expect((await drawnRows(band)).some((r) => r.text.includes('Kid')))
-    .toBe(false)
-  // The parent ends while its kid runs on: it is still drawn, for the
-  // kid under it, and opened, its fold gone with it.
+  expect(parentShut(await drawnRows(band))).toBe(true)
+  // The parent completes while its kid runs on: it is still drawn, paused
+  // on the kid under it, and stays folded through the refreshes after.
   listed[0] = { ...PARENT, status: 'completed' }
+  for (let i = 0; i < 2; i++) {
+    await w.clock.advance(CONFIG.tickMs)
+    await settle()
+  }
+  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect((w.store.get('folds:' + SESSION) as Dict).folds)
+    .toEqual({ p1: true })
+  // The kid completes too, and neither is drawn: the fold goes, from the
+  // store with it.
+  listed[1] = { ...KID, status: 'completed' }
   await w.clock.advance(CONFIG.tickMs)
   await settle()
-  const after = await drawnRows(band)
-  expect(after.length).toBe(want({}).length)
-  expect(after.some((r) => /[├╰]⊟ 🔍.* Parent/u.test(r.text))).toBe(true)
-  expect(after.some((r) => r.text.includes('Kid'))).toBe(true)
+  expect((await drawnRows(band)).some((r) => r.text.includes('Parent')))
+    .toBe(false)
+  expect((w.store.get('folds:' + SESSION) as Dict).folds).toEqual({})
+})
+
+// What the test below left in its store, for the tests after it: each
+// test loads the mod afresh, with `$.state` empty, as a restart or a
+// `--resume` of the conversation does, so only the store is carried.
+let foldsLeft: Map<string, unknown> | null = null
+
+test('a press keeps the folds in the store, under the conversation\'s ' +
+  'session id', async ($, on) => {
+  const { w } = clicking(on, [PARENT, KID])
+  await start($, w, 'terminal', STATUS)
+  const { band } = await clickBand($, w)
+  await band.press({ key: 'fold:p1' })
+  for (const key of ['fold:main', 'fold:main', 'fold:session',
+    'fold:session']) {
+    await band.press({ key })
+  }
+  expect(w.store.get('folds:' + SESSION)).toEqual({ session: SESSION,
+    folds: { p1: true, main: false, session: false }, saved_at: NOW })
+  foldsLeft = new Map(w.store)
+})
+
+test('a new session of the same conversation draws the folds the store ' +
+  'kept for it', async ($, on) => {
+  expect(foldsLeft).not.toBe(null)
+  const { w } = clicking(on, [PARENT, KID])
+  for (const [k, v] of foldsLeft!) w.store.set(k, v)
+  await start($, w, 'terminal', STATUS)
+  const { band, want } = await clickBand($, w)
+  const rows = await drawnRows(band)
+  expect(rows).toEqual(want({ p1: true, main: false, session: false }))
+  expect(parentShut(rows)).toBe(true)
+})
+
+test('a restart whose agents are gone draws 🎮\'s and 🧵\'s folds, and ' +
+  'the store lets the agents\' go', async ($, on) => {
+  const { w } = clicking(on, [])
+  w.store.set('folds:' + SESSION, { session: SESSION,
+    folds: { main: true, p1: true }, saved_at: NOW - 86400 })
+  await start($, w, 'terminal', STATUS)
+  const { band, want } = await clickBand($, w)
+  const rows = await drawnRows(band)
+  expect(rows).toEqual(want({ main: true }))
+  expect(rows.some((r) => /⊞ 🧵/u.test(r.text))).toBe(true)
+  expect(w.store.get('folds:' + SESSION)).toEqual({ session: SESSION,
+    folds: { main: true }, saved_at: NOW })
+})
+
+test('a reload from a version that kept the folds in $.state alone keeps ' +
+  'them, and gives them to the store', async ($, on) => {
+  const { w } = clicking(on, [PARENT, KID])
+  // `$.state` holds the folds as a plain map, as that version wrote them,
+  // until the mod writes its own.
+  on('state.get', async ($, e: any, next) => {
+    const got: any = await next(e)
+    const r = got && 'version' in got ? got : got?.value
+    return e.plugin === 'agentree-statusline' && e.key === 'folds' &&
+      r?.version === 0 ? { value: { value: { p1: true }, version: 0 } }
+      : got
+  })
+  await start($, w, 'terminal', STATUS)
+  const { band } = await clickBand($, w)
+  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect(w.store.get('folds:' + SESSION)).toEqual({ session: SESSION,
+    folds: { p1: true }, saved_at: NOW })
+})
+
+test('another conversation does not draw them', async ($, on) => {
+  expect(foldsLeft).not.toBe(null)
+  const { w } = clicking(on, [PARENT, KID])
+  const entry = foldsLeft!.get('folds:' + SESSION) as Dict
+  w.store.set('folds:another-session', { ...entry,
+    session: 'another-session' })
+  // Under this session's key, but of another session: not read either.
+  w.store.set('folds:' + SESSION, { ...entry, session: 'another-session' })
+  await start($, w, 'terminal', STATUS)
+  const { band, want } = await clickBand($, w)
+  const rows = await drawnRows(band)
+  expect(rows).toEqual(want({}))
+  expect(parentOpen(rows)).toBe(true)
+})
+
+test('a /resume in the running process draws the resumed ' +
+  'conversation\'s folds, and back again the first one\'s', async ($,
+  on) => {
+  const { w } = clicking(on, [PARENT, KID])
+  await start($, w, 'terminal', STATUS)
+  const { band } = await clickBand($, w)
+  await band.press({ key: 'fold:p1' })
+  expect(parentShut(await drawnRows(band))).toBe(true)
+  // The process switches to another conversation, with none kept.
+  const resumed = '/claude/projects/-work/resumed-session.jsonl'
+  place(w, sessionFile('-work'), resumed)
+  w.session.id = 'resumed-session'
+  await w.clock.advance(CONFIG.tickMs)
+  await settle()
+  expect(parentOpen(await drawnRows(band))).toBe(true)
+  expect(w.store.has('folds:resumed-session')).toBe(false)
+  // And back: the first conversation's folds, from the store.
+  w.session.id = SESSION
+  await w.clock.advance(CONFIG.tickMs)
+  await settle()
+  expect(parentShut(await drawnRows(band))).toBe(true)
+})
+
+test('a session start drops the store\'s folds saved over 31 days ago, ' +
+  'and keeps the rest', async ($, on) => {
+  const w = world(on)
+  const entry = (days: number) => ({ session: 'old-' + days,
+    folds: { main: true }, saved_at: NOW - days * 86400 })
+  w.store.set('folds:old-40', entry(40))
+  w.store.set('folds:old-30', entry(30))
+  w.store.set('folds:no-time', { session: 'no-time', folds: {} })
+  await start($, w, 'terminal', STATUS)
+  expect(w.store.has('folds:old-40')).toBe(false)
+  expect(w.store.has('folds:no-time')).toBe(false)
+  expect(w.store.get('folds:old-30')).toEqual(entry(30))
 })
 
 /** A transcript line holding SendMessage's answer that its message waits
