@@ -83,8 +83,7 @@ model the others follow, and no node changes it.
 
 | Id | Target | Measure |
 | --- | --- | --- |
-| `RF1` | [Dead and over-wide exports](dead-exports.md) | 10 exports used nowhere; 221 used only in their own file |
-| `RF2` | [Output-defining helpers named for what they make](py-output-helpers.md) | `pyJsonDumps` defined twice, `PY_SPACE` in 3 modules |
+| `RF1` | [Over-wide exports](dead-exports.md) | exports used only in their own file |
 | `RF3` | [Typed agent tasks and figures document](typed-documents.md) | 67 `as Dict`; `TreeTask.task: Dict` |
 | `RF4` | [`claude_records.ts` split](split-claude-records.md) | 3,088 lines, 10 sections |
 | `RF5` | [`register.tsx` split](split-register.md) | 1,289 lines |
@@ -93,6 +92,54 @@ model the others follow, and no node changes it.
 
 ## Nodes
 
-The order, the waits and the costs are in the three schedule nodes:
-[wave 1](refactor-wave-1.md), [wave 2](refactor-wave-2.md),
-[wave 3](refactor-wave-3.md).
+One node, one PR, one agent; at most three at once, never two in the
+same file. The nodes run in three waves, in this order; a node runs
+beside the ones its row names.
+
+| Wave | Order | Node | Size | Tokens | Dollars | Runs beside |
+| ---: | ---: | --- | --- | ---: | ---: | --- |
+| 1 | 1 | [SM7 When a row is drawn](row-visibility.md) | S | 1.5M | $1.50 | 2 |
+| 1 | 2 | [SM10 The session's credential](credential-kind.md) | S | 1M | $1 | 1 |
+| 1 | 3 | [SM6 A reading fetched with backoff](fetch-backoff.md) | M | 3M | $3 | 4 |
+| 1 | 4 | [SM5 A fold read on from its save](fold-resume.md) | M | 4M | $4 | 3 |
+| 1 | 5 | [RF4 `claude_records.ts` split](split-claude-records.md) | M | 4M | $4 | 6 |
+| 1 | 6 | [SM11 Single flights and caches](single-flight.md) | S | 2.5M | $2.50 | 5 |
+| 1 | 7 | [SM2 The fold states as records](fold-tuples.md) | M | 4M | $4 | — |
+| 2 | 1 | [RF5 `register.tsx` split](split-register.md) | M | 4M | $4 | — |
+| 2 | 2 | [SM3 The main thread's turn](turn-life.md) | M | 4M | $4 | 3 |
+| 2 | 3 | [SM4 A turn's receipt](receipt-stamping.md) | M | 3M | $3 | 2 |
+| 3 | 1 | [RF1 Over-wide exports](dead-exports.md) | S | 1.5M | $1.50 | — |
+| 3 | 2 | [RF3 Typed agent tasks and document](typed-documents.md) | L | 8M | $8 | — |
+| 3 | 3 | [SM1 A subagent's status](agent-status.md) | M | 5M | $5 | — |
+| 3 | 4 | [SM1b A parked agent keeps its fold](parked-folds.md) | S | 1M | $1 | 5 |
+| 3 | 5 | [SM9 What a thread is doing](thread-mode.md) | S | 2M | $2 | 4 |
+| 3 | 6 | [SM8 An ETA's reading](eta-reading.md) | M | 3M | $3 | — |
+| 3 | 7 | [RF7 The band's modules](band-boundaries.md) | M | 4M | $4 | — |
+| 3 | 8 | [RF6 Records decoded once](py-accessors.md) | L | 15M | $15 | — |
+
+- **RF4 before SM2** (`needs`): SM2 edits `records/eta.ts` and
+  `records/turns.ts`.
+- **SM6 before SM11:** both touch `plan_usage.ts` and `usage.ts`, and
+  SM11's single flights wrap SM6's asks.
+- **Wave 1 before wave 2:** SM11 changes `refresh` in `register.tsx`,
+  which RF5 moves.
+- **RF5 alone:** it is moves only; SM3 (`session.ts`, `turn_life.ts`) and
+  SM4 (`receipts.ts`, `receipt.ts`) then touch different files.
+- **Wave 2 before wave 3:** RF3 types what `register.tsx` reads.
+- **RF1 first in wave 3:** it clears what later nodes would otherwise
+  type.
+- **SM1b changes behaviour;** the rest go on without it.
+- **RF6** is about eight PRs, one module each, smallest first, and can
+  start on the modules RF3 and RF7 do not touch (`credits.ts`,
+  `spending.ts`, `claude_sources.ts`, `sources.ts`) as soon as RF4 is in.
+
+Every PR's acceptance test is `tests` passing with `generated` finding
+the tree clean, and `typecheck`.
+
+The plan comes to 70.5M tokens, about $70.50, 7.05% of the weekly limit.
+Tokens per node are estimates from the size of the change and the files
+to be read. Dollars at about $1 per million tokens: Claude Opus 5.5's
+$4 in, $20 out and $0.20 per million cache reads, for an agent run that
+is about nine-tenths cache reads. The weekly-limit share assumes a weekly
+limit worth $1,000 of API use, which is not recorded anywhere in the
+project: the user sets it.

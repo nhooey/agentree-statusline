@@ -2,7 +2,7 @@
 
 The whole project: the Claude accounting, the usage-source reader and the
 cells under `src/`, and the Claude Code mod, `agentree-statusline`, that
-draws them (the [redesign](../agents/plans/closed/redesign.md)).
+draws them ([Layout and rendering](../docs/layout.md)).
 
 Node 23.6 or later runs the sources directly, with no build, so the code
 keeps to TypeScript's erasable syntax: no `enum`, no `namespace`, no

@@ -423,7 +423,7 @@ export function refreshDue(rawCache: unknown, now: number,
   return fetched === null || now - fetched >= ttl;
 }
 
-export function failureCache(rawCache: unknown, now: number, _ttl: number,
+function failureCache(rawCache: unknown, now: number, _ttl: number,
                              retryAfter: number | null = null): Dict {
   const value: Dict = isDict(rawCache) ? { ...rawCache } : {};
   const count = Math.trunc(number(pyGet(value, "fail_count")) || 0) + 1;
@@ -654,7 +654,7 @@ export function oauthWindowNames(raw: Dict): string[] {
 
 /** The answer's key that also holds the Fable week, read where
  * FABLE_WINDOW's own key has no utilization. */
-export const FABLE_KEY = "seven_day_fable";
+const FABLE_KEY = "seven_day_fable";
 
 /** The window `name` of the answer `raw` as its keys give it, where it has
  * a utilization, else null: the Fable window from FABLE_WINDOW's key, else

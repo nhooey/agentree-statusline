@@ -6,7 +6,9 @@ kind: end-state
 
 # The account's dollar credits on the band
 
-Approved to build. Its steps are `CB1` … `CB5` in [the schedule](build-schedule.md).
+Approved to build. Its steps are `CB1` … `CB5` in
+[The build order](#the-build-order): every step is built but `CB5`, the
+docs and the acceptance check, which needs `CB3` and `CB6`.
 
 ## Why
 

@@ -119,8 +119,6 @@ export function mergedOf(found: Found | null, defaults: Defaults): Merged {
 export const unconfigured = (defaults: Defaults): Options =>
   optionsOf(mergedOf(null, defaults))
 
-// What the last read of the configuration files found; null before one.
-let configFound: Found | null = null
 // The options merged from it, and what the files were when it was read;
 // null before the first read, and while the defaults file is wrong.
 let merged: Merged | null = null
@@ -134,9 +132,6 @@ let configStamp = ''
 let configReading: Promise<boolean> | null = null
 // The files a notice has been shown for, each at a modification time.
 const noticed = new Set<string>()
-
-/** The last read of the configuration files, or null before one. */
-export const configNow = (): Found | null => configFound
 
 /** The options the mod draws with, as the last read merged them: the
  * files, then the mod's settings (hooks/config.ts, SETTINGS), then the
@@ -219,7 +214,6 @@ async function reread($: $): Promise<boolean> {
       }
     }
     defaultsFault = err.message
-    configFound = null
     merged = null
     current = null
     return changed
@@ -228,7 +222,6 @@ async function reread($: $): Promise<boolean> {
   const was = defaultsFault
   defaultsFault = null
   configStamp = stamp
-  configFound = found
   const files = found.layers.map((l) =>
     `${l.name} ${l.path} (${Object.keys(l.values).join(', ')})`)
   await log($, `config from ${found.start}: ` +

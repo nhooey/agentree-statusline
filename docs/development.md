@@ -172,7 +172,7 @@ table is out of date.
 name is keyed by, which `statePath` (`mod/src/state.ts`) builds. Bump a
 kind's format when what is written in it changes.
 
-`mod/tools/layout-mockup.ts` draws the [redesign](../agents/plans/closed/redesign.md)'s proposal inside a
+`mod/tools/layout-mockup.ts` draws the [layout](layout.md) inside a
 mocked Claude Code screen: `usage-dev mockup --cols 150`. It
 uses the mod's cell renderers on made-up figures and lays them out
 with the grid, `mod/src/grid.ts`; it reads nothing but the terminal. Its

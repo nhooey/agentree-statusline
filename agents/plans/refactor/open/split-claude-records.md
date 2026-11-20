@@ -16,7 +16,7 @@ marks its seams with section rules:
 
 | Section | Lines | Becomes |
 | --- | ---: | --- |
-| Python's semantics, prices | 42–204 | `exact.ts` (RF2), `records/prices.ts` |
+| Python's semantics, prices | 42–204 | `exact.ts`, `records/prices.ts` |
 | Records, payload, transcript reading | 205–682 | `records/read.ts` |
 | Tool spans and clocks | 683–1158 | `records/spans.ts` |
 | ETA reports | 1159–1327 | `records/eta.ts` |

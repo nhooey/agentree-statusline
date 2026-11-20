@@ -135,13 +135,6 @@ export function agentState(status: string, usage: unknown = null,
 const PHASES: readonly string[] = [E_PHASE_RUN, E_PHASE_PAUSE, E_PHASE_END,
   ""];
 
-/** The phase circle and the mode mark after it; see agentState. */
-export function renderState(status: string, usage: unknown = null,
-  waitingOn = false, now: number | null = null): Span[] {
-  const [phase, mode] = agentState(status, usage, waitingOn, now);
-  return spans([phaseSpan(phase), mode]);
-}
-
 /** The phase circle alone: the mode is the Doing cell's; see renderDoing. */
 export function renderPhase(status: string, usage: unknown = null,
   waitingOn = false, now: number | null = null): Span[] {

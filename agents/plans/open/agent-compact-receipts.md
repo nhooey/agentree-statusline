@@ -6,7 +6,9 @@ kind: end-state
 
 # Receipts for a subagent's run and a typed /compact
 
-Approved to build. Its steps are `AR1` … `AR5` in [the schedule](build-schedule.md).
+Approved to build. Its steps are `AR1` … `AR5` in
+[The build order](#the-build-order): `AR1` is done, and `AR2` to `AR5` are
+open.
 
 ## Why
 
@@ -87,11 +89,13 @@ nothing for them: its Stop hook's receipt is the main thread's alone.
    options; harness tests for an agent's notification, and for an agent continued
    with SendMessage.
 4. **`AR4`, the `/compact` receipt.** Filed and drawn as above, with a
-   harness test.
+   harness test. It needs only `AR1`, but starts after `AR3` lands, since
+   both change how `register.tsx` files and draws a receipt.
 5. **`AR5`, docs and the acceptance check, live.** `docs/layout.md`'s
    receipt section; then in a session here: two agents and a `/compact`
    each get their row where the table
-   says, and turning each option off stamps none.
+   says, and turning each option off stamps none. It needs `AR3` and
+   `AR4`.
 
 ## Files
 

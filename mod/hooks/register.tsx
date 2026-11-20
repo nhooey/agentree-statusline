@@ -1,7 +1,6 @@
 // The usage band: the usage line's grid drawn in Claude Code's own screen.
 //
-// agents/plans/closed/redesign.md has the design, and docs/layout.md
-// what is drawn.  Three places are drawn:
+// docs/layout.md has what is drawn.  Three places are drawn:
 //
 //   AbovePrompt   the band, bandLines over the last status document, at the
 //                 body's width plus the five columns the gutter takes, a

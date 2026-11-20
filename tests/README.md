@@ -170,9 +170,9 @@ The text is canonical:
 the figures the redesigned grid draws and today's rows do not: the status
 document's `turn` and `accounting`, the accounting's time and 💾 figures, the
 `Turn`'s lines and the `Transcript`'s main-thread figures. Schema 3, the same
-day, added what the decisions in the plan's
-[Where each row's figures come from](../agents/plans/closed/redesign.md#where-each-rows-figures-come-from)
-need: the status document's `open_turn` and `accounting.open_turn`,
+day, added what the rows' figures need
+([Where each figure comes from](../docs/accounting.md#where-each-figure-comes-from)):
+the status document's `open_turn` and `accounting.open_turn`,
 `accounting.own`, the session's `start_s`, the `Transcript`'s `own_parts` and
 `own_est` with the compactions in its own cost, and the `Turn`'s `eta`. No row
 moved either time. Schema 4 added the `Transcript`'s `session_name` and
@@ -302,15 +302,15 @@ tasks under `panel/`.
 | `01-mixed` | the running modes (🔧 a tool, 🤖 with a 🛫 rate and quiet in amber, 🚦 a question), ✅ ❌ 🛑, 💥 an API error, a workflow agent one directory down |
 | `02-parked` | completed agents only waiting: 💻 a shell, 📡 a Monitor beside one, ⛳ their own ETA, 💤 an agent under them, whose ETA the parent inherits; an ETA gone stale (amber `+`), one signed off at 0s and running over (red `+`) |
 | `03-tree` | the tree four deep, past the two levels the grid keeps the chrome for, 🤏 compactions, 📨 messages queued, a finished ancestor, a parent with no file |
-| `04-bare` | no agent files: its tasks were shells and a remote agent |
-| `05-empty` | no agent files and no tasks |
 
 **Prepared tasks**, `fixtures/panel/inputs.json`, committed data: by group
 and name, one case a line, each case's prepared `(task, usage, meta,
 shares)` records, at the figures documents' clock. The `corpus` group holds
-the inputs prepared from these sessions' task lists, with 🥚 a queued task,
-shells, a remote agent, a status never seen, tasks with no id or not an
-object, a worktree's 🌿 and a label that repeats the description. The rest
+the inputs prepared from these sessions' task lists, and from two with no
+agent files, `04-bare` (shells and a remote agent) and `05-empty` (no
+tasks), with 🥚 a queued task, shells, a remote agent, a status never
+seen, tasks with no id or not an object, a worktree's 🌿 and a label that
+repeats the description. The rest
 are made by hand for what the corpus does not reach: `states`, `eta`,
 `counts`, `tree` (depths, siblings, a missing parent and a loop),
 `gauges`, `figures` (the model, cache, context and share cells), `who`
@@ -325,8 +325,8 @@ holds each session's agents' usage, field for field, which
 
 ## Grid cases
 
-`fixtures/grid/` pins the redesigned grid
-([the plan](../agents/plans/closed/redesign.md)), `mod/src/grid.ts`. They are written by the
+`fixtures/grid/` pins the grid
+([The grid](../docs/layout.md#the-grid)), `mod/src/grid.ts`. They are written by the
 TypeScript, with `usage-dev grid-cases`.
 
 The inputs are plain data: the mockup's sample rows by id, each its scope, its
@@ -358,9 +358,10 @@ and the grid: `mod/src/band.ts` draws a status document as the band above the
 prompt (💳 🎤 🤖💬 🎮 while a turn runs, 💳 🤖💬 once it ends) and
 `mod/src/receipt.ts` draws a cost document as the receipt (its 🔺🔖 head, 📊 🎤
 and 📊 🎮) and a status document as the 🔻🔖 start line, all through the cells
-in `mod/src/cells.ts`. The plan's
-[Where each row's figures come from](../agents/plans/closed/redesign.md#where-each-rows-figures-come-from)
-says which field each cell reads. Like the grid's, these are written by the
+in `mod/src/cells.ts`.
+[Where each figure comes from](../docs/accounting.md#where-each-figure-comes-from)
+says where each figure is read, and the comments over each row's builder
+which field each cell reads. Like the grid's, these are written by the
 TypeScript, with `usage-dev row-cases`.
 
 The inputs are the committed [figures documents](#figures), by id
@@ -385,9 +386,9 @@ receipt, profiles whose samples come out the same sharing one file
 (`iterm-tmux.json`); a padded icon is a cell's, not a width's. The start and
 account cases, which no profile changes, are written once.
 
-`mod/test/rows.test.ts` replays every case under each of its file's profiles,
-the start and account cases under every profile, and runs the generator again
-in memory, failing if what it writes differs from what is committed. To look
+`mod/test/rows.test.ts` runs the generator again in memory, failing if what
+it writes differs from what is committed, and replays the start and account
+cases under every profile. To look
 at the rows in a terminal:
 
 ```sh
