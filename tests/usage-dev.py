@@ -62,23 +62,23 @@ class Plan(unittest.TestCase):
     def test_words_go_to_the_script(self):
         self.assertEqual(
             dev.plan("figures", ["f.json", "--cols", "160"]),
-            [(".", ["node", "mod/tools/draw-figures.ts",
+            [(".", ["node", "plugin/tools/draw-figures.ts",
                     "f.json", "--cols", "160"])])
 
     def test_a_leading_double_dash_is_dropped(self):
         self.assertEqual(dev.plan("figures", ["--", "--help"]),
-                         [(".", ["node", "mod/tools/draw-figures.ts",
+                         [(".", ["node", "plugin/tools/draw-figures.ts",
                                  "--help"])])
 
     def test_every_step_of_a_command_gets_the_words(self):
         self.assertEqual(dev.plan("fixtures", ["--help"]), [
-            (".", ["node", "mod/tools/gen-config-cases.ts", "--help"]),
-            (".", ["node", "mod/tools/gen-fold-saves.ts", "--help"]),
+            (".", ["node", "plugin/tools/gen-config-cases.ts", "--help"]),
+            (".", ["node", "plugin/tools/gen-fold-saves.ts", "--help"]),
         ])
 
     def test_a_command_with_no_arguments_refuses_them(self):
         self.assertEqual(dev.plan("typecheck", []),
-                         [("mod", ["npm", "run", "-s", "typecheck"])])
+                         [("plugin", ["npm", "run", "-s", "typecheck"])])
         with self.assertRaises(ValueError):
             dev.plan("typecheck", ["--watch"])
 

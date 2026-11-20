@@ -3,7 +3,7 @@ title: SM11 Single flights and stamped caches, each written once
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/hooks/register.tsx, mod/hooks/senders.ts, mod/hooks/configuration.ts, mod/hooks/calibration.ts, mod/hooks/engine.ts, mod/hooks/inbox.ts, mod/hooks/flight.ts]
+touches: [plugin/hooks/register.tsx, plugin/hooks/senders.ts, plugin/hooks/configuration.ts, plugin/hooks/calibration.ts, plugin/hooks/engine.ts, plugin/hooks/inbox.ts, plugin/hooks/flight.ts]
 cost: 2.5M tokens, $2.50, 0.25% of the weekly limit
 ---
 

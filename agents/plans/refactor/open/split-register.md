@@ -3,7 +3,7 @@ title: RF5 register.tsx as the event table, its parts in their own modules
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/hooks/register.tsx, mod/hooks/session.ts, mod/hooks/receipts.ts, mod/hooks/draw.tsx]
+touches: [plugin/hooks/register.tsx, plugin/hooks/session.ts, plugin/hooks/receipts.ts, plugin/hooks/draw.tsx]
 cost: 4M tokens, $4, 0.4% of the weekly limit
 ---
 
@@ -35,10 +35,10 @@ Moves only.
 ## Checks
 
 `typecheck`; `tests`, the `band.test.ts` engine cases and the plugin
-test (`mod/tools/plugin-test.sh`) pass unchanged.
+test (`plugin/tools/plugin-test.sh`) pass unchanged.
 
 ## Waits for
 
-"Pack receipts in the mod's store and keep fewer of them" (branch
+"Pack receipts in the plugin's store and keep fewer of them" (branch
 `store-receipts-compact`), which rewrites `remember` and the receipt's
 keys in this file.

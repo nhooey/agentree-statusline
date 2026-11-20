@@ -6,7 +6,7 @@ kind: end-state
 
 # Refactor: typed lifecycles, one transition each, plain TypeScript
 
-What is true of `mod/` when this plan is done. Every step is
+What is true of `plugin/` when this plan is done. Every step is
 behaviour-preserving unless its node says otherwise: the band, the
 receipts, the saved folds and the state files are byte for byte what
 they are on `master`.
@@ -25,13 +25,13 @@ they are on `master`.
    boolean pair or zero-sentinel number standing for a state, no `status`
    read as a bare `string` out of a `Dict`.
 2. **Each machine has one transition function,** `next(state, event)`,
-   pure, in `mod/src/` (or a pure module beside its hook), and every
+   pure, in `plugin/src/` (or a pure module beside its hook), and every
    predicate on it (live, ended, parked, drawn) is derived from that
    state, never recomputed from the raw inputs at the call site.
 3. **Each machine is tested as a table** of (state, event) → state, one
    row per transition, in the suite for its module.
 4. **No Python idiom where the TypeScript one is clearer.** `py.ts` holds
-   only what defines bytes the mod writes or compares (`str.isspace`'s
+   only what defines bytes the plugin writes or compares (`str.isspace`'s
    set, `json.dumps`'s spacing, `repr` of a float, `%.*f`), under names
    that say what they produce. Records are decoded once, at the edge, into
    typed shapes; `pyGet`, `pyOr`, `pyTruthy`, `pyDig` are gone. No comment
@@ -49,8 +49,8 @@ they are on `master`.
 - `typecheck` passes.
 - A node that changes behaviour (marked so) changes the fixtures it names
   and nothing else.
-- `rg -n 'pyGet|pyOr|pyTruthy|pyDig' mod/` finds nothing;
-  `rg -n "Python" mod/src mod/hooks` finds only the names of what
+- `rg -n 'pyGet|pyOr|pyTruthy|pyDig' plugin/` finds nothing;
+  `rg -n "Python" plugin/src plugin/hooks` finds only the names of what
   `py.ts` keeps.
 
 ## The machines found
@@ -58,8 +58,8 @@ they are on `master`.
 Measured on `master` at 1ac59bc. Lines are `master`'s; the stack of
 "Draw the band's cells in cells.ts, its agent rows in agent_row.ts"
 (f1dd6e8, `UX20`) and "Remove the status line, the old receipt and the
-panel from the mod" (396eaad, `TF4`) moves the subagent ones into
-`mod/src/agent_row.ts`.
+panel from the plugin" (396eaad, `TF4`) moves the subagent ones into
+`plugin/src/agent_row.ts`.
 
 | Id | Machine | Where the states live | Main problem |
 | --- | --- | --- | --- |

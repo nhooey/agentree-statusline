@@ -16,9 +16,9 @@ export LC_ALL=en_US.UTF-8
 # path is a silent wrong answer. Overridable so a candidate can be probed
 # without touching the checked-in one.
 DIR="$(cd "$(dirname "$0")" && pwd)"
-# Glyph constants are written in mod/src/spec.ts, which the mod imports;
+# Glyph constants are written in plugin/src/spec.ts, which the plugin imports;
 # this imports spec.ts with Node.
-LIVE="${PROBE_PROG:-$DIR/../mod/src/spec.ts}"
+LIVE="${PROBE_PROG:-$DIR/../plugin/src/spec.ts}"
 
 exec 3<>/dev/tty || { echo "no controlling terminal"; exit 1; }
 
@@ -112,7 +112,7 @@ wide_table() {        # -> "lo-hi lo-hi ..." from EAW_WIDE
 }
 
 printf -- '--- glyphs this status line uses ---\n'
-printf -- '(derived from the E_* constants in mod/src/spec.ts,\n'
+printf -- '(derived from the E_* constants in plugin/src/spec.ts,\n'
 printf -- ' not a list kept here: a list kept here drifts the moment a glyph\n'
 printf -- ' changes)\n'
 
@@ -187,7 +187,7 @@ for m in $MEASURED; do
   [ "$got" = 2 ] && [ "$says" = 1 ] && icons="$icons $cp"
 done
 
-printf -- '\n--- paste into WIDTH_PROFILES in mod/src/spec.ts ---\n'
+printf -- '\n--- paste into WIDTH_PROFILES in plugin/src/spec.ts ---\n'
 printf '# probed %s\n' "$(date '+%Y-%m-%d %H:%M')"
 printf '#   TERM_PROGRAM=%s TERM=%s TMUX=%s%s\n' \
   "${TERM_PROGRAM:-unset}" "${TERM:-unset}" \

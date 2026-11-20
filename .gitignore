@@ -1,9 +1,9 @@
 __pycache__/
 # A directory from npm, or the dev shell's link into the Nix store.
-mod/node_modules
-# The engine's types for the mod, which it writes on loading it; see
-# mod/README.md for laying them by hand.
-mod/.claude-plugin/types/
+plugin/node_modules
+# The engine's types for the plugin, which it writes on loading it; see
+# plugin/README.md for laying them by hand.
+plugin/.claude-plugin/types/
 *.pyc
 .DS_Store
 

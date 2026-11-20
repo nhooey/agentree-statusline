@@ -7,8 +7,8 @@
     usage-dev figures FILE --cols 160   # draw a figures document
     usage-dev --list                    # every command, one line each
 
-Each command runs one or more scripts under tests/, tools/ or mod/tools/
-from the repository root (or mod/), handing the words after the command to
+Each command runs one or more scripts under tests/, tools/ or plugin/tools/
+from the repository root (or plugin/), handing the words after the command to
 them unchanged, so a script's own options work here as they do there:
 `usage-dev figures -- --help` prints draw-figures.ts's help.  A command of
 several steps stops at the first that fails.
@@ -46,62 +46,63 @@ COMMANDS = {
     "stress": ("test", "rerun suites under CPU load and count failures; "
                "[--runs N] [--jobs J] [--burn B] [SUITE...]",
                [step(["bash", "tools/stress-suites.sh"])]),
-    "typecheck": ("test", "type-check the mod",
-                  [step(["npm", "run", "-s", "typecheck"], cwd="mod",
+    "typecheck": ("test", "type-check the plugin",
+                  [step(["npm", "run", "-s", "typecheck"], cwd="plugin",
                         rest=False)]),
-    "mod-test": ("test", "run the mod's node --test suites (test/*.test.ts)",
-                 [step(["node", "--test", "test/*.test.ts"], cwd="mod",
-                       rest=False)]),
-    "plugin-test": ("test", "validate the mod and run its harness tests; "
+    "plugin-node-test": ("test", "run the plugin's node --test suites "
+                         "(test/*.test.ts)",
+                         [step(["node", "--test", "test/*.test.ts"],
+                               cwd="plugin", rest=False)]),
+    "plugin-test": ("test", "validate the plugin and run its harness tests; "
                     "needs the claude CLI",
-                    [step(["npm", "run", "-s", "test:plugin"], cwd="mod",
+                    [step(["npm", "run", "-s", "test:plugin"], cwd="plugin",
                           rest=False)]),
     # manual: what CI cannot run
     "folds": ("manual", "break the transcript folds over ~/.claude/projects; "
               "[--largest N] [--seed S] [FILE...]",
-              [step(["node", "mod/tools/check-fold.ts"])]),
+              [step(["node", "plugin/tools/check-fold.ts"])]),
     "window-costs": ("manual", "time the window-cost scan over "
                      "~/.claude/projects, cold and cached; [--runs N]",
-                     [step(["node", "mod/tools/time-window-costs.ts"])]),
+                     [step(["node", "plugin/tools/time-window-costs.ts"])]),
     "probe-advance": ("manual", "measure each glyph's cursor advance in "
                       "this terminal; needs a real tty",
                       [step(["bash", "tests/probe-advance.sh"])]),
     # generate
     "option-docs": ("generate", "rewrite docs/options.md's option table "
-                    "from mod/src/options_spec.ts",
-                    [step(["node", "mod/tools/gen-option-docs.ts"],
+                    "from plugin/src/options_spec.ts",
+                    [step(["node", "plugin/tools/gen-option-docs.ts"],
                           rest=False)]),
     "fixtures": ("generate", "regenerate the configuration cases and the "
                  "fold saves under tests/fixtures/",
-                 [step(["node", "mod/tools/gen-config-cases.ts"]),
-                  step(["node", "mod/tools/gen-fold-saves.ts"])]),
+                 [step(["node", "plugin/tools/gen-config-cases.ts"]),
+                  step(["node", "plugin/tools/gen-fold-saves.ts"])]),
     "grid-cases": ("generate", "regenerate tests/fixtures/grid from the "
                    "TypeScript grid",
-                   [step(["node", "mod/tools/gen-grid-cases.ts"])]),
-    "row-cases": ("generate", "regenerate the mod's row cases",
-                  [step(["node", "mod/tools/gen-row-cases.ts"])]),
-    "mod-fixtures": ("generate", "regenerate mod-tests/fixtures.gen.ts for "
-                     "the harness tests",
-                     [step(["node", "tools/gen-mod-fixtures.ts"],
-                           cwd="mod")]),
+                   [step(["node", "plugin/tools/gen-grid-cases.ts"])]),
+    "row-cases": ("generate", "regenerate the plugin's row cases",
+                  [step(["node", "plugin/tools/gen-row-cases.ts"])]),
+    "plugin-fixtures": ("generate", "regenerate plugin-tests/fixtures.gen.ts "
+                        "for the harness tests",
+                        [step(["node", "tools/gen-plugin-fixtures.ts"],
+                              cwd="plugin")]),
     # look
     "diff-grid": ("look", "say how tests/fixtures/grid changed since a "
                   "commit; [BASE] [FILE...] [--show N]",
                   [step(["python3", "tools/diff-grid-fixtures.py"])]),
-    "figures": ("look", "draw a figures document as the mod's rows; "
+    "figures": ("look", "draw a figures document as the plugin's rows; "
                 "FILE [--cols N]",
-                [step(["node", "mod/tools/draw-figures.ts"])]),
+                [step(["node", "plugin/tools/draw-figures.ts"])]),
     "mockup": ("look", "draw the layout inside a mocked Claude Code "
                "screen; [--cols N] ...",
-               [step(["node", "mod/tools/layout-mockup.ts"])]),
+               [step(["node", "plugin/tools/layout-mockup.ts"])]),
     "palette": ("look", "draw the two colour sets side by side; "
                 "[--old REV] [--nearest N]",
                 [step(["python3", "tools/palette-review.py"])]),
     # update
-    "npm-lock": ("update", "re-resolve mod/package-lock.json from "
-                 "mod/package.json",
+    "npm-lock": ("update", "re-resolve plugin/package-lock.json from "
+                 "plugin/package.json",
                  [step(["npm", "install", "--package-lock-only",
-                        "--ignore-scripts"], cwd="mod")]),
+                        "--ignore-scripts"], cwd="plugin")]),
 }
 
 

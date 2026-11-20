@@ -8,7 +8,7 @@
 tests/fixtures/grid/*.json are far too long to read as a diff: thousands of
 draw cases, each a row drawn at a width under a set of cells, hidden paths
 and spill, as spans.  The first profile's file holds every case and the
-others a sample (see mod/tools/gen-grid-cases.ts), so a file is compared
+others a sample (see plugin/tools/gen-grid-cases.ts), so a file is compared
 with the same file at BASE.  After regenerating them, this matches each
 draw case with the one at BASE that has the same row, cells, width, hidden
 paths and spill, and prints one line a file:

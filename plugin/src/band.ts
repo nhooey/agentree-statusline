@@ -1,0 +1,904 @@
+// The band above the prompt: a status figures document drawn as the grid's
+// rows.
+//
+// docs/layout.md has the design, and docs/accounting.md's "Where each
+// figure comes from" says where each figure is read; the comments over
+// each row's builder here say which field each cell reads.  The band draws
+// four rows while a turn runs, 💳 the account, 🎤 the turn, 🤖💬 the main
+// thread and 🎮 the session, and drops to 💳 and 🤖💬 when it ends, since
+// the receipt (receipt.ts) then carries the turn and the session.
+//
+// Pure: everything comes from the document, and what the plugin keeps itself
+// comes in as an argument: HOME, to show the working directory as "~", and
+// 🛫, the main thread's token rate, which the plugin works out in memory from
+// successive documents (decision 1).  The clock's cells draw `clock.now`
+// in the process's TZ, which the edge sets from `clock.tz` before drawing.
+import {
+  CHROME_DEPTH, E_ACCT, E_DATE, E_PHASE_END, E_PHASE_PAUSE, E_PHASE_RUN,
+  E_TOOL, E_WORK, GRID_CELLS, QUIET_WARN_S, STALE_MARK_S,
+} from "./spec.ts";
+import { durFmt, grade, padVal, visWidth } from "./formatting.ts";
+import type { Settings } from "./formatting.ts";
+import { cut, ink, paint, span, width } from "./spans.ts";
+import type { Span } from "./spans.ts";
+import { isDict } from "./py.ts";
+import { charLen, charSlice, stripEnd, toFloat } from "./exact.ts";
+import {
+  W_CACHE_READ, W_CACHE_WRITE, etaFinish, tsEpoch,
+} from "./claude_records.ts";
+import type {
+  BgTask, Git, Payload, Transcript, Turn,
+} from "./claude_records.ts";
+import type { Accounting } from "./claude_calib.ts";
+import {
+  decodeGit, decodeLimits, decodePayload, decodeTranscript, decodeTurn,
+} from "./figures.ts";
+import {
+  CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, inheritEta, liveFinishes,
+  mainDoing, mainLabel, projectName, sessionLabel, turnLabel, untilReset,
+  workspacePieces, ymd,
+} from "./cells.ts";
+import type { PlanKey, PlanWindow, Workspace } from "./cells.ts";
+import type { Limits } from "./claude_sources.ts";
+import { WEEKLY_WINDOWS } from "./sources.ts";
+import type { WeeklyKey } from "./sources.ts";
+import { creditCell } from "./credits.ts";
+import { PAYER_GLYPHS } from "./spending.ts";
+import type { Spending } from "./spending.ts";
+import { treeRows } from "./band_tree.ts";
+import type { Folds, TreeAgents, TreeInput } from "./band_tree.ts";
+import type { TreeTask } from "./subagent_tasks.ts";
+import { draw, hidden, layout } from "./grid.ts";
+import type { Piece, Row } from "./grid.ts";
+import type { Dict } from "./py.ts";
+import type { Live, Place } from "./options_spec.ts";
+
+/** Whether a turn is running, which draws all four rows, or done. */
+export type Phase = "running" | "done";
+
+/** What the band is drawn with besides the document: the main thread's
+ * 🛫 (tokens a second, or null for no reading yet) and the phase, which
+ * picks what 🤖's 🛫 column and 📨 say. */
+export type BandOpts = {
+  readonly rate: number | null;
+  readonly phase: Phase;
+  /** Blank columns before each row's label (`indented`). */
+  readonly indent?: number;
+  /** Columns the container the rows are drawn in already stands in from
+   * the terminal's left edge: each row is drawn that much narrower, on the
+   * columns laid out at the full width, so its cells still land on the
+   * agent panel's columns and it ends where they end.  None where
+   * absent. */
+  readonly inset?: number;
+  /** When each row is drawn, by its name (RowsLive); "running" for a row
+   * absent, so none stays once a turn ends. */
+  readonly live?: RowsLive;
+  /** The place being drawn: only the rows `places` puts there.  Every
+   * row, wherever its place, where absent. */
+  readonly place?: Place;
+  /** Where each row is drawn, by its name (RowsPlace); "footer" for a row
+   * absent. */
+  readonly places?: RowsPlace;
+  /** When the band's tree draws the subagents, `rows.subagents.live`;
+   * "running" where absent. */
+  readonly agents?: Live;
+  /** How many seconds the tree keeps a row that finished drawn,
+   * `finished-within`; none where absent. */
+  readonly linger?: number;
+  /** The band's tree's folds, by key (band_tree.ts); each row's default
+   * where absent. */
+  readonly folds?: Folds;
+};
+
+/** A row of the band as the configuration's `rows` table names it: 🎤
+ * "turn", 🤖 "agent", 🎮 "session". */
+export type RowName = "turn" | "agent" | "session";
+
+/** Each row's Live, by its name. */
+export type RowsLive = { readonly [row in RowName]?: Live };
+
+/** Each row's Place, by its name. */
+export type RowsPlace = { readonly [row in RowName]?: Place };
+
+/** Whether a row whose `live` is `live` is drawn in `phase`, the one rule
+ * for every row the plugin draws, the subagents and 💳 among them:
+ *
+ *   live \ phase   running   done
+ *   never          no        no
+ *   running        yes       no
+ *   always         yes       yes */
+export function drawnIn(live: Live, phase: Phase): boolean {
+  return phase === "running" ? live !== "never" : live === "always";
+}
+
+/** Whether `places` puts `row` in `place`, a row absent being "footer". */
+export function placedIn(places: RowsPlace, row: RowName, place: Place):
+  boolean {
+  return (places[row] ?? "footer") === place;
+}
+
+export const ROW_NAMES: readonly RowName[] = ["turn", "agent", "session"];
+
+/** The scope of the band's row the configuration names `row`: 🤖's is
+ * `main`. */
+export function scopeOf(row: RowName): string {
+  return row === "agent" ? "main" : row;
+}
+
+/** The scopes of `rows`. */
+export function scopesOf(rows: readonly RowName[]): string[] {
+  return rows.map(scopeOf);
+}
+
+/** The band's four rows, whichever the phase draws. */
+export type BandRows = {
+  readonly account: Row;
+  readonly turn: Row;
+  readonly main: Row;
+  readonly session: Row;
+};
+
+type Cells = { [key: string]: Span[] };
+
+// ════════════════════════════════════════════════════════════════════════════
+// The fixed grid.
+// ════════════════════════════════════════════════════════════════════════════
+
+const ALL = GRID_CELLS.map((c) => c.key);
+
+/** The columns each scope can draw, whatever its figures: 🛫 and the
+ * model are state, on agent-shaped rows only; the session has no context
+ * and no ⛳ of its own; the account none, its plan being on its label.  The receipt's rows are
+ * the turn's and the session's. */
+export const SCOPE_KEYS: { readonly [scope: string]: readonly string[] } = {
+  account: [],
+  turn: ALL.filter((k) => k !== "model" && k !== "rate"),
+  main: ALL,
+  session: ALL.filter((k) => !["model", "rate", "ctx", "eta"].includes(k)),
+  agent: ALL,
+};
+
+/** A row with every column its scope can draw and nothing in them. */
+function skeleton(scope: string, depth?: number): Row {
+  return { scope, ...(depth === undefined ? {} : { depth }), label: [],
+    cells: Object.fromEntries(SCOPE_KEYS[scope].map((k) => [k, []])) };
+}
+
+/** `row` with `n` blank columns before its label, as the label's first
+ * piece: the label's room is `n` less, so the columns stay where an
+ * unindented row's are, and only on a terminal too narrow for the label
+ * is the indent cut.  Claude Code indents each line of a Stop message
+ * C_CHROME_CONT columns; the band takes the same indent, so the two
+ * readouts start at one column. */
+export function indented(row: Row, n: number): Row {
+  return n ? { ...row, label: [{ path: "indent",
+    spans: [span(" ".repeat(n))], drop: 0 }, ...row.label] } : row;
+}
+
+/** The columns at `cols` under `hide`, laid out over every row the band,
+ * the receipt and the panel can draw, agents to CHROME_DEPTH: they follow
+ * from the width and --hide alone, so no column moves when the turn ends,
+ * a document lacks a figure or an agent starts. */
+export function fixedKeys(st: Settings, cols: number,
+  hide: readonly string[]): string[] {
+  const rows = [skeleton("account"), skeleton("turn"), skeleton("main"),
+    skeleton("session")];
+  for (let d = 1; d <= CHROME_DEPTH; d++) rows.push(skeleton("agent", d));
+  return layout(st, rows.filter((r) => !hidden(hide, r.scope)), cols, hide);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Shared by the rows.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** A turn's ▴, weighed as costGroup weighs it, and its ▾. */
+export function turnTokens(t: Turn): [number, number] {
+  return [t.fresh + W_CACHE_WRITE * t.cache_write +
+    W_CACHE_READ * t.cache_read, t.out];
+}
+
+/** A turn's 🎯, as costGroup works it out. */
+export function turnCache(t: Turn): number {
+  return cacheRate(t.cache_read, t.fresh + t.cache_write + t.cache_read);
+}
+
+/** 🤖 🔧 🚦 off an accounting's seconds, drawn as proportions of
+ * themselves: agents running side by side put more agent-seconds in it
+ * than the wall clock has (decision 5). */
+export function accountingSplit(st: Settings, a: Accounting): Span[] {
+  return CELLS.split(st, a.model_s + a.tool_s + a.blocked_s, a.model_s,
+    a.tool_s);
+}
+
+/** The plan cells of an accounting's shares, under the plan reading's
+ * percentages, "" where there is none: a share the accounting could not
+ * work out is drawn "?", and with no reading the cells are blank. */
+export function shareCells(st: Settings, a: Accounting, sessPct: string,
+  weekPct: string): Cells {
+  return { five: CELLS.five(st, sessPct, a.sess_share),
+    week: CELLS.week(st, weekPct, a.week_share) };
+}
+
+/** The document's `spending`, the pool paying other than the plan and
+ * each row's figure of it (spending.ts), or null while the plan pays. */
+export function docSpending(fig: Dict): Spending | null {
+  const s = fig.spending;
+  return isDict(s) && Object.hasOwn(PAYER_GLYPHS, String(s.kind))
+    ? s as unknown as Spending : null;
+}
+
+/** The column after 💰 on the row `row` names in the document's
+ * `spending`, set in `cells` where the row has a figure: the paying
+ * credit's glyph and its dollars.  Blank while the plan pays. */
+function spendCell(st: Settings, fig: Dict,
+  row: "turn" | "main" | "session", cells: Cells): void {
+  const s = docSpending(fig);
+  const usd = s === null ? null : s[row];
+  if (s !== null && typeof usd === "number") {
+    cells.spend = CELLS.spend(st, PAYER_GLYPHS[s.kind], usd);
+  }
+}
+
+/** The main thread's ⛳: its own last report,
+ * pushed out by a live agent's (inheritEta), counted from the turn's
+ * prompt; nothing with no transcript. */
+function threadEta(st: Settings, tr: Transcript, now: number): Span[] {
+  if (!tr.start_s) return [];
+  now = etaNow(tr, now);
+  const shown = inheritEta(tr.eta,
+    liveFinishes(tr.agent_etas, now, tr.turn_s), tr.turn_s);
+  // Signed off: its own report is zero and no live agent pushed the
+  // finish past it.
+  const signedOff = tr.eta.length > 0 && tr.eta[1] === 0 &&
+    shown.length > 0 && etaFinish(shown)! <= etaFinish(tr.eta)! + 1e-6;
+  if (signedOff && tr.idle_at) return [];
+  return CELLS.eta(st, shown, tr.turn_s ? tr.turn_s * 1000 : null, now,
+    "running", null, signedOff);
+}
+
+/** 🎤's ⛳: the turn's own last report alone, and nothing before the turn
+ * has one; 🤖's (threadEta) is what live agents push out. */
+function turnEta(st: Settings, tr: Transcript, now: number): Span[] {
+  if (!tr.start_s || !tr.eta.length) return [];
+  if (tr.eta[1] === 0 && tr.idle_at) return [];
+  return CELLS.eta(st, tr.eta, tr.turn_s ? tr.turn_s * 1000 : null,
+    etaNow(tr, now), "running", null, tr.eta[1] === 0);
+}
+
+/** The time a ⛳ is counted to: `now` while the thread answers, and the
+ * end of its last answer once it is idle, so a turn's ⛳ stops with the
+ * turn rather than counting on between turns.  A ⛳
+ * signed off at zero is not drawn once idle: its overrun is only the
+ * seconds between the sign-off and the turn's last record. */
+function etaNow(tr: Transcript, now: number): number {
+  return tr.idle_at ? Math.min(now, tr.idle_at) : now;
+}
+
+/** The working directory under `home` as "~". */
+function homeDir(dir: string, home: string): string {
+  if (dir === home) return "~";
+  if (home && dir.startsWith(home + "/")) {
+    return "~" + charSlice(dir, charLen(home));
+  }
+  return dir;
+}
+
+/** `dir`, as homeDir draws it, and where in it the project's root,
+ * `root`, has its own folder's name, which 📁 draws in 📦's colour:
+ * "~/git/repo/plugin" and the span of "repo" for its plugin/ folder.  The span
+ * is null outside the project. */
+function projectDir(dir: string, root: string, home: string):
+  [string, readonly [number, number] | null] {
+  const r = stripEnd(root, "/");
+  const shown = homeDir(dir, home);
+  if (!r || (dir !== r && !dir.startsWith(r + "/"))) return [shown, null];
+  const end = homeDir(r, home).length;
+  return [shown, [end - (r.length - r.lastIndexOf("/") - 1), end]];
+}
+
+/** Where the session works, off the document's `git` and `payload`.  The
+ * receipt draws the 📦 🌿 of the band's last one (decision 7). */
+export function workspaceOf(fig: Dict, home: string): Workspace {
+  const pay: Payload = decodePayload(fig.payload);
+  const git: Git = decodeGit(fig.git);
+  const style = pay.output_style;
+  const pr = pay.pr_number;
+  const [dir, dirProject] = git.in_git
+    ? projectDir(pay.current_dir, git.main_root || git.toplevel, home)
+    : [homeDir(pay.current_dir, home), null];
+  return {
+    project: projectName(git, pay.project_dir),
+    branch: git.branch,
+    dirty: Boolean(git.dirty),
+    dir,
+    ...(dirProject ? { dirProject } : {}),
+    pr: pr && pr !== "null" ? pr : "",
+    style: style && style !== "default" && style !== "null" ? style : "",
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// The rows.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** 💳: the plan's two windows, `limits.session_pct` and `weekly_pct` as the
+ * source gave them, then the weekly windows beside them, SIDE_MARKS (the
+ * Fable window, `limits.fable_pct`, and the others, `limits.opus_pct` and
+ * the like), each where the source has it, and on the label the time to
+ * each reset, `limits.session_reset`, `weekly_reset`, `fable_reset` and
+ * the like, leading the windows that reset then, then 📅 🕐 off
+ * `clock.now`.  A window whose path `plan.<key>` is `hide`'s is left out,
+ * and a 🔜 with it where no window is left to reset then.  A reading
+ * STALE_MARK_S or more old, by `usage.reading.as_of`, has each figure
+ * marked with 🧊 and its age. */
+function accountRow(st: Settings, fig: Dict, now: number,
+  hide: (path: string) => boolean = () => false): Row {
+  const lim = decodeLimits(fig.limits);
+  // The resets as the epochs the document carries, not the minute stamps
+  // decodeLimits makes of them.
+  const raw = fig.limits as Dict;
+  const reset = (k: string): string | null =>
+    untilReset(st, raw[k] as number | null, now);
+  const pct = (s: string): number | null => {
+    const v = toFloat(s);
+    return v === null || Number.isNaN(v) ? null : v;
+  };
+  const reading = (fig.usage as Dict | undefined)?.reading as Dict | null;
+  const asOf = Number(reading?.as_of);
+  const age = Number.isFinite(asOf) ? now - asOf : NaN;
+  const stale = age >= STALE_MARK_S ? durFmt(st, age).trim() : null;
+  // The credits the plugin chose to draw (usage.ts creditsVia): each with
+  // its colour, and whether to draw what was granted.
+  const owed = fig.credits as Dict | undefined;
+  const drawn = Array.isArray(owed?.drawn) ? owed.drawn as Dict[] : [];
+  const credits = drawn.map((d) => ({ kind: String((d.credit as Dict).kind),
+    spans: creditCell(st, d.credit as Dict,
+      d.tint as "red" | "amber" | null, owed?.original === true, now) }));
+  const window = (key: PlanKey, share: string, k: string): PlanWindow => ({
+    key, pct: pct(share), reset: reset(k),
+    at: (raw[k] ?? null) as number | null });
+  // The plan's pair, then each side window with a share; planPieces puts
+  // those that reset together under one 🔜.
+  const windows: PlanWindow[] = [
+    window("five_hour", lim.session_pct, "session_reset"),
+    window("week", lim.weekly_pct, "weekly_reset"),
+    ...SIDE_MARKS.flatMap(([key]) => {
+      const w = window(key, lim[(key + "_pct") as keyof Limits],
+        key + "_reset");
+      return w.pct === null ? [] : [w];
+    })].filter((w) => !hide("plan." + w.key));
+  return { scope: "account", label: accountLabel(st, windows, ymd(now),
+    hms(now), stale, credits), cells: {} };
+}
+
+/** 🎤: the turn opened last, `open_turn`, with `accounting.open_turn`
+ * (decision 8), so a fresh turn reads zeros.  🧠 is how much the context
+ * grew in it, ⌛ how long it has run (turnClock), ⛳ the main thread's.
+ * With no open turn, the model, 🛫 and ⛳ alone. */
+function turnRow(st: Settings, fig: Dict, tr: Transcript, now: number,
+  sessPct: string, weekPct: string, opts: BandOpts): Row {
+  const raw = fig.open_turn as Dict | null;
+  const acc = (fig.accounting as Dict).open_turn as Accounting | null;
+  const pay = decodePayload(fig.payload);
+  // The model and effort, and 🛫, are the turn's, not
+  // the 🤖 row's: 🎤 is drawn only while the turn runs.  While a tool runs
+  // no tokens stream, so 🛫's column says how long the tool has run.
+  const cells: Cells = {
+    model: CELLS.model(st, pay.model_id || pay.model, pay.effort),
+    rate: toolCell(st, tr, now) ??
+      CELLS.rate(st, opts.phase === "running" ? opts.rate : null),
+    eta: turnEta(st, tr, now),
+  };
+  if (!raw) return { scope: "turn", label: turnLabel(), cells };
+  const t = decodeTurn(raw);
+  const [up, down] = turnTokens(t);
+  Object.assign(cells, {
+    ctx: CELLS.growth(st, t.dctx, Math.trunc(fig.context_window as number)),
+    tok: CELLS.tok(st, up, down),
+    cache: CELLS.cache(st, turnCache(t)),
+    clock: CELLS.clock(st, turnClock(t, tr, now, opts.phase)),
+  });
+  if (acc) {
+    Object.assign(cells, {
+      cost: CELLS.cost(st, acc.cost_usd),
+      split: accountingSplit(st, acc),
+      ...shareCells(st, acc, sessPct, weekPct),
+      diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
+    });
+  }
+  spendCell(st, fig, "turn", cells);
+  return { scope: "turn", label: turnLabel(), cells };
+}
+
+/** 🎤's ⌛.  While the turn runs, from its first record to `now`, so it
+ * counts on through a tool call, which writes no record until it ends,
+ * and to the end of its answer once the thread is idle (etaNow), so the
+ * second 🎤 is held after the receipt reads as the receipt does; never
+ * less than `dur_s`, should the clocks disagree.  Between turns, `dur_s`,
+ * the span of the turn's own records, as the receipt bills it. */
+function turnClock(t: Turn, tr: Transcript, now: number, phase: Phase):
+  number {
+  if (phase !== "running") return t.dur_s;
+  const start = tsEpoch(t.ts) ?? (tr.turn_s || null);
+  return start === null ? t.dur_s
+    : Math.max(t.dur_s, etaNow(tr, now) - start);
+}
+
+/** 🔧 and how long the main thread's tool has run, in 🛫's column, padded
+ * to the rate's width; null while no tool runs. */
+function toolCell(st: Settings, tr: Transcript, now: number): Span[] | null {
+  const [mark, since] = mainDoing(tr);
+  if (mark !== E_TOOL) return null;
+  const secs = Math.max(0.0, now - since);
+  const fig = durFmt(st, secs);
+  return [span(E_TOOL + " "),
+    paint(grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
+}
+
+/** What the main thread is doing: the mark
+ * of its state and how long it has been in it, amber once it has worked
+ * QUIET_WARN_S without a word.  Null on an offline read, and while a tool
+ * runs, which 🎤's 🛫 column says (toolCell). */
+function doingCell(st: Settings, tr: Transcript, now: number):
+  Span[] | null {
+  const [mark, since] = mainDoing(tr);
+  if (!mark || mark === E_TOOL) return null;
+  const secs = Math.max(0.0, now - since);
+  const amber = mark === E_WORK && secs >= QUIET_WARN_S;
+  const fig = durFmt(st, secs);
+  return [span(mark + " "), paint(amber ? ink("F_AMB")
+    : grade("duration", "F_PRW", fig, st.colourMode), padVal(st, 4, fig))];
+}
+
+/** 🤖: the main thread alone, before its agents' figures are added.  The
+ * model and effort its next turn will run on, drawn between turns too, the
+ * effort the last model request's; 🛫 is on 🎤 (turnRow); 💰 🔋 🪫
+ * `accounting.own`, its compactions in, the 💰 marked an estimate by
+ * `own_est` (decision 2); 🧠 its context, `ctx_est` marking an estimate;
+ * 🧩 🎯 `own_tok_*` and `own_cache_pct`; ⌛ its age from `start_s` and the
+ * split off `busy_s`, `tool_s` and `blocked_s`, a prompt that blocks
+ * counted as waiting; 💾 its own lines.  Running, 🛫's column says what it is
+ * doing, and its label's 📨 counts the messages queued for its next turn,
+ * `queued`. */
+function mainRow(st: Settings, fig: Dict, tr: Transcript, now: number,
+  sessPct: string, weekPct: string, opts: BandOpts): Row {
+  const own = (fig.accounting as Dict).own as Accounting | null;
+  const win = Math.trunc(fig.context_window as number);
+  const cells: Cells = { eta: threadEta(st, tr, now) };
+  if (own) {
+    Object.assign(cells, {
+      cost: CELLS.cost(st, own.cost_usd, tr.own_est),
+      ...shareCells(st, own, sessPct, weekPct),
+    });
+  }
+  if (tr.start_s) {
+    // renderElapsed's partition of the age: a blocking prompt moves from
+    // the busy clock to the idle one.
+    const age = Math.max(0.0, now - tr.start_s);
+    const wait = Math.min(Math.max(0.0, tr.blocked_s), tr.busy_s);
+    Object.assign(cells, {
+      ctx: CELLS.ctx(st, tr.ctx_tokens, win, tr.ctx_est),
+      tok: CELLS.tok(st, tr.own_tok_up, tr.own_tok_down),
+      cache: CELLS.cache(st, tr.own_cache_pct),
+      clock: CELLS.clock(st, age),
+      split: CELLS.split(st, age, Math.max(0.0, tr.busy_s - wait - tr.tool_s),
+        tr.tool_s),
+      diff: CELLS.diff(st, tr.lines_added, tr.lines_removed),
+    });
+  }
+  // Running, what it is doing and for how long in 🛫's column, as 🎤 draws
+  // a running tool's.
+  const pay = decodePayload(fig.payload);
+  const doing = opts.phase === "running" ? doingCell(st, tr, now) : null;
+  Object.assign(cells, {
+    model: CELLS.model(st, pay.model_id || pay.model, pay.effort),
+    rate: doing ?? [],
+  });
+  // 📨 only while it runs too: the receipt stamps this row once the turn
+  // has ended, and a count frozen there would be gone by the next turn.
+  const inbox = opts.phase === "running" ? tr.queued : 0;
+  spendCell(st, fig, "main", cells);
+  return { scope: "main", label: mainLabel(inbox), cells };
+}
+
+/** 🎮: the main thread and every agent, summed.  💰 💾 the accounting's
+ * (decision 4); ⌛ the session's age from `accounting.session.start_s`
+ * and 🤖 🔧 🚦 its agent-seconds (decision 5); 🧩 🎯 the transcript's
+ * session totals; its mark alone on the label, the workspace being the
+ * 💳 row's. */
+function sessionRow(st: Settings, fig: Dict, tr: Transcript, now: number,
+  sessPct: string, weekPct: string): Row {
+  const acc = (fig.accounting as Dict).session as Accounting | null;
+  const cells: Cells = {};
+  if (tr.start_s) {
+    Object.assign(cells, {
+      tok: CELLS.tok(st, tr.tok_up, tr.tok_down),
+      cache: CELLS.cache(st, tr.cache_pct),
+    });
+  }
+  if (acc) {
+    Object.assign(cells, {
+      cost: CELLS.cost(st, acc.cost_usd),
+      split: accountingSplit(st, acc),
+      ...shareCells(st, acc, sessPct, weekPct),
+      diff: CELLS.diff(st, acc.lines_added, acc.lines_removed),
+    });
+    if (acc.start_s !== null && acc.start_s !== undefined) {
+      cells.clock = CELLS.clock(st, now - acc.start_s);
+    }
+  }
+  spendCell(st, fig, "session", cells);
+  return { scope: "session", label: sessionLabel(), cells };
+}
+
+/** The band's rows above the prompt, as the tree draws them
+ * (band_tree.ts): of 🎮, 🎤 and 🧵, those `places` puts above and the
+ * phase draws, whose scope `hide` leaves, and the subagents of the
+ * document's `agents` where `opts.agents` draws them, those that ended
+ * for `finished-within` seconds after: the turn that ended has its
+ * receipt.  🎮's 📦 🌿 🔀 link under
+ * the document's `github`, the repository's address on GitHub, where it
+ * has one; its 📛 is the transcript's session name, in its colour. */
+export function treeOf(st: Settings, fig: Dict, rows: BandRows,
+  opts: BandOpts, hide: readonly string[]): Row[] {
+  const above = phaseRows(rows, opts.phase, opts.live, "above", opts.places);
+  const drawn = (name: RowName, row: Row): Row | null =>
+    above.includes(row) && !hidden(hide, scopeOf(name)) ? row : null;
+  return treeRows(st, treeInput(fig, drawn("session", rows.session),
+    drawn("agent", rows.main), drawn("turn", rows.turn), opts), hide);
+}
+
+/** A row of `rows` drawn under the footer line, its label as the band's
+ * tree draws it, alone: no tree's lines, no subagents, and on 🎮 no
+ * workspace, which the footer's 💳 line has. */
+function alone(st: Settings, fig: Dict, rows: BandRows, row: Row,
+  opts: BandOpts, hide: readonly string[]): Row {
+  const only = (r: Row): Row | null => r === row ? r : null;
+  return treeRows(st, { ...treeInput(fig, only(rows.session),
+    only(rows.main), only(rows.turn), opts), workspace: null,
+  agents: null }, hide)[0] ?? row;
+}
+
+/** What the band's tree is drawn from (treeRows), with the rows
+ * `session`, `main` and `turn`, each null where it is not drawn. */
+function treeInput(fig: Dict, session: Row | null, main: Row | null,
+  turn: Row | null, opts: BandOpts): TreeInput {
+  const tr = decodeTranscript(fig.transcript);
+  const running = opts.phase === "running";
+  const doc = fig.agents as Dict | undefined;
+  const shown = doc !== undefined &&
+    drawnIn(opts.agents ?? "running", opts.phase);
+  return {
+    session, main, turn,
+    workspace: workspaceOf(fig, ""),
+    mainPhase: !running ? E_PHASE_END : tr.wait_at ? E_PHASE_PAUSE
+      : E_PHASE_RUN,
+    mainInbox: running ? tr.queued : 0,
+    mainProgress: typeof doc?.main_progress === "string"
+      ? doc.main_progress : "",
+    turnPhase: running ? E_PHASE_RUN : E_PHASE_END,
+    turnPrompt: tr.user_text,
+    agents: shown ? treeAgents(fig, running, opts.linger ?? 0) : null,
+    folds: opts.folds,
+    repo: typeof fig.github === "string" ? fig.github : null,
+    sessionName: tr.session_name,
+    sessionColour: tr.session_color,
+  };
+}
+
+/** The subagents of a status figures document as the band's tree draws
+ * them (TreeAgents), while a turn runs where `running`, keeping a row
+ * that finished `linger` seconds; null where the document has none.
+ * Whether the tree draws them at all is the phase's and the options'
+ * (treeInput). */
+export function treeAgents(fig: Dict, running: boolean, linger: number):
+  TreeAgents | null {
+  const doc = fig.agents as Dict | undefined;
+  if (doc === undefined) return null;
+  const tr = decodeTranscript(fig.transcript);
+  return { tasks: (doc.tasks ?? []) as TreeTask[],
+    limits: decodeLimits(fig.limits), now: (fig.clock as Dict).now as number,
+    turnStart: running ? tr.turn_s || null : null,
+    mainBackground: (doc.main_background ?? []) as BgTask[],
+    mainEnded: (doc.main_background_ended ?? []) as BgTask[],
+    linger,
+    spending: docSpending(fig),
+    home: typeof doc.home === "string" ? doc.home : "" };
+}
+
+/** Whether the band's tree draws its root, 🎮, now: `rows.session`'s
+ * `place` puts it above the prompt and its `live` draws it in `phase`, and
+ * `hide` leaves it.  The 💳 row then leaves ROOT_WORKSPACE to it. */
+export function rootDrawn(place: Place, live: Live, phase: Phase,
+  hide: readonly string[]): boolean {
+  return place === "above" && !hidden(hide, "session") &&
+    drawnIn(live, phase);
+}
+
+/** The workspace parts the tree's root draws on its label (treeOf), which
+ * the 💳 row then leaves out: 📦 the project, 🌿 the branch, 🔀 the PR. */
+export const ROOT_WORKSPACE: readonly string[] = ["workspace.project",
+  "workspace.branch", "workspace.pr"];
+
+/** The band's four rows from a status figures document. */
+export function bandRows(st: Settings, fig: Dict, opts: BandOpts):
+  BandRows {
+  const now = (fig.clock as Dict).now as number;
+  const tr = decodeTranscript(fig.transcript);
+  const lim = decodeLimits(fig.limits);
+  const [sp, wp] = [lim.session_pct, lim.weekly_pct];
+  return {
+    account: accountRow(st, fig, now),
+    turn: turnRow(st, fig, tr, now, sp, wp, opts),
+    main: mainRow(st, fig, tr, now, sp, wp, opts),
+    session: sessionRow(st, fig, tr, now, sp, wp),
+  };
+}
+
+/** The rows a phase draws, top to bottom, of 🎤, 🤖💬 and 🎮, the order
+ * the receipt stamps them in: while a turn runs, each
+ * whose `live` is not "never", and once it ends, each whose `live` is
+ * "always".  A row absent from `live` is "running".  Given a `place`,
+ * only the rows `places` puts there, a row absent being "footer".  💳 is
+ * not among them: the caller draws it first in its place, as
+ * `accountLine` gives it, or on the footer line, as `accountText` does. */
+export function phaseRows(rows: BandRows, phase: Phase,
+  live: RowsLive = {}, place?: Place, places: RowsPlace = {}): Row[] {
+  const named: [RowName, Row][] = [["turn", rows.turn], ["agent", rows.main],
+    ["session", rows.session]];
+  return named.filter(([name]) =>
+    (place === undefined || placedIn(places, name, place)) &&
+    drawnIn(live[name] ?? "running", phase)).map(([, row]) => row);
+}
+
+/** The 💳 row's label as one line of plain text after the workspace (📦
+ * 🌿 📁, and 🔀 🎨 where the session has them),
+ * "📦agentree-statusline 🌿master  📁~/git/📦  💳 🔜 4.8h 🔋 1٪
+ * 🔜 9.8h 🪫 49٪  📅 2026-10-19  🕐 22:12:44", each piece hidden by its own
+ * path, the workspace's under `account.workspace`, with `home` shortening
+ * the 📁 directory as the band's does; ""
+ * under the hide path `account`.  The footer it is drawn on takes a string,
+ * so it keeps none of the row's colours. */
+export function accountText(st: Settings, fig: Dict,
+  hide: readonly string[], home = "", rooted = false): string {
+  return accountPieces(st, fig, hide, home, rooted)
+    .flatMap((p) => p.spans.map((s) => s.text)).join("").trim();
+}
+
+/** The hide paths the 💳 row is drawn under: `hide`, and
+ * `account.plan.<key>` for each weekly window `windows` (the option
+ * `weekly-windows`) leaves off.  The option, not the defaults' `hide`,
+ * keeps them off, since a file's `hide` replaces that list whole. */
+export function accountHide(hide: readonly string[],
+  windows: { readonly [key in WeeklyKey]: boolean }): string[] {
+  return [...hide, ...WEEKLY_WINDOWS.filter(([key]) => !windows[key])
+    .map(([key]) => "account.plan." + key)];
+}
+
+/** accountText's pieces, in their colours; none under the hide path
+ * `account`.  `rooted`: the band's tree draws ROOT_WORKSPACE on its root,
+ * and the 💳 row leaves them out. */
+function accountPieces(st: Settings, fig: Dict, hide: readonly string[],
+  home: string, rooted = false): Piece[] {
+  if (hidden(hide, "account")) return [];
+  const now = (fig.clock as Dict).now as number;
+  // The workspace first, 📦 the project, 🌿 the branch, 📁 the directory,
+  // 🔀 the PR and 🎨 the output style, each hidden by its own path.
+  const shown: Piece[] = workspacePieces(workspaceOf(fig, home)).filter((p) =>
+    !hidden(hide, "account." + p.path) &&
+    !(rooted && ROOT_WORKSPACE.includes(p.path)));
+  const gone = (path: string): boolean => hidden(hide, "account." + path);
+  // A hidden window is left out before the windows are grouped, so a 🔜
+  // leaves with the last window that resets then.
+  return [...shown,
+    ...accountRow(st, fig, now, gone).label.filter((p) => !gone(p.path))];
+}
+
+/** The paths the 💳 row sheds, one at a time and in this order, while it
+ * is too wide for its row: 🎨, 🔀, 📁, 📅, 🕐, then the windows' 🔜.  What
+ * is left after them all is cut with `…`. */
+export const ACCOUNT_SHED: readonly string[] = ["workspace.style",
+  "workspace.pr", "workspace.dir", "clock.date", "clock.time", "plan.reset"];
+
+/** The 💳 account as a row of its own, in its colours: what is the
+ * project's on the left and what is global on the right.  The workspace,
+ * 📦 🌿 📁 🔀 🎨, from the row's first column, `indent` blanks in; then 💳
+ * and its windows, FOOTER_GAP columns before 📅 🕐, flush right, ending
+ * where the band's rows end at `cols`.  Too wide, it sheds ACCOUNT_SHED's
+ * paths, then is cut with `…`.  None under the hide path `account`. */
+export function accountLine(st: Settings, fig: Dict, hide: readonly string[],
+  cols: number, home = "", indent = 0, rooted = false): Span[] {
+  let pieces = accountPieces(st, fig, hide, home, rooted);
+  if (!pieces.length) return [];
+  const room = Math.max(0, cols - st.rightEdge - indent);
+  const lead = indent ? [span(" ".repeat(indent))] : [];
+  const part = (p: Piece): number => p.path.startsWith("workspace.") ? 1
+    : p.path.startsWith("clock.") ? 2 : 0;
+  const gap = span(" ".repeat(FOOTER_GAP));
+  const sheds = [...ACCOUNT_SHED];
+  for (;;) {
+    const [acct, ws, clock] = [0, 1, 2].map((n) =>
+      trimSpans(pieces.filter((p) => part(p) === n).flatMap((p) => p.spans)));
+    const tail = [acct, clock].filter((p) => p.length)
+      .flatMap((p, i) => i ? [gap, ...p] : p);
+    const wsW = width(ws, st.widths);
+    const tailW = width(tail, st.widths);
+    const need = wsW + (ws.length && tail.length ? FOOTER_GAP : 0) + tailW;
+    if (need <= room) {
+      return [...lead, ...ws,
+        ...tail.length ? [span(" ".repeat(room - wsW - tailW))] : [],
+        ...tail];
+    }
+    const path = sheds.shift();
+    if (path === undefined) {
+      return [...lead, ...cut(ws.length && tail.length ? [...ws, gap, ...tail]
+        : [...ws, ...tail], room, st.widths)];
+    }
+    pieces = pieces.filter((p) => p.path !== path);
+  }
+}
+
+/** `spans` without the blanks at either end. */
+function trimSpans(spans: readonly Span[]): Span[] {
+  const out = spans.filter((s) => s.text);
+  while (out.length && !out[0].text.trim()) out.shift();
+  while (out.length && !out[out.length - 1].text.trim()) out.pop();
+  if (!out.length) return out;
+  out[0] = { ...out[0], text: out[0].text.trimStart() };
+  const n = out.length - 1;
+  out[n] = { ...out[n], text: out[n].text.trimEnd() };
+  return out;
+}
+
+/** What the footer under the prompt gets after Claude Code's own line,
+ * `hint`, at `cols`: `accountText`, after blanks that end it where the
+ * band's rows end; "" with no account text.  Claude Code trims the tail's
+ * leading spaces and joins it to the line with FOOTER_JOIN, so the blanks
+ * are TAIL_BLANK, which it keeps.  The line is two
+ * blanks in, and `hint` is read with one space between its parts, so the
+ * padding is a guess at the drawn width; a tail too wide is cut where the
+ * row ends.  `hint` leaves out the permission mode's pill, "⏵⏵ auto mode
+ * on · " (as in "-- INSERT -- 2 shells"), so the pill of
+ * `mode`, the session's permission mode, is counted apart. */
+export function footerTail(st: Settings, fig: Dict, hide: readonly string[],
+  hint: string, cols: number, mode?: string, home = "",
+  rooted = false): string {
+  const plain = accountText(st, fig, hide, home, rooted);
+  if (!plain) return "";
+  const pillW = pillWidth(st, hint, MODE_PILLS[mode ?? ""] ?? "");
+  // TAIL_CUT more than a row: Claude Code cuts the tail a column short of
+  // where a row under the line ends: without it, at a right edge of 2 the
+  // 🕐 ends `18:58:…`, the line one column over.
+  const room = cols - st.rightEdge - 2 - TAIL_CUT - pillW -
+    visWidth(hint, st.widths) - visWidth(FOOTER_JOIN, st.widths);
+  // The workspace, the 💳 account and 📅 🕐, FOOTER_GAP columns apart,
+  // both gaps fewer, down to one, where the row is short.
+  const parts = footerParts(plain);
+  const gapless = visWidth(parts.join(""), st.widths);
+  const gaps = parts.length - 1;
+  const gap = gaps ? Math.max(1, Math.min(FOOTER_GAP,
+    Math.floor((room - gapless) / gaps))) : 0;
+  // Claude Code draws a run of spaces in the tail as one ("6.6h 📅"), so a
+  // run's spaces past its first are blanks.
+  const text = parts.join(" ".repeat(gap)).replace(/ {2,}/g,
+    (run) => " " + TAIL_BLANK.repeat(run.length - 1));
+  return TAIL_BLANK.repeat(Math.max(0, room - visWidth(text, st.widths))) +
+    text;
+}
+
+/** A ruler as wide as `tail`, laid where it ends at `cols`: each column
+ * the last digit of its number, counting the terminal's first as 1. */
+export function footerRuler(st: Settings, tail: string, cols: number): string {
+  const n = visWidth(tail, st.widths);
+  const end = cols - st.rightEdge;
+  let out = "";
+  for (let c = end - n + 1; c <= end; c++) out += String(c % 10);
+  return out;
+}
+
+/** The columns between the footer's workspace, its account and its 📅 🕐,
+ * at most. */
+export const FOOTER_GAP = 4;
+
+/** accountText cut into the workspace, the 💳 account and 📅 🕐, each
+ * trimmed, leaving out any that is not there. */
+export function footerParts(text: string): string[] {
+  const cuts = [E_ACCT, E_DATE].map((m) => text.indexOf(m))
+    .filter((i) => i > 0);
+  const out: string[] = [];
+  let from = 0;
+  for (const i of cuts) {
+    out.push(text.slice(from, i));
+    from = i;
+  }
+  out.push(text.slice(from));
+  return out.map((p) => p.trim()).filter((p) => p);
+}
+
+/** The columns the footer draws for the mode's `pill` that `hint` does
+ * not read:
+ *
+ *   none, where `hint` has the pill whole;
+ *   its glyph and a space, where it has the pill's words alone, "-- INSERT
+ *   -- plan mode on (shift+tab to cycle)", the first of the two draws a
+ *   change of mode makes;
+ *   the pill and a space, where it has none of it and nothing follows but
+ *   MODE_CYCLE, "-- INSERT -- (shift+tab to cycle)" or "-- INSERT --";
+ *   the pill and FOOTER_JOIN before anything else, "-- INSERT -- 2 shells".
+ */
+export function pillWidth(st: Settings, hint: string, pill: string): number {
+  if (!pill || hint.includes(pill)) return 0;
+  const glyph = pill.slice(0, pill.indexOf(" ") + 1);
+  if (hint.includes(pill.slice(glyph.length))) {
+    return visWidth(glyph, st.widths);
+  }
+  const rest = hint.replace(/^-- [A-Z]+ --\s*/, "");
+  const join = !rest || rest.startsWith(MODE_CYCLE) ? " " : FOOTER_JOIN;
+  return visWidth(pill + join, st.widths);
+}
+
+/** The permission mode a change of mode has just turned on, from the
+ * first of the two draws it makes: that `hint` reads the words of the
+ * mode turned off ("accept edits on" while plan's pill is drawn), and
+ * shift+tab turns on the next in MODE_CYCLE_ORDER.
+ * undefined where `hint` reads no mode's words. */
+export function modeOfHint(hint: string): string | undefined {
+  for (const [mode, pill] of Object.entries(MODE_PILLS)) {
+    if (!hint.includes(pill.slice(pill.indexOf(" ") + 1))) continue;
+    const i = MODE_CYCLE_ORDER.indexOf(mode);
+    return i < 0 ? undefined
+      : MODE_CYCLE_ORDER[(i + 1) % MODE_CYCLE_ORDER.length];
+  }
+  return undefined;
+}
+
+/** The modes shift+tab steps through, in order. */
+export const MODE_CYCLE_ORDER: readonly string[] =
+  ["default", "acceptEdits", "plan", "auto"];
+
+/** The help that follows the mode's pill, joined to it by a space. */
+export const MODE_CYCLE = "(shift+tab to cycle)";
+
+/** What Claude Code puts between its footer line and a hook's tail. */
+export const FOOTER_JOIN = " · ";
+
+/** The pill Claude Code draws in the footer for each permission mode, by
+ * the mode's name: all but bypassPermissions's as seen drawn. */
+export const MODE_PILLS: Readonly<Record<string, string>> = {
+  default: "⏸ manual mode on",
+  auto: "⏵⏵ auto mode on",
+  acceptEdits: "⏵⏵ accept edits on",
+  plan: "⏸ plan mode on",
+  bypassPermissions: "⏵⏵ bypass permissions on",
+};
+/** The columns Claude Code cuts the footer's tail short of a row's end. */
+export const TAIL_CUT = 1;
+/** U+2800, a blank cell that is not whitespace, so no trim takes it. */
+export const TAIL_BLANK = "⠀";
+
+/** The band as drawn at `cols` under `hide`: its rows' spans, top to
+ * bottom, on the fixed grid, each `opts.inset` columns narrower.  A hidden
+ * scope's row is left out. */
+export function bandLines(st: Settings, fig: Dict, cols: number,
+  hide: readonly string[], opts: BandOpts): Span[][] {
+  return bandScoped(st, fig, cols, hide, opts).map((r) => r.spans);
+}
+
+/** bandLines, each row with its scope (`turn` for 🎤, `main` for 🧵,
+ * `session` for 🎮, `agent` for a subagent's), so a caller can tell the
+ * rows apart: the rows of `opts.place` alone where it is given, above the
+ * prompt as the band's tree (treeOf), and under the footer line each with
+ * the tree's label (alone). */
+export function bandScoped(st: Settings, fig: Dict, cols: number,
+  hide: readonly string[], opts: BandOpts):
+  { scope: string; spans: Span[] }[] {
+  const keys = fixedKeys(st, cols, hide);
+  const drawn = cols - (opts.inset ?? 0);
+  const rows = bandRows(st, fig, opts);
+  return (opts.place === "above" ? treeOf(st, fig, rows, opts, hide)
+    : phaseRows(rows, opts.phase, opts.live, opts.place, opts.places)
+      .filter((r) => !hidden(hide, r.scope))
+      .map((r) => alone(st, fig, rows, r, opts, hide)))
+    .map((r) => ({ scope: r.scope,
+      spans: draw(st, indented(r, opts.indent ?? 0), keys, drawn, hide) }));
+}

@@ -3,7 +3,7 @@ title: RF4 claude_records.ts split along its own sections
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/src/claude_records.ts, mod/src/records]
+touches: [plugin/src/claude_records.ts, plugin/src/records]
 cost: 4M tokens, $4, 0.4% of the weekly limit
 ---
 
@@ -11,7 +11,7 @@ cost: 4M tokens, $4, 0.4% of the weekly limit
 
 ## Now
 
-`claude_records.ts` is 3,088 lines, a quarter of `mod/src`, and already
+`claude_records.ts` is 3,088 lines, a quarter of `plugin/src`, and already
 marks its seams with section rules:
 
 | Section | Lines | Becomes |
@@ -28,7 +28,7 @@ marks its seams with section rules:
 
 ## Target
 
-The sections as modules under `mod/src/records/`, each importing only
+The sections as modules under `plugin/src/records/`, each importing only
 what it reads; `claude_records.ts` re-exports them for one PR, and the
 importers move to the new modules in the next, after which it goes.
 

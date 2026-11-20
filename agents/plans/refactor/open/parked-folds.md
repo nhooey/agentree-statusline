@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [agent-status]
-touches: [mod/src/band_tree.ts, mod/test/band_tree.test.ts]
+touches: [plugin/src/band_tree.ts, plugin/test/band_tree.test.ts]
 cost: 1M tokens, $1, 0.1% of the weekly limit
 ---
 

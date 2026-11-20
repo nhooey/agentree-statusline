@@ -13,7 +13,7 @@ live.
 
 ## Why
 
-Today one setting, `live-place`, puts every live row of the mod in one
+Today one setting, `live-place`, puts every live row of the plugin in one
 place: all under Claude Code's footer line (`"footer"`, the default) or
 all above the prompt (`"above"`). The user wants each row where it reads
 best:
@@ -24,7 +24,7 @@ best:
 - 🎮, the session, above the prompt too, under 🎤, kept between turns.
 - 💳, the account, as a row of its own under the footer line, holding
   everything about where the session works: 📦 🌿 📁 🔀 🎨.
-- 🤖, the main thread, as the lowest row the mod can draw, just over
+- 🤖, the main thread, as the lowest row the plugin can draw, just over
   Claude Code's agent panel, whose rows it is compared with.
 
 It also removes the prompt's text from 🎤 and the reply's text from 🤖,
@@ -102,10 +102,10 @@ Every row ends 2 columns short of the edge (`right-edge`, derived from
 
 A third field in each row of the `rows` table, `place`, and `live-place`
 retired ([Decided](#decided), 1). The defaults, in
-`mod/defaults/config.jsonc`:
+`plugin/defaults/config.jsonc`:
 
 ```jsonc
-  // Each row the mod draws.  place: "above", in the band above the
+  // Each row the plugin draws.  place: "above", in the band above the
   // prompt, or "footer", under Claude Code's footer line; live: "never",
   // "running" (while a turn runs) or "always"; transcript: whether a
   // turn's end stamps it into the transcript.  A file may set any one
@@ -176,8 +176,8 @@ compare only if both use one column grid and one left indent.
 **The width.** `AbovePrompt`'s `bodyColumns` is the band's column (the
 terminal, or the transcript's beside a docked `Pane`) less the engine's
 five at the right end, where `[-]` stands on the first row
-(`mod/.claude-plugin/types/claude-code/index.d.ts`, `AbovePrompt`). The
-mod already lays every row out at `bandCols = bodyColumns + 5`, taken from
+(`plugin/.claude-plugin/types/claude-code/index.d.ts`, `AbovePrompt`). The
+plugin already lays every row out at `bandCols = bodyColumns + 5`, taken from
 that hook whether or not it draws there; the footer's rows and the receipt
 use the same `bandCols`. So the width is shared today.
 
@@ -190,7 +190,7 @@ panel take 5 (the derivation above). The cost is three blank columns at
 the right of the footer's rows and the panel ([Decided](#decided), 2).
 
 **The left indent.** Claude Code draws the footer line's container
-`hint-inset` (2) columns in, and the mod draws its rows there that much
+`hint-inset` (2) columns in, and the plugin draws its rows there that much
 narrower; the band above the prompt starts at column 0. Since the grid is
 laid out from the right, the cells already land on one column either way;
 only the labels start 2 columns apart. The rows above the prompt take
@@ -210,7 +210,7 @@ column.
   its prompt too, and its 🎮, when `rows.session.transcript` stamps it,
   is as bare as the live one ([Decided](#decided), 6).
 - **The code goes with it** ([Decided](#decided), 9). `turnLabel` and
-  `mainLabel` in `mod/src/cells.ts` lose their `chat.prompt` and
+  `mainLabel` in `plugin/src/cells.ts` lose their `chat.prompt` and
   `chat.reply` pieces and the text they took; `band.ts` and `receipt.ts`
   stop reading the prompt and the reply for them; `chat` in
   `HIDE_GROUPS` keeps only `doing`. 🎮's live label is its mark alone;
@@ -246,9 +246,9 @@ it no longer fits after the footer's pills on most widths, so it becomes a
 row of its own under the footer line (`account-place` `"row"`, which
 `accountLine` draws today), in its colours ([Decided](#decided), 4).
 
-- **What it holds** (`workspacePieces`, `mod/src/cells.ts`, after `RP4`):
+- **What it holds** (`workspacePieces`, `plugin/src/cells.ts`, after `RP4`):
   📦 project, 🌿 branch (🍂 and ✱ when dirty), 📁 directory, 🔀 PR and 🎨
-  output style. `accountPieces` (`mod/src/band.ts`) already takes 📦 🌿
+  output style. `accountPieces` (`plugin/src/band.ts`) already takes 📦 🌿
   📁; it gains 🔀 and 🎨, each hidden by its own `account.workspace.*`
   path.
 - **The order** the user wrote, a new layout in `accountLine`: the
@@ -280,51 +280,51 @@ The plan takes that as it is, with no code for it
 | File | Change | Step |
 |---|---|---|
 | `spec/options.jsonc` | `rows.fields.place` (enum, `fixed: ["tag"]`); `live-place` removed; `right-edge`'s `derived` from `rows.*.place`; `account-place`'s doc | `RP2` |
-| `mod/defaults/config.jsonc` | `place` on each row, `live-place` gone, `account-place` `"row"`, `right-edge`'s comment | `RP2`, `RP5` |
+| `plugin/defaults/config.jsonc` | `place` on each row, `live-place` gone, `account-place` `"row"`, `right-edge`'s comment | `RP2`, `RP5` |
 | `tools/gen-spec.py` | the table form of `derived`, checked: the table and field exist, `any` is among the field's items, the map is keyed by every item | `RP2` |
-| `coding_agent_usage_line/options_spec.py`, `mod/src/options_spec.ts`, `docs/options.md` tables | generated | `RP2` |
-| `coding_agent_usage_line/options.py` | `_merged_value` and the derivation read `rows` (a mod-only option, as `live-place` was) to give `right-edge` | `RP2` |
+| `coding_agent_usage_line/options_spec.py`, `plugin/src/options_spec.ts`, `docs/options.md` tables | generated | `RP2` |
+| `coding_agent_usage_line/options.py` | `_merged_value` and the derivation read `rows` (a plugin-only option, as `live-place` was) to give `right-edge` | `RP2` |
 | `coding_agent_usage_line/config.py` | nothing beyond the spec: table fields and `fixed` are already generic | `RP2` |
-| `mod/src/config.ts` | the same derivation, `optionsOf` without `livePlace` | `RP2` |
-| `mod/hooks/register.tsx` | `AbovePrompt` draws the rows whose `place` is `"above"`,; `PromptHint` the ones whose `place` is `"footer"`; `insetOf` gone (one inset); the above rows indented `hint-inset` | `RP1`, `RP2`, `RP3` |
-| `mod/src/band.ts` | `bandScoped` takes the place to draw (rows filtered by `place`) and the order with 💳; `sessionRow`'s label bare; `turnRow`, `mainRow` without text; `accountPieces` on `workspacePieces`, then with 🔀 🎨, the user's order, shedding | `RP2`, `RP4`, `RP5` |
-| `mod/src/receipt.ts` | `turnRow` without its prompt; `sessionRow`'s label bare; no workspace taken | `RP4` |
-| `mod/src/cells.ts` | `turnLabel` and `mainLabel` without their text pieces; `sessionLabel` the mark alone; `workspacePieces` for 💳 | `RP4` |
+| `plugin/src/config.ts` | the same derivation, `optionsOf` without `livePlace` | `RP2` |
+| `plugin/hooks/register.tsx` | `AbovePrompt` draws the rows whose `place` is `"above"`,; `PromptHint` the ones whose `place` is `"footer"`; `insetOf` gone (one inset); the above rows indented `hint-inset` | `RP1`, `RP2`, `RP3` |
+| `plugin/src/band.ts` | `bandScoped` takes the place to draw (rows filtered by `place`) and the order with 💳; `sessionRow`'s label bare; `turnRow`, `mainRow` without text; `accountPieces` on `workspacePieces`, then with 🔀 🎨, the user's order, shedding | `RP2`, `RP4`, `RP5` |
+| `plugin/src/receipt.ts` | `turnRow` without its prompt; `sessionRow`'s label bare; no workspace taken | `RP4` |
+| `plugin/src/cells.ts` | `turnLabel` and `mainLabel` without their text pieces; `sessionLabel` the mark alone; `workspacePieces` for 💳 | `RP4` |
 | `spec/layout.jsonc`, `spec.{py,ts}` | `HIDE_GROUPS.chat` without `prompt` and `reply`; `LABEL_MIN` 12 | `RP4` |
-| `mod/hooks/register.tsx`, `mod/tools/*.ts`, `mod/mod-tests/` | the receipt's callers without a workspace | `RP4` |
-| `mod/tools/draw-figures.ts` | `--part above` and `--part footer` draw by place; `--sticky` becomes `--rows` reading a rows table | `RP2` |
-| `mod/README.md`, `docs/layout.md`, `docs/options.md` prose | see [Docs](#docs) | `RP6` |
+| `plugin/hooks/register.tsx`, `plugin/tools/*.ts`, `plugin/plugin-tests/` | the receipt's callers without a workspace | `RP4` |
+| `plugin/tools/draw-figures.ts` | `--part above` and `--part footer` draw by place; `--sticky` becomes `--rows` reading a rows table | `RP2` |
+| `plugin/README.md`, `docs/layout.md`, `docs/options.md` prose | see [Docs](#docs) | `RP6` |
 
 ### The Python port
 
 What the Python draws, and what it must change:
 
-- **The subagent rows' renderer** draws none of the mod's rows. It must
+- **The subagent rows' renderer** draws none of the plugin's rows. It must
   change one thing: its `right-edge`, derived from `rows.*.place` (5
-  under the new defaults) in step with the mod, as it is derived from
+  under the new defaults) in step with the plugin, as it is derived from
   `live-place` today.
 - **The defaults file** is read strictly by both ports, so `place` must be
   in the spec the Python's checker is generated from, and `live-place`
   gone from both at once (`RP2`, one commit).
 - **The status line** (`--mode status`) and **the Stop hook's receipt**
-  (`--mode cost`) draw grids of their own, retired with the mod loaded
+  (`--mode cost`) draw grids of their own, retired with the plugin loaded
   ([docs/layout.md](../../../docs/layout.md#the-status-line-and-the-stop-hook)).
   They draw none of these rows and do not change; their goldens hold.
 
 ## Tests and fixtures
 
-Each step leaves `bash tests/all.sh` and `npm test` (in `mod/`) passing.
+Each step leaves `bash tests/all.sh` and `npm test` (in `plugin/`) passing.
 
 | What | How | Step |
 |---|---|---|
 | The spec's generated files | `python3 tools/gen-spec.py`, then `--check` | `RP2` |
 | The shared config cases | `tests/fixtures/gen/config.py` (in `gen/all.py`): `right-edge-derived` becomes one case per place mix (all footer 2, any above 5, an above row `"never"` not counted), `live-place` as an unknown key, `rows.tag.place` warned | `RP2` |
 | The defaults cases | `tests/fixtures/config/defaults-cases.json`: a defaults file still holding `live-place`, or lacking `place`, is a `DefaultsError` | `RP2` |
-| The mod's fixtures module | `node mod/tools/gen-mod-fixtures.ts` (it carries the defaults file's text) | `RP2`, `RP5` |
-| The row cases | `node mod/tools/gen-row-cases.ts`: band cases by place, labels without text, the 💳 row with 🔀 🎨 and its shedding | `RP2`, `RP4`, `RP5` |
+| The plugin's fixtures module | `node plugin/tools/gen-plugin-fixtures.ts` (it carries the defaults file's text) | `RP2`, `RP5` |
+| The row cases | `node plugin/tools/gen-row-cases.ts`: band cases by place, labels without text, the 💳 row with 🔀 🎨 and its shedding | `RP2`, `RP4`, `RP5` |
 | The grid cases and the panel goldens | regenerated in both ports for `LABEL_MIN` 12 | `RP4` |
-| The mod harness | `mod/mod-tests/band.test.ts`: 🎤 and 🎮 in `AbovePrompt`, 💳 and 🤖 in `PromptHint`; 🎤 gone and 🎮 kept after the stamp; nothing above under `hasSurvey`; no row a Button; 🎮's and 🤖's cells on the same columns (`RP3`); the receipt without 🤖 🎮 by default and with them under `transcript` `true` | `RP1` … `RP5` |
-| `mod/mod-tests/config.test.ts` | the options with no file match the defaults file, `place` included | `RP2` |
+| The plugin harness | `plugin/plugin-tests/band.test.ts`: 🎤 and 🎮 in `AbovePrompt`, 💳 and 🤖 in `PromptHint`; 🎤 gone and 🎮 kept after the stamp; nothing above under `hasSurvey`; no row a Button; 🎮's and 🤖's cells on the same columns (`RP3`); the receipt without 🤖 🎮 by default and with them under `transcript` `true` | `RP1` … `RP5` |
+| `plugin/plugin-tests/config.test.ts` | the options with no file match the defaults file, `place` included | `RP2` |
 | The panel goldens' edge | unchanged by `RP2`: `tests/run-cases.py` writes `"right-edge": 5` in its scratch user file | — |
 
 ## Docs
@@ -339,7 +339,7 @@ Each step leaves `bash tests/all.sh` and `npm test` (in `mod/`) passing.
   footer's tail. A line on surveys.
 - **`docs/options.md`:** the generated tables, and the prose that names
   `live-place` (`right-edge` follows the rows' places).
-- **`mod/README.md`:** where the rows go, and the options list.
+- **`plugin/README.md`:** where the rows go, and the options list.
 - **`README.md`:** the legend if it names where a row is drawn.
 
 ## Migration of the user's file
@@ -378,7 +378,7 @@ The user's own, by hand, as `CM7` was; the plan only reads it. After
   containers of different widths. `RP1` logs both widths live.
 - **The survey's gap.** 🎤 and 🎮 vanish while a question picker is open.
 - **The `[-]` collapse.** Collapsed, the band hides 🎤 and 🎮 until it is
-  opened again; Claude Code keeps that state, not the mod.
+  opened again; Claude Code keeps that state, not the plugin.
 - **Three columns lost** under the footer line and on the panel at
   `right-edge` 5.
 - **The receipt and the band at once.** For `receiptHoldMs` (1 s) after the
@@ -439,7 +439,7 @@ In a session started in this repository, with the user's file as in `RP7`
 and no `config.local.jsonc` setting `rows`:
 
 1. `coding-agent-usage-line.py --show-config` shows `rows` from the
-   defaults, `right-edge` 5 derived, and no warning; the mod's log says
+   defaults, `right-edge` 5 derived, and no warning; the plugin's log says
    the same.
 2. While a turn runs: 🎤 then 🎮 above the prompt, `[-]` on 🎤's row; 💳
    then 🤖 under the footer line, then Claude Code's panel. Neither 🎤 nor
@@ -508,16 +508,16 @@ them.
    uncalled: `turnLabel`'s and `mainLabel`'s text pieces, the callers'
    reading of the text for them, `HIDE_GROUPS`' `chat.prompt` and
    `chat.reply`, and their tests and fixtures, in each port that has them
-   (only the mod does). The receipt's 🔖 tag line stays.
+   (only the plugin does). The receipt's 🔖 tag line stays.
 10. **No row is pressable,** and the press code is removed: a press on 🎤
     or 🤖 did nothing live. The three rows' labels are drawn flush right,
     their marks and 📨 beside the model, two columns from it.
 
 ## Files
 
-`spec/options.jsonc`, `mod/defaults/config.jsonc`, `tools/gen-spec.py`,
-`coding_agent_usage_line/options.py`, `mod/src/config.ts`,
-`mod/hooks/register.tsx`, `mod/src/band.ts`, `mod/src/receipt.ts`,
-`mod/tools/draw-figures.ts`, `mod/mod-tests/band.test.ts`,
+`spec/options.jsonc`, `plugin/defaults/config.jsonc`, `tools/gen-spec.py`,
+`coding_agent_usage_line/options.py`, `plugin/src/config.ts`,
+`plugin/hooks/register.tsx`, `plugin/src/band.ts`, `plugin/src/receipt.ts`,
+`plugin/tools/draw-figures.ts`, `plugin/plugin-tests/band.test.ts`,
 `tests/fixtures/gen/config.py`, `docs/layout.md`, `docs/options.md`,
-`mod/README.md`.
+`plugin/README.md`.

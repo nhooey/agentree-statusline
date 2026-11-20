@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [typed-documents, split-claude-records]
-touches: [mod/src, mod/hooks]
+touches: [plugin/src, plugin/hooks]
 cost: 15M tokens, $15, 1.5% of the weekly limit
 ---
 
@@ -13,8 +13,8 @@ cost: 15M tokens, $15, 1.5% of the weekly limit
 ## Now
 
 The ported code reads every record and document through accessors that
-copy Python's dictionary and truthiness rules. Counted over `mod/src`,
-`mod/hooks` and `mod/tools`:
+copy Python's dictionary and truthiness rules. Counted over `plugin/src`,
+`plugin/hooks` and `plugin/tools`:
 
 | Accessor | Calls | Files |
 | --- | ---: | ---: |
@@ -54,4 +54,4 @@ decoder says so, with a test row.
 
 Each PR: `tests` with fixtures unchanged; `typecheck`; the module's
 count of `py*` calls goes to zero. Last PR: `rg 'pyGet|pyOr|pyTruthy|
-pyDig' mod/` finds nothing.
+pyDig' plugin/` finds nothing.

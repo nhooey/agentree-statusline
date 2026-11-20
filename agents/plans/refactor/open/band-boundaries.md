@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [agent-status, eta-reading]
-touches: [mod/src/band.ts, mod/src/band_tree.ts, mod/src/cells.ts, mod/src/agent_row.ts]
+touches: [plugin/src/band.ts, plugin/src/band_tree.ts, plugin/src/cells.ts, plugin/src/agent_row.ts]
 cost: 4M tokens, $4, 0.4% of the weekly limit
 ---
 

@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [split-register]
-touches: [mod/hooks/register.tsx, mod/hooks/session.ts, mod/hooks/turn_life.ts, mod/mod-tests/band.test.ts]
+touches: [plugin/hooks/register.tsx, plugin/hooks/session.ts, plugin/hooks/turn_life.ts, plugin/plugin-tests/band.test.ts]
 cost: 4M tokens, $4, 0.4% of the weekly limit
 ---
 
@@ -66,6 +66,6 @@ stopping when the generation moves, and `forgetSession` on a switch.
 
 ## Tests
 
-A table in `mod-tests/` of (life, event) → life covering every arrow
+A table in `plugin-tests/` of (life, event) → life covering every arrow
 above, and `fileStart`'s filed-then-overwritten case. `band.test.ts`
 and the live cases are unchanged.

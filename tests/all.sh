@@ -14,7 +14,7 @@
 # are not here.
 #
 # Last, once the suites are done, `generated` reruns every generator of
-# committed files (the mod's under mod/tools/) and
+# committed files (the plugin's under plugin/tools/) and
 # fails if `git status` then shows any changed or untracked file: a
 # generator's output left uncommitted, which GitHub's run would miss.  It
 # runs alone because it rewrites the suites' inputs, and it fails on
@@ -56,11 +56,11 @@ trap 'rm -rf "$work"' EXIT
 # name | directory under ROOT | command.  In the order the table prints.
 SUITES='
 usage-dev|.|python3 tests/usage-dev.py
-node|mod|node --test test/*.test.ts
-typecheck|mod|npm run -s typecheck
-typecheck-plugin|mod|npm run -s typecheck:plugin
-plugin-test|mod|npm run -s test:plugin
-plugin-validate|mod|claude plugin validate .
+node|plugin|node --test test/*.test.ts
+typecheck|plugin|npm run -s typecheck
+typecheck-plugin|plugin|npm run -s typecheck:plugin
+plugin-test|plugin|npm run -s test:plugin
+plugin-validate|plugin|claude plugin validate .
 '
 
 now() {
@@ -108,12 +108,12 @@ if wanted generated "$@"; then
     cd "$ROOT" || exit 1
     start=$(now)
     {
-      node mod/tools/gen-option-docs.ts &&
-        node mod/tools/gen-config-cases.ts >/dev/null &&
-        node mod/tools/gen-fold-saves.ts >/dev/null &&
-        node mod/tools/gen-grid-cases.ts >/dev/null &&
-        node mod/tools/gen-row-cases.ts >/dev/null &&
-        node mod/tools/gen-mod-fixtures.ts >/dev/null &&
+      node plugin/tools/gen-option-docs.ts &&
+        node plugin/tools/gen-config-cases.ts >/dev/null &&
+        node plugin/tools/gen-fold-saves.ts >/dev/null &&
+        node plugin/tools/gen-grid-cases.ts >/dev/null &&
+        node plugin/tools/gen-row-cases.ts >/dev/null &&
+        node plugin/tools/gen-plugin-fixtures.ts >/dev/null &&
         dirty="$(git status --porcelain --untracked-files=all)" &&
         if [ -n "$dirty" ]; then
           echo "$dirty"

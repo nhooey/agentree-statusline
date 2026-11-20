@@ -4,12 +4,12 @@
 
 Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.
 
-It is a mod for [Claude Code](https://claude.com/claude-code).
+It is a plugin for [Claude Code](https://claude.com/claude-code).
 Its rows share one grid, so every figure stays on the same screen column on every row, and you can switch tabs and compare sessions at a glance.
 
 ## Above the prompt and under the footer line
 
-Drawn by the `agentree-statusline` mod in [`mod/`](mod/README.md), one scope a row.
+Drawn by the `agentree-statusline` plugin in [`plugin/`](plugin/README.md), one scope a row.
 Above the prompt, the session's threads as a tree: 🎮 the session at its root, then 🧵 the main thread with, under it, 🎤 its turn while it runs and the subagents it started, and under each thread the background shells (💻) and Monitors (📡) it has open; under Claude Code's own footer line, the 💳 account, just over the agent panel, whose rows Claude Code draws itself.
 Here the two places are drawn together, the prompt between them left out:
 
@@ -49,7 +49,7 @@ Every row's figures, left to right: 🧬 Model · 🛫 Rate or Doing · 💰 Cos
 
 ## Prompt receipt
 
-Stamped by the mod as each turn ends, in place of Claude Code's `✻ Worked for …` line, and kept in the transcript: the 🎤 row as it stood when the turn ended, dim, then the turn's tag.
+Stamped by the plugin as each turn ends, in place of Claude Code's `✻ Worked for …` line, and kept in the transcript: the 🎤 row as it stood when the turn ended, dim, then the turn's tag.
 🧵 and 🎮 stay live on screen, and `rows` can stamp them too.
 A turn that ran subagents stamps the band's tree instead: 🧵, under it 🎤 and then every agent the turn ran that had finished, 🏁, each under the agent that started it; one still at work is stamped on the first receipt after it ends ([Layout](docs/layout.md#the-receipt)).
 
@@ -63,13 +63,13 @@ The prompt that opened the turn carries the same tag under it, 🔻🔖, with th
 
 ## Install
 
-The readouts are a Claude Code mod, which needs only Claude Code: there is nothing to install beyond a clone.
+The readouts are a Claude Code plugin, which needs only Claude Code: there is nothing to install beyond a clone.
 
 ```sh
 git clone https://github.com/nhooey/agentree-statusline.git ~/src/agentree-statusline
 ```
 
-The rows above the prompt and under the footer line, and the receipt, are the mod's.
+The rows above the prompt and under the footer line, and the receipt, are the plugin's.
 Install it from the clone, which Claude Code then reads in place:
 
 ```sh
@@ -78,9 +78,9 @@ claude plugin marketplace add "$PWD"
 claude plugin install agentree-statusline@agentree-statusline
 ```
 
-Its settings, such as the usage source and what it hides, are in the [configuration files](docs/options.md#configuration-files); [`mod/README.md`](mod/README.md) has the rest.
+Its settings, such as the usage source and what it hides, are in the [configuration files](docs/options.md#configuration-files); [`plugin/README.md`](plugin/README.md) has the rest.
 
-Every setting's default is in one file, [`mod/defaults/config.jsonc`](mod/defaults/config.jsonc), which the mod reads at every load.
+Every setting's default is in one file, [`plugin/defaults/config.jsonc`](plugin/defaults/config.jsonc), which the plugin reads at every load.
 To change a setting, write only that key in your own file; every key it leaves out keeps the default, and follows the defaults file as it changes:
 
 ```sh
@@ -90,7 +90,7 @@ echo '{"mark-spacing": false}' > ~/.config/agentree-statusline/config.jsonc
 
 A project's settings go in its own `.config/agentree-statusline/` instead; see [Configuration files](docs/options.md#configuration-files).
 
-For ⛳ ETAs, the `agentree-statusline` plugin gives each session and subagent the ETA instruction at its start, the short form in [`mod/hooks/eta-instruction.md`](mod/hooks/eta-instruction.md).
+For ⛳ ETAs, the `agentree-statusline` plugin gives each session and subagent the ETA instruction at its start, the short form in [`plugin/hooks/eta-instruction.md`](plugin/hooks/eta-instruction.md).
 Link the skill as well, which holds the full rules and what `recurse` asks for; where the plugin is not enabled, also tell agents to use the skill:
 
 ```sh
@@ -101,7 +101,7 @@ echo 'For any task you expect to take more than about a minute, as the main agen
 ## Legend
 
 The legend has one table per topic.
-Each glyph has a name, and a ✓ marks each readout that draws it: the mod's rows, above the prompt and under the footer line, the subagent rows and the receipt.
+Each glyph has a name, and a ✓ marks each readout that draws it: the plugin's rows, above the prompt and under the footer line, the subagent rows and the receipt.
 Where a glyph means something different on one readout, the table says so.
 
 ### Rows
@@ -256,7 +256,7 @@ A subagent row's phase follows its kind; what the agent is doing within it fills
 | ⚫ 🟡 | 💥 | API error | its last answer died on an API error once Claude Code's retries ran out; paused or ended as it otherwise would be |
 
 Claude Code calls an agent completed both when it has finished and when it has ended its turn to wait.
-The row reads the agent's transcript and its children to tell the two apart; in the mod, Claude Code's agent list says `waiting` for the second, and the row is paused whatever the transcript holds.
+The row reads the agent's transcript and its children to tell the two apart; in the plugin, Claude Code's agent list says `waiting` for the second, and the row is paused whatever the transcript holds.
 
 ### Subagent rows
 
@@ -298,7 +298,7 @@ See [Hiding](docs/layout.md#hiding).
 
 [Options](docs/options.md) lists every option.
 
-The 💳 row's figures come from the usage source the mod is configured with (`usage-source`, `auto` by default).
+The 💳 row's figures come from the usage source the plugin is configured with (`usage-source`, `auto` by default).
 Besides the rate limits Claude Code reports, it can take them from:
 
 * the Claude Usage Tracker app
@@ -312,7 +312,7 @@ See [Usage sources](docs/usage-sources.md).
 | | |
 |---|---|
 | [Layout](docs/layout.md) | every cell on the three readouts in detail, and the colour rules |
-| [Accounting](docs/accounting.md) | how the mod derives costs, plan shares and time |
+| [Accounting](docs/accounting.md) | how the plugin derives costs, plan shares and time |
 | [Options](docs/options.md) | every option and environment variable |
 | [Usage sources](docs/usage-sources.md) | where plan figures come from, and how to write your own source |
 | [Glyphs and terminals](docs/glyphs-and-terminals.md) | how to choose a glyph that keeps the columns aligned |

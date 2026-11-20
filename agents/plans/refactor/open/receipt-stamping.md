@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [split-register]
-touches: [mod/hooks/receipts.ts, mod/src/receipt.ts, mod/test/receipt_closing.test.ts]
+touches: [plugin/hooks/receipts.ts, plugin/src/receipt.ts, plugin/test/receipt_closing.test.ts]
 cost: 3M tokens, $3, 0.3% of the weekly limit
 ---
 
@@ -60,7 +60,7 @@ alike, billed nothing (each reason), deadline with and without a key.
 
 ## Waits for
 
-"Pack receipts in the mod's store and keep fewer of them" (branch
+"Pack receipts in the plugin's store and keep fewer of them" (branch
 `store-receipts-compact`, 2b310ff), which rewrites `remember` and the
 receipt's stored shape; this node is written against it.
 

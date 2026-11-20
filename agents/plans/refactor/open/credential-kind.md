@@ -3,7 +3,7 @@ title: SM10 The session's credential as one kind
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/src/spending.ts, mod/hooks/edges.ts, mod/test/spending.test.ts]
+touches: [plugin/src/spending.ts, plugin/hooks/edges.ts, plugin/test/spending.test.ts]
 cost: 1M tokens, $1, 0.1% of the weekly limit
 ---
 

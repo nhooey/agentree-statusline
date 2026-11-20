@@ -30,13 +30,13 @@ A new mark must be:
    font still has it.
 4. **Outside U+1F900–U+1F90B.** The program treats that band as wide, and
    Ghostty does not.
-5. **Declared as an `E_*` constant** in `mod/src/spec.ts`
+5. **Declared as an `E_*` constant** in `plugin/src/spec.ts`
    and used by name, never as a literal in a renderer. `tests/probe-advance.sh`
    finds the glyphs to measure by reading those constants out of
-   `mod/src/spec.ts`; a literal is a glyph nobody measures.
+   `plugin/src/spec.ts`; a literal is a glyph nobody measures.
 
 Then measure it. Run `usage-dev probe-advance` in a real terminal tab and
-check it advances two columns, and look at the mod's rows drawn with it. A
+check it advances two columns, and look at the plugin's rows drawn with it. A
 glyph can measure correctly and still paint wrong.
 
 One glyph in use breaks rule 3: 🤏 `E_ROW_COMPACT` (U+1F90F) is Unicode 12. It

@@ -3,7 +3,7 @@ title: SM5 A fold read on from its save, one reader and one saver
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/hooks/transcripts.ts, mod/hooks/inbox.ts, mod/hooks/fold_io.ts]
+touches: [plugin/hooks/transcripts.ts, plugin/hooks/inbox.ts, plugin/hooks/fold_io.ts]
 cost: 4M tokens, $4, 0.4% of the weekly limit
 ---
 
