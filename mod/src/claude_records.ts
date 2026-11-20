@@ -742,9 +742,14 @@ export const BG_ENDED_KEEP = 8;
  * label. */
 export const BG_LABEL_MAX = 120;
 
-/** The most characters of a call's command a background task keeps, the
- * last of them `…` where it was cut. */
+/** The most characters of a call's command a background task keeps, `…`
+ * among them where it was cut. */
 export const BG_COMMAND_MAX = 300;
+
+/** How many of a cut command's first characters a background task keeps;
+ * the rest of BG_COMMAND_MAX, `…` aside, are its last, where a redirect
+ * to its log usually stands (shell_log.ts). */
+export const BG_COMMAND_HEAD = 200;
 
 /** What stands for each line break in a command kept on one line. */
 export const BG_NEWLINE = " ⏎ ";
@@ -774,15 +779,17 @@ export function backgroundLabel(input: unknown): string {
 
 /** A background task's command off its call's input, on one line: its
  * lines with text, each stripped, joined by BG_NEWLINE, cut to
- * BG_COMMAND_MAX characters with `…` last where it was longer; "" for
- * none. */
+ * BG_COMMAND_MAX characters where it was longer: its first
+ * BG_COMMAND_HEAD, `…` and its last; "" for none. */
 export function backgroundCommand(input: unknown): string {
   const v = pyGet(input, "command");
   if (typeof v !== "string") return "";
   const cs = Array.from(v.split("\n").map(stripSpace).filter((l) => l)
     .join(BG_NEWLINE));
   return cs.length > BG_COMMAND_MAX
-    ? cs.slice(0, BG_COMMAND_MAX - 1).join("") + "…" : cs.join("");
+    ? cs.slice(0, BG_COMMAND_HEAD).join("") + "…" +
+      cs.slice(cs.length - (BG_COMMAND_MAX - BG_COMMAND_HEAD - 1)).join("")
+    : cs.join("");
 }
 
 /** The output file a tool result block names, as a background Bash call's

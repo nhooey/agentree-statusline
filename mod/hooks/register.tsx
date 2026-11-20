@@ -36,9 +36,10 @@ import type { Env, Settings } from '../src/formatting.ts'
 import { hexOf } from '../src/spans.ts'
 import type { Press, Span } from '../src/spans.ts'
 import {
-  drawnAgents, foldShut, foldsKey, heldFolds, keptFolds, pruneFolds,
+  bgPath, drawnAgents, foldShut, foldsKey, heldFolds, keptFolds, pruneFolds,
   stampedSplit,
 } from '../src/band_tree.ts'
+import { LOG_TAIL_BYTES, logFile, logRows, tailLines } from '../src/shell_log.ts'
 import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
@@ -102,6 +103,10 @@ const configured = atom(
 // of, read back through heldFolds (band_tree.ts).
 const folds = atom(
   { plugin: 'agentree-statusline', key: 'folds' } as const, {})
+// The background shell whose log band is open, by its task id, or null
+// for none (shellBand).
+const shellLog = atom(
+  { plugin: 'agentree-statusline', key: 'shellLog' } as const, null)
 
 /** The store's key for a start line: its prompt's text. */
 export const startKey = (text: string) =>
@@ -817,6 +822,7 @@ function pressKey(p: Press | undefined): string {
   if (p.kind === 'fold') return 'fold:' + p.key
   if (p.kind === 'view') return 'view:' + (p.row ?? p.agent ?? 'main')
   if (p.kind === 'task') return 'task:' + p.row
+  if (p.kind === 'log') return 'log:' + p.row
   return 'link:' + p.href
 }
 
@@ -825,7 +831,9 @@ function pressKey(p: Press | undefined): string {
  * (the update reads it, so two presses before a redraw both land), and
  * keeps the folds in the store (keepFolds); a view
  * switches the transcript, and logs why where it would not; a task shows
- * its text as a toast, for CONFIG.taskToastMs. */
+ * its text as a toast, for CONFIG.taskToastMs; a log opens its shell's
+ * log band, moving it from another shell's, or closes it where it is that
+ * shell's (shellBand). */
 function onPressOf($: $, p: Press): () => Promise<void> {
   if (p.kind === 'fold') {
     return async () => {
@@ -848,6 +856,11 @@ function onPressOf($: $, p: Press): () => Promise<void> {
   if (p.kind === 'task') {
     return async () => {
       $.ui.toast(p.text, { timeoutMs: CONFIG.taskToastMs })
+    }
+  }
+  if (p.kind === 'log') {
+    return async () => {
+      await update($, shellLog, (v) => v === p.row ? null : p.row)
     }
   }
   return async () => {}
@@ -924,6 +937,57 @@ async function bandNow($: $, isWorking: boolean, place: Place):
         linger: o.finishedWithin,
         folds: place === 'above' ? heldFolds(await read($, folds)).folds
           : {} })]
+}
+
+/** What a press on a background shell's row opens its log band with. */
+type LogPress = Extract<Press, { kind: 'log' }>
+
+/** The log band of the background shell whose band is open (shellLog),
+ * as rows to draw above the tree's `lines`: a dim title naming the file it
+ * shows, ⤷ and its path (bgPath), then the file's last lines, as many as
+ * logRows leaves in a terminal `rows` high, each cut to the band's width.
+ * Only the file's tail, LOG_TAIL_BYTES of it, is read.  The file is
+ * logFile's; where it finds none, or the file is not there yet, the title
+ * says so alone.  None while no band is open; and where the shell's row is
+ * no longer drawn, none, and the band is closed. */
+async function shellBand($: $, ui: any, lines: { spans: Span[] }[],
+  rows: number, fullscreen: boolean): Promise<RenderElement[]> {
+  const open = await read($, shellLog)
+  if (open === null) return []
+  const press = lines.flatMap((l) => l.spans).map((s) => s.press)
+    .find((p): p is LogPress => p?.kind === 'log' && p.row === open)
+  if (!press) {
+    void update($, shellLog, (v) => v === open ? null : v)
+    return []
+  }
+  const { Text } = ui
+  const row = (key: string, text: string, dim: boolean) => (
+    <Text key={key} wrap="truncate-end" dimColor={dim}>{text || ' '}</Text>)
+  const sizeOf = async (path: string) => {
+    const s = await $.fs.stat(path)
+    return s.kind === 'file' ? s.size : 0
+  }
+  // Not `h`, the name JSX compiles against.
+  const homeDir = await home($)
+  const outSize = press.output
+    ? await sizeOf(press.output).catch(() => 0) : 0
+  const cwd = await $.session.cwd().catch(() => homeDir)
+  const where = logFile(press.output, outSize, press.command, cwd, homeDir)
+  if (where.path === null) return [row('log.title', '⤷ ' + where.why, true)]
+  const title = '⤷ ' + bgPath(where.path, homeDir)
+  try {
+    const size = where.path === press.output ? outSize
+      : await sizeOf(where.path)
+    const offset = Math.max(0, size - LOG_TAIL_BYTES)
+    const text = size > 0 ? await $.fs.read(where.path,
+      { as: 'text', offset, length: size - offset }) : ''
+    const body = tailLines(text, offset > 0, logRows(rows, fullscreen,
+      lines.length))
+    return [row('log.title', title, true),
+      ...body.map((l, i) => row('log.' + i, l, false))]
+  } catch {
+    return [row('log.title', title + ' · not there yet', true)]
+  }
 }
 
 /** Whether the band's tree draws its root now, whose label carries 📦 🌿
@@ -1129,9 +1193,13 @@ export const register: Register = on => {
       // on a blank top row it stood alone.  A bottom margin of -1, into the
       // blank row above the prompt's border, hid the band's last row under
       // the border instead.  The tree's fold marks and labels take a press
-      // (pressLine).
+      // (pressLine), and a shell's opens its log band above the tree
+      // (shellBand).
+      const logBand = await shellBand($, ui, lines,
+        e.viewport?.rows ?? 24, e.viewport?.isFullscreen ?? false)
       return (
         <Box flexDirection="column">
+          {logBand}
           {lines.map((l, i) => pressLine(ui, $, l.spans, 'band' + i))}
         </Box>
       )

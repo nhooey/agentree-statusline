@@ -53,7 +53,7 @@ export const STATE_KINDS = {
     "prefix": "claude-main-fold-",
     "key": ["transcript"],
     "suffix": "",
-    "format": 10,
+    "format": 11,
     "part_bytes": 1000000,
     "check_bytes": 4096,
   },

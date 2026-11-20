@@ -63,6 +63,10 @@ declare module 'claude-code' {
        * back through heldFolds, which takes a plain map of folds, as an
        * earlier version kept them, as of no session. */
       folds: FoldsHeld | { [key: string]: boolean };
+      /** The task id of the background shell whose log band is open above
+       * the tree, or null for none: a press on a shell's row sets it, or
+       * clears it where it is that shell's. */
+      shellLog: string | null;
       /** Which credit pays for the session other than the plan and since
        * when, and the first reading of its balance for the 🎮 row's
        * measured fall (src/spending.ts), as the last document found them,

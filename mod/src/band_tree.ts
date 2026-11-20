@@ -314,8 +314,9 @@ export function bgText(st: Settings, b: BgTask, label: string,
 /** The row of a background task: 💻 for a shell, 📡 for a Monitor, with
  * 🟢 as every running thread has, or ⚫ once it has closed, then its
  * call's label, or else its kind; ⌛ how long it has run, or ran, where
- * its start is known.  A leaf whose label shows bgText as a toast: it has
- * no transcript to switch to, and no call opens one task's own view. */
+ * its start is known.  A leaf, as it has no transcript to switch to:
+ * a shell's label opens its log band, and a Monitor's shows bgText as a
+ * toast. */
 function bgNode(st: Settings, b: BgTask, now: number, home: string):
   Node {
   const shell = b.kind === "bash";
@@ -325,7 +326,9 @@ function bgNode(st: Settings, b: BgTask, now: number, home: string):
     label: pressingAll([headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
       b.end === undefined ? E_PHASE_RUN : E_PHASE_END),
     { path: "name.label", spans: [span(label)], drop: 0 }],
-    { kind: "task", row: b.id, text: bgText(st, b, label, now, home) }),
+    shell ? { kind: "log", row: b.id, output: b.output ?? "",
+      command: b.command ?? "" }
+      : { kind: "task", row: b.id, text: bgText(st, b, label, now, home) }),
     cells: age === null ? {} : { clock: ageCell(st, age) } } };
 }
 

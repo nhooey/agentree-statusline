@@ -1,8 +1,9 @@
 ---
 title: A press on a background shell's row shows its log in a band above the prompt
-state: approved
+state: implemented
 kind: end-state
-touches: [mod/src/band_tree.ts, mod/src/spans.ts, mod/hooks/register.tsx, mod-tests/band.test.ts]
+touches: [mod/src/band_tree.ts, mod/src/spans.ts, mod/src/shell_log.ts, mod/src/claude_records.ts, mod/hooks/register.tsx, mod-tests/band.test.ts]
+implemented-by: shell-log-band
 ---
 
 # A press on a background shell's row shows its log in a band above the prompt

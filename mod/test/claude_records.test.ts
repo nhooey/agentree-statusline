@@ -337,7 +337,8 @@ test("a background task keeps its command and output file, open and " +
   assert.equal(tasks.find((t) => t.id === "m4")!.output,
     "/private/tmp/claude-501/p/tasks/m4.output");
   const b6 = tasks.find((t) => t.id === "b6")!;
-  assert.equal(b6.command, "é".repeat(299) + "…");
+  // Cut to its first characters and its last, where a redirect stands.
+  assert.equal(b6.command, "é".repeat(200) + "…" + "é".repeat(99));
   assert.equal(b6.output, "/Users/u/tasks/b6.output");
   // Closed: b4's notification after it, at a stamp.
   cr.scanBackground({ type: "user", timestamp: "2026-08-17T20:55:00.000Z",
