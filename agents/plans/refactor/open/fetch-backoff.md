@@ -3,7 +3,7 @@ title: SM6 A reading fetched with backoff, one machine for every source
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/hooks/plan_usage.ts, mod/hooks/usage.ts, mod/src/sources.ts, mod/src/fetch_state.ts]
+touches: [plugin/hooks/plan_usage.ts, plugin/hooks/usage.ts, plugin/src/sources.ts, plugin/src/fetch_state.ts]
 cost: 3M tokens, $3, 0.3% of the weekly limit
 ---
 

@@ -21,8 +21,8 @@ each case is for, and which recorded behaviours are deliberate.
 ## The committed corpora
 
 Everything under `fixtures/` is committed, and each family is one of two
-kinds: written by a generator under `mod/tools/`, or committed data that no
-generator writes, which the mod's tests read as the reference. Payload
+kinds: written by a generator under `plugin/tools/`, or committed data that no
+generator writes, which the plugin's tests read as the reference. Payload
 paths are `${HOME}` and `${FIXTURES}` placeholders that the tests fill in,
 so no fixture carries a username.
 
@@ -56,9 +56,9 @@ fixtures/
 
 | Family | Written by | Read by |
 |---|---|---|
-| `config/` | `node mod/tools/gen-config-cases.ts` | the node suite |
-| `grid/`, `rows/` | `node mod/tools/gen-grid-cases.ts`, `node mod/tools/gen-row-cases.ts` | the node suite, which also runs each generator again and fails on a difference |
-| `fold-saves.json` | `node mod/tools/gen-fold-saves.ts` | the node suite |
+| `config/` | `node plugin/tools/gen-config-cases.ts` | the node suite |
+| `grid/`, `rows/` | `node plugin/tools/gen-grid-cases.ts`, `node plugin/tools/gen-row-cases.ts` | the node suite, which also runs each generator again and fails on a difference |
+| `fold-saves.json` | `node plugin/tools/gen-fold-saves.ts` | the node suite |
 | everything else | nothing: committed data | the node suite |
 
 A family with a generator changes only through it: a hand edit is lost on
@@ -67,7 +67,7 @@ on a difference, and the node suite runs each again in memory.
 
 `records/`, `calib/`, `render/cells.json`, `claude/` and
 `formatting/values.json` are written once, one case a line, and
-`mod/test/cases_once.ts` reads them back into the calls they hold:
+`plugin/test/cases_once.ts` reads them back into the calls they hold:
 
 - a case whose `cfg` is a list of names stands for one case under each
   of the file's `configurations` it names, which all give its result;
@@ -122,7 +122,7 @@ A readout runs in two stages:
 
 1. **Figures.** The inputs read -- payload, transcript and agent files, usage
    source, calibration cache, repository, the clock -- and every figure the
-   rows draw worked out from them: `statusFigures` in `mod/src/claude.ts`
+   rows draw worked out from them: `statusFigures` in `plugin/src/claude.ts`
    for the band, and `costFigures` for the receipt.
    Everything that reads a file or a cache, runs a command or reads the
    clock happens here.
@@ -132,14 +132,14 @@ A readout runs in two stages:
 Between them is a figures document. A document has no width and no flags,
 so each case names one in `cases.json`'s `figures`, and the cases that come
 to the same document name the same one, committed once as
-`fixtures/figures/<suite>/<figures>.json`. `mod/test/claude.test.ts` builds
+`fixtures/figures/<suite>/<figures>.json`. `plugin/test/claude.test.ts` builds
 each case's document from its inputs and compares it, field for field,
 with the one it names, so a case whose document differs fails, and checks
 that the document's records have exactly their fields. The row cases are
 drawn from the committed documents. To draw one by hand:
 
 ```sh
-node mod/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
+node plugin/tools/draw-figures.ts tests/fixtures/figures/status/<name>.json --cols 160
 ```
 
 The text is canonical:
@@ -163,7 +163,7 @@ The text is canonical:
   field of a record (a `Payload`, `Transcript`, `Git`, `Limits`,
   `CacheShares` or `Turn`) whose value is null, so a schema number touches
   no document and a new record field only the documents that have a value
-  for it. `mod/test/figures_doc.ts` puts them back, with the mod's schema
+  for it. `plugin/test/figures_doc.ts` puts them back, with the plugin's schema
   number. The other nulls, of the document's own shape, stay in the text.
 
 `schema` is 6 and `mode` is `status` or `cost`. Schema 2 (2026-10-19) added
@@ -192,7 +192,7 @@ weekly Fable window, `fable_pct` and `fable_reset`, which the 💳 row draws as
 | `usage.account_text` | the account summary row, when one is drawn |
 
 A status document adds the records the band takes, field for field
-as `mod/src/claude_records.ts` defines them:
+as `plugin/src/claude_records.ts` defines them:
 
 | Key | Record |
 |---|---|
@@ -316,17 +316,17 @@ are made by hand for what the corpus does not reach: `states`, `eta`,
 `gauges`, `figures` (the model, cache, context and share cells), `who`
 (the name, branch and activity) and `missing` (no usage, a partial one, no
 meta or shares, tasks that are skipped). No two cases hold the same tasks.
-`mod/tools/gen-row-cases.ts` draws each case as the band's tree, three of
+`plugin/tools/gen-row-cases.ts` draws each case as the band's tree, three of
 the corpus's at every width and the rest at one (see Row cases below), and
-`mod/tools/draw-figures.ts --agents <group>/<name>` draws one by hand.
+`plugin/tools/draw-figures.ts --agents <group>/<name>` draws one by hand.
 `tests/fixtures/claude/agent-usage.json`
 holds each session's agents' usage, field for field, which
-`mod/test/band_tree.test.ts` holds `agentUsageOf` to.
+`plugin/test/band_tree.test.ts` holds `agentUsageOf` to.
 
 ## Grid cases
 
 `fixtures/grid/` pins the grid
-([The grid](../docs/layout.md#the-grid)), `mod/src/grid.ts`. They are written by the
+([The grid](../docs/layout.md#the-grid)), `plugin/src/grid.ts`. They are written by the
 TypeScript, with `usage-dev grid-cases`.
 
 The inputs are plain data: the mockup's sample rows by id, each its scope, its
@@ -345,7 +345,7 @@ profile can change: the layout cases whose columns differ, with their draw
 cases, and every draw case at 300 columns. The shapes are in the
 generator's header.
 
-`mod/test/grid.test.ts` replays every case under each of its file's
+`plugin/test/grid.test.ts` replays every case under each of its file's
 profiles, and `unknown.json`'s layout cases under every other profile but
 where that profile's file has the case, and runs the generator again in
 memory, failing if what it writes differs from what is committed, so
@@ -354,21 +354,21 @@ regenerating and reading the diff is the only way to change them.
 ## Row cases
 
 `fixtures/rows/` pins the row builders, the step between a figures document
-and the grid: `mod/src/band.ts` draws a status document as the band above the
+and the grid: `plugin/src/band.ts` draws a status document as the band above the
 prompt (💳 🎤 🤖💬 🎮 while a turn runs, 💳 🤖💬 once it ends) and
-`mod/src/receipt.ts` draws a cost document as the receipt (its 🔺🔖 head, 📊 🎤
+`plugin/src/receipt.ts` draws a cost document as the receipt (its 🔺🔖 head, 📊 🎤
 and 📊 🎮) and a status document as the 🔻🔖 start line, all through the cells
-in `mod/src/cells.ts`.
+in `plugin/src/cells.ts`.
 [Where each figure comes from](../docs/accounting.md#where-each-figure-comes-from)
 says where each figure is read, and the comments over each row's builder
 which field each cell reads. Like the grid's, these are written by the
 TypeScript, with `usage-dev row-cases`.
 
 The inputs are the committed [figures documents](#figures), by id
-(`status/01-baseline`), filled out as `mod/test/figures_doc.ts` fills them.
+(`status/01-baseline`), filled out as `plugin/test/figures_doc.ts` fills them.
 Each `band` case is a status document
 drawn at `cols` under the `--hide` patterns in a `phase`, with `rate`, the 🛫
-the mod works out itself and passes in; each `receipt` case is a cost document
+the plugin works out itself and passes in; each `receipt` case is a cost document
 at `cols` under `hide`, with the 📦 🌿 of the status document named by
 `workspace`, which stands for the band's last one; each `start` case is a
 status document's start line. Out come the spans of each row; the first case
@@ -386,7 +386,7 @@ receipt, profiles whose samples come out the same sharing one file
 (`iterm-tmux.json`); a padded icon is a cell's, not a width's. The start and
 account cases, which no profile changes, are written once.
 
-`mod/test/rows.test.ts` runs the generator again in memory, failing if what
+`plugin/test/rows.test.ts` runs the generator again in memory, failing if what
 it writes differs from what is committed, and replays the start and account
 cases under every profile. To look
 at the rows in a terminal:
@@ -399,14 +399,14 @@ usage-dev figures tests/fixtures/figures/cost/<name>.json \
 
 ## The folds' saves
 
-`fixtures/fold-saves.json` holds, for each of the mod's three saved folds
+`fixtures/fold-saves.json` holds, for each of the plugin's three saved folds
 (the main transcript's, each agent's, and the inbox's), its format number and
 a digest of what it saves of each fixture transcript, which
-`node mod/tools/gen-fold-saves.ts` writes; `--show PATH` prints a save's
+`node plugin/tools/gen-fold-saves.ts` writes; `--show PATH` prints a save's
 text, to read a change by running it before and after.
-`mod/test/main_fold.test.ts`, `agent_fold.test.ts` and `inbox_fold.test.ts`
+`plugin/test/main_fold.test.ts`, `agent_fold.test.ts` and `inbox_fold.test.ts`
 save each fold again and fail where its digest differs or its format is not
-`mod/src/state_spec.ts`'s, so a change to a fold's text cannot land without a new
+`plugin/src/state_spec.ts`'s, so a change to a fold's text cannot land without a new
 format. They also break the folds anywhere: each fixture folded to every
 record boundary, finished, and folded on to the end reads as its whole
 fold, and so does one with a half-written last line folded on a copy and
@@ -417,16 +417,16 @@ saved a part at a time, and read past a torn head.
 
 `fixtures/config/cases.json` holds, for each case, a tree of configuration
 files, the environment, the directory the walk starts from, and what
-`mod/src/config.ts` makes of them: the project root, each layer's path, the
+`plugin/src/config.ts` makes of them: the project root, each layer's path, the
 options a layer above the defaults set, each with its layer, each table
 field a file set, and the warnings, word for word.
 `fixtures/config/defaults-cases.json` holds the shipped defaults file and
 changes to it, each with the error the strict reading gives, or null.
-`node mod/tools/gen-config-cases.ts` writes both from the cases in its
-source. `mod/test/config.test.ts` runs every case over a fake file system
+`node plugin/tools/gen-config-cases.ts` writes both from the cases in its
+source. `plugin/test/config.test.ts` runs every case over a fake file system
 and fails on any path asked outside the case's tree;
-`mod/mod-tests/config.test.ts` checks the read through `$.fs`, its lines in
-the mod's log, and that no path the mod asks for lies outside the test's own
+`plugin/plugin-tests/config.test.ts` checks the read through `$.fs`, its lines in
+the plugin's log, and that no path the plugin asks for lies outside the test's own
 world.
 
 ## Manual checks
@@ -435,7 +435,7 @@ world.
 
 ```sh
 usage-dev folds [--largest N] [--seed S] [FILE...]  # in the dev shell
-node mod/tools/check-fold.ts [...]                  # the same, outside it
+node plugin/tools/check-fold.ts [...]                  # the same, outside it
 ```
 
 The node suite breaks the main transcript's folds over the fixtures; this
@@ -451,9 +451,9 @@ fold. One line a file, and a total. Over 4,495 files and 10.1 GB it took
 usage-dev probe-advance
 ```
 
-Prints this terminal's cursor advance for every glyph the mod uses, by
+Prints this terminal's cursor advance for every glyph the plugin uses, by
 drawing each one and asking the terminal for the cursor position (DSR). The
-glyph list is the `E_*` constants and `EAW_WIDE` of `mod/src/spec.ts`,
+glyph list is the `E_*` constants and `EAW_WIDE` of `plugin/src/spec.ts`,
 read with Node. It asserts nothing. Run it after a
 terminal update and before changing any glyph or width-table entry. See
 [glyphs and terminals](../docs/glyphs-and-terminals.md).

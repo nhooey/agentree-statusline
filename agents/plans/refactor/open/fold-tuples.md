@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [split-claude-records]
-touches: [mod/src/claude_records.ts, mod/src/main_fold.ts, mod/src/agent_fold.ts]
+touches: [plugin/src/claude_records.ts, plugin/src/main_fold.ts, plugin/src/agent_fold.ts]
 cost: 4M tokens, $4, 0.4% of the weekly limit
 ---
 

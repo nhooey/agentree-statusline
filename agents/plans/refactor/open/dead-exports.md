@@ -3,7 +3,7 @@ title: RF1 Nothing exported that nothing imports
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/src, mod/hooks]
+touches: [plugin/src, plugin/hooks]
 cost: 1.5M tokens, $1.50, 0.15% of the weekly limit
 ---
 

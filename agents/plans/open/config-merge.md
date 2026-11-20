@@ -6,7 +6,7 @@ kind: end-state
 
 # Configuration: one set of options, merged from files and flags
 
-Being built: steps 1 to 7 are done (each has its Status), so the mod
+Being built: steps 1 to 7 are done (each has its Status), so the plugin
 reads the files and draws from them; step 8, the acceptance check, is the
 user's, live.
 [Options](../../../docs/options.md) is the reference for the flags and the
@@ -19,9 +19,9 @@ The usage line has two ports, and each takes its settings its own way:
 - **The Python package**, `coding_agent_usage_line/`, takes flags on its
   command line, which lives in the hook commands. One command serves every
   project, so a setting cannot differ between projects.
-- **The mod**, `mod/`, takes a TypeScript object, `CONFIG` in
-  `mod/hooks/config.ts`, read once at module load. A change is an edit to the
-  mod's source and a `/reload-plugins`, and it applies to every project too.
+- **The plugin**, `plugin/`, takes a TypeScript object, `CONFIG` in
+  `plugin/hooks/config.ts`, read once at module load. A change is an edit to the
+  plugin's source and a `/reload-plugins`, and it applies to every project too.
 
 Some settings have to agree between the two, `hide` and the right edge
 among them, and only comments keep them in step. Two copies of one value
@@ -39,14 +39,14 @@ port can say that today; see [The rows table](#the-rows-table).
 Decided 2026-10-20, by the user: a setting is taken from the first layer that
 has it, highest first.
 
-| Layer | Where | Python | Mod |
+| Layer | Where | Python | Plugin |
 |---|---|---|---|
-| command-line flags | the hook command in `settings.json` | yes | none: the mod has no command line |
+| command-line flags | the hook command in `settings.json` | yes | none: the plugin has no command line |
 | project config | the project's files, see [Files](#files) | yes | yes |
 | user-global config | one file per user | yes | yes |
 | built-in defaults | the options spec | yes | yes |
 
-The mod has no flags layer, so for it a project file is the highest. A flag
+The plugin has no flags layer, so for it a project file is the highest. A flag
 the panel's command gives therefore beats a project file for the panel but
 not for the band; see [Decided](#decided-2026-10-20), 1, for the flags
 that must agree.
@@ -58,7 +58,7 @@ constants are written in `spec/layout.jsonc`. `tools/gen-spec.py` writes it
 out beside the layout, comments and all:
 
 - `coding_agent_usage_line/options_spec.py`, a tuple of option records;
-- `mod/src/options_spec.ts`, the same records, `as const`, with a generated
+- `plugin/src/options_spec.ts`, the same records, `as const`, with a generated
   `Options` type;
 - the option tables of `docs/options.md`, between
   `<!-- options:begin -->` and `<!-- options:end -->` markers, so the prose
@@ -75,10 +75,10 @@ Each option is one member:
   "type": "enum",            // bool | int | string | enum | list | table
   "items": ["footer", "above"],   // enum values, or a list's
   "default": "footer",
-  "ports": ["mod"],          // which ports read it: "py", "mod" or both
+  "ports": ["plugin"],       // which ports read it: "py", "plugin" or both
   "file": true,              // settable in a config file
   "flag": null,              // the CLI flag, or null for none
-  // Where the mod draws its live rows: under Claude Code's footer line,
+  // Where the plugin draws its live rows: under Claude Code's footer line,
   // or above the prompt.
   "doc": "..."
 }
@@ -137,12 +137,12 @@ up, looking in each directory for either project file, and stops at the first
 directory that has a `.git` (a directory, or the file a worktree has), at
 `$HOME`, or at `/`. The first directory with a project file is the root;
 with none, there is no project layer. The walk is file tests only, no `git`
-process: the mod would otherwise spawn one per read, and the Python already
+process: the plugin would otherwise spawn one per read, and the Python already
 pays for `git` in the status line.
 
 | Reader | Starts from |
 |---|---|
-| the mod | `$.session.root()`: where the session started, or where `/cd` or a worktree move took it; a shell `cd` does not move it |
+| the plugin | `$.session.root()`: where the session started, or where `/cd` or a worktree move took it; a shell `cd` does not move it |
 | the status line (`--mode status`) | the payload's `workspace.project_dir`, else `cwd` |
 | the Stop hook (`--mode cost`) | the payload's `cwd` |
 | Codex | the payload's `cwd`, else the rollout's |
@@ -154,7 +154,7 @@ is its own checkout: it sees the committed file, which it checks out, but
 not the main checkout's local file, so it reads that one when it has none
 of its own; see [Decided](#decided-2026-10-20), 6.
 
-**Reading them in the mod.** Through `$.fs`, with no Node: `$.fs.stat` for
+**Reading them in the plugin.** Through `$.fs`, with no Node: `$.fs.stat` for
 each candidate path in the walk, `$.fs.read` for the ones found. A config
 file is a few hundred bytes, far under `$.fs.read`'s 4 MiB, and a file over
 64 KiB is refused with a warning rather than read. `HOME` and
@@ -171,7 +171,7 @@ cost is a handful of `stat` calls and two small reads.
 
 ### The rows table
 
-Each row the mod can draw is set on its own, by when the mod draws it and
+Each row the plugin can draw is set on its own, by when the plugin draws it and
 whether a turn's end stamps it into the transcript (decided 2026-10-20).
 Where the live rows go is `live-place`, one setting for all of them.
 
@@ -179,7 +179,7 @@ Where the live rows go is `live-place`, one setting for all of them.
 {
   "live-place": "footer",            // "footer" | "above"
   "rows": {
-    //   live:       "never"   — the mod never draws it
+    //   live:       "never"   — the plugin never draws it
     //               "running" — drawn while a turn runs, gone at its end
     //               "always"  — drawn while a turn runs, and kept after
     //   transcript: stamped into the transcript when the turn ends
@@ -231,7 +231,7 @@ transcript.
   together.
 
 `coding-agent-usage-line.py --show-config` prints the merged options, each
-with the layer it came from and that layer's path, and exits; the mod logs
+with the layer it came from and that layer's path, and exits; the plugin logs
 the same table to its log on each read that changes it. That answers "why is
 it drawing this" without reading three files by hand.
 
@@ -260,12 +260,12 @@ Where the warnings go:
   The panel's stdout is task rows only and the Stop hook's is one JSON
   object, so nothing goes there. `--diagnose` adds them to its line, and
   `--show-config` lists them under the table.
-- **Mod:** its log (`log.ts`), every time, and a `$.ui.notice` once per file
+- **Plugin:** its log (`log.ts`), every time, and a `$.ui.notice` once per file
   and modification time, so a typo is seen the first time and not every
   tick. Not a toast: `slowToast` showed that a toast takes the footer line
   and hides the 💳 row (seen live 2026-10-20).
 
-### When the mod reads its configuration
+### When the plugin reads its configuration
 
 Today `CONFIG` is a module constant, read at load. It becomes a value the
 handlers read through one function, `options()`, kept in module state with
@@ -275,7 +275,7 @@ the files' modification times, and read again:
 - **on `session.start`**, since a new session may be in another project;
 - **on the idle tick** (`tickMs`, 30 s): one `$.fs.stat` per file found, and
   a read of any whose `mtimeMs` changed. The engine has no file-watch event
-  for a mod (the `FileChanged` hook is a shell hook's), and a stat every
+  for a plugin (the `FileChanged` hook is a shell hook's), and a stat every
   30 s is free next to the transcript reads the tick does anyway;
 - **when the root moves**: `$.session.root()` is read on each tick, and a
   new root walks again.
@@ -296,13 +296,13 @@ one.
 | `account` | `account` | both | `--account` | |
 | `period` | `account-period` | both | `--account-period` | renamed to the flag's name |
 | `hide` | `hide` | both | `--hide`, repeatable | one list for the band and the panel; the comment telling the user to keep them in step goes |
-| `sticky` | `rows.<row>.live` | mod | none | `"always"` for a row once sticky; see [The rows table](#the-rows-table) |
-| `bandPlace` | `live-place` | mod, and the panel through `right-edge` | none | `"hint"` becomes `"footer"` |
+| `sticky` | `rows.<row>.live` | plugin | none | `"always"` for a row once sticky; see [The rows table](#the-rows-table) |
+| `bandPlace` | `live-place` | plugin, and the panel through `right-edge` | none | `"hint"` becomes `"footer"` |
 | (`BAND_EDGE`) | `right-edge` | both | `--right-edge` | derived from `live-place` when unset |
-| `accountPlace` | `account-place` | mod | none | where the 💳 row goes when `rows.account.live` draws it |
-| `hintTuck` | `hint-tuck` | mod | none | |
-| `hintInset` | `hint-inset` | mod | none | |
-| `footerRuler` | `footer-ruler` | mod | none | a debugging aid; documented as such |
+| `accountPlace` | `account-place` | plugin | none | where the 💳 row goes when `rows.account.live` draws it |
+| `hintTuck` | `hint-tuck` | plugin | none | |
+| `hintInset` | `hint-inset` | plugin | none | |
+| `footerRuler` | `footer-ruler` | plugin | none | a debugging aid; documented as such |
 | `markSpacing` | `mark-spacing` | both | `--mark-spacing`, `--no-mark-spacing` | |
 | `subscriptDecimals` | `subscript-decimals` | both | `--subscript-decimals` | gains `--no-subscript-decimals` |
 | `version` | none | | | stays a constant in `config.ts`: it keys the caches, and a file must not change it |
@@ -311,16 +311,16 @@ one.
 | `tickRunningMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `readSpacing` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `slowReadMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
-| `slowToast` | `slow-toast` | mod | none | |
+| `slowToast` | `slow-toast` | plugin | none | |
 | `slowToastMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `clockMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
-| `startsKept` | `starts-kept` | mod | none | store size; minimum 1 |
+| `startsKept` | `starts-kept` | plugin | none | store size; minimum 1 |
 | `receiptWaitMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `receiptPollMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 | `receiptHoldMs` | none | | | a constant in `config.ts`, Decided 5 and 15 |
 
 The timings stay constants beside `version` (Decided 5 and 15): tuning
-values, not settings, so no file can set the mod spinning.
+values, not settings, so no file can set the plugin spinning.
 
 #### Every flag of `cli.py`
 
@@ -379,7 +379,7 @@ Claude Code has its own place for a plugin's settings: fields declared in the
 manifest's `userConfig`, stored in `settings.json` under
 `pluginConfigs[<plugin>].options`, handed to `register(on, options)`, and
 drawn as rows of `/config`, which `$.config.set` changes. It was considered
-for the mod and not taken:
+for the plugin and not taken:
 
 - **The panel cannot share it.** The Python would have to find and parse
   Claude Code's settings files itself, with their own merge rules, and Codex
@@ -396,7 +396,7 @@ for the mod and not taken:
   table and the derived `right-edge` do not.
 
 What it would give is the `/config` menu. That can come later on top of this
-design: the mod could declare a few `userConfig` fields and treat them as one
+design: the plugin could declare a few `userConfig` fields and treat them as one
 more layer, between the user file and the project files. Not in this plan.
 
 ## Tests
@@ -434,14 +434,14 @@ result. Together they cover:
 - `tools/gen-spec.py --check` covers `options_spec.py`, `options_spec.ts` and
   the doc tables.
 
-### Mod, `mod/test/`
+### Plugin, `plugin/test/`
 
-- `mod/test/config.test.ts`: the shared cases through `mod/src/config.ts`,
+- `plugin/test/config.test.ts`: the shared cases through `plugin/src/config.ts`,
   the pure merge, with the walk run over a fake `$.fs` built from each
   case's files.
-- `mod/test/options_spec.test.ts`: the generated `Options` type and records
+- `plugin/test/options_spec.test.ts`: the generated `Options` type and records
   agree with `spec/options.jsonc` (as `spec.test.ts` does for the layout).
-- `mod/mod-tests/band.test.ts`: the band's rows during and after a turn,
+- `plugin/plugin-tests/band.test.ts`: the band's rows during and after a turn,
   and the receipt's, for each `live` and `transcript` value of each row, read through `options()`, and a config change on
   the tick redrawing the band without a reload.
 
@@ -459,7 +459,7 @@ and `npm test`.
    **Status 2026-10-20: done.** As built:
    - `spec/options.jsonc` is one `OPTIONS` object of 35 records, as
      `spec/state.jsonc` is one `STATE_KINDS`: 26 flags of `cli.py` (with
-     `--selftest` and `--help`, `-h` as an alias) and 9 the mod alone reads,
+     `--selftest` and `--help`, `-h` as an alias) and 9 the plugin alone reads,
      by the tables above, less the timings (Decided 5). `agentMessageRow`,
      newer than this plan, is `agent-message-row`; `agentListMs` and
      `agentSenderMemo` stay constants with the timings.
@@ -472,14 +472,14 @@ and `npm test`.
      string; it is the doc table's Effect cell as it reads today, so the
      bools that default true describe their `--no-` flag.
    - The Python's is a dict by name, not a tuple, so a lookup is by name.
-     The TypeScript is `as const`, with `Options` over the mod's options
-     by camel-case name; `mod/test/options_spec.test.ts` fills it from the
+     The TypeScript is `as const`, with `Options` over the plugin's options
+     by camel-case name; `plugin/test/options_spec.test.ts` fills it from the
      defaults, so the typecheck holds the two together.
    - The doc tables sit between `<!-- options:begin shared -->` and
      `<!-- options:end shared -->`, and the same for `display`; the
-     options with no doc table, the mod's, wait for a section of their own.
+     options with no doc table, the plugin's, wait for a section of their own.
    - The defaults are the built-in ones, not `CONFIG`'s: `usage-source`
-     `auto` and `hide` empty, as the Python has them; the mod's
+     `auto` and `hide` empty, as the Python has them; the plugin's
      `claude-usage-tracker` and hide list are the user's, for step 7.
      `right-edge` keeps the Python's `5` beside its derived map, which
      gives `2` under `live-place`'s default `footer`, so the panel's
@@ -538,7 +538,7 @@ and `npm test`.
      calls and 19 `in argv` tests read `options[...]`. `label` keeps its
      default worked out in `_cost_opts` and `right-edge` is set only when
      given, so the derived values stay CM4's and CM6's (Decided 13).
-   - `_flag` and `_costOpts(argv)` in `mod/src/claude_cost.ts`, the
+   - `_flag` and `_costOpts(argv)` in `plugin/src/claude_cost.ts`, the
      TypeScript mirror of the cost line that the shared cases drive with
      each case's flags, still read an argv; CM6 decides whether they take
      `options()` or stay a test's reading of a case's flags.
@@ -566,14 +566,14 @@ and `npm test`.
      (`codex.rollout_cwd`).
    - A file's `usage-source` this agent cannot read is skipped with a
      warning (`--show-config` checks it for any agent). A flag overriding
-     a file for an option with `"mod"` in its ports is a warning, by the
+     a file for an option with `"plugin"` in its ports is a warning, by the
      spec rather than a list (Decided 1). Warnings go to stderr;
      `--diagnose` appends ` config_warnings=N` on both agents' lines;
      `--show-config` (a new spec record, `"file": false`, no `--agent`
      needed, no stdin, walking from the working directory) lists them
      under its table instead. The nearest-key hint is the optimal string
      alignment distance, within `max(1, len // 3)`, ties to spec order,
-     so the mod can match it exactly; warning texts carry no parser's
+     so the plugin can match it exactly; warning texts carry no parser's
      message, so both ports can write them.
    - Derived values: `label` from `usage-text`; the spec's map now holds
      `C_LABEL` exactly, padded to the widest label, so the goldens hold.
@@ -597,15 +597,15 @@ and `npm test`.
      them, written by `tests/fixtures/gen/config.py` (in `gen/all.py`):
      a file tree, the environment, the start and the flags, and the
      merged options that are not default, each table field a file set,
-     and the warnings. The mod runs the cases with no flags; its port of
+     and the warnings. The plugin runs the cases with no flags; its port of
      `usage-source`'s check needs the sources' names.
-5. **The mod reads the files.** `mod/src/config.ts`, the pure merge, and the
-   reading through `$.fs` in `mod/hooks/edges.ts`; `config.test.ts` against
+5. **The plugin reads the files.** `plugin/src/config.ts`, the pure merge, and the
+   reading through `$.fs` in `plugin/hooks/edges.ts`; `config.test.ts` against
    the shared cases. `CONFIG` is still the defaults' source and nothing
    reads the files' values yet.
 
    **Status 2026-10-20: done.** As built:
-   - `mod/src/config.ts` ports `config.py` (`find`, `mainCheckout`,
+   - `plugin/src/config.ts` ports `config.py` (`find`, `mainCheckout`,
      `readFile`, `check`, `nearest`), `options.merge` and `cli._merged`'s
      usage-source loop, with no flags layer. `load(start, env, fs,
      agent)` takes a `ConfigFs` (`stat`, `read`, `realPath`, each null
@@ -616,7 +616,7 @@ and `npm test`.
      and the warnings' quoting (`json.dumps` with and without
      `ensure_ascii`) come out as the Python's. Each `Layer` carries its
      file's `mtimeMs` for step 6's tick.
-   - `mod/hooks/edges.ts`: `configVia` reads through `$.fs` (bytes,
+   - `plugin/hooks/edges.ts`: `configVia` reads through `$.fs` (bytes,
      decoded strictly with the byte-order mark kept, as Python's
      `open(…, encoding="utf-8")`), starts at `$.session.root()`, and
      checks `usage-source` as Claude's panel does (`agent` `"claude"`;
@@ -625,38 +625,38 @@ and `npm test`.
      runs once per load, from `start()` in `register.tsx`, not awaited.
      No notice yet: the notice and the re-reads are step 6's.
    - `CODING_AGENT_USAGE_LINE_PROJECT_DIR`, the Python's test override,
-     is not read: the mod's tests set `$.session.root` instead.
-   - `mod/test/config.test.ts` runs the 35 cases with no flags over a
+     is not read: the plugin's tests set `$.session.root` instead.
+   - `plugin/test/config.test.ts` runs the 35 cases with no flags over a
      fake file system built from each case's tree, and fails on any path
-     asked outside it; `mod/mod-tests/config.test.ts` reads two planted
+     asked outside it; `plugin/plugin-tests/config.test.ts` reads two planted
      files through the harness's `$.fs`, checks the log's lines word for
-     word, and that no path the mod asks for, figures included, lies
+     word, and that no path the plugin asks for, figures included, lies
      outside its world (the hermetic check, as `GoldensAreHermetic` is
      for the Python).
-6. **The mod draws from `options()`.** Every `CONFIG.x` in `register.tsx`
+6. **The plugin draws from `options()`.** Every `CONFIG.x` in `register.tsx`
    and `edges.ts` becomes `options().x`; the re-reads on `session.start`, the
    tick and a moved root; the redraw on change; the log and the notice.
    `config.ts` keeps only `version` and the timings (Decided 15).
    `BAND_EDGE` becomes the derived `right-edge`, 2 by default (Decided 13).
 
    **Status 2026-10-21: done.** As built:
-   - `options()` in `mod/hooks/edges.ts` is the merged value, typed as
-     the generated `Options` (`optionsOf` in `mod/src/config.ts`, camel
+   - `options()` in `plugin/hooks/edges.ts` is the merged value, typed as
+     the generated `Options` (`optionsOf` in `plugin/src/config.ts`, camel
      case); every `CONFIG.x` that is an option reads it, in
      `register.tsx`, `edges.ts` (the source, account and period) and the
      settings `settingsOf` makes, which it makes again when
      `mark-spacing`, `subscript-decimals` or `right-edge` change.
      `config.ts` keeps `version`, the timings, `readSpacing`,
      `agentListMs` and `agentSenderMemo` as `CONFIG`; `BAND_EDGE` is gone.
-   - Byte for byte as before with no file: the settings the mod drew with
+   - Byte for byte as before with no file: the settings the plugin drew with
      that are not the spec's defaults (`usage-source`
      `claude-usage-tracker`, the hide list, and `rows` with 🎤, 🤖 and 🎮
      live `"running"` and all three stamped, today's `sticky: []`) are a
-     layer of the mod's own, `mod` (`SETTINGS` in `config.ts`,
-     `MOD_LAYER`), under the files and over the defaults, so the spec's
+     layer of the plugin's own, `plugin` (`SETTINGS` in `config.ts`,
+     `PLUGIN_LAYER`), under the files and over the defaults, so the spec's
      defaults stay the program's (Decided 17). Step 7 moves them to the
      user's file and empties `SETTINGS`. `--show-config` does not know
-     the layer; the mod's log names it. `mod-tests/config.test.ts` holds
+     the layer; the plugin's log names it. `plugin-tests/config.test.ts` holds
      the options with no file to the old `CONFIG`, field by field, and
      every band, row, receipt, figures fixture and golden is unchanged.
    - The rows table: `phaseRows` takes each row's `live` (`RowsLive`),
@@ -677,7 +677,7 @@ and `npm test`.
      reads the figures again.
    - The log: each read logs the files and every warning, as in step 5,
      and a read that changes the options (or the first) logs
-     `config options:` with each mod option and table field a layer above
+     `config options:` with each plugin option and table field a layer above
      the defaults gave, and its layer.
    - The notice: `$.ui.notice` is a line under a tool call's open dialog
      in this engine (2.1.303's types: `notice(tool_use_id, text)`), with
@@ -693,14 +693,14 @@ and `npm test`.
      its scratch user file, the edge the panel's goldens are drawn at.
      The shared case `right-edge-not-yet-derived` is `right-edge-derived`,
      and `right-edge-set` is new: 38 cases.
-   - `_flag` and `_costOpts(argv)` in `mod/src/claude_cost.ts` stay a
-     test's reading of a case's flags: the mod draws no cost line.
+   - `_flag` and `_costOpts(argv)` in `plugin/src/claude_cost.ts` stay a
+     test's reading of a case's flags: the plugin draws no cost line.
 7. **Move today's settings into files.** The user's `hide` list and
    `--usage-source`, `--mark-spacing` leave `CONFIG` for the user-global
    file, so both ports read one copy. This is the user's file, so the step
    is a short note in `docs/options.md` and done by hand, not in a commit.
 
-   Since step 6 the mod's own settings are `SETTINGS` in `config.ts`.
+   Since step 6 the plugin's own settings are `SETTINGS` in `config.ts`.
    The user file that draws as now, checked with
    `--show-config` (no warning; `right-edge` derived 2):
 
@@ -729,7 +729,7 @@ and `npm test`.
 
    **Status 2026-11-02: steps 2, 3 and 7 pass, 4 to 6 to run.** Step 1
    reads against the user's file as kept in step 7 of the build, with its
-   `rows`: those rows hold everywhere else. Step 3: the mod's log showed
+   `rows`: those rows hold everywhere else. Step 3: the plugin's log showed
    the project-local layer 9 s after the file was written, and
    `--show-config` the same. Step 7: one warning naming `"always"` in the
    log and in `--show-config`, the row falling through to the user file's
@@ -757,14 +757,14 @@ The rows table set in this project only:
    }
    ```
 
-3. With no `/reload-plugins`: within one tick (30 s) the mod's log shows the
+3. With no `/reload-plugins`: within one tick (30 s) the plugin's log shows the
    new table with `rows` from the project-local layer, and
    `coding-agent-usage-line.py --show-config` run here says the same.
-4. A turn in a session started in this repository ends: the mod keeps all
+4. A turn in a session started in this repository ends: the plugin keeps all
    three rows, 🎤, 🤖 and 🎮, where it drew them, and the receipt on the
    closing line stamps all three.
 5. A turn in a session started in another repository (or in `/tmp`) ends:
-   the mod keeps 🤖 and 🎮, drops 🎤, and the receipt stamps 🎤 alone.
+   the plugin keeps 🤖 and 🎮, drops 🎤, and the receipt stamps 🎤 alone.
 6. `/cd` from this repository to the other moves the session's root, and
    the next tick takes the other project's layer: the next turn there
    stamps 🎤 alone.
@@ -785,7 +785,7 @@ The rows table set in this project only:
    `_FIGURES_OUT`).
 3. **Lists replace** across layers.
 4. **The notice:** one `$.ui.notice` per file change, and the log.
-5. **The mod's timings** stay constants in `config.ts`, out of the spec.
+5. **The plugin's timings** stay constants in `config.ts`, out of the spec.
 6. **The project files,** XDG style inside the project (pi0's `config-dir`
    proposal, which cosmiconfig also searches):
    `.config/agentree-statusline/config.jsonc`, committed, and
@@ -809,13 +809,13 @@ The rows table set in this project only:
     its own JSON reader after stripping comments and trailing commas, with
     no vendored parser and no implicit typing (YAML would need PyYAML and
     the `yaml` package vendored and agreeing; TOML a Python of 3.11 or
-    later for the panel and a vendored parser in the mod).
+    later for the panel and a vendored parser in the plugin).
 12. **🎤 `turn` defaults to live `"running"`:** shown while a turn runs,
     then left to the transcript's stamped copy; the other rows stay
     `"always"`.
 13. **`right-edge` is derived from `live-place` when unset,** in the panel
     too: 2 under the default `"footer"`, 5 under `"above"`. The panel run
-    without the mod sets `live-place` or `right-edge` to keep 5.
+    without the plugin sets `live-place` or `right-edge` to keep 5.
 14. **Trailing commas are accepted:** the comment stripper drops a comma
     before `}` or `]`, and keeps one inside a string, as Decided 11 says;
     the shared cases change to match.
@@ -833,14 +833,14 @@ The rows table set in this project only:
 ## Decided (2026-10-21, by the user)
 
 18. **The defaults are a file, and it governs.** Every option a file may
-    set has its default in `mod/defaults/config.jsonc`, in exactly the
+    set has its default in `plugin/defaults/config.jsonc`, in exactly the
     shape of a user's `config.jsonc`, with a short comment per option, so
     a user copies it to `~/.config/agentree-statusline/config.jsonc`
     (or a project's `.config/agentree-statusline/`), edits the copy,
     and a `diff` against the repository's file shows only their changes.
     The format stays JSONC (Decided 11; TOML was considered and dropped).
-    - **Where:** in `mod/`, because the marketplace installs the plugin
-      from `./mod` alone, and the mod reaches its own files through
+    - **Where:** in `plugin/`, because the marketplace installs the plugin
+      from `./plugin` alone, and the plugin reaches its own files through
       `$.fs` under `$.plugin.root`; the Python, which runs from the
       checkout, reads the same file beside its package
       (`config.DEFAULTS_FILE`).
@@ -856,7 +856,7 @@ The rows table set in this project only:
       it is derived from", and its map names every value that option can
       take.
     - **Strict at run time:** both ports read the file at every run
-      (`config.load_defaults`, `readDefaults` in the mod), and a key
+      (`config.load_defaults`, `readDefaults` in the plugin), and a key
       missing, a key that is no option or describes one run, a value of
       the wrong type, `null` for an option that is not derived, or a
       file unreadable or not JSONC is a `DefaultsError` naming the file
@@ -867,7 +867,7 @@ The rows table set in this project only:
       line's line, the Stop hook's `systemMessage` and each agent-panel
       row, exiting 0 so Claude Code shows it, and on stderr; by hand
       (`--show-config`, `--help`, `--mode cost --all`) on stderr with
-      exit 2. The mod has no options while it is wrong: each drawing
+      exit 2. The plugin has no options while it is wrong: each drawing
       leaves Claude Code's own, the footer line draws the error in red
       under it, the log and one transcript line say it once, and no
       figures are read or receipts stamped until the file reads whole

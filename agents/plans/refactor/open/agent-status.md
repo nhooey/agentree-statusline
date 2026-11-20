@@ -4,7 +4,7 @@ state: proposed
 kind: implementation
 part-of: refactor
 needs: [typed-documents]
-touches: [mod/src/agent_row.ts, mod/src/band_tree.ts, mod/src/subagent_tasks.ts, mod/src/agent_message.ts, mod/src/claude_records.ts]
+touches: [plugin/src/agent_row.ts, plugin/src/band_tree.ts, plugin/src/subagent_tasks.ts, plugin/src/agent_message.ts, plugin/src/claude_records.ts]
 cost: 5M tokens, $5, 0.5% of the weekly limit
 ---
 

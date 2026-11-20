@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw mod/src/spec.ts's two colour sets side by side, to review them by
+"""Draw plugin/src/spec.ts's two colour sets side by side, to review them by
 eye in a true-colour terminal.
 
     python3 tools/palette-review.py > review.ansi       # this tree's sets
@@ -12,13 +12,13 @@ were handed that and left to round it (chalk's rgbToAnsi256 on the xterm
 palette), and the role its comment gives.  Each cell is a block, the text
 "841k" and the text "98٪" faint, as a dimmed figure is
 drawn, with the faint text's contrast on black; a colour a dim figure takes
-is marked * and must clear the floor in mod/test/spec.test.ts.  --nearest adds
+is marked * and must clear the floor in plugin/test/spec.test.ts.  --nearest adds
 that many palette entries closest to each true value.  --old adds a column
 for a revision's 256 value.  Then the pairs whose roles must stay apart,
 how far apart they are in each set, any two names that share one 256
 entry, and real rows drawn at each level: the band and the receipt, true
 colour then 256.  The palette, DIMMED and the floor are
-mod/test/spec.test.ts's, written again here.
+plugin/test/spec.test.ts's, written again here.
 """
 import argparse
 import os
@@ -27,7 +27,7 @@ import subprocess
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LAYOUT = "mod/src/spec.ts"
+LAYOUT = "plugin/src/spec.ts"
 RESET = "\x1b[0m"
 # Claude Code's default dark theme's user-message background, which B_MSG
 # sits against in the transcript.
@@ -49,10 +49,10 @@ LEVELS = [("true colour", {"TERM": "xterm-256color", "COLORTERM": "truecolor"}),
 # Real rows: (label, command run from the tree's root).
 DRAWINGS = [
     ("the band, 01-baseline at 196",
-     ["node", "mod/tools/draw-figures.ts",
+     ["node", "plugin/tools/draw-figures.ts",
       "tests/fixtures/figures/status/01-baseline.json", "--cols", "196"]),
     ("the receipt, 01-plain at 150",
-     ["node", "mod/tools/draw-figures.ts",
+     ["node", "plugin/tools/draw-figures.ts",
       "tests/fixtures/figures/cost/01-plain.json", "--cols", "150"]),
 ]
 

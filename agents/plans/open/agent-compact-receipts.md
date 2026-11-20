@@ -12,7 +12,7 @@ open.
 
 ## Why
 
-The mod stamps one receipt per turn of the main thread, on the turn's
+The plugin stamps one receipt per turn of the main thread, on the turn's
 closing line. A subagent that finishes gets none: its cost reaches the
 transcript only as part of the 🤖 row of the turn that ran it, and a
 background agent that finishes after that turn is in no receipt until the
@@ -75,13 +75,13 @@ nothing for them: its Stop hook's receipt is the main thread's alone.
 
 ## The build order
 
-1. **`AR1`, the trial.** Done: the mod logs, once per shape, what Claude
+1. **`AR1`, the trial.** Done: the plugin logs, once per shape, what Claude
    Code raises when a subagent ends and when `/compact` runs, and a live
    run settled the draw sites and the event a `/compact` is filed on, as
    above. A subagent's end raises `turn.complete` with its `agentId`,
    `reason` `answer` and `durationMs`, about a second before its
    notification draws.
-2. **`AR2`, a subagent's figures.** A pure function in `mod/src/receipt.ts`
+2. **`AR2`, a subagent's figures.** A pure function in `plugin/src/receipt.ts`
    from an agent's records to its row, with row cases from fixture agent
    files.
 3. **`AR3`, a subagent's receipt.** Filed on `turn.complete` with
@@ -99,7 +99,7 @@ nothing for them: its Stop hook's receipt is the main thread's alone.
 
 ## Files
 
-`mod/hooks/register.tsx` (filing and drawing), `mod/src/receipt.ts` (the
-rows), `mod/hooks/transcripts.ts` (an agent's records by id),
-`spec/options.jsonc` and its generated files, `mod/defaults/config.jsonc`,
-`mod/mod-tests/band.test.ts`, `docs/layout.md`, `docs/options.md`.
+`plugin/hooks/register.tsx` (filing and drawing), `plugin/src/receipt.ts` (the
+rows), `plugin/hooks/transcripts.ts` (an agent's records by id),
+`spec/options.jsonc` and its generated files, `plugin/defaults/config.jsonc`,
+`plugin/plugin-tests/band.test.ts`, `docs/layout.md`, `docs/options.md`.

@@ -3,7 +3,7 @@ title: SM7 When a row is drawn, one function of live, place and phase
 state: proposed
 kind: implementation
 part-of: refactor
-touches: [mod/src/band.ts, mod/src/options_spec.ts, mod/hooks/register.tsx, mod/test/rows.test.ts]
+touches: [plugin/src/band.ts, plugin/src/options_spec.ts, plugin/hooks/register.tsx, plugin/test/rows.test.ts]
 cost: 1.5M tokens, $1.50, 0.15% of the weekly limit
 ---
 

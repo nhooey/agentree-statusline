@@ -1,7 +1,7 @@
 # Options
 
-Every option is a key of a [configuration file](#configuration-files), which the mod reads; there is no command line.
-Every key and its default is in [`mod/defaults/config.jsonc`](../mod/defaults/config.jsonc).
+Every option is a key of a [configuration file](#configuration-files), which the plugin reads; there is no command line.
+Every key and its default is in [`plugin/defaults/config.jsonc`](../plugin/defaults/config.jsonc).
 
 | I want to… | Set |
 |---|---|
@@ -10,11 +10,11 @@ Every key and its default is in [`mod/defaults/config.jsonc`](../mod/defaults/co
 | leave a column out | `"hide"` — see [Hiding](#hiding) |
 | move a row, or stop drawing it | `"rows"` — see [What a file holds](#what-a-file-holds) |
 | set an option for every session, or for one project | a [configuration file](#configuration-files) |
-| see which file set what | the mod's log, `agentree-statusline.log` in the state directory |
+| see which file set what | the plugin's log, `agentree-statusline.log` in the state directory |
 
 ## Settings
 
-The settings the table below lists apply to every row the mod draws; the others, which say where each row goes and what it holds, are under [What a file holds](#what-a-file-holds).
+The settings the table below lists apply to every row the plugin draws; the others, which say where each row goes and what it holds, are under [What a file holds](#what-a-file-holds).
 
 <!-- options:begin settings -->
 | Key | Default | Effect |
@@ -22,7 +22,7 @@ The settings the table below lists apply to every row the mod draws; the others,
 | `usage-source` | `"auto"` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
 | `account` | `"default"` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
 | `account-period` | `"day"` | The UTC calendar period for organization reports (`anthropic-admin`). Weeks start on Monday. |
-| `right-edge` | `5` with any of the mod's rows above the prompt (`rows.*.place`), else `2` | The columns every grid row leaves blank at the terminal's right edge. `2` matches the mod with its rows under the footer line, whose container stops two columns short of the edge; `5` is the room Claude Code keeps for the mod's band `[-]` above the prompt. Unset, it follows the mod's `rows.*.place` from the files: `5` when any row the mod draws live is placed `above`, else `2`, so every row ends in one column. |
+| `right-edge` | `5` with any of the plugin's rows above the prompt (`rows.*.place`), else `2` | The columns every grid row leaves blank at the terminal's right edge. `2` matches the plugin with its rows under the footer line, whose container stops two columns short of the edge; `5` is the room Claude Code keeps for the plugin's band `[-]` above the prompt. Unset, it follows the plugin's `rows.*.place` from the files: `5` when any row the plugin draws live is placed `above`, else `2`, so every row ends in one column. |
 | `hide` | none | Columns and parts of a row's label left out of the grid, or 🔋 and 🪫 off the turn tag lines (`tag.plan.five_hour`, `tag.plan.week`), each `scope[.group[.metric]]` with `*` for any one part; see [Hiding](#hiding). |
 | `mark-spacing` | `true` | A blank between a mark and its value; `false` closes it. |
 | `subscript-decimals` | `false` | Write fractions as subscript digits: `1.2٪` becomes `1₂٪`. |
@@ -64,7 +64,7 @@ A reading under 1٪ keeps its leading zero — `.08٪` becomes `0₀₈٪` — b
 That makes the sub-1 reading the same width in both forms, and it is the widest reading, so **no field gets narrower**: a shorter figure just gets another column of padding and nothing on the row moves.
 The option changes how figures look, not how much room they take.
 
-Ghostty draws the subscript digits one column wide, which is what the mod assumes.
+Ghostty draws the subscript digits one column wide, which is what the plugin assumes.
 
 ## Hiding
 
@@ -110,11 +110,11 @@ On the turn tag lines, 🔻🔖 under the prompt and the receipt's 🔺🔖 ([do
 
 ## Configuration files
 
-Every option is in [`mod/defaults/config.jsonc`](../mod/defaults/config.jsonc), with its default and a line on what it does.
+Every option is in [`plugin/defaults/config.jsonc`](../plugin/defaults/config.jsonc), with its default and a line on what it does.
 
 ### Starting from the defaults
 
-That file is the defaults: the mod reads it at every load, and no default is written anywhere else.
+That file is the defaults: the plugin reads it at every load, and no default is written anywhere else.
 To change settings, write only the keys you change in your user file, or in a project's; a table such as `rows` takes just the fields you set:
 
 ```jsonc
@@ -130,8 +130,8 @@ A full copy of the defaults file works too, but sets every option, so it keeps t
 `right-edge` is `null` in the defaults file, which means "follow `rows.*.place`"; `null` in your file means the same, and is not a setting.
 
 The defaults file is read strictly.
-A key missing from it, a key that is no option, or a value of the wrong type is an error naming the file and the key, never a value made up in its place: the mod draws it in red under the footer line in place of its rows, with one line in the transcript.
-The mod reads the defaults file once each time it is loaded, once it reads whole: a change to it on disk shows after the next `/reload-plugins`, which also loads the code written for it, and the mod's log says the change is waiting.
+A key missing from it, a key that is no option, or a value of the wrong type is an error naming the file and the key, never a value made up in its place: the plugin draws it in red under the footer line in place of its rows, with one line in the transcript.
+The plugin reads the defaults file once each time it is loaded, once it reads whole: a change to it on disk shows after the next `/reload-plugins`, which also loads the code written for it, and the plugin's log says the change is waiting.
 Your own files stay lenient, as below, and apply within a tick.
 
 ### What a file holds
@@ -153,7 +153,7 @@ A setting comes from the first of these that has it:
 | `project-local` | `<root>/.config/agentree-statusline/config.local.jsonc`: one person's, not committed |
 | `project` | `<root>/.config/agentree-statusline/config.jsonc`: committed, for everyone |
 | `user` | `$AGENTREE_STATUSLINE_CONFIG_DIR/config.jsonc`, else `$XDG_CONFIG_HOME/agentree-statusline/config.jsonc`, else `~/.config/agentree-statusline/config.jsonc` |
-| `default` | `mod/defaults/config.jsonc` in the repository, which the plugin carries |
+| `default` | `plugin/defaults/config.jsonc` in the repository, which the plugin carries |
 
 The project `<root>` is found by walking up from the session's root, where the session started or `/cd` took it, to the first directory holding either project file.
 The walk stops at a `.git`, at `$HOME` and at `/`.
@@ -168,19 +168,19 @@ A file that is not valid JSONC or not an object is skipped whole, and so is a fi
 A value of the wrong type or out of range is skipped alone, the layer under it supplying the value.
 Each is a warning naming the file, and an unknown key's names the nearest known one.
 
-The mod reads the files at each load (a session's start or a `/reload-plugins`), again on `session.start`, and every 30 seconds while idle, a stat of each file, reading again only when one has come, gone or changed, or `/cd` has moved the session's root; a change draws every row again under the new options, with no reload.
+The plugin reads the files at each load (a session's start or a `/reload-plugins`), again on `session.start`, and every 30 seconds while idle, a stat of each file, reading again only when one has come, gone or changed, or `/cd` has moved the session's root; a change draws every row again under the new options, with no reload.
 Each read writes what each file gave and every warning to `agentree-statusline.log` in the state directory, one line each, and a read that changes the options writes them too, each with its layer.
 A file with a warning also gets one notice line in the transcript, `agentree-statusline: config <path>: …`, once per change to the file.
 
-Under the files the mod has one layer of its own, `mod`: `SETTINGS` in `mod/hooks/config.ts`, for a setting it draws with that is not the default and that no file gives.
+Under the files the plugin has one layer of its own, `plugin`: `SETTINGS` in `plugin/hooks/config.ts`, for a setting it draws with that is not the default and that no file gives.
 It is empty: a person's own settings go in their user file.
-The mod's log names it.
+The plugin's log names it.
 
 `right-edge` follows the places in `rows` when no layer sets it: 5 when any row whose `live` is not `"never"` has `place` `"above"`, as under the defaults, else 2.
 
-`plan-usage` is on in the defaults: the mod asks `https://api.anthropic.com/api/oauth/usage` for the plan's windows once a minute, and sooner when Claude Code's own week disagrees with the last answer, one request with the session's own credential, which Claude Code sets on the request and the mod never sees, and only for a signed-in subscription.
+`plan-usage` is on in the defaults: the plugin asks `https://api.anthropic.com/api/oauth/usage` for the plan's windows once a minute, and sooner when Claude Code's own week disagrees with the last answer, one request with the session's own credential, which Claude Code sets on the request and the plugin never sees, and only for a signed-in subscription.
 Under `usage-source` `auto` it draws them over Claude Code's own reading, which names only the plan's week, so the weekly Fable window (🦊 on 💳) shows without the Claude Usage Tracker.
-`false` turns it off; see [The plan's windows under the mod](usage-sources.md#the-plans-windows-under-the-mod).
+`false` turns it off; see [The plan's windows under the plugin](usage-sources.md#the-plans-windows-under-the-plugin).
 
 `weekly-windows` holds a field for each of the other weekly windows the usage source can give beside the plan's week and the Fable one, all `false` in the defaults:
 
@@ -212,7 +212,7 @@ The log's `config options:` line lists every option a layer above the defaults g
 
 ### The credits
 
-The mod draws the account's dollar credits on the 💳 row, after 🪫, each as its glyph, what is left and 🔜 the time to its expiry: `⛅ $4.4 🔜 15h  🎁 $200 🔜 9.6d`.
+The plugin draws the account's dollar credits on the 💳 row, after 🪫, each as its glyph, what is left and 🔜 the time to its expiry: `⛅ $4.4 🔜 15h  🎁 $200 🔜 9.6d`.
 `credits` says which and how:
 
 | Field | Value | Effect |
@@ -246,7 +246,7 @@ On a narrow terminal the credits leave the row before 📅 and 🕐.
 | Variable | Effect |
 |---|---|
 | `AGENTREE_STATUSLINE_CONFIG_DIR` | The user-global [configuration](#configuration-files) directory. Default `$XDG_CONFIG_HOME/agentree-statusline`, or `~/.config/agentree-statusline`. |
-| `AGENTREE_STATUSLINE_STATE_DIR` | Where caches, the mod's log and per-session state live. Default `$XDG_STATE_HOME/agentree-statusline`, or `~/.local/state/agentree-statusline`. |
+| `AGENTREE_STATUSLINE_STATE_DIR` | Where caches, the plugin's log and per-session state live. Default `$XDG_STATE_HOME/agentree-statusline`, or `~/.local/state/agentree-statusline`. |
 | `AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST` | Read an exported Claude Usage Tracker store from this path instead of the running app's preferences. |
 | `ANTHROPIC_ADMIN_KEY`, `CLAUDE_OAUTH_ACCESS_TOKEN` | Credentials for the sources that need them. See [Usage sources](usage-sources.md#sources). |
 

@@ -2,7 +2,7 @@
   description = "Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.";
 
   inputs = {
-    # Rolling, for a current Node: the mod's tests run TypeScript straight
+    # Rolling, for a current Node: the plugin's tests run TypeScript straight
     # through `node --test`, and its TypeScript 7 wants a recent runtime.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-parts = {
@@ -52,35 +52,35 @@
       perSystem =
         { pkgs, ... }:
         let
-          # The one Node: the mod's node_modules are built with it, and the
+          # The one Node: the plugin's node_modules are built with it, and the
           # dev shell runs it.
           nodejs = pkgs.nodejs_26;
 
-          # mod/'s npm dependencies (TypeScript, Node's types), each fetched
+          # plugin/'s npm dependencies (TypeScript, Node's types), each fetched
           # by the integrity hash its package-lock.json records: no
           # `npm ci`, and no hash to keep beside the lock.  Built from the
-          # two files alone, so an edit elsewhere in mod/ rebuilds nothing.
-          modNodeModules = pkgs.importNpmLock.buildNodeModules {
-            package = builtins.fromJSON (builtins.readFile ./mod/package.json);
-            packageLock = builtins.fromJSON (builtins.readFile ./mod/package-lock.json);
+          # two files alone, so an edit elsewhere in plugin/ rebuilds nothing.
+          pluginNodeModules = pkgs.importNpmLock.buildNodeModules {
+            package = builtins.fromJSON (builtins.readFile ./plugin/package.json);
+            packageLock = builtins.fromJSON (builtins.readFile ./plugin/package-lock.json);
             inherit nodejs;
           };
         in
         {
-          # The mod as the engine loads it: its manifest, hooks, sources,
+          # The plugin as the engine loads it: its manifest, hooks, sources,
           # state contract and defaults, without its tests, tools or
-          # node_modules.  A session started with `--plugin-dir result-mod`
-          # runs this build, so an edit under mod/ reaches it only after
-          # `mod-build` and /reload-plugins.
-          packages.mod = pkgs.runCommand "agentree-statusline-mod" {
+          # node_modules.  A session started with `--plugin-dir result-plugin`
+          # runs this build, so an edit under plugin/ reaches it only after
+          # `plugin-build` and /reload-plugins.
+          packages.plugin = pkgs.runCommand "agentree-statusline-plugin" {
             src = pkgs.lib.fileset.toSource {
-              root = ./mod;
+              root = ./plugin;
               fileset = pkgs.lib.fileset.unions [
-                ./mod/.claude-plugin/plugin.json
-                ./mod/defaults
-                ./mod/hooks
-                ./mod/src
-                ./mod/types
+                ./plugin/.claude-plugin/plugin.json
+                ./plugin/defaults
+                ./plugin/hooks
+                ./plugin/src
+                ./plugin/types
               ];
             };
           } "cp -R $src $out";
@@ -96,8 +96,8 @@
             ];
             env = [
               {
-                name = "MOD_NODE_MODULES";
-                value = "${modNodeModules}/node_modules";
+                name = "PLUGIN_NODE_MODULES";
+                value = "${pluginNodeModules}/node_modules";
               }
             ];
             devshell.startup.link-node-modules.text = builtins.readFile ./nix/link-node-modules.sh;
@@ -114,9 +114,9 @@
 
               {
                 category = "dev";
-                name = "mod-build";
-                help = "build the mod a `--plugin-dir result-mod` session loads, then /reload-plugins there; new files need `git add` first";
-                command = ''nix build "$PRJ_ROOT#mod" --out-link "$PRJ_ROOT/result-mod"'';
+                name = "plugin-build";
+                help = "build the plugin a `--plugin-dir result-plugin` session loads, then /reload-plugins there; new files need `git add` first";
+                command = ''nix build "$PRJ_ROOT#plugin" --out-link "$PRJ_ROOT/result-plugin"'';
               }
 
               # test
@@ -129,7 +129,7 @@
               {
                 category = "test";
                 name = "typecheck";
-                help = "type-check the mod (usage-dev typecheck)";
+                help = "type-check the plugin (usage-dev typecheck)";
                 command = ''python3 "$PRJ_ROOT/tools/usage-dev.py" typecheck "$@"'';
               }
             ];
@@ -146,7 +146,7 @@
                   pkgs.python3
                 ];
                 src = ./.;
-                modNodeModules = "${modNodeModules}/node_modules";
+                pluginNodeModules = "${pluginNodeModules}/node_modules";
               }
               ''
                 bash ${./nix/check-tests.sh}

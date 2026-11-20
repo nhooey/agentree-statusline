@@ -1,0 +1,16 @@
+{
+  "name": "agentree-statusline",
+  "description": "Your Claude Code session and its subagents as a live tree above the prompt, with cost, plan usage and timing.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'test/*.test.ts'",
+    "typecheck": "tsc -p .",
+    "typecheck:plugin": "test -f .claude-plugin/types/tsconfig.json || { echo 'no .claude-plugin/types/: load the plugin in Claude Code once (see README)' >&2; exit 1; }; tsc -p tsconfig.plugin.json",
+    "test:plugin": "bash tools/plugin-test.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  }
+}

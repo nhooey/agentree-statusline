@@ -1,30 +1,32 @@
 # Development
 
-The project is one Claude Code mod, `agentree-statusline`, in TypeScript
-under `mod/`; [its README](../mod/README.md) says how it is loaded and how its
+The project is one Claude Code plugin, `agentree-statusline`, in TypeScript
+under `plugin/`; [its README](../plugin/README.md) says how it is loaded and how its
 hooks reach Claude Code. Node 23.6 or later runs its sources directly, with
 no build, for the tests and the tools. The only Python is under `tools/`:
 `usage-dev.py`, the dev shell's command tool, and two review scripts;
-nothing builds or tests the mod with them.
+nothing builds or tests the plugin with them.
 
 ## How the code is laid out
 
 ```
-mod/
-  hooks/       the mod's hooks: register.tsx, and what reads files, the
-               transcript, the usage source and the configuration through
-               the engine's `$`
-  src/         the pure modules the hooks import, and their *_node.ts
-               readers for the tests and tools
-  defaults/    config.jsonc, every option's default
-  test/        node --test suites, against tests/fixtures
-  mod-tests/   the hooks' own suites, run in the engine (npm run test:plugin)
-  tools/       the generators of committed cases and of docs/options.md's
-               option table, and drawing and timing tools
-tools/         usage-dev.py, diff-grid-fixtures.py, palette-review.py,
-               stress-suites.sh
-tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
-               fixtures
+plugin/
+  hooks/          the plugin's hooks: register.tsx, and what reads files,
+                  the transcript, the usage source and the configuration
+                  through the engine's `$`
+  src/            the pure modules the hooks import, and their *_node.ts
+                  readers for the tests and tools
+  defaults/       config.jsonc, every option's default
+  test/           node --test suites, against tests/fixtures
+  plugin-tests/   the hooks' own suites, run in the engine (npm run
+                  test:plugin)
+  tools/          the generators of committed cases and of
+                  docs/options.md's option table, and drawing and timing
+                  tools
+tools/            usage-dev.py, diff-grid-fixtures.py, palette-review.py,
+                  stress-suites.sh
+tests/            all.sh, usage-dev.py, probe-advance.sh, the committed
+                  fixtures
 ```
 
 | module | owns |
@@ -38,7 +40,7 @@ tests/         all.sh, usage-dev.py, probe-advance.sh, the committed
 | `sources.ts`, `claude_sources.ts`, `credits.ts` | The usage source: the version-1 reading, the payload's own windows, the scoped cache, the custom command, the tracker, and the credits' conditions. See [Usage sources](usage-sources.md). |
 | `config.ts` | The configuration files: the walk, the strict defaults file, the merge and its warnings. See [Options](options.md#configuration-files). |
 | `formatting.ts`, `spans.ts` | The `S_*` glyph forms and widths, the fixed-width number formats, the dim and tier rules, and `Span`, a run of text with a colour named by its `F_*` constant, joined into escape codes once, where a line is drawn. |
-| `state.ts` | Each file the mod keeps in the state directory, named from `mod/src/state_spec.ts`. |
+| `state.ts` | Each file the plugin keeps in the state directory, named from `plugin/src/state_spec.ts`. |
 | `exact.ts` | The helpers whose bytes land in a file, a hash or a fixture, each named for the form it makes: `stableJson` and `parseJson`, `floatRepr`, `fixed` and `intText`, `UNICODE_SPACE`, the code-point string helpers, `joinPath`. |
 
 The comments in the code are dense on purpose. These documents cover what is
@@ -48,7 +50,7 @@ at that line and is not repeated here.
 
 ## Boundaries
 
-These hold across the mod.
+These hold across the plugin.
 
 - **`src/` is pure.** Its modules take what was read and return values; they
   read no file, call no source, touch no cache and read no clock of their
@@ -61,7 +63,7 @@ These hold across the mod.
   stays absent and renders blank or `?`. It is never printed as `0`.
 - **Display switches are a value.** The terminal profile, the mark spacing
   and the subscript switch are one immutable `Settings`
-  (`mod/src/formatting.ts`), built once where a row is drawn and passed to
+  (`plugin/src/formatting.ts`), built once where a row is drawn and passed to
   everything that measures.
 - **Quota buckets keep their shape.** A reading is a set of named buckets,
   each with its own windows. A bucket that is not the default one is not
@@ -75,13 +77,13 @@ These hold across the mod.
 
 | change | where | then |
 |---|---|---|
-| A cell on the mod's rows or its receipt | `mod/src/cells.ts`, and the row builders in `mod/src/band.ts` and `mod/src/receipt.ts` | Regenerate the row cases (`usage-dev row-cases`) and read the diff; `usage-dev figures` draws a figures document to look at; update [Layout](layout.md). |
-| A subagent row's state, label or cells | `mod/src/agent_row.ts`, and the cell itself in `mod/src/cells.ts` | Regenerate the row cases and read the diff. |
-| A glyph, colour, width or cut | Its constant in `mod/src/spec.ts`; a colour's true value in its `TRUE_COLOURS` | The node suite's `spec.test.ts` holds the colours to the palette. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
-| An option | Its record in `mod/src/options_spec.ts`, its field in `Options` there and its default in `mod/defaults/config.jsonc`, then `usage-dev option-docs`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
-| Claude accounting (prices, turns, agents) | `mod/src/claude_records.ts`; window shares and calibration in `mod/src/claude_calib.ts` | The node suite; update [Accounting](accounting.md). |
-| A saved fold's text | `mod/src/main_fold.ts`, `agent_fold.ts` or `inbox_fold.ts`, and its format in `mod/src/state_spec.ts` | Run `usage-dev fixtures`; `node mod/tools/gen-fold-saves.ts --show PATH` prints a fixture's saves, to read the change by running it before and after. |
-| A usage source | `mod/src/sources.ts`, and `validateSource` for its spec | `mod/test/sources.test.ts`; update [Usage sources](usage-sources.md). |
+| A cell on the plugin's rows or its receipt | `plugin/src/cells.ts`, and the row builders in `plugin/src/band.ts` and `plugin/src/receipt.ts` | Regenerate the row cases (`usage-dev row-cases`) and read the diff; `usage-dev figures` draws a figures document to look at; update [Layout](layout.md). |
+| A subagent row's state, label or cells | `plugin/src/agent_row.ts`, and the cell itself in `plugin/src/cells.ts` | Regenerate the row cases and read the diff. |
+| A glyph, colour, width or cut | Its constant in `plugin/src/spec.ts`; a colour's true value in its `TRUE_COLOURS` | The node suite's `spec.test.ts` holds the colours to the palette. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
+| An option | Its record in `plugin/src/options_spec.ts`, its field in `Options` there and its default in `plugin/defaults/config.jsonc`, then `usage-dev option-docs`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
+| Claude accounting (prices, turns, agents) | `plugin/src/claude_records.ts`; window shares and calibration in `plugin/src/claude_calib.ts` | The node suite; update [Accounting](accounting.md). |
+| A saved fold's text | `plugin/src/main_fold.ts`, `agent_fold.ts` or `inbox_fold.ts`, and its format in `plugin/src/state_spec.ts` | Run `usage-dev fixtures`; `node plugin/tools/gen-fold-saves.ts --show PATH` prints a fixture's saves, to read the change by running it before and after. |
+| A usage source | `plugin/src/sources.ts`, and `validateSource` for its spec | `plugin/test/sources.test.ts`; update [Usage sources](usage-sources.md). |
 
 ## Verifying a change
 
@@ -89,7 +91,7 @@ These hold across the mod.
 
 ```sh
 tests          # every suite, side by side
-tests node     # the mod's tests alone
+tests node     # the plugin's tests alone
 ```
 
 CI runs the node suite, the type check, the option table's check,
@@ -107,7 +109,7 @@ them. `usage-dev probe-advance` needs a real terminal tab.
 ## Style
 
 - Prefer pure functions over immutable records and prepared snapshots.
-- Name glyphs as `E_*` constants in `mod/src/spec.ts` and use the constant.
+- Name glyphs as `E_*` constants in `plugin/src/spec.ts` and use the constant.
   The probe finds glyphs by that prefix; a literal elsewhere is invisible to
   it.
 - A fixed-width field carries a unit (`1.2k`, `4.5M`, `1.5h`), never more
@@ -156,26 +158,26 @@ Intentions, not designs:
    carry per-terminal width knowledge itself.
 
 Until (3) exists, the width tables, terminal profiles and glyph rules stay in
-`mod/src/spec.ts`. They are the first thing to move out when it does.
+`plugin/src/spec.ts`. They are the first thing to move out when it does.
 
-`mod/src/spec.ts` is where the glyphs, colours, widths and cuts are written,
-each beside the comment that explains it, and `mod/test/spec.test.ts` holds
+`plugin/src/spec.ts` is where the glyphs, colours, widths and cuts are written,
+each beside the comment that explains it, and `plugin/test/spec.test.ts` holds
 the colours to what a terminal draws. What is computed from the constants,
-the `S_*` forms and the widths, is in `mod/src/formatting.ts`.
+the `S_*` forms and the widths, is in `plugin/src/formatting.ts`.
 
-`mod/src/options_spec.ts` holds every option's record, its type and its
-documentation; `usage-dev option-docs` (`mod/tools/gen-option-docs.ts`)
+`plugin/src/options_spec.ts` holds every option's record, its type and its
+documentation; `usage-dev option-docs` (`plugin/tools/gen-option-docs.ts`)
 writes the option table of [Options](options.md) from it, and the `generated` suite fails while the
 table is out of date.
 
-`mod/src/state_spec.ts` names each file the mod keeps in the state directory, with the format number its
-name is keyed by, which `statePath` (`mod/src/state.ts`) builds. Bump a
+`plugin/src/state_spec.ts` names each file the plugin keeps in the state directory, with the format number its
+name is keyed by, which `statePath` (`plugin/src/state.ts`) builds. Bump a
 kind's format when what is written in it changes.
 
-`mod/tools/layout-mockup.ts` draws the [layout](layout.md) inside a
+`plugin/tools/layout-mockup.ts` draws the [layout](layout.md) inside a
 mocked Claude Code screen: `usage-dev mockup --cols 150`. It
-uses the mod's cell renderers on made-up figures and lays them out
-with the grid, `mod/src/grid.ts`; it reads nothing but the terminal. Its
+uses the plugin's cell renderers on made-up figures and lays them out
+with the grid, `plugin/src/grid.ts`; it reads nothing but the terminal. Its
 options, `--cols`, `--hide`, `--receipt`, `--phase`, `--labels`, `--grid`,
 `--agents`, `--part` and `--plain`, are in its `--help`.
 

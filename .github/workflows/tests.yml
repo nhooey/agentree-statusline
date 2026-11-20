@@ -1,4 +1,4 @@
-# The mod's tests, run by something other than a person remembering to.
+# The plugin's tests, run by something other than a person remembering to.
 #
 # What is deliberately NOT here, and why: probe-advance.sh needs a
 # controlling tty, and more than that it needs the TERMINAL whose widths are
@@ -18,23 +18,23 @@ permissions:
   contents: read
 
 jobs:
-  mod:
-    # The mod's tests, against the committed cases.  Node 23.6 and later
+  plugin:
+    # The plugin's tests, against the committed cases.  Node 23.6 and later
     # run .ts directly, so the tests install nothing; the type check needs
     # the two dev dependencies in the lockfile.
     runs-on: ubuntu-latest
-    name: mod (node)
+    name: plugin (node)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
       - name: node --test
-        run: cd mod && node --test 'test/*.test.ts'
+        run: cd plugin && node --test 'test/*.test.ts'
       - name: typecheck
-        run: cd mod && npm ci && npm run typecheck
+        run: cd plugin && npm ci && npm run typecheck
       - name: docs/options.md's option table is up to date
-        run: node mod/tools/gen-option-docs.ts && git diff --exit-code docs/options.md
+        run: node plugin/tools/gen-option-docs.ts && git diff --exit-code docs/options.md
       # usage-dev is standard-library Python; the runner's own python3
       # runs it.
       - name: usage-dev

@@ -4,12 +4,12 @@ The reference for everything the program draws: the rows above the prompt and un
 Each section opens with a real render, then says what every cell is.
 The [legend](../README.md#legend) in the README names every glyph.
 
-The mod, `agentree-statusline` in [`mod/`](../mod/README.md), draws inside Claude Code's own screen: the band's tree of threads above the prompt, the 💳 row under the footer line, the receipt and the turn's tags.
+The plugin, `agentree-statusline` in [`plugin/`](../plugin/README.md), draws inside Claude Code's own screen: the band's tree of threads above the prompt, the 💳 row under the footer line, the receipt and the turn's tags.
 The subagent rows, one per subagent, hang in the band's tree, drawn by `agent_row.ts`.
 Every row of all of them has the same columns in the same order, so a figure stands on the same screen column wherever it is drawn.
 Claude Code's own agent panel draws its rows itself.
 
-All examples below are the programs' own output against the test fixtures (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile), with colour stripped: `usage-dev figures` for the mod's rows, from `tests/fixtures/figures/`, with the subagents of a case of `tests/fixtures/panel/inputs.json` where the tree has some (`--agents`).
+All examples below are the programs' own output against the test fixtures (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile), with colour stripped: `usage-dev figures` for the plugin's rows, from `tests/fixtures/figures/`, with the subagents of a case of `tests/fixtures/panel/inputs.json` where the tree has some (`--agents`).
 Colour and brightness carry meaning of their own — see [Colour and brightness](#colour-and-brightness).
 
 - [Above the prompt and under the footer line](#above-the-prompt-and-under-the-footer-line)
@@ -41,7 +41,7 @@ Colour and brightness carry meaning of their own — see [Colour and brightness]
 
 ## Above the prompt and under the footer line
 
-The mod draws its rows in two places: above the prompt, in the band Claude Code can collapse with its `[-]` and ctrl+x ctrl+a (`AbovePrompt`), and under Claude Code's own `-- INSERT -- ⏵⏵ auto mode on` footer line, in the same container (`PromptHint`).
+The plugin draws its rows in two places: above the prompt, in the band Claude Code can collapse with its `[-]` and ctrl+x ctrl+a (`AbovePrompt`), and under Claude Code's own `-- INSERT -- ⏵⏵ auto mode on` footer line, in the same container (`PromptHint`).
 While a turn runs, at 160 columns, above the prompt (`usage-dev figures tests/fixtures/figures/status/01-baseline.json --cols 160 --part above --inset 2 --right-edge 5 --rate 200 --plain`):
 
 ```
@@ -57,14 +57,14 @@ and, past the prompt, under the footer line (the same with `--part footer`):
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
 
-The footer's first line is Claude Code's, drawn by Claude Code, so its pills stay live; the mod draws the rest under it.
+The footer's first line is Claude Code's, drawn by Claude Code, so its pills stay live; the plugin draws the rest under it.
 Claude Code draws its `[-]` in the five rightmost columns of the band's first row, beside 🎮.
 The fixture's transcript writes no lines and reports no ETA, so 💾 and ⛳ are blank here; [the tree's render](#the-tree) has both.
 
 ### The rows
 
 Each row is one scope: its label says which, and its figures count that scope alone.
-Where each is drawn and when are the option `rows` in the [configuration files](options.md#configuration-files), a `place`, a `live` and a `transcript` for each row ([mod/README.md](../mod/README.md#configuration)); as the mod ships:
+Where each is drawn and when are the option `rows` in the [configuration files](options.md#configuration-files), a `place`, a `live` and a `transcript` for each row ([plugin/README.md](../plugin/README.md#configuration)); as the plugin ships:
 
 | Row | Scope | Place | Drawn |
 |---|---|---|---|
@@ -81,7 +81,7 @@ When the turn ends, 🎤 becomes [the receipt](#the-receipt), frozen, in the tra
 
 Every row, above the prompt and under the footer line, and the receipt, starts at one column and ends at one column, so a figure on 🎮 stands over the same figure on 🧵 and on the subagent rows:
 
-- **The left edge.** Claude Code draws the footer's container `hint-inset` (2) columns in from each edge, and the mod draws its rows there that much narrower; the band above the prompt starts at the terminal's left edge, so its rows, and the receipt, are indented `hint-inset` columns instead.
+- **The left edge.** Claude Code draws the footer's container `hint-inset` (2) columns in from each edge, and the plugin draws its rows there that much narrower; the band above the prompt starts at the terminal's left edge, so its rows, and the receipt, are indented `hint-inset` columns instead.
 - **The right edge.** Every row ends `right-edge` columns short of the terminal's edge: 5 when any row drawn live is above the prompt, clear of the `[-]`, else 2 (`right-edge` follows `rows.*.place`; the subagents count unless their `live` is `never`).
 
 Under the rows Claude Code's blank row stays, between the footer and the panel's `⏺ main`; `hint-tuck` draws them with a bottom margin of -1 instead, taking it up.
@@ -99,9 +99,9 @@ Too wide for its row, it sheds 🎨, then 🔀, then 📁, then 📅, then 🕐,
 
 No row takes a press: each is plain text, above the prompt, under the footer line and in the receipt.
 
-While a survey (a question picker) holds the band, the mod draws nothing above the prompt, and Claude Code draws the picker there: the tree is gone until it is answered, and the receipt, stamped at the turn's end, is not touched.
+While a survey (a question picker) holds the band, the plugin draws nothing above the prompt, and Claude Code draws the picker there: the tree is gone until it is answered, and the receipt, stamped at the turn's end, is not touched.
 The rows under the footer line are drawn wherever Claude Code draws its footer line.
-Each change of the band's widths or of a survey goes to the mod's log, `band: {"bodyColumns":…,"viewportColumns":…,"isFullscreen":…,"hasSurvey":…}`, and the footer's own log line ends with the same `isFullscreen` and whether a survey held the band when it was drawn.
+Each change of the band's widths or of a survey goes to the plugin's log, `band: {"bodyColumns":…,"viewportColumns":…,"isFullscreen":…,"hasSurvey":…}`, and the footer's own log line ends with the same `isFullscreen` and whether a survey held the band when it was drawn.
 
 ### The tree
 
@@ -136,8 +136,8 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
   A folded agent keeps its own figures and draws 👶🏻 and how many agents are hidden under it, and 💻 📡 how many of its own shells and Monitors; 🧵 folded hides 🎤 with its agents, and counts its own shells and Monitors with 💻 📡.
   Every row starts opened.
 - **Every row drawn.** The tree draws every agent, shell and Monitor it holds, however many there are: when they outgrow the screen, scroll the band, or fold a row to hide its subtree.
-- **The fold state.** Each row stays as it was left for the rest of the conversation, kept in the mod's `$.state` by key: an agent's id, and fixed keys for 🎮 and 🧵.
-  Each change also keeps the folds in the mod's store under the session's id, so a restart, a `--resume` or a `--continue` of the conversation draws 🎮 and 🧵, and any agent still drawn, as they were left; an entry not written for 31 days is dropped as a session starts.
+- **The fold state.** Each row stays as it was left for the rest of the conversation, kept in the plugin's `$.state` by key: an agent's id, and fixed keys for 🎮 and 🧵.
+  Each change also keeps the folds in the plugin's store under the session's id, so a restart, a `--resume` or a `--continue` of the conversation draws 🎮 and 🧵, and any agent still drawn, as they were left; an entry not written for 31 days is dropped as a session starts.
   A `/clear` or a forked session starts a new conversation, with every row opened.
   An agent's fold goes once the tree would no longer draw its row, whatever the phase draws, so no later row takes a fold it never had: one paused, one finished within `finished-within` and one over an agent at work keep theirs; 🎮's and 🧵's last the conversation.
 - **The clicks.** A click on an agent's label (its kind, name and progress update) switches the transcript to that agent, as Claude Code's tasks list does, and one on 🧵 main's or 🎤 turn's goes back to the main conversation, since the turn is the main thread's.
@@ -151,7 +151,7 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
     Under the home folder it starts with `~`, and one longer than 80 characters keeps its first two folders, `…` and its file name.
 
   As in `💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · $ npm test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output`.
-  Claude Code offers mods no way to open one task's own view.
+  Claude Code offers plugins no way to open one task's own view.
   🎮 has no label click, and the session's name takes none.
   On 🎮's label 📦 the project, 🌿 the branch and 🔀 the pull request link to them on GitHub, when the `origin` remote is on GitHub; otherwise they are plain text.
   The clickable parts are drawn as before, with no hotkeys and no brackets, so no figure moves.
@@ -166,7 +166,7 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
 - **Shells and Monitors.** Each background shell (a Bash call run in the background, or moved there past its timeout) and each Monitor that a thread started and has not heard the end of is a leaf under that thread: under 🧵 for the main thread's, under the agent for an agent's, after its agents, in the order they opened.
   Its label is 💻 for a shell or 📡 for a Monitor, 🟢, then the call's `description`, else the first line of its `command`, else `shell` or `monitor`; its one figure is ⌛, how long it has run.
   It does not fold; a click on it shows it as a toast, with its whole command and its output file (see the clicks above), which the folds keep with its label.
-  Once the thread hears its end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at how long it ran, for `finished-within` seconds after the record that closed it (120 as the mod ships), and then leaves.
+  Once the thread hears its end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at how long it ran, for `finished-within` seconds after the record that closed it (120 as the plugin ships), and then leaves.
   An opened thread leaves its 💻 📡 counts to these rows; a folded one hides them and counts them.
   With the panel inputs' `corpus/02-parked`, whose Pine waits on a shell and Poppy on a Monitor and a shell, and a shell and a Monitor of the main thread's, at 120 columns (`--agents corpus/02-parked --background` and the progress above, `--cols 120`):
 
@@ -187,16 +187,16 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
      ├─ 💻    🟢 Run the plugin tests                                           ⌛6.2m
      ╰─ 📡    🟢 Watch PR #38 for comments                                      ⌛ 25m
   ```
-- **Finished agents.** A subagent that ends keeps its own row where it stood, ⚫ and its figures as they ended, for `finished-within` seconds after its last record (120 as the mod ships), and its parents stay drawn with it; then it goes, and the turn's receipt holds it.
+- **Finished agents.** A subagent that ends keeps its own row where it stood, ⚫ and its figures as they ended, for `finished-within` seconds after its last record (120 as the plugin ships), and its parents stay drawn with it; then it goes, and the turn's receipt holds it.
 
-The subagents' `live` in `rows` picks when they are drawn: `"running"` while a turn runs, `"always"` between turns too, `"never"` not at all; the mod ships `"always"`.
+The subagents' `live` in `rows` picks when they are drawn: `"running"` while a turn runs, `"always"` between turns too, `"never"` not at all; the plugin ships `"always"`.
 Between turns the running and paused subagents are drawn, and the ones that ended for `finished-within` seconds: the turn's receipt holds the ones that ended ([Between turns](#between-turns)).
 Their `place` is always `"above"`.
 With 🎮 placed under the footer line the tree has no root, and 🧵 is its top row, with 🎤 under it; with 🧵 placed there, 🎤 and then the subagents hang from 🎮, and with both placed there, 🎤 and the subagents stand at the top.
 
 ### The grid
 
-Every row of the mod's rows, the receipt and the subagent rows draws the same columns, in this order:
+Every row of the plugin's rows, the receipt and the subagent rows draws the same columns, in this order:
 
 ```
 model  🛫  💰  💸  🧠  🧩 ▴ ▾  🎯  ⌛ ⛳ 🤖 🔧 🚦  🔋  🪫  💾
@@ -212,7 +212,7 @@ Not every scope fills every column: the model and 🛫 are a thread's state, so 
 
 - **model**, `🧬O⁵🐇`: the model as its family initial and superscript major version (`O⁵` Opus 5, `S⁵` Sonnet 5, `H⁴` Haiku 4.5), then the reasoning effort as a glyph: 🐌 low, 🐢 medium, 🐇 high, 🏃 xhigh, 🚀 max.
   The turn's, on the 🎤 row.
-- **🛫**, `🛫 200`: the main thread's token rate, how fast 🧩's total is climbing, worked out by the mod from one reading to the next.
+- **🛫**, `🛫 200`: the main thread's token rate, how fast 🧩's total is climbing, worked out by the plugin from one reading to the next.
   It jumps by a request's whole prompt at each request, so it measures pace, not generation speed.
   While a tool runs the column says that instead, `🔧 42s`, since the oldest call still running.
   On the 🧵 row, while the turn runs, it says what the main thread is doing and for how long, the same states as an [agent row's](#state): 🤖 the model has the floor, amber once it has written nothing for ten minutes; 🚦 waiting on a question to you or a foreground agent.
@@ -222,9 +222,9 @@ Not every scope fills every column: the model and 🛫 are a thread's state, so 
 - **The credit paying**, `💸2.1`: which of the account's credits pays for the row's work, by its glyph, and what it has paid, in 💰's dollars.
   Blank while the plan pays, which 🔋 and 🪫 already show.
   A Claude Code on the web session is paid for by ⛅ the cloud session credit; an API key (`ANTHROPIC_API_KEY`) by 🎁 a promotional credit while one has a balance, then 💵 the prepaid balance; a plan login, once a window is at 100% and extra usage is on, by 💸 extra usage.
-  Each row bills its own records from the moment that credit began paying, so a turn that crossed into it shows the part after the crossing; extra usage, and the prepaid balance after a promotional credit, are counted from the first reading that found them paying, a start the mod keeps through a `/reload-plugins`, a restart and a `--resume`, for 31 days after it last changed.
+  Each row bills its own records from the moment that credit began paying, so a turn that crossed into it shows the part after the crossing; extra usage, and the prepaid balance after a promotional credit, are counted from the first reading that found them paying, a start the plugin keeps through a `/reload-plugins`, a restart and a `--resume`, for 31 days after it last changed.
   The 🎤, 🧵, 🎮 and agent rows draw it; the 🎮 row draws the fall in the credit's balance instead once a reading from before the session began and a later one bracket it.
-  The mod alone draws it, and only for the pool paying now.
+  The plugin alone draws it, and only for the pool paying now.
 - **🧠**: on the 🧵 row, `🧠115k  11٪`, the main thread's context size and its share of the model's window; agents are left out, since this is the number that decides when *this* window needs compacting.
   On the 🎤 row, `🧠-42k  -4٪`, how much the context grew in the turn, in tokens and in points of the window, signed: a compaction shrinks it.
   A size read from an estimate is marked `~`.
@@ -278,7 +278,7 @@ Every label is drawn from the left, and each row draws the same label wherever i
 
 - **💳** carries where the session works: 📦 the project (in a linked git worktree, the main repository, since 🌿 already names the worktree's branch), 🌿 the branch, 📁 the current directory, 🔀 the branch's pull request and 🎨 the output style, when not the default.
   A dirty working tree turns 🌿 into 🍂 and adds `✱`.
-  📁 draws the whole path, the project's own folder in 📦's colour, so in `📁~/git/repo/mod` the `repo` stands out as the project.
+  📁 draws the whole path, the project's own folder in 📦's colour, so in `📁~/git/repo/plugin` the `repo` stands out as the project.
   Its windows and clock are in [The rows](#the-rows).
 
 A label keeps at least 12 columns before columns drop: an agent row's head on the [subagent rows](#the-subagent-rows) and the first letters of its name.
@@ -359,7 +359,7 @@ With subagents running between turns (`--phase done --agents corpus/01-mixed`, a
 ```
 
 🎤 stays a second after the stamp lands (`CONFIG.receiptHoldMs`), so the turn's figures are never off screen.
-The option `rows` sets, for each row, whether it is drawn while a turn runs (`live` `"running"`), always (`"always"`) or never (`"never"`), and whether the receipt stamps it (`transcript`), apart; as the mod ships, 🎤 is drawn while a turn runs and stamped, 🧵, 🎮 and 💳 are always drawn and not stamped, and the subagents are always drawn, between turns only those running or paused, and always stamped, every one the turn ran that had finished, with 🧵 over them.
+The option `rows` sets, for each row, whether it is drawn while a turn runs (`live` `"running"`), always (`"always"`) or never (`"never"`), and whether the receipt stamps it (`transcript`), apart; as the plugin ships, 🎤 is drawn while a turn runs and stamped, 🧵, 🎮 and 💳 are always drawn and not stamped, and the subagents are always drawn, between turns only those running or paused, and always stamped, every one the turn ran that had finished, with 🧵 over them.
 `"rows": {"subagents": {"live": "running"}}` draws no subagent between turns.
 `"rows": {"session": {"live": "running"}}` leaves the band empty between turns.
 
@@ -368,7 +368,7 @@ The rows are read again every 5 seconds while a turn runs, never more often than
 ### Hiding
 
 `--hide scope[.group[.metric]]`, repeatable, with `*` for any one part.
-One path means the same on the mod's rows, the receipt and the subagent rows, which take the paths in the option `hide`, from the [configuration files](options.md#configuration-files).
+One path means the same on the plugin's rows, the receipt and the subagent rows, which take the paths in the option `hide`, from the [configuration files](options.md#configuration-files).
 
 | Part | Values |
 |---|---|
@@ -402,9 +402,9 @@ Hiding 🔋 (`*.plan.five_hour`), 🧠's share of the window (`*.context.share`)
 
 ## The receipt
 
-As a turn ends, the mod stamps its receipt as the turn's closing line, in place of Claude Code's `✻ <word> for <duration>`: the rows whose `transcript` is set in `rows`, as they stood when it ended, frozen and dim, in their colours, then the turn's tag.
+As a turn ends, the plugin stamps its receipt as the turn's closing line, in place of Claude Code's `✻ <word> for <duration>`: the rows whose `transcript` is set in `rows`, as they stood when it ended, frozen and dim, in their colours, then the turn's tag.
 Every receipt has one shape: its rows as the band's tree draws them, each with its tree label (see [Labels](#labels)), 🎤's being `🎤 🏁 turn` and the first words of the prompt the turn answered.
-As the mod ships that is 🎤 alone, since 🧵 and 🎮 stay live on screen.
+As the plugin ships that is 🎤 alone, since 🧵 and 🎮 stay live on screen.
 At 160 columns, from a cost document (`usage-dev figures tests/fixtures/figures/cost/10-turn-id.json --cols 160 --part receipt --inset 2 --right-edge 5 --plain`):
 
 ```
@@ -426,13 +426,13 @@ With `"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}` 
 No fixture pairs a cost document with a status document of the same session, so here the 🧵 row comes from another one's.
 
 The stamp waits for Claude Code to write the turn's records, which it does after the turn ends, so a reload or restart in that window, such as a `/reload-plugins` queued during the turn, can stop it short.
-When the mod loads, it looks at the session's last turn: if the transcript shows it finished (a `turn_duration` record after its prompt) and no receipt is filed for it, the mod stamps it then, with that record's duration, so the turn's closing line draws it.
+When the plugin loads, it looks at the session's last turn: if the transcript shows it finished (a `turn_duration` record after its prompt) and no receipt is filed for it, the plugin stamps it then, with that record's duration, so the turn's closing line draws it.
 A turn still running is left to its own end.
-The mod's log says `receipt stamped on load` when it does.
+The plugin's log says `receipt stamped on load` when it does.
 
 A turn that ran subagents stamps them too, as the band's tree draws them: 🧵 the parent, stamped whatever `rows` says of it, under it 🎤 first, then every agent the turn ran that had finished by the time it was stamped, each under the nearest agent above it stamped too, in the order they started.
 An agent the turn ran started after the turn opened, or wrote its last record after it; it had finished once it had completed, failed or been killed, with no agent under it still at work.
-One still running or paused is owed a row instead: the mod keeps it, and the first receipt stamped after it ends draws it, even when it wrote nothing in that turn, as an agent that ends between turns does.
+One still running or paused is owed a row instead: the plugin keeps it, and the first receipt stamped after it ends draws it, even when it wrote nothing in that turn, as an agent that ends between turns does.
 The receipt's tree is drawn whole: no fold marks and every agent opened.
 🏁 marks 🎤 and each agent, and 🧵 keeps its ⚫.
 🎤 is followed by the prompt the turn answered, 🧵 and each agent by the first line of the last text it wrote.
@@ -450,20 +450,20 @@ At 200 columns, the same with `--agents corpus/01-mixed --progress "All four sui
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
 
-The mod files a receipt as its drawn lines, the agents' with the rest, so every receipt filed draws as it was stamped, whatever rows it holds.
+The plugin files a receipt as its drawn lines, the agents' with the rest, so every receipt filed draws as it was stamped, whatever rows it holds.
 
-The rows are laid out at the width the mod's rows last drew at, `hint-inset` columns in and `right-edge` short of the edge, so each column is under theirs, and every turn's receipt stays in the transcript to scroll back to.
+The rows are laid out at the width the plugin's rows last drew at, `hint-inset` columns in and `right-edge` short of the edge, so each column is under theirs, and every turn's receipt stays in the transcript to scroll back to.
 A blank row stands above the receipt, one before its tag line and one after it.
 
 - **🎤** is the turn just answered, `🎤 🏁 turn` and its prompt: what it cost, its context's growth, its tokens, how long it ran, the last ETA it reported (kept after the turn ends, to compare with when it did end) and its share of each window.
   The model and 🛫 are not drawn: they were the turn's state.
-- **🧵** is the main thread as the mod's 🧵 row last drew it.
+- **🧵** is the main thread as the plugin's 🧵 row last drew it.
 - **The subagents** are each agent the turn ran that had finished, as the band's tree last drew it, with 🏁 for its ⚫.
 - **🎮** is the session as it stood when the turn ended; it includes every row above it.
 
-Claude Code writes a turn's records to the transcript only after its Stop hooks have run, so the mod waits for them: it reads the transcript every half second until the turn that just ended is billed and two reads agree on it, for up to 30 seconds; a task notification written after it, as a turn of its own, does not hold it back.
+Claude Code writes a turn's records to the transcript only after its Stop hooks have run, so the plugin waits for them: it reads the transcript every half second until the turn that just ended is billed and two reads agree on it, for up to 30 seconds; a task notification written after it, as a turn of its own, does not hold it back.
 Until then the closing line is one blank row.
-A turn whose records never land leaves it blank and says why in the mod's log ([mod/README.md](../mod/README.md#its-log)).
+A turn whose records never land leaves it blank and says why in the plugin's log ([plugin/README.md](../plugin/README.md#its-log)).
 Each turn is stamped once.
 
 Some turns end with no closing line, and their receipt is drawn under the turn's answer instead, its last block of text, the same rows in the same place.
@@ -522,7 +522,7 @@ At 160 columns with a right edge of 5, a running agent in each state, finished o
 ```
 
 Each row is laid out for the terminal's width and keeps room at its left for a tree's chrome, `  ◯ ` at the top level, four columns, and two more for each level an agent started by another agent sits below it; the row counts the chrome toward its width and does not print it.
-It ends as many columns short of the edge as `right-edge` says, which unset follows `rows.*.place` from the configuration files, as the mod's rows do: 5 when any row the mod draws live is above the prompt, as under the defaults, else 2.
+It ends as many columns short of the edge as `right-edge` says, which unset follows `rows.*.place` from the configuration files, as the plugin's rows do: 5 when any row the plugin draws live is above the prompt, as under the defaults, else 2.
 The columns follow from the width and `hide` alone; on a narrow terminal whole columns drop from every row at once, 🛫 first and 💰 last, and at an unknown width every column is drawn and the label keeps 12 columns.
 
 ### Subagent cells
@@ -566,8 +566,8 @@ A task with no transcript (a shell, a remote agent) shows only what the task lis
 ### State
 
 Claude Code's task list gives a task one of five statuses, and `completed` covers two different things: an agent that has finished, and one that ended its turn to wait on work it started, which Claude Code keeps alive until that work ends.
-The mod's agent list, `$.agent.list()`, says `waiting` for the second, as Claude Code's own panel draws it ◯ waiting, and the mod passes it on: a waiting agent is paused, never running, whatever its transcript holds.
-The mod reads `idle`, a teammate between turns, as `completed`.
+The plugin's agent list, `$.agent.list()`, says `waiting` for the second, as Claude Code's own panel draws it ◯ waiting, and the plugin passes it on: a waiting agent is paused, never running, whatever its transcript holds.
+The plugin reads `idle`, a teammate between turns, as `completed`.
 The row reads the phase off everything it knows, and puts the circle in the state cell.
 What the agent is doing in that phase goes in the 🛫 column, with how long it has been doing it:
 
@@ -607,7 +607,7 @@ The two are matched by time: a send adds one, a delivery takes one away, and the
 A peer `handback` is a report home and is not counted, and nor is a message typed into the agent's pane, which leaves nothing on the sending side, so 📨 can read lower than Claude Code's count.
 A killed or failed agent's inbox is dropped.
 Files last written before the earliest agent in the task list started are not read.
-Each file's sends and deliveries are saved per session in `claude-inbox-fold-<digest>/` in private state, as `mod/src/state_spec.ts`'s `inbox-fold` row names it, so a tick reads only what each file had appended since the last; a file rewritten in place is read afresh.
+Each file's sends and deliveries are saved per session in `claude-inbox-fold-<digest>/` in private state, as `plugin/src/state_spec.ts`'s `inbox-fold` row names it, so a tick reads only what each file had appended since the last; a file rewritten in place is read afresh.
 
 ### Nesting
 
@@ -696,7 +696,7 @@ A task with no transcript — a shell or a remote agent — shows only its name,
 ## Messages from agents
 
 Claude Code folds a message another agent sent into one dim row naming its sender, `› Message from @general-purpose (ctrl+o to expand)`: for a subagent with no name of its own that is only its type, so two agents of one type read alike.
-The mod draws the row as 📨, the sending agent's task, as its Agent call described it, and the message's first line, cut with `…` to end where the mod's rows end, `right-edge` short of the edge (`messageSpans` in `mod/src/agent_message.ts`, at 100 columns and `right-edge` 5):
+The plugin draws the row as 📨, the sending agent's task, as its Agent call described it, and the message's first line, cut with `…` to end where the plugin's rows end, `right-edge` short of the edge (`messageSpans` in `plugin/src/agent_message.ts`, at 100 columns and `right-edge` 5):
 
 ```
 › 📨 Reclaim the right-edge columns: The right edge is now a setting in both ports, and the …
@@ -707,11 +707,11 @@ The task is bold at full strength and the rest of the row dim, so the task is wh
 
 The sender is known only by name, so its agent is found by that among the session's agents: one whose own name it is, else one whose type it is, the live ones before the rest.
 Where that finds several, the message's words pick one: the agent whose last reply, its text or what it sent with a tool, holds the message's first line, whitespace folded on both sides.
-Each candidate's conversation is read once per message, and the sender found is kept for the message's later draws, and in the mod's store for its loads after a reload.
+Each candidate's conversation is read once per message, and the sender found is kept for the message's later draws, and in the plugin's store for its loads after a reload.
 An agent that has finished drops out of the session's agents in time, so where they settle nothing the session's `subagents/` folder is read instead: each agent's meta file for its type and task, and the last 256 KiB of its transcript for its last reply.
 Where no reply holds it, or more than one does, the row names the sender as Claude Code did, as in the second row: a guess between two agents' tasks would put one agent's words under the other's.
 ctrl+o shows the whole message either way, and `agent-message-row` turns the row off.
-No figures document holds a message, so the render is drawn from `agent_message.ts` itself, run from `mod/`:
+No figures document holds a message, so the render is drawn from `agent_message.ts` itself, run from `plugin/`:
 
 ```
 node -e 'Promise.all([import("./src/agent_message.ts"), import("./src/formatting.ts"), import("./src/spans.ts")]).then(([m, f, s]) => { for (const [l, t] of [["Reclaim the right-edge columns", "The right edge is now a setting in both ports, and the panel and the band end two columns short.\nMore."], ["general-purpose", "Done."]]) console.log(s.text(m.messageSpans(f.settings({}), l, t, 98))) })'
@@ -727,7 +727,7 @@ The one exception is 🎯 (below).
 
 **Brightness is the unit.**
 A figure written with a unit takes its shade from that unit, in levels of its own hue, so 841k and 8.4M, or 3h and 3d, do not look alike in the same four columns.
-Two tables in `mod/src/spec.ts` and one rule decide it (`grade` in `mod/src/formatting.ts`).
+Two tables in `plugin/src/spec.ts` and one rule decide it (`grade` in `plugin/src/formatting.ts`).
 
 A *scale* lists a kind of figure's units in order of size, smallest first.
 Units in one step share a position.
@@ -762,7 +762,7 @@ Every ramp is the hue faint, the hue, and a lighter shade of the hue:
 
 In the 256 set a lighter shade is one of the 80 round-trip entries (see [Under tmux](#under-tmux)) of the same hue.
 The pinks' one lighter entry is ⛳'s own colour, which ▾ and 🧠 take as their lighter shade, so ▴ and ▾ shade alike at one unit; ⛳ has nothing lighter, so its ramp collapses to two levels there.
-`mod/test/spec.test.ts` refuses a ramp that names a colour the palette lacks, or whose levels, once collapsed, do not each draw lighter than the one below in every mode.
+`plugin/test/spec.test.ts` refuses a ramp that names a colour the palette lacks, or whose levels, once collapsed, do not each draw lighter than the one below in every mode.
 
 **The rule.** The scale's most intense unit takes the ramp's top level.
 Each unit below it takes the next level down, and the units below the bottom level share it.
@@ -778,7 +778,7 @@ Its figures run bare up to a thousand dollars, so a scale would dim every sessio
 
 **Shares have cuts of their own.**
 An agent row's 🔋 🪫 pair is dim while the agent is under 0.2٪ of the week, the two together, so two figures about one scope never disagree.
-The shares on the mod's rows and the receipt are never dimmed by magnitude; 100٪ is their ceiling and the reader knows it.
+The shares on the plugin's rows and the receipt are never dimmed by magnitude; 100٪ is their ceiling and the reader knows it.
 
 **🎯 uses tiers**, because a low hit rate is the problem: red at or under 50٪, amber at or under 80٪, and dim green above.
 A cache collapse means the prefix was invalidated and the same work now bills at full price.
@@ -791,15 +791,15 @@ Claude Code draws in 256 colours whenever `TMUX` is set, even in a terminal that
 It turns each colour into a palette index by rounding, and the terminal draws that index from the xterm palette, whose steps are not the ones the rounding assumes.
 So most colours come back a little off under tmux, and two near colours can come back as one.
 
-So each default colour has two values in `mod/src/spec.ts`, a 256 value under its name and a true value in `TRUE_COLOURS`:
+So each default colour has two values in `plugin/src/spec.ts`, a 256 value under its name and a true value in `TRUE_COLOURS`:
 
 - **The 256 set** is drawn whenever Claude Code draws 256 colours or fewer, and wherever that is in doubt: tmux without `CLAUDE_CODE_TMUX_TRUECOLOR`, a terminal it does not know, no `TERM` at all.
   Every 256 value is one of the 80 palette entries that come back as themselves: a cube colour whose channels are all 0, 175, 215 or 255, black, white, or a grey from 8 to 178 in steps of 10.
-  So the 256 set draws in tmux's limited mode exactly as chosen in the mod's rows, which go through Claude Code's renderer.
+  So the 256 set draws in tmux's limited mode exactly as chosen in the plugin's rows, which go through Claude Code's renderer.
 - **The true set** is softer colours, drawn only where Claude Code itself draws true colour.
   Both ports work its level out with its own rules, from the variables it reads (`COLORTERM`, `TERM`, `TERM_PROGRAM`, `FORCE_COLOR`, `NO_COLOR`, `TMUX`, `CLAUDE_CODE_TMUX_TRUECOLOR`); a wrong guess errs to the 256 set, which draws right in true colour too.
 
-`mod/test/spec.test.ts` refuses a 256 value that is not one of the 80 entries and names the nearest, and holds a figure that is drawn dim, in either set, to a floor of faint contrast.
+`plugin/test/spec.test.ts` refuses a 256 value that is not one of the 80 entries and names the nearest, and holds a figure that is drawn dim, in either set, to a floor of faint contrast.
 `tools/palette-review.py` draws both sets side by side, with the rows at each level, for a review by eye.
 A test in each port checks that under tmux's limited mode, and with the level in doubt, every colour drawn is one of the 80 entries.
 
@@ -855,8 +855,8 @@ With `account-place` `"tail"` (the default is `"row"`), the 💳 row is not a ro
 ```
 
 Claude Code trims the tail's leading spaces and draws a run of spaces as one, so the padding that ends it where the rows end is U+2800, a blank cell that is not whitespace.
-The footer line hands the mod its words without the permission mode's pill, so the pill's width is counted apart, and the padding is a guess at the drawn width; `footer-ruler` draws a ruler of column digits in its place to check it.
+The footer line hands the plugin its words without the permission mode's pill, so the pill's width is counted apart, and the padding is a guess at the drawn width; `footer-ruler` draws a ruler of column digits in its place to check it.
 
 ### The status line and the Stop hook
 
-Leave any `statusLine` command or `Stop` hook that drew the session's figures out of `settings.json`: the mod's rows replace the status line, and its receipt the Stop hook's, which would otherwise print a second one each turn.
+Leave any `statusLine` command or `Stop` hook that drew the session's figures out of `settings.json`: the plugin's rows replace the status line, and its receipt the Stop hook's, which would otherwise print a second one each turn.

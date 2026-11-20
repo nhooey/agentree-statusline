@@ -4,7 +4,7 @@ A **usage source** supplies account-level readings: how much of each plan or quo
 Everything else on the readout — tokens, cost, context, time — comes from the session's own transcript, whatever source you pick.
 
 Most people need no configuration.
-Claude Code gives the mod the plan's week, and the mod asks the account's usage endpoint for the rest; the default, `auto`, reads those.
+Claude Code gives the plugin the plan's week, and the plugin asks the account's usage endpoint for the rest; the default, `auto`, reads those.
 To pick another, set `usage-source` in a [configuration file](options.md#configuration-files):
 
 ```jsonc
@@ -28,7 +28,7 @@ A source the configuration names that is none of these is a warning, and the lay
 
 ### What `auto` does
 
-Under the mod with `plan-usage` on (the default), the plan's windows the mod asked the account's usage endpoint for in the last seven minutes come first, over the steps below; see [The plan's windows under the mod](#the-plans-windows-under-the-mod).
+Under the plugin with `plan-usage` on (the default), the plan's windows the plugin asked the account's usage endpoint for in the last seven minutes come first, over the steps below; see [The plan's windows under the plugin](#the-plans-windows-under-the-plugin).
 
 1. Use native data if Claude Code has given fresh native data.
 2. Otherwise use a native reading cached in the last 60 seconds.
@@ -41,7 +41,7 @@ The cache files described under [Refresh and storage](#refresh-and-storage) are 
 ### An explicit source is final
 
 Naming a source other than `auto`, `native`, `none` or `off` replaces native data for account readings.
-If that source fails, the readings are unavailable (or the last good reading is shown, marked stale); the mod never falls back to a different source.
+If that source fails, the readings are unavailable (or the last good reading is shown, marked stale); the plugin never falls back to a different source.
 The session's own figures are unaffected.
 
 `none`/`off` never run a collector, but still use native data and any compatible cached reading, marked stale once it is more than five minutes old.
@@ -141,33 +141,33 @@ Nothing but the whitelisted fields is ever written to disk.
 ## Organization reports
 
 `anthropic-admin` names your organization's usage and cost reports, read with an admin key, for the UTC day, week (from Monday) or month to date that `account-period` chooses.
-The mod accepts the name and makes no request for it, so it gives no reading: the plan cells stay blank under it.
+The plugin accepts the name and makes no request for it, so it gives no reading: the plan cells stay blank under it.
 
 ## Experimental subscription sources
 
 `experimental-claude-oauth` calls the undocumented endpoint Claude's own apps use to show subscription usage.
 It may break without notice.
-The mod reads no credential store or browser cookie, and refreshes no token.
+The plugin reads no credential store or browser cookie, and refreshes no token.
 
 `experimental-claude-oauth` reads the five-hour window and every seven-day one the answer holds with a utilization: `seven_day`, the weekly Fable window `seven_day_overage_included` (or `seven_day_fable` where that key has none), then every other `seven_day_*` key by name (`seven_day_opus`, `seven_day_sonnet`, …), so a per-model week under a new name is kept too.
 
-The mod asks it as the session, with no token in the environment: the engine adds the session's own credential and sends it only to Anthropic's host.
-It is the mod's `auto` fallback for Claude, so the plan stays current while no session is making requests, as use on another machine or on claude.ai moves it.
+The plugin asks it as the session, with no token in the environment: the engine adds the session's own credential and sends it only to Anthropic's host.
+It is the plugin's `auto` fallback for Claude, so the plan stays current while no session is making requests, as use on another machine or on claude.ai moves it.
 A reading is kept for five minutes in the shared state directory, under the account Claude Code is signed in to (`oauthAccount` in its `.claude.json`), so the machine asks once per five minutes, whatever the number of sessions.
-With `plan-usage` on, the mod's own ask below stands in for this fallback, which then asks nothing.
+With `plan-usage` on, the plugin's own ask below stands in for this fallback, which then asks nothing.
 
-### The plan's windows under the mod
+### The plan's windows under the plugin
 
-Claude Code gives the mod only the plan's week (`seven_day`) through `$.session.usage()`, so the weekly Fable window that 🦊 draws on the 💳 row, the five-hour window and the per-model weeks would need the Claude Usage Tracker or another app.
-With `plan-usage` on, the default, the mod asks the account's usage endpoint for them itself, as Claude Usage.app does:
+Claude Code gives the plugin only the plan's week (`seven_day`) through `$.session.usage()`, so the weekly Fable window that 🦊 draws on the 💳 row, the five-hour window and the per-model weeks would need the Claude Usage Tracker or another app.
+With `plan-usage` on, the default, the plugin asks the account's usage endpoint for them itself, as Claude Usage.app does:
 
 - **One request a minute** to `https://api.anthropic.com/api/oauth/usage`, with the header `anthropic-beta: oauth-2025-04-20`, and once at each load; sooner when Claude Code's own week disagrees, as below.
-- **With the session's own credential, via the engine.** The mod asks `$.session.authorize()` for an opaque handle and passes it to `$.http.fetch`, which sets the credential header itself, over https to Anthropic's host only.
-  The mod never sees the credential, and reads no keychain or credential file.
+- **With the session's own credential, via the engine.** The plugin asks `$.session.authorize()` for an opaque handle and passes it to `$.http.fetch`, which sets the credential header itself, over https to Anthropic's host only.
+  The plugin never sees the credential, and reads no keychain or credential file.
 - **Only for a signed-in subscription.** With no first-party credential (a third-party provider, a gateway, no login) or with an API key, nothing is asked.
   With `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set, Claude Code refuses the request.
 - **Never on a drawing's path.** Each status document takes the reading kept, and an ask that is due starts after it, whose answer the next document takes.
-  The reading is kept in the mod's store under the signed-in account, so every session on the account shares the minute's ask.
+  The reading is kept in the plugin's store under the signed-in account, so every session on the account shares the minute's ask.
 - **One session asks at a time.** The ask is made under a lock directory, `plan-usage-<hash>.lock` in the state directory, which `mkdir` makes atomically: the session that makes it asks, and the others take its answer from the store.
   A lock left for over 30 seconds, by a session that died holding it, is taken over.
 - **Sooner when Claude Code's own week disagrees.** Claude Code's `seven_day` comes with every response, so it moves first when the week does, as when the limit is reset.
@@ -201,8 +201,8 @@ The account named by `activeProfileId` is read, falling back to the one marked `
 Only the usage figures are taken: the five-hour, weekly, Opus-weekly and Fable-weekly percentages, their reset times, and when the app last updated them, with the record's `id` hashed (see [Calibration cache](#calibration-cache)).
 The same record holds an OAuth account and a session key, and neither is read.
 
-The app keeps its profiles in the Keychain from version 3.3 on, which the mod does not read, so its preferences hold no `profiles_v3` and the source gives no reading.
-The mod writes that to `agentree-statusline.log` once a load, as `tracker: Claude Usage.app's settings have no profiles_v3, …`.
+The app keeps its profiles in the Keychain from version 3.3 on, which the plugin does not read, so its preferences hold no `profiles_v3` and the source gives no reading.
+The plugin writes that to `agentree-statusline.log` once a load, as `tracker: Claude Usage.app's settings have no profiles_v3, …`.
 
 The Fable-weekly percentage becomes the weekly Fable window (`seven_day_overage_included`, 🦊 on the 💳 row).
 The app keeps no reset time of its own for it, so it takes the weekly window's; a store without the figure gives no Fable window.
@@ -215,10 +215,10 @@ Set `AGENTREE_STATUSLINE_CLAUDE_TRACKER_PLIST` to read an exported store from a 
 |---|---|
 | native, `cmd:`, tracker | 60 seconds |
 | `experimental-claude-oauth` | 300 seconds |
-| the mod's `plan-usage` | 60 seconds |
+| the plugin's `plan-usage` | 60 seconds |
 
 Between refreshes the cached reading is used.
-A failed refresh keeps the last good reading and backs off exponentially, up to five minutes, and longer if the server sent `Retry-After` (also capped at five minutes); the mod's `plan-usage` backs off up to an hour instead, as [The plan's windows under the mod](#the-plans-windows-under-the-mod) says.
+A failed refresh keeps the last good reading and backs off exponentially, up to five minutes, and longer if the server sent `Retry-After` (also capped at five minutes); the plugin's `plan-usage` backs off up to an hour instead, as [The plan's windows under the plugin](#the-plans-windows-under-the-plugin) says.
 A reading older than its refresh interval is marked **stale** — freshness comes from the source's `as_of`, not from when it was fetched.
 
 Concurrent sessions don't refresh the same cache twice: each refresh takes a lock scoped to the source, account and period.
@@ -242,7 +242,7 @@ A reading that names no account is shown as its source gave it.
 ### The account's credits
 
 The account's dollar credits are read apart from its plan windows, since `auto` takes the windows from Claude Code and so never asks the usage endpoint.
-Every 5 minutes the mod asks the account's usage endpoint as the session, as `experimental-claude-oauth` does, and keeps the `credits` it gives in one small file per signed-in account, source `credits`, period `credits`.
+Every 5 minutes the plugin asks the account's usage endpoint as the session, as `experimental-claude-oauth` does, and keeps the `credits` it gives in one small file per signed-in account, source `credits`, period `credits`.
 
 - **The cloud session credit:** each window of the answer with a dollar limit, taken by its fields and never its name, is a `cloud` credit: its dollars left, its limit, what it has spent, and its reset as its expiry.
 - **Extra usage:** an `extra` credit while it is on and has a monthly cap, what is left of the cap, the cap, and what it has spent.
@@ -265,9 +265,9 @@ The id is what keeps two accounts apart, since the percentage stored with a scan
 A source with no id, or a tracker profile without one, falls back to the reading cache's account scope above (for `"account": "default"`, the session).
 
 A calibration file untouched for eight days belongs to a period, account or session that has passed, and is removed.
-The mod sweeps at most once a day, by the stamp on `claude-calibration-swept`, and removes files with `rm`, since its file API cannot.
+The plugin sweeps at most once a day, by the stamp on `claude-calibration-swept`, and removes files with `rm`, since its file API cannot.
 
 ## Diagnostics
 
-The mod writes what it read and why a figure is blank to `agentree-statusline.log` in the state directory: a source that failed and when it is asked again, the plan usage's window keys, the tracker's missing profiles.
+The plugin writes what it read and why a figure is blank to `agentree-statusline.log` in the state directory: a source that failed and when it is asked again, the plan usage's window keys, the tracker's missing profiles.
 A `cmd:` source is logged as `cmd`, without its path.

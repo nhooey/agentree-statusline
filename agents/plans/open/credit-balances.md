@@ -17,8 +17,8 @@ an original amount, what is left and an expiry: claude.ai's cloud session
 credit ("$4 of $250 left", expiring in a day) and the Claude Console's
 promotional API credit ("$199.99 of $200.00"). Today they are seen only
 on the two billing pages. The band shows the plan windows; it should show
-these beside them, for every user of the mod, with no secret of theirs
-held by the mod and no tool such as SecretSpec required.
+these beside them, for every user of the plugin, with no secret of theirs
+held by the plugin and no tool such as SecretSpec required.
 
 ## Where each figure is
 
@@ -31,7 +31,7 @@ Both endpoints are undocumented. A public balance API was asked for
 (`anthropics/claude-code#47574`) and closed as not planned.
 
 `claude.ai`'s `usage` answer has the shape of
-`api.anthropic.com/api/oauth/usage`, which the mod already reads with the
+`api.anthropic.com/api/oauth/usage`, which the plugin already reads with the
 session's own credential (`$.session.authorize()`, spent through
 `$.http.fetch`, the secret held by the host). `CB1` found:
 
@@ -63,12 +63,12 @@ session's own credential (`$.session.authorize()`, spent through
   `expires_at`, `granted_at`, `applies_to`, as `docs/usage-sources.md`
   gives it. A window or tranche is taken by its fields, never by its
   codename; one missing a field is dropped, not guessed.
-- **The cloud session credit:** from the OAuth `usage` answer the mod
+- **The cloud session credit:** from the OAuth `usage` answer the plugin
   already fetches, at its 5-minute pace, with no setup.
 - **The Console credits:** from the `credits.command` option, any program
-  printing the `credits[]` JSON, run at the same pace. The mod needs
+  printing the `credits[]` JSON, run at the same pace. The plugin needs
   nothing more; a user may wrap theirs in `secretspec run`.
-- **Shared:** the mod writes the reading to the cache in
+- **Shared:** the plugin writes the reading to the cache in
   `~/.local/state/agentree-statusline/`, so the Python status line
   shows the same figures without fetching.
 - **On the band:** each credit as its glyph, its balance and 🔜 with the
@@ -166,13 +166,13 @@ and its plan windows:
   the reading is 💸. Bedrock, Vertex and anything else pay none of these.
 - **The crossing:** 💸, and 💵 after 🎁, are counted from the first
   reading that found them paying, the moment before which is unknown;
-  every other pool has paid since the session began. The mod keeps the
+  every other pool has paid since the session began. The plugin keeps the
   spell, and the first reading of the paying credit for the measured
   fall, in `$.state` (`agentree-statusline`'s `spending`) for the
   session and in `$.store` under `spending:<session id>`, so a
   `/reload-plugins`, a restart or a `--resume` counts on from them rather
   than from the
-  reload; until the reloaded mod has read the credits, the kept spell
+  reload; until the reloaded plugin has read the credits, the kept spell
   stands. A session start drops the store's entries saved over 31 days
   ago, the longest billing month, past which a start is of a period
   already over.
@@ -203,25 +203,25 @@ and its plan windows:
 
 ## The build order
 
-1. **`CB1`, the trial.** Once per process, at the mod's start, it logs
+1. **`CB1`, the trial.** Once per process, at the plugin's start, it logs
    what the session's credential reaches: the OAuth `usage` answer's keys
    with a value and each window with a dollar limit, then the Console's
    organizations and each one's prepaid credits, as figures only, never a
    body. Nothing drawn changes. Its findings are above, and its code is
-   out of the mod.
+   out of the plugin.
 2. **`CB1b`, the second trial.** It logs `extra_usage`'s figures and the
    cloud credit's `used` at each turn's end, as figures only: extra
    usage's cap, spend and reset, and whether a local session moves the
-   cloud credit. Its findings are above, and its code is out of the mod.
+   cloud credit. Its findings are above, and its code is out of the plugin.
 3. **`CB2`, the reading.** `credits[]` in `docs/usage-sources.md`'s format,
    its parser in both ports, with cases.
 4. **`CB3`, the sources.** The cloud credit and extra usage from the OAuth
    answer, asked every 5 minutes apart from the plan windows, and kept per
    signed-in account in a file the Python port reads without asking.
 5. **`CB4`, the conditions and the cells.** The conditions evaluated in
-   both ports (`coding_agent_usage_line/credits.py`, `mod/src/credits.ts`)
+   both ports (`coding_agent_usage_line/credits.py`, `plugin/src/credits.ts`)
    with shared cases, the five glyphs in `spec/layout.jsonc`, and each
-   credit's cell in the mod.
+   credit's cell in the plugin.
 6. **`CB4b`, the credits drawn.** `credits` in `spec/options.jsonc`, the
    defaults file and both ports' configuration readers, through a
    `record` type; the credits on the 💳 row; the Console credits from
@@ -239,9 +239,9 @@ and its plan windows:
 
 ## Files
 
-`mod/hooks/usage.ts` and
-`mod/src/sources.ts` (the fetch and the reading),
-`coding_agent_usage_line/sources.py`, `mod/src/band.ts`,
-`spec/options.jsonc` and its generated files, `mod/defaults/config.jsonc`,
-`mod/mod-tests/band.test.ts`, `docs/usage-sources.md`, `docs/layout.md`,
+`plugin/hooks/usage.ts` and
+`plugin/src/sources.ts` (the fetch and the reading),
+`coding_agent_usage_line/sources.py`, `plugin/src/band.ts`,
+`spec/options.jsonc` and its generated files, `plugin/defaults/config.jsonc`,
+`plugin/plugin-tests/band.test.ts`, `docs/usage-sources.md`, `docs/layout.md`,
 `docs/options.md`.

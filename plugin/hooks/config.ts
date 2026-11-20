@@ -1,0 +1,83 @@
+// The plugin's constants, and the settings it carries until the user's own
+// configuration file holds them.
+//
+// What the plugin draws is set by the options (options_spec.ts), merged
+// from the configuration files over the defaults file
+// (defaults/config.jsonc) (docs/options.md, "Configuration files";
+// configuration.ts, options()).
+// What stays here are the constants no file may set: the version the
+// caches are keyed by, and the timings (agents/plans/open/config-merge.md,
+// Decided 5 and 15).  A change here is a change to the plugin: edit, then
+// /reload-plugins.
+import type { Value } from '../src/config.ts'
+
+export const CONFIG = {
+  // The version the plugin's caches are keyed by: a change to the
+  // accounting is a new version.
+  version: "agentree-statusline 0.2.0",
+  // How often a live agent's fold, and the main transcript's, is saved, so
+  // a reload reads on from it.
+  foldSaveMs: 60_000,
+  // How often the band reads its figures again with nothing else
+  // happening, so the clocks and the 🔜 resets move while idle; and how
+  // often it looks at the configuration files for a change.
+  tickMs: 30_000,
+  // How often it reads again while a main-thread turn runs, so 🛫 and the
+  // totals keep up with the clocks; never more often
+  // than readSpacing times as long as the last read took, so a long
+  // transcript's reads cannot crowd the session.
+  tickRunningMs: 5_000,
+  readSpacing: 3,
+  // A read that takes longer is logged, with how long each of its steps
+  // took, and with the option slow-toast shown as a toast at most once per
+  // slowToastMs.
+  slowReadMs: 2_000,
+  slowToastMs: 60_000,
+  // How long the toast a press on a shell's or a Monitor's row shows stays:
+  // twice Claude Code's default, long enough to read a command's line.
+  taskToastMs: 8_000,
+  // What the plugin asked of the engine since the last refresh, its reads'
+  // bytes or its processes, past which the refresh is logged with them,
+  // though it was quick: an idle refresh reads a few small files.
+  ioNoteBytes: 16 * 1024 * 1024,
+  ioNoteSpawns: 20,
+  // The ms a minute the plugin's own drawing (its ui.render hooks, the
+  // engine's drawing beneath them left out) may take before the minute is
+  // logged with each component's draws and ms: 2% of it.
+  drawNoteMs: 1_200,
+  // How long one step of a refresh may run before it is dropped and
+  // logged: past it the band keeps its last figures and the next event
+  // reads again, so a read that never ends cannot blank the band until a
+  // /reload-plugins.  Over 3 times the slowest first read seen, on a 20 MB
+  // transcript.
+  readLimitMs: 20_000,
+  // How often the band and the footer redraw their clocks (🔧 ⌛ ⛳ 🕐 🔜)
+  // against the time now, between reads, without reading anything.
+  clockMs: 1_000,
+  // How long the receipt waits, from turn.complete, for the transcript to
+  // bill the turn just ended (Claude Code writes its records after the
+  // Stop hooks), and how often it looks.
+  receiptWaitMs: 30_000,
+  receiptPollMs: 500,
+  // How long the band keeps a done turn's 🎤 and 🎮 rows after its receipt
+  // is stamped, so the receipt is there before they go.
+  receiptHoldMs: 1_000,
+  // How long the agents `$.agent.list()` gave are taken as standing, for
+  // an agent's message row to find its sender's task in: the row is drawn
+  // on every draw of the transcript, and a list each time would cross to
+  // the engine each time.  An agent starting or ending lists them again
+  // at once.
+  agentListMs: 5_000,
+  // How many messages that row keeps the sender of, once their words have
+  // picked it out of several agents of one name: a message never changes,
+  // so its agents' replies are read once and not on every draw.  The
+  // oldest goes first.
+  agentSenderMemo: 256,
+} as const;
+
+// One more layer under the configuration files, named "plugin": a setting
+// the plugin draws with that is not the options' default and that no file
+// gives.  Empty: a person's settings are in their own file,
+// ~/.config/agentree-statusline/config.jsonc (docs/options.md), which
+// the band and the agent panel both read.
+export const SETTINGS: { readonly [option: string]: Value } = {}
