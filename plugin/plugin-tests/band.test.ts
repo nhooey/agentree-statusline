@@ -17,7 +17,9 @@
 // against receiptLines over the same bytes.
 import { expect } from 'claude-code/testing'
 import { BUDGET_MS, test } from './budget.ts'
-import type { AgentInfo, On, RenderPropsOf } from 'claude-code'
+import type {
+  AgentInfo, On, RenderElement, RenderPropsOf,
+} from 'claude-code'
 
 import { CALIB, NOW, TRACKER } from './fixtures.gen.ts'
 import { partOf, partOfRun } from '../hooks/engine.ts'
@@ -28,7 +30,9 @@ import {
   WINDOW, world,
 } from './world.ts'
 import type { Ran, Run, World } from './world.ts'
-import { partsOf, receiptKey, startKey } from '../hooks/register.tsx'
+import {
+  ownRowFirst, partsOf, receiptKey, startKey,
+} from '../hooks/register.tsx'
 import { drawingNote, ioText } from '../hooks/profile.ts'
 import { LOG_NAME } from '../hooks/log.ts'
 import { CONFIG } from '../hooks/config.ts'
@@ -1782,6 +1786,82 @@ test('the rule is drawn only where the band still fits the rows it may ' +
     // Between turns the band draws no row, so no rule either.
     expect(await drawnRows(await bandAbove($, { isWorking: false })))
       .toEqual([])
+  })
+
+/** A band row as AbovePromptList hands it, of `plugin`, a Text of its
+ * name. */
+const listRow = (plugin: string) =>
+  ({ plugin, tree: h('Text', null, plugin) as RenderElement })
+
+/** Each arrangement of the band's rows as it reaches core, by plugin,
+ * oldest first: a hook beneath every plugin's, registered before the
+ * test's first call on `$`. */
+function stackedRows(on: On): string[][] {
+  const seen: string[][] = []
+  on('ui.render', { component: 'AbovePromptList' }, async ($, e, next) => {
+    seen.push(e.props.rows.map((r) => r.plugin))
+    return next(e)
+  })
+  return seen
+}
+
+/** The band's rows `rows` (hand-built, in that order), mounted as the
+ * engine hands them to AbovePromptList. */
+const mountList = ($: any, rows: { plugin: string }[]) =>
+  $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
+    component: 'AbovePromptList', props: { ...BAND, isCollapsed: false,
+      rows } })
+
+test('the band above the prompt has this plugin\'s row first, the ' +
+  'others after it in their order', async ($, on) => {
+    world(on)
+    const seen = stackedRows(on)
+    await mountList($, ['other-band', 'agentree-statusline', 'third-band']
+      .map(listRow))
+    expect(seen.at(-1))
+      .toEqual(['agentree-statusline', 'other-band', 'third-band'])
+  })
+
+test('a band whose first row is this plugin\'s, or with none of its, ' +
+  'is stacked as it came', async ($, on) => {
+    world(on)
+    const seen = stackedRows(on)
+    for (const order of [['agentree-statusline', 'other-band'],
+      ['other-band', 'third-band']]) {
+      await mountList($, order.map(listRow))
+      expect(seen.at(-1)).toEqual(order)
+    }
+  })
+
+test('a second plugin\'s row drawn above this plugin\'s in the chain is ' +
+  'stacked under it', {
+  plugins: [{ name: 'other-band', tier: 'prepend', register(on) {
+    on('ui.render', { component: 'AbovePrompt' }, async ($, e) => {
+      const { Text } = $.ui.resolve(e)
+      return h(Text, { key: 'other' }, 'the other row') as RenderElement
+    })
+  } }],
+}, async ($, on) => {
+  const w = world(on)
+  const seen = stackedRows(on)
+  await start($, w, 'terminal', STATUS)
+  await bandAbove($)
+  // The kit's own row, the test's, is stacked after them.
+  expect(seen.at(-1)?.slice(0, 2)).toEqual(['agentree-statusline',
+    'other-band'])
+})
+
+test('ownRowFirst moves the plugin\'s rows to the front, each row the ' +
+  'same one, and hands back the rows themselves where there is nothing to ' +
+  'move', async () => {
+    const [a, ours, b] = ['a', 'agentree-statusline', 'b'].map(listRow)
+    const moved = ownRowFirst([a, ours, b], 'agentree-statusline')
+    expect(moved.map((r) => r.plugin))
+      .toEqual(['agentree-statusline', 'a', 'b'])
+    expect(moved[0] === ours && moved[1] === a && moved[2] === b).toBe(true)
+    for (const rows of [[ours, a, b], [a, b], []]) {
+      expect(ownRowFirst(rows, 'agentree-statusline') === rows).toBe(true)
+    }
   })
 
 test('a turn started with no plan reading has no 💳 on its tag',

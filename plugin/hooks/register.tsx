@@ -112,6 +112,17 @@ const shellLog = atom(
 export const startKey = (text: string) =>
   'start:' + sha256Hex(text).slice(0, 32)
 
+/** The band's rows with `plugin`'s first and the others after them in the
+ * order they came, each row itself as it came, since the engine refuses a
+ * row changed or repeated; `rows` itself where `plugin` has none, or its
+ * are first already. */
+export function ownRowFirst<R extends { readonly plugin: string }>(
+  rows: readonly R[], plugin: string): readonly R[] {
+  const own = rows.filter((r) => r.plugin === plugin)
+  if (!own.length || own.every((r, i) => rows[i] === r)) return rows
+  return [...own, ...rows.filter((r) => r.plugin !== plugin)]
+}
+
 let st: Settings | null = null
 // The options `st` was made under.
 let stKey = ''
@@ -1217,6 +1228,15 @@ export const register: Register = on => {
     } finally {
       drawEnd(draw)
     }
+  })
+
+  // The band's rows, this plugin's first (ownRowFirst), so band-rule's
+  // rule over it is the band's top edge.  A later AbovePromptList hook in
+  // the chain may still reorder them.
+  on('ui.render', { component: 'AbovePromptList' }, async ($, e, next) => {
+    const rows = ownRowFirst(e.props.rows, $.plugin.name)
+    return next(rows === e.props.rows ? e
+      : { ...e, props: { ...e.props, rows } })
   })
 
   // Claude Code's closing line, `✻ <word> for <duration>`, drawn as the
