@@ -203,12 +203,12 @@ export async function prepareClaudeReading(
     now: number, env: Env, store: Store,
     fetch: Fetch, configAccount: AccountOf = () => "",
     claudeFallback = "claude-usage-tracker",
-    preferred: Reading | null = null):
+    preferred: Reading | null = null, side: Reading | null = null):
     Promise<PreparedClaudeReading> {
   const safe = isDict(context) ? context : {};
   const reading = await collect("claude", spec, account, period, safe, now,
                                 store, fetch, env, configAccount,
-                                claudeFallback, preferred);
+                                claudeFallback, preferred, side);
   return { reading, limits: legacyLimits(reading) };
 }
 

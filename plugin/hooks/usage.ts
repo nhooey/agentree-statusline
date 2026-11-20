@@ -214,12 +214,14 @@ export async function preparedVia($: $, places: Places, raw: Dict,
     findCompatible: (a, c, p) => storeFind($, dir, a, c, p),
   }
   // Under plan-usage, the plan's windows the plugin asks for itself once a
-  // minute (plan_usage.ts), which auto takes over Claude Code's own; and
-  // the fallback below then asks nothing, the endpoint being plan_usage's.
+  // minute (plan_usage.ts), which auto takes over Claude Code's own while
+  // fresh, and past that the windows Claude Code's own lacks, drawn beside
+  // it; and the fallback below then asks nothing, the endpoint being
+  // plan_usage's.
   const planOn = o.planUsage && (spec || 'auto') === 'auto'
-  const preferred = planOn
+  const plan = planOn
     ? planUsageVia($, await configAccountVia($, places.home), now,
-      nativeWeek(raw)) : null
+      nativeWeek(raw)) : { reading: null, side: null }
   const fetch: Fetch = (selected, ctx) =>
     planOn && selected === 'experimental-claude-oauth' ? Promise.resolve({})
       : fetchOne($, places.home, selected, ctx)
@@ -228,7 +230,7 @@ export async function preparedVia($: $, places: Places, raw: Dict,
   // app, which need not be running: the plugin can ask it as the session.
   return prepareClaudeReading(spec, account, accountPeriod, context,
     now, env, store, fetch, () => configAccountVia($, places.home),
-    'experimental-claude-oauth', preferred)
+    'experimental-claude-oauth', plan.reading, plan.side)
 }
 
 /** Whether an ask for the credits is under way, so a document doesn't

@@ -40,7 +40,7 @@ import {
 } from "./cells.ts";
 import type { PlanKey, PlanWindow, Workspace } from "./cells.ts";
 import type { Limits } from "./claude_sources.ts";
-import { WEEKLY_WINDOWS } from "./sources.ts";
+import { FABLE_WINDOW, WEEKLY_WINDOWS } from "./sources.ts";
 import type { WeeklyKey } from "./sources.ts";
 import { creditCell } from "./credits.ts";
 import { PAYER_GLYPHS } from "./spending.ts";
@@ -330,7 +330,8 @@ export function workspaceOf(fig: Dict, home: string): Workspace {
  * `clock.now`.  A window whose path `plan.<key>` is `hide`'s is left out,
  * and a 🔜 with it where no window is left to reset then.  A reading
  * STALE_MARK_S or more old, by `usage.reading.as_of`, has each figure
- * marked with 🧊 and its age. */
+ * marked with 🧊 and its age; a side window with an `as_of` of its own in
+ * the reading's default bucket is marked by that instead. */
 function accountRow(st: Settings, fig: Dict, now: number,
   hide: (path: string) => boolean = () => false): Row {
   const lim = decodeLimits(fig.limits);
@@ -344,9 +345,24 @@ function accountRow(st: Settings, fig: Dict, now: number,
     return v === null || Number.isNaN(v) ? null : v;
   };
   const reading = (fig.usage as Dict | undefined)?.reading as Dict | null;
-  const asOf = Number(reading?.as_of);
-  const age = Number.isFinite(asOf) ? now - asOf : NaN;
-  const stale = age >= STALE_MARK_S ? durFmt(st, age).trim() : null;
+  const staleSince = (at: unknown): string | null => {
+    const age = typeof at === "number" ? now - at : NaN;
+    return age >= STALE_MARK_S ? durFmt(st, age).trim() : null;
+  };
+  const stale = staleSince(Number(reading?.as_of));
+  // A window read apart from the rest, with an `as_of` of its own, as the
+  // plugin's last answer from the usage endpoint is kept beside Claude
+  // Code's own reading (sources.ts withSideWindows): its own age.
+  const own = new Map<unknown, unknown>();
+  const buckets = reading?.buckets;
+  for (const b of Array.isArray(buckets) ? buckets : []) {
+    if (!isDict(b) || b.id !== "default" || !Array.isArray(b.windows)) continue;
+    for (const w of b.windows) {
+      if (isDict(w) && typeof w.as_of === "number") own.set(w.id, w.as_of);
+    }
+  }
+  const sideIds = new Map<string, string>([["fable", FABLE_WINDOW],
+    ...WEEKLY_WINDOWS.map(([key, id]) => [key, id] as [string, string])]);
   // The credits the plugin chose to draw (usage.ts creditsVia): each with
   // its colour, and whether to draw what was granted.
   const owed = fig.credits as Dict | undefined;
@@ -354,9 +370,12 @@ function accountRow(st: Settings, fig: Dict, now: number,
   const credits = drawn.map((d) => ({ kind: String((d.credit as Dict).kind),
     spans: creditCell(st, d.credit as Dict,
       d.tint as "red" | "amber" | null, owed?.original === true, now) }));
-  const window = (key: PlanKey, share: string, k: string): PlanWindow => ({
-    key, pct: pct(share), reset: reset(k),
-    at: (raw[k] ?? null) as number | null });
+  const window = (key: PlanKey, share: string, k: string): PlanWindow => {
+    const at = own.get(sideIds.get(key));
+    return { key, pct: pct(share), reset: reset(k),
+      at: (raw[k] ?? null) as number | null,
+      ...at === undefined ? {} : { stale: staleSince(at) } };
+  };
   // The plan's pair, then each side window with a share; planPieces puts
   // those that reset together under one 🔜.
   const windows: PlanWindow[] = [

@@ -593,9 +593,11 @@ export type PlanKey = typeof PLAN_MARKS[number][0];
 
 /** A window as the 💳 row draws it: its key in PLAN_MARKS, its share, the
  * time until it resets, and `at`, the reset itself, which the windows that
- * reset together share; each null where it has none. */
+ * reset together share; each null where it has none.  `stale`, where
+ * given, is how long ago this window was read, in place of the row's. */
 export type PlanWindow = { readonly key: PlanKey; readonly pct: number | null;
-  readonly reset: string | null; readonly at: number | null };
+  readonly reset: string | null; readonly at: number | null;
+  readonly stale?: string | null };
 
 /** A window's mark and its share.  Three digits for every window, so 🪫
  * reads 87٪ as 🔋 does, not the 87.0٪ the wider 🪫 column draws for an
@@ -637,7 +639,8 @@ export function planPieces(st: Settings, windows: readonly PlanWindow[],
           E_RESET + " " + reset + " ", null, 0, true)],
         ...group.map(({ w, mark, colour }, i): Piece => ({
           path: "plan." + w.key,
-          spans: [...windowSpans(st, mark, colour, w.pct, stale),
+          spans: [...windowSpans(st, mark, colour, w.pct,
+            w.stale === undefined ? stale : w.stale),
             span(i === group.length - 1 ? "  " : " ")],
           drop: 0 }))];
     });

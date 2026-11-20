@@ -500,6 +500,119 @@ const PLAN_ANSWER: Dict = {
 
 const PLAN_URL = 'https://api.anthropic.com/api/oauth/usage'
 
+/** The plan-usage file in the state directory, which every session and
+ * every install of the plugin on the world's account shares. */
+const PLAN_FILE = statePath(STATE, 'plan-usage', 'plan-usage:default')
+
+/** What the plan-usage file keeps, undefined with no file. */
+function keptOf(w: World): Dict | undefined {
+  const f = w.files.get(PLAN_FILE)
+  return f ? JSON.parse(new TextDecoder().decode(f)) as Dict : undefined
+}
+
+/** `kept` written to the plan-usage file, as another session, or another
+ * install with its own `$.store`, writes it. */
+function keep(w: World, kept: Dict): void {
+  w.files.set(PLAN_FILE, encoder.encode(JSON.stringify(kept)))
+}
+
+test('the plan-usage reading, its schedule and its failures\' wait are ' +
+  'kept in one file in the state directory, which every install of the ' +
+  'plugin shares, and not in $.store, which each install has its own of',
+  async ($, on) => {
+    const w = planWorld(on, PLAN_ANSWER)
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    const first = keptOf(w)!
+    expect(typeof first.fetched_at).toBe('number')
+    expect(first.reading).toBeDefined()
+    expect([...w.store.keys()].filter((k) => k.startsWith('plan-usage')))
+      .toEqual([])
+    // Another install's session asks before this one's minute is up, and
+    // its answer, the Fable week at 9٪, is taken without asking again.
+    const at = w.clock.now() / 1000 + 50
+    keep(w, { reading: claudeOauthReading({ ...PLAN_ANSWER,
+      seven_day_overage_included: { utilization: 9.0,
+        resets_at: '2026-08-19T01:00:00+00:00' } }, at), fetched_at: at })
+    await w.clock.advance(61_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(1)
+    await w.clock.advance(31_000)
+    await settle()
+    expect(String((lastDoc(w).limits as Dict).fable_pct)).toMatch(/^9/)
+    // Its next ask was refused with a 429: this session waits it out too.
+    const now = w.clock.now() / 1000
+    keep(w, { ...keptOf(w), retry_at: now + 900, failures: 1 })
+    for (let i = 0; i < 14; i++) {
+      await w.clock.advance(61_000)
+      await settle()
+    }
+    expect(w.oauth.asked.length).toBe(1)
+    // A document comes every 30 seconds: the first past the wait asks.
+    await w.clock.advance(91_000)
+    await settle()
+    expect(w.oauth.asked.length).toBe(2)
+    expect(keptOf(w)!.failures).toBeUndefined()
+  })
+
+test('past seven minutes of failed asks, Claude Code\'s own week is drawn, ' +
+  'and the Fable week the last answer gave with its age until its own ' +
+  'reset; a fresh answer then stands over both', async ($, on) => {
+    const fableReset = NOW + 15 * 60
+    const w = planWorld(on, { ...PLAN_ANSWER,
+      seven_day_overage_included: { utilization: 6.0,
+        resets_at: new Date(fableReset * 1000).toISOString() } })
+    await start($, w, 'terminal', STATUS)
+    expect(w.oauth.asked.length).toBe(1)
+    w.oauth.status = 429
+    w.oauth.headers = { 'retry-after': '120' }
+    // Eleven minutes of 429s.
+    for (let i = 0; i < 11; i++) {
+      await w.clock.advance(60_000)
+      await settle()
+    }
+    expect(Number(keptOf(w)!.failures)).toBeGreaterThan(1)
+    const limits = lastDoc(w).limits as Dict
+    expect(String(limits.weekly_pct)).toMatch(/^87/)
+    expect(String(limits.fable_pct)).toMatch(/^6/)
+    expect(String(limits.omelette_pct)).toMatch(/^3/)
+    // The five-hour window is not Claude Code's either, but is the plan's
+    // own: not carried past the seven minutes.
+    expect(limits.session_pct).toBeNull()
+    // 🦊 drawn with its age; 🪫, Claude Code's own, without.
+    const row = text(accountLine(BAND_ST, lastDoc(w), HIDE, 200, HOME))
+    expect(row).toMatch(new RegExp(spec.E_FABLE + ' +6٪ ' + spec.E_STALE +
+      '\\S+'))
+    expect(row).toMatch(new RegExp(spec.E_WEEK + ' +87٪(?! ' +
+      spec.E_STALE + ')'))
+    // Past the Fable week's own reset, it is dropped.
+    while (w.clock.now() / 1000 <= fableReset) {
+      await w.clock.advance(60_000)
+      await settle()
+    }
+    await w.clock.advance(31_000)
+    await settle()
+    expect((lastDoc(w).limits as Dict).fable_pct).toBeNull()
+    // An answer again: its windows stand over Claude Code's and the old
+    // ones, with no age.
+    w.oauth.status = 200
+    w.oauth.body = JSON.stringify({ ...PLAN_ANSWER,
+      seven_day_overage_included: { utilization: 11.0,
+        resets_at: '2026-08-22T01:00:00+00:00' } })
+    for (let i = 0; i < 40 && keptOf(w)!.failures !== undefined; i++) {
+      await w.clock.advance(60_000)
+      await settle()
+    }
+    expect(keptOf(w)!.failures).toBeUndefined()
+    await w.clock.advance(31_000)
+    await settle()
+    const after = lastDoc(w).limits as Dict
+    expect(String(after.weekly_pct)).toMatch(/^24/)
+    expect(String(after.fable_pct)).toMatch(/^11/)
+    expect(text(accountLine(BAND_ST, lastDoc(w), HIDE, 200, HOME)))
+      .not.toContain(spec.E_STALE)
+  })
+
 test('under plan-usage, the plan\'s windows are asked of the usage ' +
   'endpoint as the session once a minute, the Fable week among them, and ' +
   'drawn over Claude Code\'s own; their keys are logged once, then as ' +
@@ -515,7 +628,7 @@ test('under plan-usage, the plan\'s windows are asked of the usage ' +
     expect(String(limits.session_pct)).toMatch(/^18/)
     expect(String(limits.fable_pct)).toMatch(/^6/)
     // Every seven_day_* window with a utilization is kept, by its key.
-    const kept = w.store.get('plan-usage:default') as Dict
+    const kept = keptOf(w) as Dict
     const ids = (((kept.reading as Dict).buckets as Dict[])[0]
       .windows as Dict[]).map((x) => x.id)
     expect(ids).toEqual(['five_hour', 'seven_day',
@@ -570,7 +683,7 @@ test('under plan-usage, the Fable week of the answer\'s limits list is ' +
     expect(String(limits.weekly_pct)).toMatch(/^24/)
     expect(String(limits.fable_pct)).toMatch(/^6/)
     expect(String(limits.opus_pct)).toMatch(/^11/)
-    const kept = w.store.get('plan-usage:default') as Dict
+    const kept = keptOf(w) as Dict
     const ids = (((kept.reading as Dict).buckets as Dict[])[0]
       .windows as Dict[]).map((x) => x.id)
     expect(ids).toEqual(['seven_day', 'seven_day_overage_included',
@@ -620,7 +733,7 @@ test('a failed plan-usage ask is logged once and waited out, the wait ' +
     // Each failure in a row counted in the store, its wait not asked in.
     const runs: number[] = []
     for (let i = 0; i < 7; i++) {
-      const kept = w.store.get('plan-usage:default') as Dict
+      const kept = keptOf(w) as Dict
       const asked = w.oauth.asked.length
       runs.push(Number(kept.failures))
       await w.clock.advance(Number(kept.retry_at) * 1000 - w.clock.now() -
@@ -639,16 +752,16 @@ test('a failed plan-usage ask is logged once and waited out, the wait ' +
     expect(logOf(w).split(line).length - 1).toBe(1)
     // An answer ends the run: the next failure waits 2 minutes again.
     w.oauth.status = 200
-    const kept = w.store.get('plan-usage:default') as Dict
+    const kept = keptOf(w) as Dict
     await w.clock.advance(Number(kept.retry_at) * 1000 - w.clock.now() +
       1_000)
     await settle()
-    expect((w.store.get('plan-usage:default') as Dict).failures)
+    expect((keptOf(w) as Dict).failures)
       .toBeUndefined()
     w.oauth.status = 503
     await w.clock.advance(61_000)
     await settle()
-    const after = w.store.get('plan-usage:default') as Dict
+    const after = keptOf(w) as Dict
     expect(after.failures).toBe(1)
     expect(Math.round((Number(after.retry_at) - w.clock.now() / 1000) / 60))
       .toBe(2)
@@ -665,7 +778,7 @@ test('a plan-usage ask that never answers counts as failed after 20 ' +
     await w.clock.advance(21_000)
     await settle()
     expect(logOf(w)).toContain('plan usage failed: no answer in 20 s\n')
-    const kept = w.store.get('plan-usage:default') as Dict
+    const kept = keptOf(w) as Dict
     expect(kept.failures).toBe(1)
     // The lock is let go, and the next ask waits the 2 minutes out.
     expect(w.made.size).toBe(0)
@@ -677,8 +790,8 @@ test('a plan-usage ask that never answers counts as failed after 20 ' +
     expect(w.oauth.asked.length).toBe(3)
   })
 
-test('a 429 is waited out for its Retry-After, kept in the store for ' +
-  'every session on the account', async ($, on) => {
+test('a 429 is waited out for its Retry-After, kept in the plan-usage ' +
+  'file for every session on the account', async ($, on) => {
     const w = planWorld(on, PLAN_ANSWER)
     await start($, w, 'terminal', STATUS)
     expect(w.oauth.asked.length).toBe(1)
@@ -687,7 +800,7 @@ test('a 429 is waited out for its Retry-After, kept in the store for ' +
     await w.clock.advance(61_000)
     await settle()
     expect(w.oauth.asked.length).toBe(2)
-    const kept = w.store.get('plan-usage:default') as Dict
+    const kept = keptOf(w) as Dict
     // Waited from the failed ask, a minute after the reading kept.
     const waited = Number(kept.retry_at) - Number(kept.fetched_at) - 900
     expect(waited >= 60 && waited <= 61).toBe(true)
@@ -844,7 +957,7 @@ test('under plan-usage, a disagreeing week takes another session\'s ' +
       seven_day: { utilization: 1.0, resets_at: week },
       seven_day_overage_included: { utilization: 0.0, resets_at: week } }
     const at = w.clock.now() / 1000
-    w.store.set('plan-usage:default', {
+    keep(w, {
       reading: claudeOauthReading(answer, at), fetched_at: at })
     w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 1.4,
       resetsAt: week }]

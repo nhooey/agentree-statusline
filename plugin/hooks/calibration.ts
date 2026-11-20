@@ -20,7 +20,7 @@ import { isDict, pyGet } from '../src/py.ts'
 import type { Dict } from '../src/py.ts'
 import {
   agentWalk, fileSize, listDir, readRange, readTextVia, RM_AT_ONCE, runVia,
-  writeText,
+  writeAtomicVia, writeText,
 } from './engine.ts'
 import type { Listed, Places } from './engine.ts'
 
@@ -144,23 +144,6 @@ async function removeOldCostsVia($: $, places: Places): Promise<void> {
     if (r.exitCode !== 0) return
   }
   await writeText($, marker, '')
-}
-
-/** A whole file written so no reader sees it torn: `$.fs.write` truncates
- * and then writes, and holds 4 MiB at most, so the text goes through the
- * shell's stdin to a temporary file beside `path`, renamed over it.
- * False where it could not be written. */
-async function writeAtomicVia($: $, path: string, text: string):
-  Promise<boolean> {
-  try {
-    const r = await runVia($, ['/bin/sh', '-c',
-      'umask 077 && t="$1.$$" && cat > "$t" && mv -f -- "$t" "$1" ||' +
-      ' { rm -f -- "$t"; exit 1; }', 'sh', path],
-    { stdin: text, timeoutMs: 30_000 })
-    return r.exitCode === 0
-  } catch {
-    return false
-  }
 }
 
 /** _windowCosts through `$`, then the cache written as _writeCalibCache
