@@ -11,30 +11,26 @@ cost: 1.5M tokens, $1.50, 0.15% of the weekly limit
 
 ## Now
 
-Measured on `master` by word search of each `export`ed name across
-`mod/src`, `mod/hooks`, `mod/tools`, `mod/test` and `mod/mod-tests`.
+Measured by word search of each `export`ed name across the repository.
 
-**Used nowhere** (only the declaration):
+**Used nowhere** but in comments, all in `spec.ts`:
 
-| Name | Where |
+| Name | Why it is still there |
 | --- | --- |
-| `readTurnsSettled` | `claude_records_node.ts:443` |
-| `P_IN` | `claude_records.ts:178` |
-| `renderState` | `claude_subagent_render.ts:251` (`agent_row.ts` after `UX20`) |
-| `configNow` | `hooks/configuration.ts:139` |
-| `E_SUM`, `W_MOD`, `E_TREE_NODE`, `E_TREE_OPEN`, `E_TREE_END`, `HIDE_GROUPS` | `spec.ts` |
+| `E_TREE_NODE`, `E_TREE_OPEN`, `E_TREE_END` | the glyphs of Claude Code's own panel, which `probe-advance.sh` measures because they are `E_*` constants ([glyphs and terminals](../../../../docs/glyphs-and-terminals.md)); `grid.ts` draws `◯` inline where it could name `E_TREE_NODE` |
+| `E_HUMAN`, `E_BOT`, `E_READ`, `E_WRITE`, `E_COSTLINE`, `E_ROW_PROMPT`, `E_ROW_TOTAL`, `E_ROW_AGENTS` | `probe-advance.sh` measures every `E_*` constant; each glyph is drawn under another name, or not at all |
+| `LIM_PCT_W`, `LIM_FIG_W`, `LIM_ACCT_W`, `SHARE_FIG_W` | other constants' comments explain their widths by these |
+| `C_CHROME_CONT` | `band.ts`'s `indented` names it for the indent it matches |
 
-**Used only in their own file:** 221 exports, most in
-`claude_records.ts` (53), `claude_subagent_render.ts` (31), `spec.ts`
-(18), `config.ts` (15), `sources.ts` (14), `band.ts` (11) and
-`hooks/plan_usage.ts` (10). Some are exported for a test and are read
-there; the rest are exported for nothing.
+**Used only in their own file:** many exports, to be counted when this
+starts, most in `claude_records.ts`, `spec.ts`, `config.ts`,
+`sources.ts`, `band.ts` and `hooks/plan_usage.ts`. Some are exported for
+a test and are read there; the rest are exported for nothing.
 
 ## Target
 
-- The used-nowhere names removed, with what only they reach
-  (`readTurnsSettled` takes `SETTLE_S`, `SETTLE_POLL_S` and `_settled`
-  with it where nothing else reads them).
+- Each used-nowhere name above removed, or used where its glyph or width
+  is drawn, with the comments that cite it reworded.
 - Each own-file-only export un-exported, unless a test imports it.
 - A `usage-dev` command, `usage-dev exports`, that lists both kinds, run
   by `tests` so a new one fails the suite.
@@ -42,11 +38,6 @@ there; the rest are exported for nothing.
 ## Checks
 
 `typecheck`; `tests` with fixtures unchanged. `spec.ts`'s names are
-checked against `spans.ts`'s lookups by name (`spec.TRUE_COLOURS[name]`,
-`:271`) before any goes: a colour read by its name has no import.
-
-## Waits for
-
-`TF4`, which deletes `claude_render.ts`, `claude_subagent_render.ts`,
-`claude_cost.ts` and `claude_cost_render.ts` and with them about 40 of
-these exports; measured again after it.
+checked against the lookups by name before any goes: `spans.ts` reads
+the `F_*` colours by name (`spec.TRUE_COLOURS[name]`), and
+`probe-advance.sh` every exported `E_*` glyph, so neither has an import.

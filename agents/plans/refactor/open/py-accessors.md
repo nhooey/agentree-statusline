@@ -3,7 +3,7 @@ title: RF6 Records decoded once, and the py accessors gone
 state: proposed
 kind: implementation
 part-of: refactor
-needs: [typed-documents, py-output-helpers, split-claude-records]
+needs: [typed-documents, split-claude-records]
 touches: [mod/src, mod/hooks]
 cost: 15M tokens, $15, 1.5% of the weekly limit
 ---
@@ -38,7 +38,7 @@ the record's shape anew, and the type checker sees `unknown` throughout.
   (`UserRec`, `AssistantRec`, `SystemRec`, `ToolUse`, `ToolResult`), with
   the coercions the accessors did made explicit once, in the decoder.
 - `pyGet`, `pyOr`, `pyTruthy`, `pyDig`, `pyHas` are deleted; `pyLen`,
-  `pySlice`, `pyStrip` and the rest become the `exact.ts` helpers (RF2)
+  `pySlice`, `pyStrip` and the rest become the `exact.ts` helpers
   where code-point or `isspace` semantics change the bytes, and plain
   string methods where they do not.
 

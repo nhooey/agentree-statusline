@@ -16,7 +16,7 @@ import {
   agentOffsetsOf, agentReadingOf, agentRecordsOf,
   copyAgentFold, foldAgentBytes, inboxDeliveriesOf, inboxSendsOf,
   inboxTally, markedRecordsOf, newAgentFold,
-  transcriptOf, turnsOf, _settled, SETTLE_POLL_S, SETTLE_S,
+  transcriptOf, turnsOf,
 } from "./claude_records.ts";
 import { cmpStr, joinPath, stableJson } from "./exact.ts";
 import {
@@ -432,42 +432,4 @@ export function readTurns(path: string,
     (seen) => agents ?? agentRecords(path, seen, null, foldsIn),
     stateDir === null ? null : agentOffsets(path, stateDir), held,
     agentLabel);
-}
-
-/** readTurns, having waited for the turn being reported to be written.
- *
- * The transcript is NOT flushed in step with the Stop hook: the records the
- * turn just produced can still be missing when it reads, and a turn with no
- * usage record looks like a prompt never answered.  Waiting is the only
- * stateless fix; the file's size gates the re-read, so a wait that spans
- * the whole budget parses it once.  Asynchronous here: the mod's handlers
- * must not block its event loop. */
-export async function readTurnsSettled(path: string, budget = SETTLE_S,
-  poll = SETTLE_POLL_S, agents: readonly AgentRec[] | null = null,
-  held: Map<string, number> | null = null, stateDir: string | null = null,
-  foldsIn: string | null = null): Promise<Turn[]> {
-  let turns = readTurns(path, agents, held, stateDir, foldsIn);
-  if (!budget || _settled(turns)) return turns;
-  const deadline = performance.now() + budget * 1000;
-  let size: number;
-  try {
-    size = fs.statSync(path).size;
-  } catch {
-    return turns;
-  }
-  while (performance.now() < deadline) {
-    await new Promise((ok) => setTimeout(ok, poll * 1000));
-    let grown: number;
-    try {
-      grown = fs.statSync(path).size;
-    } catch {
-      break;
-    }
-    if (grown === size) continue;
-    size = grown;
-    held?.clear();
-    turns = readTurns(path, agents, held, stateDir, foldsIn);
-    if (_settled(turns)) break;
-  }
-  return turns;
 }

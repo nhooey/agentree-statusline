@@ -6,8 +6,9 @@ kind: end-state
 
 # Configuration: one set of options, merged from files and flags
 
-Being built: steps 1 to 6 are done (each has its Status), so both ports
-read the files and draw from them; steps 7 and 8 are the user's, by hand.
+Being built: steps 1 to 7 are done (each has its Status), so the mod
+reads the files and draws from them; step 8, the acceptance check, is the
+user's, live.
 [Options](../../../docs/options.md) is the reference for the flags and the
 files. This document collects the design as it is decided.
 
@@ -619,8 +620,7 @@ and `npm test`.
      decoded strictly with the byte-order mark kept, as Python's
      `open(…, encoding="utf-8")`), starts at `$.session.root()`, and
      checks `usage-source` as Claude's panel does (`agent` `"claude"`;
-     the shared cases run with none). `readConfig` keeps the result
-     (`configNow()`) and logs one line of the files and the keys each
+     the shared cases run with none). `readConfig` logs one line of the files and the keys each
      gave, then one line per warning, to `agentree-statusline.log`. It
      runs once per load, from `start()` in `register.tsx`, not awaited.
      No notice yet: the notice and the re-reads are step 6's.

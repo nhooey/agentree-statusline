@@ -1,7 +1,6 @@
 // The agent panel's inbox counts, read on from a saved fold.
 // state_spec.ts's "inbox-fold" row names the directory and the format;
-// agents/plans/closed/saved-running-totals.md has the design.  The
-// text:
+// docs/layout.md, "Inbox", has the design.  The text:
 //
 //   {"format":N,"seq":S,"files":[[PATH,POS,MTIME,TAIL,SENDS,GOT],...]}
 //

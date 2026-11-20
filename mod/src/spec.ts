@@ -126,9 +126,6 @@ export const E_EFF_XHIGH = "🏃";     // both readouts.  All five single-codepo
 export const E_EFF_MAX = "🚀";       // (the 🎚/🎛 sliders are not, and would shift everything
                                      // to their right by a column on some terminals).
 export const E_STY = "🎨";           // output style
-export const E_SUM = "Σ";            // Greek capital sigma, ONE column — the n-ary summation
-                                     // U+2211 sits inside the 2190-2BFF range this file
-                                     // treats as unmeasurable, and the column matters here
 export const E_WAIT = "🚦";          // time spent waiting: on the status line, for a
                                      // person; on an agent row, for anything that is
                                      // neither the model nor a tool.  A light held at red
@@ -708,7 +705,6 @@ export const RAMPS = {
 // ════════════════════════════════════════════════════════════════════════════
 // Tunables.
 // ════════════════════════════════════════════════════════════════════════════
-export const MAX_ROW = 120;          // max columns of chat text when the width is unknown
 export const MAX_LINE = 165;         // fallback row width when the terminal will not say
 export const MARK_SP = " ";          // what sits between a column-4 mark and its value.
                                      // A space by default, "" under --no-mark-spacing.
@@ -755,36 +751,6 @@ export const RATE_TICK_S = 5.0;      // seconds between two samples of 🧩's to
                                      // the status line's 🛫 and an agent row's measure the
                                      // same eighty seconds.  See sessionRate.
 export const RATE_SAMPLES = 16;
-export const RIGHT_MARGIN = 4;       // columns held empty at the right edge, covering two
-                                     // things neither the payload nor the tty reports.
-                                     // First, the status line is drawn into an Ink box with
-                                     // wrap:"truncate" and that box is narrower than the tty:
-                                     // at 196 reported columns the cut fell at 193.  Second, a
-                                     // column of slack for any glyph a terminal draws wider
-                                     // than it declares.  Erring high is nearly free; erring
-                                     // low gets the clock chopped to "00:15…".
-export const MIN_GAP = 2;            // smallest gap between the left and right groups
-
-// How the left group divides whatever the right group leaves it.  The three
-// names compete for one budget, so a fixed cap each would either waste columns
-// on a short name or crush a long one beside it.  Weights set the share of a
-// contended budget; the same ranking decides who gets the rounding and who
-// gives up a column first when a minimum must be met.  The branch is cut least
-// — it is the shortest and every character is load-bearing.  The path is cut
-// first: longest, most repetitive, and its head is echoed by the project name.
-export const LWT_BRANCH = 3;
-export const LMIN_BRANCH = 6;
-export const LWT_PROJ = 2;
-export const LMIN_PROJ = 6;
-export const LWT_PATH = 2;
-export const LMIN_PATH = 10;
-
-export const LEFT_GAP = 2;           // columns between 📦 project, 📁 path and 🌿 branch
-export const W_STY = 6;              // 🎨 + the style name's first 4 characters
-export const W_MOD = 4;              // the model cell past its icon: the two-character
-                                     // spec and the effort's glyph, "O⁵🐇".  Held whether
-                                     // or not the glyph is drawn, so the 💰 beside it does
-                                     // not move with the effort — see renderModelCost.
 export const VAL_W = 5;              // a metric's first value field: "▴4.8M", "200/s",
                                      // " 115k"
 export const VAL2_W = 6;             // the second field — one wider, because one of them
@@ -862,20 +828,6 @@ export const SHARE_FIG_W = 3;        // column 3's two fields, 🎤 and 🎮 ahe
                                      // fraction of a percent of one prompt's cost is not a
                                      // figure anyone acts on, and rounding it to 0 says the
                                      // same thing in fewer columns.
-export const RST_W = 6;              // the countdown/elapsed field — column 4's LAST, shared
-                                     // by 🔋 🪫 ⌛ so the three durations line up down it.
-                                     // Two columns of mark and four of figure, durFmt's
-                                     // widest at the default three digits ("5.8d").  🔜
-                                     // and 🚦, which holds it on the ⌛ row, both measure
-                                     // two, so the field is one shape on all three rows and
-                                     // begins on one column.
-                                     //
-                                     // It closes the column.  The argument for leading it is
-                                     // real — a countdown asks the same question as the ⌛
-                                     // above it — but that puts the one field that is not a
-                                     // scope in front of the three that are, so the reader
-                                     // crosses it to reach the sequence and the sequence
-                                     // starts a field in from the column's edge.
 export const SEG_GAP = 4;            // columns between adjacent grid cells
 export const SEG_RULE = "|";         // the divider drawn inside that gap, at wide enough
                                      // widths.  ASCII, and not U+2502, which is what a box
@@ -899,7 +851,8 @@ export const SEG_RULE = "|";         // the divider drawn inside that gap, at wi
 export const RULE_MIN = 170;         // narrowest row that still gets the rules.  Set against
                                      // what line 3 owes before a single name is drawn, which
                                      // is measured and not estimated: 105 columns of grid,
-                                     // RIGHT_MARGIN, MIN_GAP and the where-group's own chrome
+                                     // the right margin, the gap between the groups and
+                                     // the where-group's own chrome
                                      // come to 123.  At this width the project, path and
                                      // branch share the 47 that are left, against the 22
                                      // allocateLeft will cut them to at the floor — a bit
@@ -1032,83 +985,15 @@ export const G = 1000000000;
 // the same question the other way.  One readout arguing for the tight form
 // while the other defaults to the spaced one would be the inconsistency, not
 // either form.
-export const C_ELAPSED = 9;  // ⌛🤖 + a duration.  BOTH rows are robot time: this prompt's
-                             // answering time on top, every prompt's answering time summed
-                             // beneath it.  The session's AGE would be the wrong total
-                             // for the bottom row — everything
-                             // else here totals what the prompts above it did, and an age
-                             // totals what the clock did.  The 🤖 says which of the two
-                             // this is, against the status line's ⌛ 🤖 🔧 🚦, where all
-                             // three are on show and two of them are these.  It is the
-                             // status line's 🤖 over the turn: tool and waiting seconds out.
-export const C_TOOL = 7;     // 🔧 + a sign column + a duration: what the ⌛🤖 beside it
-                             // leaves out for time inside a tool, per prompt above and
-                             // summed beneath.  Its own cell and not a second field in
-                             // C_ELAPSED, so the gap before it is the row's C_SEG_GAP and
-                             // the ⌛ stays a mark on 🤖 alone.  No 🚦 beside it: the
-                             // remainder of a turn is a question or an agent it waited on,
-                             // and the receipt reports what the prompt did, not what it
-                             // waited for.
-export const C_STAMP = 13;   // 📅 + "2026-08-22" above 🕐 + a clock padded to the same ten,
-                             // so the date and the time it belongs to share a right edge
 export const C_TOK_TIGHT = 13;       // 🧩 + "▴627k ▾627k" with MARK_SP empty
-
-export const C_CTX = 14;     // 🧠 + "+142k +14.2٪" — growth in tokens, then that growth as a
-                             // share of the window it has to fit in
 export const C_CACHE_TIGHT = 5;      // 🎯 + "97٪" with MARK_SP empty
-
-export const C_COST = 9;     // 💰 + a sign column + moneyCell: three integer columns, one
-                             // fractional so the two rows' points land in one column, and
-                             // one for the unit.  The ninth column is the unit's: three
-                             // integer columns alone cap the row at $999, past which the
-                             // cell overruns and — because only ONE of the two rows carries
-                             // the big figure — the groups come out different widths and the
-                             // 📊 stops stacking.  A fourth integer column buys one decade
-                             // and then faces the same cliff at $9999; the k and M every
-                             // other magnitude on this row already carries cost exactly one
-                             // column whatever the figure.  The fraction stays.  place()
-                             // takes the unit's column out of the label, never out of the
-                             // group.
-                             // The sign column carries "+" on the per-prompt row and a space
-                             // on the totals row, as 🧠 🔋 and 📆 do either side of it: every
-                             // figure on that row is what ONE prompt added to the reading
-                             // beneath it, and 💰 without it would be the one not saying so — the field
-                             // a reader is most likely to mistake for a running total, since
-                             // a dollar figure beside a session's name reads as the bill
 export const C_LIM_TOT_TIGHT = 6;    // " 💳99٪" with MARK_SP empty
 
-export const C_SEG_GAP = 2;  // between adjacent cost-row segments; matches the status line's
-                             // line-3 spacing so the two read as one family
-
-// Columns the CLI spends before the cost row's first character: the box's
-// five-column indent ("  ⎿  ") plus "Stop says: ", which appear nowhere in the
-// hook payload and cannot be measured from here.  docs/layout.md, '"Stop
-// says:" and --force-newline', for what these two figures buy — why the rows ship as
-// ONE systemMessage, and why an unsubtracted chrome shows up as a WRAPPED
-// second line rather than a trailing ellipsis.
-//
-// Neither figure can be derived; both were read off a pasted row, by counting
-// how far its 📊 sat from the screen's left edge and subtracting the leading pad
-// this program had emitted.  A correct stack does not check them: 14 and 3
-// keep the same ELEVEN-column difference and so stack correctly while quietly
-// spending two of RIGHT_MARGIN's four columns.
-export const C_CHROME_LEFT = 16;
-// The same box on a CONTINUATION line: the indent alone.  "Stop says: " is
-// printed against the first line only, so a row below it starts eleven columns
-// further left and needs its own figure, or it right-aligns to a different
-// column than the row above it.
+// Columns the CLI indents each line of a Stop message by, the box's
+// "  ⎿  ": read off a pasted row, by counting how far its 📊 sat from the
+// screen's left edge.  It appears nowhere in the hook payload and cannot be
+// measured from here.
 export const C_CHROME_CONT = 5;
-export const C_RIGHT_MARGIN = 4;     // matches the status line's 4 so the right edges agree.
-                                     // Agreeing takes BOTH constants: the status line ends at
-                                     // cols-4 because nothing precedes it, while this row is
-                                     // inset by the chrome first, so it must end at
-                                     // cols-chrome-4 of its own width to land on the same
-                                     // screen column.
-export const C_MIN_GAP = 4;          // floor between the label and the metrics — the four
-                                     // spaces asked for after the colon.  When even the floor
-                                     // will not fit it is the LABEL that gives way, never the
-                                     // group: a metric that moves when the window narrows is
-                                     // a metric you have to re-find.
 
 // One glyph per row type, riding immediately right of the 📊 that marks the
 // block.  📊 says "this is the cost line"; these say WHICH cost line, so the
@@ -1446,8 +1331,8 @@ export const MODEL_FAMILIES = ["Opus", "Sonnet", "Haiku", "Fable", "Mythos"];
 //
 // One scope per row, one column per metric: the band, the receipt and the
 // agent panel draw these columns in this order on every row.  The design is
-// agents/plans/closed/redesign.md's; mod/tools/layout-mockup.ts draws
-// it from made-up figures.
+// docs/layout.md's "The grid"; mod/tools/layout-mockup.ts draws it from
+// made-up figures.
 // ════════════════════════════════════════════════════════════════════════════
 
 // The five columns Claude Code keeps for the band's [-] button.  The panel's
@@ -1462,13 +1347,9 @@ export const RIGHT_EDGE = 5;
 // The band's labels are their marks, 🤖's with its 📨 count, 7 at most.
 export const LABEL_MIN = 12;
 // The panel's chrome before a row of the session's own, drawn by Claude
-// Code: two blanks, its pointer and one blank, "  ◯ ", measured with the
-// align-probe mod.  A nested row's is a guess: two more blanks
-// per level.
+// Code: two blanks, its pointer and one blank, "  ◯ ", measured.  A nested
+// row's is a guess: two more blanks per level.
 export const PANEL_CHROME = 4;
-// What the panel's payload calls `columns`: the terminal's width less this.
-// Measured: 154 in a 160-column terminal.
-export const PANEL_COLUMNS_SHORT = 6;
 // The deepest nesting the grid keeps room for.  The chrome is kept for this
 // many levels whether any agent runs or not, so the columns follow from the
 // width and --hide alone and do not move when an agent starts; a deeper row
@@ -1483,50 +1364,6 @@ export const GRID_SCOPES = ["account", "turn", "main", "session", "agent"];
 // and `tag.plan.week`, so `*.plan.five_hour` hides 🔋 there too.  Not a
 // row's scope: the tag lines are not on the grid.
 export const TAG_SCOPE = "tag";
-
-// The groups and metrics of a --hide path, scope.group.metric, with * for
-// any one part.  A cell's metric is its column; a label piece's is the part
-// of the label it is.  One renderer draws all three readouts, so one path
-// means the same everywhere.
-export const HIDE_GROUPS = {
-  "plan": [
-    "five_hour",
-    "week",
-    "fable",
-    "opus",
-    "sonnet",
-    "omelette",
-    "oauth_apps",
-    "cowork",
-    "reset",
-  ],                                                    // 🔋 🪫, 🦊 🎼 🎭 🍳
-                                                        //  🔌 🤝 on the 💳
-                                                        //  label, and their
-                                                        //  🔜 there
-  "cost": ["cost", "spend"],                            // 💰, and the
-                                                        //  credit paying
-                                                        //  for it
-  "tokens": ["io", "cache"],                            // 🧩 ▴ ▾, 🎯
-  "context": ["size", "share"],                         // 🧠, and its ٪
-                                                        //  of the window
-  "time": ["elapsed", "eta", "split"],                  // ⌛, ⛳, 🤖 🔧 🚦
-  "work": ["diff"],                                     // 💾
-  "state": ["model", "rate", "kids", "compact", "shells", "monitors", "inbox"],  // model, 🛫, and an
-                                                                                 //  agent's 👶🏻 🤏 💻
-                                                                                 //  📡 📨
-  "chat": ["doing", "progress"],                        // what an agent does,
-                                                        //  and a thread's
-                                                        //  latest progress
-                                                        //  update
-  "workspace": ["project", "branch", "dir", "pr", "style", "name"],  // 📦 🌿 📁 🔀 🎨, and
-                                                                     //  🎮's session
-                                                                     //  name
-  "clock": ["date", "time"],                            // 📅 🕐
-  "name": ["label", "kind", "receipt", "tag"],          // the row's name, an
-                                                        //  agent's kind, the
-                                                        //  receipt's 📊 and
-                                                        //  its 🔺🔖 tag
-};
 
 // The columns, in the order every row draws them.  `key` names the column,
 // `hide` its path under the row's scope, and `gap` the blanks before it: the

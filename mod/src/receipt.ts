@@ -1,7 +1,7 @@
 // The receipt a turn ends with, and the start line under its prompt, from
 // the figures documents.
 //
-// agents/plans/closed/redesign.md has the design ("The receipt"):
+// docs/layout.md has the design ("The receipt"):
 // live, then stamped.  While a turn runs the band draws its 🎤 and 🎮 rows; once the
 // turn's records are in the transcript, the mod stamps them there frozen, a
 // `$.ui.log` line each: a head, 🔺🔖 the turn's tag, the account's limits

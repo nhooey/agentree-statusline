@@ -184,7 +184,6 @@ const RUN: Record<string, (c: Case) => unknown> = {
   read_turns_settled: (c) => turnsWith(c.args[0], c.args[1], null),
   turn_model_s: (c) => cr.turnModelS(c.args[0]),
   turn_times: (c) => cr.turnTimes(c.args[0]),
-  _settled: (c) => cr._settled(c.args[0]),
   open_turn: (c) => cr.openTurn(c.args[0]),
 };
 

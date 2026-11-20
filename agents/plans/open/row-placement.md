@@ -7,7 +7,9 @@ kind: end-state
 # Row placement: each row where it reads best
 
 Approved to build, its nine decisions taken (see [Decided](#decided)).
-Its steps are `RP1` … `RP8` in [the schedule](build-schedule.md).
+Its steps are `RP1` … `RP8` in [The build order](#the-build-order):
+`RP1` to `RP7` are done, and `RP8`, the acceptance check, is the user's,
+live.
 
 ## Why
 
@@ -429,7 +431,7 @@ a trial, the last two are the user's.
    [Acceptance](#acceptance), 🤖 stands above the prompt with 🎤 and 🎮
    rather than under the footer line, and the receipt stamps 🎤, 🤖 and
    🎮 rather than 🎤 alone; every other step reads as written.
-8. **`RP8`, the acceptance check**, live, below.
+8. **`RP8`, the acceptance check**, live, below, by hand with the user.
 
 ## Acceptance
 
@@ -518,5 +520,4 @@ them.
 `mod/hooks/register.tsx`, `mod/src/band.ts`, `mod/src/receipt.ts`,
 `mod/tools/draw-figures.ts`, `mod/mod-tests/band.test.ts`,
 `tests/fixtures/gen/config.py`, `docs/layout.md`, `docs/options.md`,
-`mod/README.md`. `register.tsx` and `band.ts` are changed by several
-steps; see [the schedule](build-schedule.md) for their order.
+`mod/README.md`.

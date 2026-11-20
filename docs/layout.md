@@ -8,7 +8,6 @@ The mod, `agentree-statusline` in [`mod/`](../mod/README.md), draws inside Claud
 The subagent rows, one per subagent, hang in the band's tree, drawn by `agent_row.ts`.
 Every row of all of them has the same columns in the same order, so a figure stands on the same screen column wherever it is drawn.
 Claude Code's own agent panel draws its rows itself.
-Why it is laid out this way is in [the plan it was built from](../agents/plans/closed/redesign.md), and the tree in [The band's tree](../agents/plans/open/one-panel-port.md#the-bands-tree).
 
 All examples below are the programs' own output against the test fixtures (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile), with colour stripped: `usage-dev figures` for the mod's rows, from `tests/fixtures/figures/`, with the subagents of a case of `tests/fixtures/panel/inputs.json` where the tree has some (`--agents`).
 Colour and brightness carry meaning of their own — see [Colour and brightness](#colour-and-brightness).

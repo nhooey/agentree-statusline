@@ -1,7 +1,7 @@
 // Each agent transcript's fold saved as text, so a read goes on from where
 // the last one stopped.  state_spec.ts's "agent-fold" row names the
-// files and the format; agents/plans/closed/saved-running-totals.md
-// has the design.
+// files and the format; docs/accounting.md, "Agent folds", has the
+// design.
 //
 // A fold is claude_records.ts's AgentFold, saved whole as one JSON object
 // to one of two slots in turn, each with a sequence number, since

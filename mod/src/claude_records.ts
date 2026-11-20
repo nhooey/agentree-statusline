@@ -72,8 +72,9 @@ export function cmpTuple(a: readonly number[], b: readonly number[]): number {
 export const W_CACHE_WRITE = 2.0;
 export const W_CACHE_READ = 0.1;
 
-// Opus 5 list price, USD per token, for the cost line's per-prompt figure.
-export const P_IN = 5e-6, P_OUT = 25e-6, P_CR = 0.5e-6, P_CW = 10e-6;
+// Opus 5 list price, USD per token, of output and of a cache read: what a
+// compaction's summary and the context it read are costed at.
+export const P_OUT = 25e-6, P_CR = 0.5e-6;
 
 export type Prices = readonly [number, number, number, number];
 
@@ -2992,20 +2993,4 @@ export function openTurn(turns: readonly Turn[]): Turn | null {
     if (!turns[i].compact && !turns[i].agent) return turns[i];
   }
   return null;
-}
-
-// How long the Stop hook waits for the turn it is about to report to appear
-// in the transcript, and how often it looks: room for the write to land,
-// nowhere near the hook's budget.
-export const SETTLE_S = 1.5;
-export const SETTLE_POLL_S = 0.025;
-
-/** Has the turn being reported billed anything yet?  The last turn that is
- * not a synthetic agents turn, which sorts in by stamp and bills no
- * calls. */
-export function _settled(turns: readonly Turn[]): boolean {
-  for (let i = turns.length - 1; i >= 0; i--) {
-    if (!turns[i].agent) return Boolean(turns[i].calls);
-  }
-  return false;
 }

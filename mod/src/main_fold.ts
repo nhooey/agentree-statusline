@@ -1,6 +1,6 @@
 // The main transcript's two folds saved as text, so a reload reads on
 // from where they stopped.  state_spec.ts's "main-fold" row names the
-// files and the format; agents/plans/closed/saved-running-totals.md
+// files and the format; docs/accounting.md, "State kept between loads",
 // has the design.
 //
 // What never changes once folded is a log, one JSON array a line, tagged

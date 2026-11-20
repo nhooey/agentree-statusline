@@ -101,9 +101,7 @@
    "tests/fixtures/transcripts/status/rounding-boundary.jsonl": "af76c7a5864445f2aed9d358efa75c5aeac4109dcb42ae215db833d4d3b82818",
    "tests/fixtures/transcripts/subagent/01-mixed.jsonl": "2a7aede16224d49b93f28195eb96cee2f198754e813a2d4ca8c958e3a3cca0fc",
    "tests/fixtures/transcripts/subagent/02-parked.jsonl": "2a7aede16224d49b93f28195eb96cee2f198754e813a2d4ca8c958e3a3cca0fc",
-   "tests/fixtures/transcripts/subagent/03-tree.jsonl": "2f8e719c966e779cfd579c694c0a5d0d777a48b21e39dab1d5f24af56cb1272f",
-   "tests/fixtures/transcripts/subagent/04-bare.jsonl": "2a7aede16224d49b93f28195eb96cee2f198754e813a2d4ca8c958e3a3cca0fc",
-   "tests/fixtures/transcripts/subagent/05-empty.jsonl": "2a7aede16224d49b93f28195eb96cee2f198754e813a2d4ca8c958e3a3cca0fc"
+   "tests/fixtures/transcripts/subagent/03-tree.jsonl": "2f8e719c966e779cfd579c694c0a5d0d777a48b21e39dab1d5f24af56cb1272f"
   }
  }
 }

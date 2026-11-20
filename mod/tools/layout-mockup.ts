@@ -6,9 +6,8 @@
 // be looked at in a real terminal before any of it is built.  The status
 // line is gone from it: the band replaces it.
 //
-// The proposal it draws, laid out by src/grid.ts
-// (agents/plans/closed/redesign.md has the design; docs/layout.md
-// has what was built):
+// The proposal it draws, laid out by src/grid.ts (docs/layout.md has
+// what was built):
 //
 // - One column per metric, in one order, on every row of every readout:
 //   model, 🛫, 💰, 🧠, 🧩, 🎯, ⌛ ⛳ 🤖 🔧 🚦, 🔋, 🪫, 💾.  The cells and the

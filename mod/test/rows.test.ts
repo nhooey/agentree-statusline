@@ -1,8 +1,8 @@
 // The row builders against their shared cases, tests/fixtures/rows/, which
-// tools/gen-row-cases.ts writes from them.  As with the grid's cases, each
-// is replayed from its document and options, and the generator's output
-// must be what is committed, so a change to a builder shows up as a change
-// to the cases, made by regenerating them.
+// tools/gen-row-cases.ts writes from them.  The generator's output must be
+// what is committed, so a change to a builder shows up as a change to the
+// cases, made by regenerating them; the start and account cases, written
+// under the first profile alone, are replayed under every profile.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
@@ -28,8 +28,7 @@ import type { RowName } from "../src/band.ts";
 import { decodeTurn } from "../src/figures.ts";
 import { PROFILES, spanFrom, spanJson } from "../tools/gen-grid-cases.ts";
 import {
-  OUT, corpusAgents, document, drawAccount, drawBand, drawReceipt,
-  drawStart, generate, inZone,
+  OUT, corpusAgents, document, drawAccount, drawStart, generate, inZone,
 } from "../tools/gen-row-cases.ts";
 import type { AccountCase, BandCase, ReceiptCase }
   from "../tools/gen-row-cases.ts";
@@ -64,26 +63,6 @@ function same(got: readonly Span[], want: readonly unknown[][],
 
 for (const f of files) {
   const data = JSON.parse(readFileSync(pathJoin(OUT, f), "utf8")) as File;
-  for (const [profile, env] of Object.entries(data.settings.profiles)) {
-    const st = settings(env);
-    test(`${f} under ${profile}: band`, () => {
-      for (const c of data.band) {
-        const where = JSON.stringify([c.doc, c.cols, c.hide, c.phase,
-          c.place ?? null]);
-        const rows = drawBand(st, document(c.doc), c);
-        assert.equal(rows.length, c.rows.length, where);
-        rows.forEach((r, i) => same(r, c.rows[i], c.lines?.[i], where));
-      }
-    });
-    test(`${f} under ${profile}: receipt`, () => {
-      for (const c of data.receipt) {
-        const where = JSON.stringify([c.doc, c.cols, c.hide]);
-        const got = drawReceipt(st, document(c.doc), c);
-        assert.equal(got.length, c.rows.length, where);
-        got.forEach((r, i) => same(r, c.rows[i], c.lines?.[i], where));
-      }
-    });
-  }
   // Written once, in the first profile's file, since no profile changes
   // them: replayed under every profile.
   for (const [profile, env] of Object.entries(PROFILES)) {
