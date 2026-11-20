@@ -118,11 +118,11 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
      ├─ 🎤 🟢 turn  Why does the elapsed row report two…  🧬O⁵🐇  🛫 200   💰 6.4           🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
      ├─ 🎩 🟢 Clover                                      🧬O⁵🐇  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🐇  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ├─ 🤖 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
      ├─ 🔩 🟢 Bluebell                                    🧬So🐌  🤖 333   💰 0.1           🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
      ├─ 📐 🟢 Thistle                                     🧬O⁵🐇  🚦 4.7m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
      ├─ 🐚 🟢 sleep 300 && make test                                                                                             ⌛  2m
-     ╰─ 👥 🟡 Quince                                      🧬O⁵🐇  🥚  30s
+     ╰─ 🤖 🟡 Quince                                      🧬O⁵🐇  🥚  30s
 ```
 
 - **The lines.** `├─` and `╰─` join a row to its parent, `│` carries a parent's line past its children, three columns a level.
@@ -352,11 +352,11 @@ With subagents running between turns (`--phase done --agents corpus/01-mixed`, a
   ╰⊟ 🧵    ⚫ main                                        🧬O⁵🐇           💰  35           🧠 115k  11٪  🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠆⠀ 🔧⠄⠀ 🚦⠶⠄  🔋 3.8٪   🪫 8.45٪
      ├─ 🎩 🟢 Clover                                      🧬O⁵🐇  🤖  13m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍 🟢 Marigold  Running the suite                 🧬O⁵🐇  🔧  11m  💰 0.1           🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ├─ 🤖 🟢 Willow                                      🧬H⁴    🤖 8.3m  💰 0.0           🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
      ├─ 🔩 🟢 Bluebell                                    🧬So🐌  🤖 333   💰 0.1           🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
      ├─ 📐 🟢 Thistle                                     🧬O⁵🐇  🚦 4.7m  💰 0.0           🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
      ├─ 🐚 🟢 sleep 300 && make test                                                                                             ⌛  2m
-     ╰─ 👥 🟡 Quince                                      🧬O⁵🐇  🥚  30s
+     ╰─ 🤖 🟡 Quince                                      🧬O⁵🐇  🥚  30s
 ```
 
 🎤 stays a second after the stamp lands (`CONFIG.receiptHoldMs`), so the turn's figures are never off screen.
@@ -517,9 +517,9 @@ At 160 columns with a right edge of 5, a running agent in each state, finished o
 🔩⚫ Fern                🧬O⁵🐇  ❌  32m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
 🔩⚫ Kale                🧬O⁵🐇  🛑  23m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛1.7m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
 🔍⚫ Elm                 🧬O⁵🐇  💥  18m  💰0.0   🧠 32k  16٪  🧩▴7.1k ▾400   🎯93٪  ⌛ 50s         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
-👥🟡 Quince              🧬O⁵🐇  🥚  30s
+🤖🟡 Quince              🧬O⁵🐇  🥚  30s
 🐚🟢 sleep 300 && make test                                                          ⌛  2m
-👥🟢 Willow             🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+🤖🟢 Willow             🧬H⁴    🤖 8.3m  💰0.0   🧠 10    0٪  🧩▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
 ```
 
 Each row is laid out for the terminal's width and keeps room at its left for a tree's chrome, `  ◯ ` at the top level, four columns, and two more for each level an agent started by another agent sits below it; the row counts the chrome toward its width and does not print it.

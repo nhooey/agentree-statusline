@@ -277,7 +277,7 @@ and `87٪`.
 | `06-interrupted` | an interrupted request with all-zero usage |
 | `07-empty` | an empty file |
 | `08-woken` | turns opened by messages nobody typed (task notifications, peer messages), including a batch where only the second message is answered |
-| `09-agents` | agent files beside the transcript, and a 👥 row for spend the 🎤 row cannot carry; an `Agent` call the first turn waits on, which is in neither ⌛🤖 nor 🔧, and a Bash call in the second |
+| `09-agents` | agent files beside the transcript, and a 🤖 row for spend the 🎤 row cannot carry; an `Agent` call the first turn waits on, which is in neither ⌛🤖 nor 🔧, and a Bash call in the second |
 | `10-turn-id` | the turn tag: a real `promptId` and a `turnIndex` past 9, and the first turn's ids kept off the second's row |
 | `11-turn-id-late` | an opener with no ids, as a queue operation writes it: the tag prints the hash alone |
 

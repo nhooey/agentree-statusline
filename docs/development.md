@@ -122,7 +122,7 @@ them. `usage-dev probe-advance` needs a real terminal tab.
 `tests/probe-advance.sh` in Ghostty and in iTerm2, with the result recorded
 in [Glyphs and terminals](glyphs-and-terminals.md).
 
-- The subagent-row kind marks, `E_KIND_*`: 🔩 🎩 🔍 📐 📚 📟 🍴 👥 🐚 🔗 🌐
+- The subagent-row kind marks, `E_KIND_*`: 🔩 🎩 🔍 📐 📚 📟 🍴 🤖 🐚 🔗 🌐
   🎎. They are `E_*` constants, so the next probe run covers them. A wrong
   width here shifts one subagent row.
 - The agent-row state marks and 👶🏻, `E_PHASE_*`, `E_MODE_*` and `E_KIDS`:
