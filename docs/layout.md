@@ -109,6 +109,7 @@ Each change of the band's widths or of a survey goes to the plugin's log, `band:
 ### The rule
 
 The band's first row above the prompt is a rule, `─` from the terminal's left edge across the band's columns (its `bodyColumns`), with Claude Code's `[-]` in the five columns after it, over 🎮 and the rest of the tree.
+The plugin puts its row at the top of the band, above every other plugin's, so the rule is the band's top edge; a later `AbovePromptList` hook in the chain can still reorder the rows.
 
 - **Its colour** is the session's, its latest `agent-color` record (`/color`), as Claude Code draws that colour: the key of Claude Code's theme for it, `red_FOR_SUBAGENTS_ONLY` for `red`, and the same for `blue`, `green`, `yellow`, `purple`, `orange`, `pink` and `cyan`, so it follows the person's theme.
   With no colour, or `/color default`, it is the prompt box's border colour, the theme's `promptBorder`, so the rule matches the prompt box under it.
