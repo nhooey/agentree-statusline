@@ -93,6 +93,7 @@ The windows that reset at the same time are a group, led by one 🔜 and the tim
 A hidden window leaves its group, and a group with no window left leaves its 🔜: with 🔋 hidden, `💳 🔜 1.9d 🪫 87٪ 🦊 4٪`.
 A window the source does not give is not drawn.
 A reading 10 minutes old or more has each share followed by 🧊 and its age, `🔜 1.9d 🪫 87٪ 🧊3h`, in the text rather than a colour, since [the footer's tail](#the-footers-tail) draws in Claude Code's one style.
+A window kept from an older reading beside a fresh one, as the plugin keeps 🦊 beside Claude Code's own week (see [Usage sources](usage-sources.md#the-plans-windows-under-the-plugin)), is marked by its own age alone: `🪫 87٪ 🦊 6٪ 🧊11m`.
 It draws nothing in the columns: its figures are the plan's own, read from the configured [usage source](usage-sources.md), and can include use from other machines, the web and the phone.
 Both shares take three digits, so 🪫 reads `87٪` as 🔋 does, and so does each window after it.
 Too wide for its row, it sheds 🎨, then 🔀, then 📁, then 📅, then 🕐, then the windows' 🔜, and only then is cut with `…`; the windows themselves are never shed.

@@ -814,6 +814,11 @@ const HTTP_SOURCES = ["anthropic-admin", "experimental-claude-oauth"];
 // No lock is taken around the refresh: Node has no flock, and the cost of
 // two refreshes racing is one extra tracker read.
 //
+// `side`, which the plugin alone passes, in place of `preferred` once that
+// is too old to stand over the native reading: the windows of it the
+// native reading never has, drawn beside whatever was collected
+// (withSideWindows).
+//
 // Each window of the reading is at the highest the account has read for it
 // (accountHigh).
 export async function collect(agent: string, spec: string | null,
@@ -822,11 +827,41 @@ export async function collect(agent: string, spec: string | null,
                               fetch: Fetch, env: Env = {},
                               configAccount: AccountOf = () => "",
                               claudeFallback = "claude-usage-tracker",
-                              preferred: Reading | null = null):
+                              preferred: Reading | null = null,
+                              side: Reading | null = null):
     Promise<Reading> {
-  return accountHigh(agent, await collectOne(agent, spec, account, period,
-    context, now, store, fetch, env, configAccount, claudeFallback,
-    preferred), now, store);
+  const one = await collectOne(agent, spec, account, period, context, now,
+    store, fetch, env, configAccount, claudeFallback, preferred);
+  return accountHigh(agent, withSideWindows(one, side, now), now, store);
+}
+
+/** `reading` with each window of `side` it lacks, by bucket id and window
+ * id, that resets after `now`, added to its bucket of the same id: the
+ * plugin's last answer from the account's usage endpoint, too old to
+ * stand over the native reading, kept for the windows the native one
+ * never has.  Each added window keeps its own `as_of`, so its age can be
+ * told from the reading's.  A reading with none takes `side`'s windows
+ * alone. */
+export function withSideWindows(reading: Reading, side: Reading | null,
+                                now: number): Reading {
+  if (side === null || !hasReading(side)) return reading;
+  const base: Reading = hasReading(reading) ? reading
+    : { ...side, buckets: [] };
+  const buckets = (base.buckets as Dict[]).map((b): Dict =>
+    ({ ...b, windows: [...b.windows as Dict[]] }));
+  for (const from of side.buckets as Dict[]) {
+    const into = buckets.find((b) => b.id === from.id);
+    const ids = new Set((into?.windows as Dict[] | undefined ?? [])
+      .map((w) => w.id));
+    const added = (from.windows as Dict[]).filter((w) => {
+      const reset = number(w.resets_at);
+      return !ids.has(w.id) && reset !== null && reset > now;
+    }).map((w) => ({ ...w }));
+    if (!added.length) continue;
+    if (into === undefined) buckets.push({ ...from, windows: added });
+    else (into.windows as Dict[]).push(...added);
+  }
+  return { ...base, buckets };
 }
 
 // A plan window's use only rises until it resets, so the highest any

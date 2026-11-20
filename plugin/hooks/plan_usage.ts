@@ -11,15 +11,24 @@
 //
 // The ask is never on a document's path: a document takes the reading
 // kept, and an ask that is due starts after it, whose answer the next
-// document takes.  The reading is kept in `$.store`, under the signed-in
-// account, so every session on the account shares one ask a minute.
+// document takes.  The reading is kept in a file in the state directory
+// (state_spec.ts's plan-usage kind), one per signed-in account, so every
+// session on the account shares one ask a minute, one failure's wait and
+// one reading.  Not in `$.store`: Claude Code gives each install of the
+// plugin a store of its own, so a session started with `--plugin-dir` and
+// one of the marketplace install would each keep their own and both ask.
 //
-// `$.store` has no compare-and-set, so two sessions that look at it
-// together could both ask.  The ask is taken under a lock directory in the
-// state directory instead, made with `mkdir`, which is atomic across
-// processes: the session whose `mkdir` lands asks, and the others take its
-// answer from the store a minute later.  A lock older than
+// Two sessions that look at the file together could both ask, so the ask
+// is taken under a lock directory beside it, made with `mkdir`, which is
+// atomic across processes: the session whose `mkdir` lands asks, writes
+// the file whole through a temporary file renamed over it, and the others
+// take its answer from the file a minute later.  A lock older than
 // PLAN_USAGE_LOCK_STALE seconds is a session's that died holding it.
+//
+// Past PLAN_USAGE_FRESH, Claude Code's own reading stands in for the plan's
+// windows; the windows it never has, the Fable week and the other
+// per-model ones, are still drawn from the last answer until each one's
+// own reset (sideWindows).
 //
 // Claude Code's own reading of the plan's week comes with every response,
 // so it moves first when the week does, as when the limit is reset.  Where
@@ -30,11 +39,13 @@
 import type { EngineInterface } from 'claude-code'
 
 import { claudeOauthReading, oauthLimitWindows } from '../src/sources.ts'
-import { parseJson } from '../src/exact.ts'
+import { parseJson, stableJson } from '../src/exact.ts'
 import type { Reading } from '../src/sources.ts'
 import { isDict, pyGet } from '../src/py.ts'
+import type { Dict } from '../src/py.ts'
 import { sha256Hex } from '../src/sha256.ts'
-import { placesOf, runVia } from './engine.ts'
+import { statePath } from '../src/state.ts'
+import { placesOf, readText, runVia, writeAtomicVia } from './engine.ts'
 import { log } from './log.ts'
 
 type $ = EngineInterface
@@ -51,7 +62,7 @@ export const PLAN_USAGE_BACKOFF = 120
 export const PLAN_USAGE_BACKOFF_MAX = 3600
 export const PLAN_USAGE_RETRY_MAX = PLAN_USAGE_BACKOFF_MAX
 /** Seconds an ask is waited for before it counts as failed: under
- * PLAN_USAGE_LOCK_STALE, so the failure's wait is in the store before
+ * PLAN_USAGE_LOCK_STALE, so the failure's wait is in the file before
  * another session can take the lock over. */
 export const PLAN_USAGE_TIMEOUT = 20
 /** Seconds after which a lock directory is taken as abandoned. */
@@ -63,11 +74,41 @@ export const PLAN_USAGE_FRESH = 7 * 60
  * disagreeing with the one kept, makes ahead of the minute. */
 export const PLAN_USAGE_RECHECK_GAP = 30
 
-/** What `$.store` keeps per account: the reading, when it was asked for,
- * and, after a failure, how many failed in a row and when the next ask may
- * be. */
+/** What the plan-usage file keeps per account: the reading, when it was
+ * asked for, and, after a failure, how many failed in a row and when the
+ * next ask may be. */
 export type Kept = { reading?: Reading; fetched_at?: number;
   retry_at?: number; failures?: number }
+
+/** What planUsageVia gives a document: the reading, while fresh, which
+ * stands over Claude Code's own; else, past PLAN_USAGE_FRESH, the windows
+ * of the last one that Claude Code's own never has (sideWindows), to draw
+ * beside it; each null for none. */
+export type PlanUsage = { reading: Reading | null; side: Reading | null }
+
+/** The windows Claude Code's own reading gives: the plan's five hours and
+ * its week. */
+export const NATIVE_WINDOWS: readonly string[] = ['five_hour', 'seven_day']
+
+/** The windows of the reading `reading`, asked for at `at`, that Claude
+ * Code's own never has (NATIVE_WINDOWS), each that resets after `now`,
+ * stamped with `as_of`, `at`, so the 💳 row can tell their age from the
+ * rest; null where none is left.  A window with no reset is not kept: its
+ * end is not known. */
+export function sideWindows(reading: Reading | undefined, at: number,
+  now: number): Reading | null {
+  const buckets = isDict(reading) ? pyGet(reading, 'buckets') : null
+  const kept = (Array.isArray(buckets) ? buckets : []).flatMap((b) => {
+    const windows = isDict(b) ? pyGet(b, 'windows') : null
+    const left = (Array.isArray(windows) ? windows : []).filter((w) => {
+      const reset = isDict(w) ? finite(pyGet(w, 'resets_at')) : null
+      return isDict(w) && !NATIVE_WINDOWS.includes(String(pyGet(w, 'id'))) &&
+        reset !== null && reset > now
+    }).map((w) => ({ ...w as Dict, as_of: at }))
+    return left.length ? [{ ...b as Dict, windows: left }] : []
+  })
+  return kept.length ? { ...reading, as_of: at, buckets: kept } : null
+}
 
 /** The plan's week as two readings are compared by: its used percent and
  * its reset, in seconds since the epoch, null where not known. */
@@ -152,7 +193,7 @@ type Handle = NonNullable<Awaited<ReturnType<$['session']['authorize']>>>[
 const plan = {
   key: '',
   kept: {} as Kept,
-  // When the store was last looked at, in seconds; null before the first.
+  // When the file was last looked at, in seconds; null before the first.
   checkedAt: null as number | null,
   asking: false,
   // The window keys last logged, and each failure logged, so each is
@@ -197,13 +238,14 @@ export function windowLine(
     (w.empty.length ? ' · no reading: ' + w.empty.join(' ') : '')
 }
 
-/** The account's plan windows as last asked for, while fresh, else null;
- * and, once PLAN_USAGE_EVERY has passed since the store was last looked
- * at, or sooner where Claude Code's own week `native` disagrees with the
- * kept one (recheckDue), an ask started behind it.  `who` is the
- * signed-in account. */
+/** The account's plan windows as last asked for, while fresh, else the
+ * windows of them Claude Code's own reading lacks (PlanUsage); and, once
+ * PLAN_USAGE_EVERY has passed since the file was last looked at, or sooner
+ * where Claude Code's own week `native` disagrees with the kept one
+ * (recheckDue), an ask started behind it.  `who` is the signed-in
+ * account. */
 export function planUsageVia($: $, who: string, now: number,
-  native: Week | null = null): Reading | null {
+  native: Week | null = null): PlanUsage {
   const key = 'plan-usage:' + (who || 'default')
   if (key !== plan.key) {
     plan.key = key
@@ -240,8 +282,12 @@ export function planUsageVia($: $, who: string, now: number,
     })
   }
   const at = plan.kept.fetched_at
-  return plan.kept.reading && typeof at === 'number' &&
-    now - at < PLAN_USAGE_FRESH && now >= at ? plan.kept.reading : null
+  if (!plan.kept.reading || typeof at !== 'number') {
+    return { reading: null, side: null }
+  }
+  return now - at < PLAN_USAGE_FRESH && now >= at
+    ? { reading: plan.kept.reading, side: null }
+    : { reading: null, side: sideWindows(plan.kept.reading, at, now) }
 }
 
 /** The answer this load asked for within `within` seconds of `now`, for
@@ -268,7 +314,7 @@ export function retryAfter(value: string | undefined, now: number):
  * `since`. */
 type Recheck = { since: number; native: Week }
 
-/** Whether the store's reading `kept` answers the recheck `r`: it was
+/** Whether the file's reading `kept` answers the recheck `r`: it was
  * asked for at or after the week was seen, or it agrees with the week, as
  * when another session's recheck asked for it first. */
 function answers(kept: Kept, r: Recheck): boolean {
@@ -277,13 +323,38 @@ function answers(kept: Kept, r: Recheck): boolean {
     (held !== null && !weeksDisagree(r.native, held))
 }
 
-/** The store's reading for `key`, and whether it is fresh: another
+/** The plan-usage file for `key`, `plan-usage:<account>`, in the state
+ * directory. */
+async function keptPath($: $, key: string): Promise<string> {
+  return statePath((await placesOf($)).stateDir, 'plan-usage', key)
+}
+
+/** What the plan-usage file for `key` keeps; nothing where there is no
+ * file or it does not parse. */
+async function readKept($: $, key: string): Promise<Kept> {
+  const text = await readText($, await keptPath($, key))
+  if (text === null) return {}
+  try {
+    const kept = parseJson(text)
+    return isDict(kept) ? kept as Kept : {}
+  } catch {
+    return {}
+  }
+}
+
+/** `kept` written whole to the plan-usage file for `key`, while the ask's
+ * lock is held; a failed write leaves the last one, which the next ask
+ * reads. */
+async function writeKept($: $, key: string, kept: Kept): Promise<void> {
+  await writeAtomicVia($, await keptPath($, key), stableJson(kept))
+}
+
+/** The file's reading for `key`, and whether it is fresh: another
  * session asked within the minute, or, for the recheck `recheck`, it
  * answers that (answers); or a failure's wait is not over. */
 async function keptIfFresh($: $, key: string, now: number,
   recheck: Recheck | null): Promise<{ kept: Kept; fresh: boolean }> {
-  const stored = await $.store.get(key).catch(() => undefined)
-  const kept: Kept = isDict(stored) ? stored as Kept : {}
+  const kept = await readKept($, key)
   const fetched = kept.fetched_at
   const fresh = (typeof fetched === 'number' && now >= fetched &&
       (recheck === null ? now - fetched < PLAN_USAGE_EVERY
@@ -312,12 +383,12 @@ async function takeLock($: $, dir: string, now: number): Promise<boolean> {
   return made()
 }
 
-/** planUsageVia's ask: the store's reading where another session asked
+/** planUsageVia's ask: the file's reading where another session asked
  * within the minute or a failure's wait is not over, else, under the lock,
  * the endpoint's answer, kept; a failure logged once and waited out by
  * every session, for a wait that doubles with each failure in a row, or
  * for the answer's `Retry-After` where that is longer.  A recheck,
- * `recheck`, takes the store's reading only where it answers it. */
+ * `recheck`, takes the file's reading only where it answers it. */
 async function ask($: $, key: string, now: number, recheck: Recheck | null):
   Promise<void> {
   const first = await keptIfFresh($, key, now, recheck)
@@ -371,7 +442,7 @@ async function askHeld($: $, key: string, now: number, handle: Handle,
       await log($, keys)
     }
     plan.kept = { reading: claudeOauthReading(raw, now), fetched_at: now }
-    await $.store.set(key, plan.kept)
+    await writeKept($, key, plan.kept)
   } catch (err) {
     const what = err instanceof Error ? err.message : String(err)
     if (!plan.errors.has(what)) {
@@ -379,6 +450,6 @@ async function askHeld($: $, key: string, now: number, handle: Handle,
       await log($, 'plan usage failed: ' + what)
     }
     plan.kept = { ...kept, retry_at: now + wait, failures }
-    await $.store.set(key, plan.kept).catch(() => {})
+    await writeKept($, key, plan.kept)
   }
 }

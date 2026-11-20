@@ -167,8 +167,10 @@ With `plan-usage` on, the default, the plugin asks the account's usage endpoint 
 - **Only for a signed-in subscription.** With no first-party credential (a third-party provider, a gateway, no login) or with an API key, nothing is asked.
   With `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set, Claude Code refuses the request.
 - **Never on a drawing's path.** Each status document takes the reading kept, and an ask that is due starts after it, whose answer the next document takes.
-  The reading is kept in the plugin's store under the signed-in account, so every session on the account shares the minute's ask.
-- **One session asks at a time.** The ask is made under a lock directory, `plan-usage-<hash>.lock` in the state directory, which `mkdir` makes atomically: the session that makes it asks, and the others take its answer from the store.
+  The reading is kept in a file in the state directory, `claude-plan-usage-<hash>.cache`, one per signed-in account, with when it was asked for and any failure's wait.
+  Every session on the account shares it, whichever install of the plugin runs it: a session started with `--plugin-dir` and one of the marketplace install share one reading, one ask a minute and one wait after a failure.
+  It is not kept in the plugin's `$.store`, since Claude Code gives each install a store of its own.
+- **One session asks at a time.** The ask is made under a lock directory beside the file, `plan-usage-<hash>.lock`, which `mkdir` makes atomically: the session that makes it asks and writes the file whole, through a temporary file renamed over it, and the others take its answer from the file.
   A lock left for over 30 seconds, by a session that died holding it, is taken over.
 - **Sooner when Claude Code's own week disagrees.** Claude Code's `seven_day` comes with every response, so it moves first when the week does, as when the limit is reset.
   Where its percent, rounded to a whole one, differs from the kept reading's, or its reset is a minute or more from the kept reading's, the ask is made at the next document instead of at the minute's end, the Fable window and the others with it.
@@ -179,6 +181,9 @@ With `plan-usage` on, the default, the plugin asks the account's usage endpoint 
   A model is told by a display name equal to the word or a model id holding it, as Claude Usage.app tells it.
   The list's other entries, the session's and the plan's week, are left to the keys.
 - **Drawn under `auto` over Claude Code's own reading** while it is at most seven minutes old; past that, `auto` goes on as above.
+  The windows Claude Code's own reading never has, the Fable week and the per-model weeks, are still drawn from the last answer past the seven minutes, each until its own reset, so a run of failed asks does not take 🦊 off the 💳 row; the five-hour window and the plan's week are not.
+  Once such a window is ten minutes old, 🧊 and its age follow its figure, as for a whole reading gone cold.
+  The next answer stands over them all again.
 - **A failed ask** keeps the last reading, is written to `agentree-statusline.log` once per distinct failure (`plan usage failed: HTTP 429`), and the next ask, from any session on the account, waits: two minutes after the first failure in a row, doubling with each failure after it up to an hour, or as long as the answer's `Retry-After` says where that is longer.
   An answer ends the run.
   An ask with no answer in 20 seconds counts as failed.

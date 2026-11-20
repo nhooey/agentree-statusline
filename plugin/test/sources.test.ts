@@ -12,7 +12,7 @@ import * as path from "node:path";
 import {
   accountHigh, cachedReading, claudeOauthReading, creditsReading, cacheName, claudeUsageTracker, commandReading, epoch,
   hasReading, isCacheName, nativeReading, normalise, number, periodBounds,
-  HIGHS_PERIOD, HIGHS_SOURCE, oauthLimitWindows,
+  HIGHS_PERIOD, HIGHS_SOURCE, oauthLimitWindows, withSideWindows,
 } from "../src/sources_node.ts";
 import { parseJson } from "../src/exact.ts";
 import type { Dict } from "../src/sources_node.ts";
@@ -376,6 +376,42 @@ test("each window reads at the highest the account has given for it", async () =
                               reset + 1)), 1);
   files[key("claude", HIGHS_SOURCE, other, HIGHS_PERIOD)] = { windows: [1] };
   assert.equal(pct(await high(weekly(3, reset, { account_id: other }))), 3);
+});
+
+test("withSideWindows adds only the windows the reading lacks, each " +
+     "until its own reset, with its own as_of", () => {
+  const now = 1793786000, old = now - 900;
+  const win = (id: string, pct: number, reset: number | null,
+               extra: Dict = {}): Dict => ({ id, duration_seconds: 604800,
+    used_percent: pct, resets_at: reset, ...extra });
+  const reading = (as_of: number, windows: Dict[]): Dict => ({
+    schema_version: 1, as_of, source: "native",
+    buckets: [{ id: "default", label: "default", windows }] });
+  const native = reading(now, [win("seven_day", 87, now + 86400)]);
+  const side = reading(old, [
+    win("seven_day_overage_included", 6, now + 600, { as_of: old }),
+    win("seven_day_omelette", 3, now - 1, { as_of: old }),
+    win("seven_day_opus", 2, null, { as_of: old }),
+    win("seven_day", 24, now + 86400, { as_of: old })]);
+  const ids = (r: Dict) => ((r.buckets as Dict[])[0].windows as Dict[])
+    .map((w) => [w.id, w.used_percent, w.as_of ?? null]);
+  const merged = withSideWindows(native, side, now);
+  // The native week stands; the Fable week is added with its own as_of;
+  // the one past its reset, and the one with none, are not.
+  assert.deepEqual(ids(merged), [["seven_day", 87, null],
+    ["seven_day_overage_included", 6, old]]);
+  assert.equal(merged.as_of, now);
+  assert.deepEqual(ids(native), [["seven_day", 87, null]],
+                   "the reading given is not changed");
+  assert.equal(withSideWindows(native, null, now), native);
+  // Past the Fable week's reset, nothing is added.
+  assert.deepEqual(ids(withSideWindows(native, side, now + 600)),
+                   [["seven_day", 87, null]]);
+  // A reading with none takes the side's windows, and its as_of.
+  const alone = withSideWindows({}, side, now);
+  assert.equal(alone.as_of, old);
+  assert.deepEqual(ids(alone).map(([id]) => id),
+                   ["seven_day_overage_included", "seven_day"]);
 });
 
 test("every case ran", () => {

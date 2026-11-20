@@ -97,4 +97,18 @@ export const STATE_KINDS = {
     "format": 1,
     "check_bytes": 4096,
   },
+  // The plan's windows the plugin last asked the account's usage endpoint
+  // for (hooks/plan_usage.ts): the reading, when it was asked for and,
+  // after a failure, how many failed in a row and when the next ask may
+  // be, as JSON.  One file per signed-in account, its key
+  // `plan-usage:<account>` (planUsageVia), shared by every session
+  // and every install of the plugin, written whole through a temporary
+  // file renamed over it while the ask's lock is held.  Bump the format
+  // whenever what is kept changes.
+  "plan-usage": {
+    "prefix": "claude-plan-usage-",
+    "key": ["account"],
+    "suffix": ".cache",
+    "format": 1,
+  },
 };

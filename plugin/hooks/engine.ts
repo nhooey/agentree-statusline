@@ -237,6 +237,26 @@ export async function writeText($: $, path: string, text: string): Promise<boole
   }
 }
 
+/** The shell script writeAtomicVia runs, `sh -c` with the path as `$1`
+ * and the text on stdin. */
+export const ATOMIC_WRITE_SH = 'umask 077 && t="$1.$$" && cat > "$t" && ' +
+  'mv -f -- "$t" "$1" || { rm -f -- "$t"; exit 1; }'
+
+/** A whole file written so no reader sees it torn: `$.fs.write` truncates
+ * and then writes, and holds 4 MiB at most, so the text goes through the
+ * shell's stdin to a temporary file beside `path`, renamed over it.
+ * False where it could not be written. */
+export async function writeAtomicVia($: $, path: string, text: string):
+  Promise<boolean> {
+  try {
+    const r = await runVia($, ['/bin/sh', '-c', ATOMIC_WRITE_SH, 'sh', path],
+      { stdin: text, timeoutMs: 30_000 })
+    return r.exitCode === 0
+  } catch {
+    return false
+  }
+}
+
 
 // The transcript transcriptPath last found, and the session id it found
 // it for: a /clear or a /resume in the same process moves the session on,

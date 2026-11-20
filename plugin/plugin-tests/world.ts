@@ -9,7 +9,7 @@ import type { On, RenderElement } from 'claude-code'
 
 import { CALIB, FILES, NOW, TRACKER } from './fixtures.gen.ts'
 import { DEFAULTS_TEXT, isDefaults } from './defaults.ts'
-import { fromBase64 } from '../hooks/engine.ts'
+import { ATOMIC_WRITE_SH, fromBase64 } from '../hooks/engine.ts'
 import type { Dict } from '../src/py.ts'
 
 export const HOME = '/home/fixture'
@@ -212,6 +212,15 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     }
     if (prog === '/bin/rmdir' && path.endsWith('.lock')) {
       made.delete(path)
+      const ok: Ran = { exitCode: 0, stdout: '', stderr: '',
+        isStdoutTruncated: false, isStderrTruncated: false }
+      return { value: ok }
+    }
+    // writeAtomicVia's write of the plan-usage file, the one state file
+    // these tests read back through it.
+    if (prog === '/bin/sh' && e.argv[2] === ATOMIC_WRITE_SH &&
+        /\/claude-plan-usage-[0-9a-f]{64}\.cache$/.test(path)) {
+      files.set(path, encoder.encode(e.init?.stdin ?? ''))
       const ok: Ran = { exitCode: 0, stdout: '', stderr: '',
         isStdoutTruncated: false, isStderrTruncated: false }
       return { value: ok }
