@@ -67,6 +67,24 @@
           };
         in
         {
+          # The mod as the engine loads it: its manifest, hooks, sources,
+          # state contract and defaults, without its tests, tools or
+          # node_modules.  A session started with `--plugin-dir result-mod`
+          # runs this build, so an edit under mod/ reaches it only after
+          # `mod-build` and /reload-plugins.
+          packages.mod = pkgs.runCommand "agentree-statusline-mod" {
+            src = pkgs.lib.fileset.toSource {
+              root = ./mod;
+              fileset = pkgs.lib.fileset.unions [
+                ./mod/.claude-plugin/plugin.json
+                ./mod/defaults
+                ./mod/hooks
+                ./mod/src
+                ./mod/types
+              ];
+            };
+          } "cp -R $src $out";
+
           # Repo-specific packages and commands, merged onto the module's.
           devshells.default = {
             packages = [
@@ -92,6 +110,13 @@
                 name = "usage-dev";
                 help = "test, generate, draw and update: usage-dev --list names each command";
                 command = ''python3 "$PRJ_ROOT/tools/usage-dev.py" "$@"'';
+              }
+
+              {
+                category = "dev";
+                name = "mod-build";
+                help = "build the mod a `--plugin-dir result-mod` session loads, then /reload-plugins there; new files need `git add` first";
+                command = ''nix build "$PRJ_ROOT#mod" --out-link "$PRJ_ROOT/result-mod"'';
               }
 
               # test
