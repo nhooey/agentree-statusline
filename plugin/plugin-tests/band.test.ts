@@ -134,9 +134,28 @@ async function mountBand($: any, surface: 'terminal' | 'desktop',
   // Claude Code's line, the blank row under it, then the 💳 row.
   const skip = OPTIONS.accountPlace === 'row' &&
     OPTIONS.rows.account.place === 'footer' ? 3 : 1
+  // Above the prompt, the rule over the tree, which bandLines does not
+  // draw (the rule's own tests are under "the band above the prompt opens
+  // on a rule").
+  const tree = (rows: (Drawn | string)[]) => rows.length && isRule(rows[0])
+    ? rows.slice(1) : rows
   return { above, hint, drawn: async () => ({ type: 'Box',
-    children: [...rowsOf(await drawnOf(above), 0),
+    children: [...tree(rowsOf(await drawnOf(above), 0)),
       ...rowsOf(await drawnOf(hint), skip)] }) }
+}
+
+/** Whether `el` is the rule `band-rule` draws over the band's tree: a
+ * Text of `─` alone. */
+function isRule(el: Drawn | string): boolean {
+  return typeof el !== 'string' && el.type === 'Text' &&
+    /^─+$/u.test((el.children ?? []).join(''))
+}
+
+/** The rows of the band above the prompt mounted in `ui`, as drawnRows
+ * gives them, without the rule over its tree: the rows bandLines draws. */
+async function treeRowsOf(ui: { drawn: () => Promise<unknown> }) {
+  const rows = await drawnRows(ui)
+  return rows.length && /^─+$/u.test(rows[0].text) ? rows.slice(1) : rows
 }
 
 const BAND: RenderPropsOf['AbovePrompt'] = {
@@ -1297,7 +1316,7 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(text(above[0])).toMatch(/^ *⊟ 🎮 +📦/u)
   expect(text(above[1])).toMatch(/^ *╰⊟ 🧵/u)
   expect(text(above[2])).toMatch(/^ *   ╰─ 🎤/u)
-  expect(await drawnRows(ui.above)).toEqual(expected(above))
+  expect(await treeRowsOf(ui.above)).toEqual(expected(above))
   // The 💳 row alone under the footer line, a row of its own by default,
   // without the 📦 🌿 🔀 the tree's root draws.
   const rooted = rootDrawn(OPTIONS.rows.session.place,
@@ -1379,7 +1398,7 @@ test('the main thread\'s open background shell is in the document and ' +
       start: Date.parse(stamp) / 1000, command: 'make docs ⏎ && open site',
       output: SHELL_OUTPUT }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
-  const rows = (await drawnRows(ui.above)).map((r) => r.text)
+  const rows = (await treeRowsOf(ui.above)).map((r) => r.text)
   expect(rows.some((r) => /^ *   [├╰]─ 💻 +🟢 Build the docs /u.test(r)))
     .toBe(true)
 })
@@ -1410,7 +1429,7 @@ test('a shell that closed stays drawn, ended, for finished-within, and ' +
     command: 'make docs ⏎ && open site', output: SHELL_OUTPUT,
     end: NOW - 2 }])
   const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
-  const shell = async () => (await drawnRows(ui.above))
+  const shell = async () => (await treeRowsOf(ui.above))
     .some((r) => /💻 +⚫ Build the docs/u.test(r.text))
   expect(await shell()).toBe(true)
   // The clock alone moves it on: no document is read before it goes.
@@ -1446,7 +1465,7 @@ for (const cols of [80, 120, 160]) {
     await start($, w, 'terminal', STATUS)
     const ui = await mountBand($, 'terminal',
       { ...BAND, isWorking: true, bodyColumns: cols - 5 })
-    const above = await drawnRows(ui.above)
+    const above = await treeRowsOf(ui.above)
     const session = above.find((r) => r.text.includes('🎮'))
     const main = above.find((r) => r.text.includes('🧵'))
     expect(session).toBeDefined()
@@ -1672,6 +1691,98 @@ test('🎮 draws the session\'s name off its transcript in its colour, the ' +
       live: LIVE, places: PLACES, ...AGENTS, place: 'above',
       indent: INSET })[0])).not.toContain('Renamed')
 })
+
+/** The rule `band-rule` draws as the band's first row above the prompt:
+ * `─` across the band's columns, in `colour`, a key of Claude Code's
+ * theme. */
+const ruleRow = (colour: string) => ({ text: '─'.repeat(BAND.bodyColumns),
+  colours: [colour] })
+
+/** The band above the prompt while a turn runs, mounted, with `props`
+ * over BAND's. */
+async function bandAbove($: any,
+  props: Partial<RenderPropsOf['AbovePrompt']> = {}) {
+  return $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
+    component: 'AbovePrompt', props: { ...BAND, isWorking: true, ...props } })
+}
+
+/** The tree's rows the band above the prompt should draw while a turn
+ * runs, off the last document. */
+function treeWant(w: World) {
+  return expected(bandLines(BAND_ST, lastDoc(w), COLS, HIDE, { rate: null,
+    phase: 'running', live: LIVE, places: PLACES, ...AGENTS,
+    place: 'above', indent: INSET }))
+}
+
+test('the band above the prompt opens on a rule in the session\'s ' +
+  '/color as Claude Code draws it, and a new /color recolours it',
+  async ($, on) => {
+    const w = world(on)
+    const path = await start($, w, 'terminal', STATUS)
+    append(w, path, [
+      { type: 'agent-color', agentColor: 'blue', sessionId: SESSION }])
+    await w.clock.advance(CONFIG.tickMs)
+    await settle()
+    expect((lastDoc(w).transcript as Dict).session_color).toBe('blue')
+    // The tree under it is drawn at the plugin's clock, which the tick has
+    // moved past the document's, so only its rows are counted here.
+    const mounted = await bandAbove($)
+    const ruled = await drawnRows(mounted)
+    expect(ruled[0]).toEqual(ruleRow('blue_FOR_SUBAGENTS_ONLY'))
+    expect(ruled.length).toBe(treeWant(w).length + 1)
+    // A /color mid-session: the next draw is in the new colour.
+    append(w, path, [
+      { type: 'agent-color', agentColor: 'pink', sessionId: SESSION }])
+    await w.clock.advance(CONFIG.tickMs)
+    await settle()
+    expect((await drawnRows(mounted))[0])
+      .toEqual(ruleRow('pink_FOR_SUBAGENTS_ONLY'))
+    // `/color default` takes the colour away: the prompt box's border's.
+    append(w, path, [
+      { type: 'agent-color', agentColor: 'default', sessionId: SESSION }])
+    await w.clock.advance(CONFIG.tickMs)
+    await settle()
+    expect((await drawnRows(mounted))[0]).toEqual(ruleRow('promptBorder'))
+  })
+
+test('with no /color the rule is the prompt box\'s border colour',
+  async ($, on) => {
+    const w = world(on)
+    await start($, w, 'terminal', STATUS)
+    expect((lastDoc(w).transcript as Dict).session_color ?? '').toBe('')
+    expect(await drawnRows(await bandAbove($)))
+      .toEqual([ruleRow('promptBorder'), ...treeWant(w)])
+  })
+
+test('band-rule false draws the band with no rule', async ($, on) => {
+  const w = world(on)
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
+    encoder.encode('{"band-rule": false}'))
+  await start($, w, 'terminal', STATUS)
+  const rows = await drawnRows(await bandAbove($))
+  expect(rows.length).toBeGreaterThan(0)
+  expect(rows).toEqual(treeWant(w))
+})
+
+test('the rule is drawn only where the band still fits the rows it may ' +
+  'take, and not at all where the band draws nothing', async ($, on) => {
+    const w = world(on)
+    await start($, w, 'terminal', STATUS)
+    const tree = treeWant(w)
+    const n = tree.length
+    const fit = (rows: number) => bandAbove($, { maxRows: rows,
+      scroll: { offset: 0, bodyRows: rows } })
+    // A row to spare: the rule takes it.
+    expect(await drawnRows(await fit(n + 1)))
+      .toEqual([ruleRow('promptBorder'), ...tree])
+    // None to spare: the tree alone, which fits as it did.
+    const full = await drawnRows(await fit(n))
+    expect(full).toEqual(tree)
+    expect(full.length).toBe(n)
+    // Between turns the band draws no row, so no rule either.
+    expect(await drawnRows(await bandAbove($, { isWorking: false })))
+      .toEqual([])
+  })
 
 test('a turn started with no plan reading has no 💳 on its tag',
   async ($, on) => {
@@ -3094,22 +3205,22 @@ test('a press on a fold mark folds its row and opens it again', async ($,
   const { w } = clicking(on, [PARENT, KID])
   await start($, w, 'terminal', STATUS)
   const { band, want } = await clickBand($, w)
-  const opened = await drawnRows(band)
+  const opened = await treeRowsOf(band)
   expect(opened).toEqual(want({}))
   expect(opened.some((r) => /⊟ 🔍 +🟢 Parent/u.test(r.text))).toBe(true)
   expect(opened.some((r) => r.text.includes('Kid'))).toBe(true)
   // Folded: 👶🏻 counts the agent hidden under it, and the band is drawn
   // again at once.
   await band.press({ key: 'fold:p1' })
-  const folded = await drawnRows(band)
+  const folded = await treeRowsOf(band)
   expect(folded).toEqual(want({ p1: true }))
   expect(folded.some((r) => /⊞ 🔍 +🟢 👶🏻1 Parent/u.test(r.text))).toBe(true)
   expect(folded.some((r) => r.text.includes('Kid'))).toBe(false)
   await band.press({ key: 'fold:p1' })
-  expect(await drawnRows(band)).toEqual(want({ p1: false }))
+  expect(await treeRowsOf(band)).toEqual(want({ p1: false }))
   // 🎮 folds the whole tree under it.
   await band.press({ key: 'fold:session' })
-  const root = await drawnRows(band)
+  const root = await treeRowsOf(band)
   expect(root.length).toBe(1)
   expect(root[0].text).toMatch(/^ *⊞ 🎮/u)
 })
@@ -3191,15 +3302,15 @@ test('a press on a shell\'s row opens its log band above the tree, its ' +
   'closes it', async ($, on) => {
   const { w, band, toasts } = await shellBand($, on)
   w.files.set(SHELL_OUTPUT, numbered(30))
-  expect(logBandOf(await drawnRows(band))).toEqual([])
+  expect(logBandOf(await treeRowsOf(band))).toEqual([])
   await band.press({ key: 'log:bsh1' })
-  const rows = await drawnRows(band)
+  const rows = await treeRowsOf(band)
   // Half of the 24 rows a band with no viewport takes, the title aside.
   expect(logBandOf(rows)).toEqual(['⤷ ' + SHELL_OUTPUT,
     ...Array.from({ length: 11 }, (_, i) => 'line ' + (20 + i))])
   expect(rows[0].text).toBe('⤷ ' + SHELL_OUTPUT)
   await band.press({ key: 'log:bsh1' })
-  expect(logBandOf(await drawnRows(band))).toEqual([])
+  expect(logBandOf(await treeRowsOf(band))).toEqual([])
   expect(toasts).toEqual([])
 })
 
@@ -3210,7 +3321,7 @@ test('a shell whose output file is empty shows the file its command\'s ' +
     'cd build && make docs > some.log 2>&1')
   w.files.set(CWD + '/build/some.log', encoder.encode('one\ntwo\n'))
   await band.press({ key: 'log:bsh1' })
-  expect(logBandOf(await drawnRows(band)))
+  expect(logBandOf(await treeRowsOf(band)))
     .toEqual(['⤷ ' + CWD + '/build/some.log', 'one', 'two'])
 })
 
@@ -3218,7 +3329,7 @@ test('a shell whose output file is empty and whose command names no file ' +
   'it writes to shows the no-log line', async ($, on) => {
   const { band } = await shellBand($, on)
   await band.press({ key: 'log:bsh1' })
-  expect(logBandOf(await drawnRows(band))).toEqual(['⤷ no log: its ' +
+  expect(logBandOf(await treeRowsOf(band))).toEqual(['⤷ no log: its ' +
     'output file is empty and its command names no file it writes to'])
 })
 
@@ -3228,7 +3339,7 @@ test('the log band holds as many of a long log\'s last lines as fit in ' +
     { columns: COLS, rows: 20, isFullscreen: false })
   w.files.set(SHELL_OUTPUT, numbered(20_000))
   await band.press({ key: 'log:bsh1' })
-  expect(logBandOf(await drawnRows(band))).toEqual(['⤷ ' + SHELL_OUTPUT,
+  expect(logBandOf(await treeRowsOf(band))).toEqual(['⤷ ' + SHELL_OUTPUT,
     ...Array.from({ length: 9 }, (_, i) => 'line ' + (19_992 + i))])
 })
 
@@ -3249,7 +3360,7 @@ test('an agent that completes while the tree still draws it keeps its ' +
   await start($, w, 'terminal', STATUS)
   const { band } = await clickBand($, w)
   await band.press({ key: 'fold:p1' })
-  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect(parentShut(await treeRowsOf(band))).toBe(true)
   // The parent completes while its kid runs on: it is still drawn, paused
   // on the kid under it, and stays folded through the refreshes after.
   listed[0] = { ...PARENT, status: 'completed' }
@@ -3257,7 +3368,7 @@ test('an agent that completes while the tree still draws it keeps its ' +
     await w.clock.advance(CONFIG.tickMs)
     await settle()
   }
-  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect(parentShut(await treeRowsOf(band))).toBe(true)
   expect((w.store.get('folds:' + SESSION) as Dict).folds)
     .toEqual({ p1: true })
   // The kid completes too, and neither is drawn: the fold goes, from the
@@ -3265,7 +3376,7 @@ test('an agent that completes while the tree still draws it keeps its ' +
   listed[1] = { ...KID, status: 'completed' }
   await w.clock.advance(CONFIG.tickMs)
   await settle()
-  expect((await drawnRows(band)).some((r) => r.text.includes('Parent')))
+  expect((await treeRowsOf(band)).some((r) => r.text.includes('Parent')))
     .toBe(false)
   expect((w.store.get('folds:' + SESSION) as Dict).folds).toEqual({})
 })
@@ -3297,7 +3408,7 @@ test('a new session of the same conversation draws the folds the store ' +
   for (const [k, v] of foldsLeft!) w.store.set(k, v)
   await start($, w, 'terminal', STATUS)
   const { band, want } = await clickBand($, w)
-  const rows = await drawnRows(band)
+  const rows = await treeRowsOf(band)
   expect(rows).toEqual(want({ p1: true, main: false, session: false }))
   expect(parentShut(rows)).toBe(true)
 })
@@ -3309,7 +3420,7 @@ test('a restart whose agents are gone draws 🎮\'s and 🧵\'s folds, and ' +
     folds: { main: true, p1: true }, saved_at: NOW - 86400 })
   await start($, w, 'terminal', STATUS)
   const { band, want } = await clickBand($, w)
-  const rows = await drawnRows(band)
+  const rows = await treeRowsOf(band)
   expect(rows).toEqual(want({ main: true }))
   expect(rows.some((r) => /⊞ 🧵/u.test(r.text))).toBe(true)
   expect(w.store.get('folds:' + SESSION)).toEqual({ session: SESSION,
@@ -3330,7 +3441,7 @@ test('a reload from a version that kept the folds in $.state alone keeps ' +
   })
   await start($, w, 'terminal', STATUS)
   const { band } = await clickBand($, w)
-  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect(parentShut(await treeRowsOf(band))).toBe(true)
   expect(w.store.get('folds:' + SESSION)).toEqual({ session: SESSION,
     folds: { p1: true }, saved_at: NOW })
 })
@@ -3345,7 +3456,7 @@ test('another conversation does not draw them', async ($, on) => {
   w.store.set('folds:' + SESSION, { ...entry, session: 'another-session' })
   await start($, w, 'terminal', STATUS)
   const { band, want } = await clickBand($, w)
-  const rows = await drawnRows(band)
+  const rows = await treeRowsOf(band)
   expect(rows).toEqual(want({}))
   expect(parentOpen(rows)).toBe(true)
 })
@@ -3357,20 +3468,20 @@ test('a /resume in the running process draws the resumed ' +
   await start($, w, 'terminal', STATUS)
   const { band } = await clickBand($, w)
   await band.press({ key: 'fold:p1' })
-  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect(parentShut(await treeRowsOf(band))).toBe(true)
   // The process switches to another conversation, with none kept.
   const resumed = '/claude/projects/-work/resumed-session.jsonl'
   place(w, sessionFile('-work'), resumed)
   w.session.id = 'resumed-session'
   await w.clock.advance(CONFIG.tickMs)
   await settle()
-  expect(parentOpen(await drawnRows(band))).toBe(true)
+  expect(parentOpen(await treeRowsOf(band))).toBe(true)
   expect(w.store.has('folds:resumed-session')).toBe(false)
   // And back: the first conversation's folds, from the store.
   w.session.id = SESSION
   await w.clock.advance(CONFIG.tickMs)
   await settle()
-  expect(parentShut(await drawnRows(band))).toBe(true)
+  expect(parentShut(await treeRowsOf(band))).toBe(true)
 })
 
 test('a session start drops the store\'s folds saved over 31 days ago, ' +
@@ -3432,7 +3543,7 @@ test('an agent with messages waiting draws 📨N, and one whose messages ' +
     join(agent, deliveredAt('2026-08-16T01:41:00Z')))
   await start($, w, 'terminal', path)
   const { band } = await clickBand($, w)
-  const rows = await drawnRows(band)
+  const rows = await treeRowsOf(band)
   expect(rows.some((r) => /🔍 +🟢 📨2 Parent/u.test(r.text))).toBe(true)
   const kid = rows.find((r) => r.text.includes('Kid'))
   expect(kid?.text.includes('📨')).toBe(false)
@@ -3476,7 +3587,7 @@ async function linksDrawn($: any, w: World) {
   return {
     links: (await band.findAll({ type: 'Link' })).map((l: any) =>
       [l.props.href, l.text.slice(String(l.props.href).length)]),
-    rows: await drawnRows(band),
+    rows: await treeRowsOf(band),
     want: expected(bandLines(BAND_ST, lastDoc(w), COLS, HIDE, { rate: null,
       phase: 'running', live: LIVE, places: PLACES, ...AGENTS,
       place: 'above', indent: INSET })),

@@ -171,6 +171,7 @@ test('with no configuration file the options are the defaults', () => {
       subagents: { place: 'above', live: 'always', transcript: true },
     },
     finishedWithin: 120,
+    bandRule: true,
     accountPlace: 'row',
     planUsage: true,
     weeklyWindows: { opus: false, sonnet: false, omelette: false,
