@@ -14,5 +14,6 @@ Then:
 - `typecheck`: type-check the mod's TypeScript (`usage-dev typecheck`).
 - `usage-dev`: every other command: regenerating the option docs, fixtures, goldens and cases, drawing figures, the manual checks; `usage-dev --list` names them.
 - `check`: `nix flake check`: formatting (treefmt) and the suites a build can run (`nix/check-tests.sh`).
+- `mod-build`: build the mod's runtime files into `result-mod`, a link into the Nix store. A session started with `claude --plugin-dir result-mod` runs that build, so edits under `mod/` reach it only after `mod-build` and `/reload-plugins` there. A new file needs `git add` before it is built.
 
 `menu` lists the dev shell's other commands.
