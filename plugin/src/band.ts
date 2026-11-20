@@ -35,8 +35,8 @@ import {
 } from "./figures.ts";
 import {
   CELLS, SIDE_MARKS, accountLabel, cacheRate, hms, inheritEta, liveFinishes,
-  mainDoing, mainLabel, projectName, sessionLabel, turnLabel, untilReset,
-  workspacePieces, ymd,
+  mainDoing, mainLabel, projectName, sessionLabel, sessionThemeKey,
+  turnLabel, untilReset, workspacePieces, ymd,
 } from "./cells.ts";
 import type { PlanKey, PlanWindow, Workspace } from "./cells.ts";
 import type { Limits } from "./claude_sources.ts";
@@ -894,6 +894,29 @@ export const MODE_PILLS: Readonly<Record<string, string>> = {
 export const TAIL_CUT = 1;
 /** U+2800, a blank cell that is not whitespace, so no trim takes it. */
 export const TAIL_BLANK = "⠀";
+
+/** The rule `band-rule` draws as the band's first row above the prompt:
+ * `─` across `cols`, the columns the band's tree is laid out in, and its
+ * colour, a key of Claude Code's theme: the session's colour, the
+ * document's `transcript.session_color`, as Claude Code draws it, or the
+ * prompt box's border's with none (sessionThemeKey).  The document is
+ * read again at each draw, so a /color recolours it. */
+export function bandRule(fig: Dict, cols: number):
+  { readonly text: string; readonly colour: string } {
+  const tr = decodeTranscript(fig.transcript);
+  return { text: "─".repeat(Math.max(0, cols)),
+    colour: sessionThemeKey(tr.session_color) };
+}
+
+/** Whether the band above the prompt draws its rule over its `rows`, the
+ * rows it draws besides: where `band-rule` is `on`, the band draws any
+ * row, and the band with the rule still fits `maxRows`, the rows it may
+ * take, so the rule never makes it scroll; past that the rule gives its
+ * row to the band's own. */
+export function ruleDrawn(on: boolean, rows: number, maxRows: number):
+  boolean {
+  return on && rows > 0 && rows + 1 <= maxRows;
+}
 
 /** The band as drawn at `cols` under `hide`: its rows' spans, top to
  * bottom, on the fixed grid, each `opts.inset` columns narrower.  A hidden

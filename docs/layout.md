@@ -14,6 +14,7 @@ Colour and brightness carry meaning of their own — see [Colour and brightness]
 
 - [Above the prompt and under the footer line](#above-the-prompt-and-under-the-footer-line)
   - [The rows](#the-rows)
+  - [The rule](#the-rule)
   - [The tree](#the-tree)
   - [The grid](#the-grid)
   - [Column by column](#column-by-column)
@@ -58,7 +59,8 @@ and, past the prompt, under the footer line (the same with `--part footer`):
 ```
 
 The footer's first line is Claude Code's, drawn by Claude Code, so its pills stay live; the plugin draws the rest under it.
-Claude Code draws its `[-]` in the five rightmost columns of the band's first row, beside 🎮.
+Over the band's rows the plugin draws a rule, `─` across the band, as its first row ([The rule](#the-rule)); the renders above leave it out.
+Claude Code draws its `[-]` in the five rightmost columns of the band's first row, beside the rule, or beside 🎮 with no rule.
 The fixture's transcript writes no lines and reports no ETA, so 💾 and ⛳ are blank here; [the tree's render](#the-tree) has both.
 
 ### The rows
@@ -74,7 +76,7 @@ Where each is drawn and when are the option `rows` in the [configuration files](
 | `subagents` | each subagent alone | above the prompt, under the thread that started it | always; between turns, those running or paused |
 | 🎤 `turn` | the turn: what it has cost so far | above the prompt, under 🧵, first | while a turn runs |
 
-Above the prompt the rows are [a tree](#the-tree): 🎮, then 🧵, and under it 🎤 and the subagents.
+Above the prompt the rows are [a tree](#the-tree) under [a rule](#the-rule): 🎮, then 🧵, and under it 🎤 and the subagents.
 Under the footer line they stand in one order, whatever the places: 💳, 🎤, 🧵, 🎮, the lowest just over Claude Code's agent panel.
 The subagents are drawn in the tree alone, and their place is always above the prompt.
 When the turn ends, 🎤 becomes [the receipt](#the-receipt), frozen, in the transcript just above the band.
@@ -103,6 +105,18 @@ No row takes a press: each is plain text, above the prompt, under the footer lin
 While a survey (a question picker) holds the band, the plugin draws nothing above the prompt, and Claude Code draws the picker there: the tree is gone until it is answered, and the receipt, stamped at the turn's end, is not touched.
 The rows under the footer line are drawn wherever Claude Code draws its footer line.
 Each change of the band's widths or of a survey goes to the plugin's log, `band: {"bodyColumns":…,"viewportColumns":…,"isFullscreen":…,"hasSurvey":…}`, and the footer's own log line ends with the same `isFullscreen` and whether a survey held the band when it was drawn.
+
+### The rule
+
+The band's first row above the prompt is a rule, `─` from the terminal's left edge across the band's columns (its `bodyColumns`), with Claude Code's `[-]` in the five columns after it, over 🎮 and the rest of the tree.
+
+- **Its colour** is the session's, its latest `agent-color` record (`/color`), as Claude Code draws that colour: the key of Claude Code's theme for it, `red_FOR_SUBAGENTS_ONLY` for `red`, and the same for `blue`, `green`, `yellow`, `purple`, `orange`, `pink` and `cyan`, so it follows the person's theme.
+  With no colour, or `/color default`, it is the prompt box's border colour, the theme's `promptBorder`, so the rule matches the prompt box under it.
+  A `/color` partway through the session recolours it at the band's next draw after the plugin reads the record.
+- **Its row** is one of the rows the band may take (`maxRows`): the rule is drawn only where the band, the tree and any shell's log band open over it, still fits them with the rule, so it never makes the band scroll; past that it gives its row to the band's own.
+  In fullscreen the log band leaves it its row.
+- **When.** Only while the band draws a row: between turns with nothing above the prompt, and under a survey, there is no rule either.
+  The option `band-rule` turns it off ([options](options.md#what-a-file-holds)).
 
 ### The tree
 
@@ -334,7 +348,7 @@ The tree's lines are part of a label, so a deep row's name is cut first on a nar
 
 ### Between turns
 
-Once a turn ends and its receipt is stamped, 🎤 leaves the band, and its frozen copy is the receipt just above; with no subagent running, the band is 🎮 and 🧵, with Claude Code's `[-]` on 🎮's row, 🧵 ⚫ with the model its next turn runs on and no 🛫, and 💳 stays under the footer line (`--phase done`, above the prompt and under the footer line):
+Once a turn ends and its receipt is stamped, 🎤 leaves the band, and its frozen copy is the receipt just above; with no subagent running, the band is [the rule](#the-rule), 🎮 and 🧵, with Claude Code's `[-]` on the rule's row, 🧵 ⚫ with the model its next turn runs on and no 🛫, and 💳 stays under the footer line (`--phase done`, above the prompt and under the footer line):
 
 ```
   ⊟ 🎮     📦repo 🌿golden-clean           💰  35                 🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪

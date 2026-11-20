@@ -72,6 +72,10 @@
   // it, before it goes.  Counted from when it finished; 0 drops it at
   // once.
   "finished-within": 120,
+  // A rule, ─ across the band, as the first row of the band above the
+  // prompt, in the session's /color, or the prompt box's border colour
+  // with none.
+  "band-rule": true,
   // Where the 💳 account is drawn: "row", a row of its own where
   // rows.account.place puts it, in its colours, or "tail", at the footer
   // line's right end, plain and dim, whatever rows.account.place says.

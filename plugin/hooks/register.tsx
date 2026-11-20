@@ -3,9 +3,10 @@
 // docs/layout.md has what is drawn.  Three places are drawn:
 //
 //   AbovePrompt   the band, bandLines over the last status document, at the
-//                 body's width plus the five columns the gutter takes, a
-//                 blank row above it; its tree's fold marks and labels
-//                 take a press, and 🎮's 📦 🌿 🔀 are links (pressLine);
+//                 body's width plus the five columns the gutter takes,
+//                 under a rule in the session's colour (band-rule); its
+//                 tree's fold marks and labels take a press, and 🎮's
+//                 📦 🌿 🔀 are links (pressLine);
 //   TurnDuration  the turn's closing line: the turn's receipt, blank until
 //                 it is stamped;
 //   AssistantMessage  under the answer of a turn Claude Code closes with
@@ -42,9 +43,9 @@ import { LOG_TAIL_BYTES, logFile, logRows, tailLines } from '../src/shell_log.ts
 import { _recordsOf } from '../src/claude_records.ts'
 import type { Turn } from '../src/claude_records.ts'
 import {
-  ROW_NAMES, accountHide, accountLine, bandRows, bandScoped, drawnIn,
-  footerRuler, footerTail,
-  modeOfHint, rootDrawn, treeAgents,
+  ROW_NAMES, accountHide, accountLine, bandRows, bandRule, bandScoped,
+  drawnIn, footerRuler, footerTail,
+  modeOfHint, rootDrawn, ruleDrawn, treeAgents,
 } from '../src/band.ts'
 import type { RowsLive, RowsPlace } from '../src/band.ts'
 import {
@@ -944,13 +945,15 @@ type LogPress = Extract<Press, { kind: 'log' }>
 /** The log band of the background shell whose band is open (shellLog),
  * as rows to draw above the tree's `lines`: a dim title naming the file it
  * shows, ⤷ and its path (bgPath), then the file's last lines, as many as
- * logRows leaves in a terminal `rows` high, each cut to the band's width.
+ * logRows leaves in a terminal `rows` high, beside the tree's rows and the
+ * `ruleRows` over it (band-rule), each cut to the band's width.
  * Only the file's tail, LOG_TAIL_BYTES of it, is read.  The file is
  * logFile's; where it finds none, or the file is not there yet, the title
  * says so alone.  None while no band is open; and where the shell's row is
  * no longer drawn, none, and the band is closed. */
 async function shellBand($: $, ui: any, lines: { spans: Span[] }[],
-  rows: number, fullscreen: boolean): Promise<RenderElement[]> {
+  ruleRows: number, rows: number, fullscreen: boolean):
+  Promise<RenderElement[]> {
   const open = await read($, shellLog)
   if (open === null) return []
   const press = lines.flatMap((l) => l.spans).map((s) => s.press)
@@ -981,7 +984,7 @@ async function shellBand($: $, ui: any, lines: { spans: Span[] }[],
     const text = size > 0 ? await $.fs.read(where.path,
       { as: 'text', offset, length: size - offset }) : ''
     const body = tailLines(text, offset > 0, logRows(rows, fullscreen,
-      lines.length))
+      lines.length + ruleRows))
     return [row('log.title', title, true),
       ...body.map((l, i) => row('log.' + i, l, false))]
   } catch {
@@ -1187,17 +1190,26 @@ export const register: Register = on => {
       // Between turns the receipt carries the rows, and the band has none.
       if (!lines.length) return await drawNext(draw, () => next(e))
       const ui = $.ui.resolve(e)
-      const { Box } = ui
+      const { Box, Text } = ui
       // No margin: Claude Code draws its `[-]` on the band's first row, and
       // on a blank top row it stood alone.  A bottom margin of -1, into the
       // blank row above the prompt's border, hid the band's last row under
       // the border instead.  The tree's fold marks and labels take a press
       // (pressLine), and a shell's opens its log band above the tree
-      // (shellBand).
-      const logBand = await shellBand($, ui, lines,
+      // (shellBand).  Over them both, band-rule's rule, the `[-]` on its
+      // row, where the band still fits its rows with it (ruleDrawn); the
+      // log band leaves it its row.
+      const ruled = options()?.bandRule ?? false
+      const logBand = await shellBand($, ui, lines, ruled ? 1 : 0,
         e.viewport?.rows ?? 24, e.viewport?.isFullscreen ?? false)
+      const doc = await read($, status)
+      const rule = doc !== null &&
+        ruleDrawn(ruled, logBand.length + lines.length, e.props.maxRows)
+        ? bandRule(doc as Dict, e.props.bodyColumns) : null
       return (
         <Box flexDirection="column">
+          {rule ? [<Text key="rule" color={rule.colour}
+            wrap="truncate-end">{rule.text}</Text>] : []}
           {logBand}
           {lines.map((l, i) => pressLine(ui, $, l.spans, 'band' + i))}
         </Box>

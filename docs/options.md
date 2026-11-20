@@ -208,6 +208,9 @@ The defaults say 120; 0 drops a row at once.
 
 The tree draws every row it holds, however many subagents there are; scroll the band, or fold a row (⊟ ⊞) to hide its subtree ([The tree](layout.md#the-tree)).
 
+`band-rule` is on in the defaults: the band above the prompt opens on a rule, `─` across the band, in the session's colour (its latest `/color`) as Claude Code draws it, or the prompt box's border colour with none, whenever the band draws a row and still fits the rows it may take with it ([The rule](layout.md#the-rule)).
+`false` leaves it out.
+
 The log's `config options:` line lists every option a layer above the defaults gave, each with its value and layer.
 
 ### The credits

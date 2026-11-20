@@ -129,6 +129,11 @@ export const OPTIONS = {
     "doc-table": null,
     "doc": "How many seconds a row of the band's tree that finished stays drawn where it stood, ended, its parents with it, before it goes: a subagent that ended, and a background shell or Monitor that closed. Counted from when it finished, its last record or the record that closed it; 0 drops it at once.",
   },
+  "band-rule": {
+    "type": "bool",
+    "doc-table": null,
+    "doc": "Draw a rule, `─` across the band, as the first row of the band above the prompt, in the session's colour (its latest `/color`) as Claude Code draws it, or the prompt box's border colour with none. Not drawn while the band draws nothing, or where it would make the band taller than the rows it may take.",
+  },
   "account-place": {
     "type": "enum",
     "items": ["row", "tail"],
@@ -271,6 +276,7 @@ export type Options = {
     };
   };
   readonly finishedWithin: number;
+  readonly bandRule: boolean;
   readonly accountPlace: "row" | "tail";
   readonly planUsage: boolean;
   readonly weeklyWindows: {

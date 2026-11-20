@@ -738,6 +738,28 @@ export const SESSION_COLOURS: { readonly [name: string]: string } = {
  * SESSION_COLOURS does not name. */
 export const SESSION_COLOUR_NONE = "F_CRM";
 
+/** The key of Claude Code's theme it draws each of its session colours
+ * (its /color names) in, its own map from an agent colour to a theme
+ * key, so the colour follows the person's theme as Claude Code's does. */
+export const SESSION_THEME_KEYS: { readonly [name: string]: string } = {
+  red: "red_FOR_SUBAGENTS_ONLY", blue: "blue_FOR_SUBAGENTS_ONLY",
+  green: "green_FOR_SUBAGENTS_ONLY", yellow: "yellow_FOR_SUBAGENTS_ONLY",
+  purple: "purple_FOR_SUBAGENTS_ONLY", orange: "orange_FOR_SUBAGENTS_ONLY",
+  pink: "pink_FOR_SUBAGENTS_ONLY", cyan: "cyan_FOR_SUBAGENTS_ONLY",
+};
+
+/** The theme key for a session with no colour, or one SESSION_THEME_KEYS
+ * does not name: the prompt box's border's, as Claude Code falls back to
+ * it. */
+export const SESSION_THEME_NONE = "promptBorder";
+
+/** The theme key of the session colour `colour`, its latest /color, ""
+ * for none. */
+export function sessionThemeKey(colour: string): string {
+  return Object.hasOwn(SESSION_THEME_KEYS, colour)
+    ? SESSION_THEME_KEYS[colour] : SESSION_THEME_NONE;
+}
+
 /** The session's name, under the path `workspace.name`, in its colour
  * (SESSION_COLOURS), then two blanks; none for no name.  It stands in
  * the names' column of the band's tree, where the other rows' names
