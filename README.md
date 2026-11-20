@@ -19,11 +19,11 @@ Here the two places are drawn together, the prompt between them left out:
      ├─ 🎤 🟢 turn  Why…  🧬O⁵🐇  🛫 200   💰 6.4   🧠 -42k  -4٪  🧩 ▴525k ▾151k  🎯98٪  ⌛  8m         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋 1.2٪   🪫 1.56٪
      ├─ 🎩 🟢 Clover      🧬O⁵🐇  🤖  13m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛ 15m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .01٪  🪫  .011٪
      ├─ 🔍 🟢 Marigold …  🧬O⁵🐇  🔧  11m  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   🎯93٪  ⌛ 12m ⛳ +50s 🤖⠄⠀ 🔧⠶⠦ 🚦⠀⠀  🔋  .02٪  🪫  .022٪  💾 +  9  -  4
-     ├─ 👥 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
+     ├─ 🤖 🟢 Willow      🧬H⁴    🤖 8.3m  💰 0.0   🧠  10    0٪  🧩 ▴ 10  ▾ 10   🎯 0٪  ⌛ 10m         🤖⠶⠶ 🔧⠀⠀ 🚦⠀⠀  🔋  .00٪  🪫  .000٪
      ├─ 🔩 🟢 Bluebell    🧬So🐌  🤖 333   💰 0.1   🧠  60k  30٪  🧩 ▴ 13k ▾1.3k  🎯97٪  ⌛6.7m         🤖⠶⠦ 🔧⠄⠀ 🚦⠀⠀  🔋  .01٪  🪫  .016٪
      ├─ 📐 🟢 Thistle     🧬O⁵🐇  🚦 4.7m  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   🎯93٪  ⌛  5m         🤖⠄⠀ 🔧⠀⠀ 🚦⠶⠦  🔋  .01٪  🪫  .011٪
      ├─ 🐚 🟢 sleep 300 && make test                                                     ⌛  2m
-     ╰─ 👥 🟡 Quince      🧬O⁵🐇  🥚  30s
+     ╰─ 🤖 🟡 Quince      🧬O⁵🐇  🥚  30s
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20
 ```
@@ -226,7 +226,7 @@ Each is named for the agent type it stands for; `other` covers every other type,
 | 🔍 | Explore | 🐚 | shell |
 | 📐 | Plan | 🌐 | remote |
 | 📚 | claude-code-guide | 🎎 | teammate |
-| 📟 | statusline-setup | 👥 | other |
+| 📟 | statusline-setup | 🤖 | other |
 
 ### Agent state
 

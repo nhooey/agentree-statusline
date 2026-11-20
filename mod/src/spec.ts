@@ -1159,12 +1159,11 @@ export const E_KIND_PLAN = "📐";       // 📐  Plan
 export const E_KIND_GUIDE = "📚";      // 📚  claude-code-guide
 export const E_KIND_SETUP = "📟";      // 📟  statusline-setup
 export const E_KIND_FORK = "🍴";       // 🍴  fork
-export const E_KIND_OTHER = "👥";      // 👥  local_agent, and any other kind.
+export const E_KIND_OTHER = "🤖";      // 🤖  local_agent, and any other kind.
                                        //    Emoji_Presentation=Yes and a single
-                                       //    code point, chosen for that.
-                                       //    Measured by tests/probe-advance.sh:
-                                       //    advance=2 in bare Ghostty, not under
-                                       //    tmux -- a reading, like the other three
+                                       //    code point, chosen for that; the
+                                       //    agent-time mark too, so its advance
+                                       //    is measured with the layout's.
 export const E_KIND_SHELL = "🐚";      // 🐚  local_bash
 export const E_KIND_WORKFLOW = "🔗";   // 🔗  local_workflow
 export const E_KIND_REMOTE = "🌐";     // 🌐  remote_agent
@@ -1244,9 +1243,9 @@ export const E_MODE_ETA = E_ETA;                 // ⛳  paused on nothing it ca
 // and U+2800, the empty cell, keeps the gauge's width at a zero share.
 export const E_GAUGE = "⠀⠄⠆⠦⠶";
 export const GAUGE_W = 2;
-export const E_ROW_AGENTS = E_KIND_OTHER;                 // 👥  the status line's row of
+export const E_ROW_AGENTS = E_KIND_OTHER;                 // 🤖  the status line's row of
                                                           // agent spend the 🎤 row cannot carry.  The
-                                                          // panel and the band never draw it, so 👥
+                                                          // panel and the band never draw it, so 🤖
                                                           // there is the kind alone.
 export const E_TURN_ID = "🔖";              // 🔖  the receipt's turn tag: which turn the
                                             // rows below it bill.  Wide, one code point,

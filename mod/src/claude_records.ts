@@ -2675,7 +2675,7 @@ export function _foldAgents(turns: TurnBuild[],
         ? a.offset > (offsets.get(a.path) ?? 0)
         : lastStop === null || (a.epoch !== null && a.epoch > lastStop);
       if (isNew && !_endedAfter(a, ends)) {
-        // Still running: its 👥 row waits for its end, and the record stays
+        // Still running: its 🤖 row waits for its end, and the record stays
         // on its spawning turn for the totals until then.  `held` keeps
         // publishAgentOffsets from marking it reported.
         if (held !== null && a.offset < (held.get(a.path) ?? a.offset + 1)) {

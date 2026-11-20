@@ -519,7 +519,7 @@ export const KIND_MARK: ReadonlyMap<string, string> = new Map([
   ["local_bash", E_KIND_SHELL], ["local_workflow", E_KIND_WORKFLOW],
   ["remote_agent", E_KIND_REMOTE], ["in_process_teammate", E_KIND_TEAMMATE]]);
 
-/** The mark of an agent's type, or of its task's kind, else 👥. */
+/** The mark of an agent's type, or of its task's kind, else 🤖. */
 export function renderKind(agentType: string, taskKind: string): string {
   return KIND_MARK.get(agentType || taskKind) ?? E_KIND_OTHER;
 }
