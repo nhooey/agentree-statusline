@@ -1216,8 +1216,9 @@ const SHELL_OUTPUT = '/private/tmp/claude-501/p/tasks/bsh1.output'
  * result naming SHELL_OUTPUT, and with `monitor` a Monitor after it,
  * `mon1`, labelled `Watch the CI checks` and started at `monitor`, an
  * event's notification naming its output file under HOME, placed as the
- * status line's; its path. */
-function withShell(w: World, stamp: string, monitor?: string): string {
+ * status line's; its path.  `command` is the shell's. */
+function withShell(w: World, stamp: string, monitor?: string,
+  command = 'make docs\n  && open site'): string {
   const path = sessionFile('-shell')
   place(w, STATUS, path)
   const call = (ts: string, id: string, name: string, input: Dict) => ({
@@ -1228,7 +1229,7 @@ function withShell(w: World, stamp: string, monitor?: string): string {
       { type: 'tool_result', tool_use_id: id, content }] },
     toolUseResult: res })
   const records = [
-    call(stamp, 'tu-bg', 'Bash', { command: 'make docs\n  && open site',
+    call(stamp, 'tu-bg', 'Bash', { command,
       description: 'Build the docs', run_in_background: true }),
     result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' },
       'Command running in background with ID: bsh1. Output is being ' +
@@ -3019,8 +3020,10 @@ test('a press on a label switches the transcript to its agent, and 🧵 ' +
 
 /** The band above the prompt over a session with an open background
  * shell, `bsh1`, and Monitor, `mon1`, mounted; each `$.ui.toast` kept in
- * `toasts`, and each command run in `ran`. */
-async function shellBand($: any, on: On) {
+ * `toasts`, and each command run in `ran`.  `command` is the shell's,
+ * and `viewport` the band's where given. */
+async function shellBand($: any, on: On, command?: string,
+  viewport?: { columns: number; rows: number; isFullscreen: boolean }) {
   const { w } = clicking(on, [])
   const toasts: Dict[] = []
   const ran: string[] = []
@@ -3033,30 +3036,87 @@ async function shellBand($: any, on: On) {
     return {}
   })
   await start($, w, 'terminal',
-    withShell(w, '2026-08-16T01:44:00Z', '2026-08-16T01:50:00Z'))
-  const { band } = await clickBand($, w)
-  return { band, toasts, ran }
+    withShell(w, '2026-08-16T01:44:00Z', '2026-08-16T01:50:00Z', command))
+  const band = viewport === undefined ? (await clickBand($, w)).band
+    : await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
+      component: 'AbovePrompt', props: { ...BAND, isWorking: true },
+      viewport })
+  return { w, band, toasts, ran }
 }
 
-test('a press on an open shell\'s or Monitor\'s row toasts what the band ' +
-  'knows of it, its command and output file too, and runs no command',
-async ($, on) => {
+/** `n` numbered lines, `line 1` on, each ending in a line break. */
+const numbered = (n: number) => encoder.encode(Array.from({ length: n },
+  (_, i) => 'line ' + (i + 1) + '\n').join(''))
+
+/** The rows of the log band in `rows`: its title, ⤷ first, and the lines
+ * after it up to the tree's first row, 🎮's. */
+function logBandOf(rows: { text: string }[]): string[] {
+  const at = rows.findIndex((r) => r.text.startsWith('⤷'))
+  if (at < 0) return []
+  const end = rows.findIndex((r, i) => i > at && r.text.includes('🎮'))
+  return rows.slice(at, end < 0 ? undefined : end).map((r) => r.text)
+}
+
+test('a press on an open Monitor\'s row toasts what the band knows of it, ' +
+  'its command and output file too, and runs no command', async ($, on) => {
   const { band, toasts, ran } = await shellBand($, on)
   const keys: string[] = (await band.findAll({ type: 'Button' }))
     .map((b: { key?: string }) => b.key ?? '')
-  expect(keys.filter((k) => k.startsWith('task:')))
-    .toEqual(['task:bsh1', 'task:mon1'])
-  await band.press({ key: 'task:bsh1' })
+  expect(keys.filter((k) => k.startsWith('task:'))).toEqual(['task:mon1'])
+  expect(keys.filter((k) => k.startsWith('log:'))).toEqual(['log:bsh1'])
   await band.press({ key: 'task:mon1' })
   await settle()
   expect(toasts).toEqual([
-    { text: '💻 shell · 🟢 running · ⌛ 39m · Build the docs · ' +
-        '$ make docs ⏎ && open site · ⤷ ' + SHELL_OUTPUT,
-      timeoutMs: CONFIG.taskToastMs },
     { text: '📡 Monitor · 🟢 running · ⌛ 33m · Watch the CI checks · ' +
         '$ make watch · ⤷ ~/tasks/mon1.output',
       timeoutMs: CONFIG.taskToastMs }])
   expect(ran).toEqual([])
+})
+
+test('a press on a shell\'s row opens its log band above the tree, its ' +
+  'output file\'s last lines under a title naming it, and a second press ' +
+  'closes it', async ($, on) => {
+  const { w, band, toasts } = await shellBand($, on)
+  w.files.set(SHELL_OUTPUT, numbered(30))
+  expect(logBandOf(await drawnRows(band))).toEqual([])
+  await band.press({ key: 'log:bsh1' })
+  const rows = await drawnRows(band)
+  // Half of the 24 rows a band with no viewport takes, the title aside.
+  expect(logBandOf(rows)).toEqual(['⤷ ' + SHELL_OUTPUT,
+    ...Array.from({ length: 11 }, (_, i) => 'line ' + (20 + i))])
+  expect(rows[0].text).toBe('⤷ ' + SHELL_OUTPUT)
+  await band.press({ key: 'log:bsh1' })
+  expect(logBandOf(await drawnRows(band))).toEqual([])
+  expect(toasts).toEqual([])
+})
+
+test('a shell whose output file is empty shows the file its command\'s ' +
+  'last stdout redirect writes to, resolved against the working ' +
+  'directory', async ($, on) => {
+  const { w, band } = await shellBand($, on,
+    'cd build && make docs > some.log 2>&1')
+  w.files.set(CWD + '/build/some.log', encoder.encode('one\ntwo\n'))
+  await band.press({ key: 'log:bsh1' })
+  expect(logBandOf(await drawnRows(band)))
+    .toEqual(['⤷ ' + CWD + '/build/some.log', 'one', 'two'])
+})
+
+test('a shell whose output file is empty and whose command names no file ' +
+  'it writes to shows the no-log line', async ($, on) => {
+  const { band } = await shellBand($, on)
+  await band.press({ key: 'log:bsh1' })
+  expect(logBandOf(await drawnRows(band))).toEqual(['⤷ no log: its ' +
+    'output file is empty and its command names no file it writes to'])
+})
+
+test('the log band holds as many of a long log\'s last lines as fit in ' +
+  'half the terminal\'s rows, read off its tail alone', async ($, on) => {
+  const { w, band } = await shellBand($, on, undefined,
+    { columns: COLS, rows: 20, isFullscreen: false })
+  w.files.set(SHELL_OUTPUT, numbered(20_000))
+  await band.press({ key: 'log:bsh1' })
+  expect(logBandOf(await drawnRows(band))).toEqual(['⤷ ' + SHELL_OUTPUT,
+    ...Array.from({ length: 9 }, (_, i) => 'line ' + (19_992 + i))])
 })
 
 /** Whether `rows` draw Parent folded, its kid hidden under it. */

@@ -715,6 +715,7 @@ function pressesOf(r: Row): string[] {
     const k = !p ? "" : p.kind === "fold" ? "fold:" + p.key + ":" + p.shut
       : p.kind === "view" ? "view:" + (p.agent ?? "main")
       : p.kind === "task" ? "task:" + p.row
+      : p.kind === "log" ? "log:" + p.row
       : "link:" + p.href;
     if (k && out.at(-1) !== k) out.push(k);
   }
@@ -747,8 +748,9 @@ test("every row with children presses its fold, under its key, with its " +
     [undefined, undefined]);
 });
 
-test("each open shell's and Monitor's label toasts what the band knows " +
-  "of it, the whole of the label pressing", () => {
+test("each open shell's label opens its log band and each Monitor's " +
+  "toasts what the band knows of it, the whole of the label pressing",
+() => {
   const doc = withBackground(corpusAgents("corpus/02-parked", ""), NOW);
   const blank = (scope: string): Row => ({ scope, label: [], cells: {} });
   const rows = treeRows(ST, { session: null, main: blank("main"),
@@ -757,23 +759,22 @@ test("each open shell's and Monitor's label toasts what the band knows " +
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW,
       turnStart: null, mainBackground: doc.main_background as BgTask[],
       home: "/Users/u" } }, []);
-  const bg = (doc.main_background as BgTask[]).map((b) => b.id);
+  const bg = doc.main_background as BgTask[];
   const tail = rows.slice(-bg.length);
-  assert.deepEqual(tail.map(pressesOf), bg.map((id) => ["task:" + id]));
+  assert.deepEqual(tail.map(pressesOf), bg.map((b) =>
+    [(b.kind === "bash" ? "log:" : "task:") + b.id]));
   // Every span after the tree line presses it, the kind glyph included.
   for (const r of tail) {
     assert.ok(r.label.slice(1).every((p) => p.spans.every((s) =>
-      s.press?.kind === "task" && s.press.at === undefined)));
+      s.press !== undefined && s.press.at === undefined)));
   }
-  const texts = tail.map((r) => {
-    const p = r.label[1].spans[0].press;
-    return p?.kind === "task" ? p.text : "";
-  });
-  assert.deepEqual(texts, [
-    "💻 shell · 🟢 running · ⌛ 6.2m · Run the plugin tests · " +
-      "$ npm test -- --watch · ⤷ /private/tmp/…/b3qupkikw.output",
-    "📡 Monitor · 🟢 running · ⌛ 25m · Watch PR #38 for comments · " +
-      "$ gh pr view 38 --comments ⏎ sleep 30 · ⤷ ~/.cache/tasks/mmon.output"]);
+  const presses = tail.map((r) => r.label[1].spans[0].press);
+  assert.deepEqual(presses, [
+    { kind: "log", row: bg[0].id, output: bg[0].output,
+      command: "npm test -- --watch" },
+    { kind: "task", row: bg[1].id, text: "📡 Monitor · 🟢 running · ⌛ " +
+      "25m · Watch PR #38 for comments · $ gh pr view 38 --comments ⏎ " +
+      "sleep 30 · ⤷ ~/.cache/tasks/mmon.output" }]);
 });
 
 test("a task's toast leaves out ⌛ where its start is not known", () => {

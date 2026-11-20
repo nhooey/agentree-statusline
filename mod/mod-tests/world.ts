@@ -160,8 +160,13 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const reads: string[] = [], lists: string[] = []
   on('fs.read', ($, e) => {
     reads.push(e.path)
-    const f = fileAt(e.path)
-    if (!f) return { deny: 'no such file: ' + e.path }
+    const whole = fileAt(e.path)
+    if (!whole) return { deny: 'no such file: ' + e.path }
+    // A range, where asked: from `offset`, `length` bytes at most.
+    const from = e.offset ?? 0
+    const f = e.offset === undefined && e.length === undefined ? whole
+      : whole.subarray(from, e.length === undefined ? undefined
+        : from + e.length)
     if (e.as === 'bytes') {
       let s = ''
       for (const b of f) s += String.fromCharCode(b)
