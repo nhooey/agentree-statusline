@@ -210,6 +210,11 @@ export const OPTIONS = {
     "doc-table": null,
     "doc": "Draw the folded row of a message another agent sent as the sending agent's task and the message's first line, `› 📨 <task>: <line>…`, instead of Claude Code's own row.",
   },
+  "agent-panel-dedupe": {
+    "type": "bool",
+    "doc-table": null,
+    "doc": "Hide Claude Code's own agent panel row of each subagent or teammate the band's tree draws above the prompt on that surface, so no agent is shown twice. The row comes back while the band does not draw the agent: folded away under another row, ended past `finished-within`, the band collapsed, held by a survey or drawing nothing between turns. A hidden agent stays in `/tasks`.",
+  },
   "slow-toast": {
     "type": "bool",
     "doc-table": null,
@@ -298,6 +303,7 @@ export type Options = {
   readonly hintInset: number;
   readonly footerRuler: boolean;
   readonly agentMessageRow: boolean;
+  readonly agentPanelDedupe: boolean;
   readonly slowToast: boolean;
   readonly startsKept: number;
 };

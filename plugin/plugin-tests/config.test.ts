@@ -197,6 +197,7 @@ test('with no configuration file the options are the defaults', () => {
     hintInset: 2,
     footerRuler: false,
     agentMessageRow: true,
+    agentPanelDedupe: true,
     slowToast: false,
     startsKept: 400,
   })
