@@ -51,6 +51,7 @@ import { agentReadings, foldOf, turnsVia } from './transcripts.ts'
 import { creditsVia, preparedVia } from './usage.ts'
 import { calibrationVia } from './calibration.ts'
 import { agentsDoc } from './subagents.ts'
+import { withShellLines } from './background.ts'
 import { options } from './configuration.ts'
 
 type $ = EngineInterface
@@ -275,16 +276,20 @@ export async function statusDoc($: $, places: Places): Promise<Dict> {
   // The plugin's alone: the subagents and the progress updates the band's
   // tree draws (subagents.ts), and the main thread's open background
   // shells and Monitors, which it draws under 🧵, and the ones it last
-  // closed, which it keeps drawn for `finished-within`; and the home
-  // folder, which a shell's toast draws as `~` in its output file.
+  // closed, which it keeps drawn for `finished-within`, each shell with its
+  // log's last line; the home folder, which a shell's toast draws as `~`
+  // in its output file, and the session's directory, which a shell's row
+  // draws a `cd` in its command apart from.
   const ended = path && fold ? endedTasks(fold.tr.bgEnded) : []
-  const agents = path && fold ? {
+  const agents = path && fold ? await withShellLines($, {
     ...await timed($, 'tree', () => agentsDoc($, path, tr,
       payload.current_dir, now, calib, snap)),
-    main_background: backgroundTasks(fold.tr.background, fold.tr.bgInfo),
+    main_background: backgroundTasks(fold.tr.background, fold.tr.bgInfo,
+      fold.tr.bgEvents),
     ...ended.length ? { main_background_ended: ended } : {},
     home: places.home,
-  } : null
+    cwd: payload.current_dir,
+  }, payload.current_dir, places.home) : null
   // And only when there are some: the credits the 💳 row draws, by the
   // option.
   const drawn = o === null ? [] : drawnCredits(credits.credits, o.credits,

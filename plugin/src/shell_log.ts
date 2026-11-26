@@ -3,16 +3,15 @@
 // reading (register.tsx).
 
 import { BG_NEWLINE } from "./claude_records.ts";
+import { drawable } from "./output_lines.ts";
 
 /** The rows the prompt takes in fullscreen, its borders included, which
  * the log band leaves it of the bottom slot's half. */
 export const PROMPT_ROWS = 3;
 
-/** The most bytes of a log's tail the band reads. */
+/** The most bytes of a log's tail the band reads, and that a shell's row
+ * reads for its last line. */
 export const LOG_TAIL_BYTES = 64 * 1024;
-
-/** The columns between tab stops. */
-const TAB = 8;
 
 /** A word of a command, bare or quoted, as the redirect and `cd` patterns
  * take it: group 1 double-quoted, 2 single-quoted, 3 bare. */
@@ -49,7 +48,7 @@ export function joined(dir: string, path: string): string {
 
 /** Word `w` with a leading `~` and `$HOME` or `${HOME}` as `home`; null
  * where any other expansion is left, or the word was cut (`…`). */
-function expanded(w: string, home: string): string | null {
+export function expanded(w: string, home: string): string | null {
   const e = w.replace(/^~(?=\/|$)/, home)
     .replace(/\$\{HOME\}|\$HOME(?![A-Za-z0-9_])/g, home);
   return /[$`*?…]/.test(e) ? null : e;
@@ -77,31 +76,6 @@ export function redirectOf(command: string, cwd: string, home: string):
       return to === null || to === "-" ? d : joined(d, to);
     }, cwd);
   return joined(dir, last.t);
-}
-
-/** Line `l` as a row can draw it: what follows its last carriage return,
- * as a terminal would leave it; its escape sequences gone; its tabs as
- * spaces to the next TAB stop; any other control character gone. */
-export function drawable(l: string): string {
-  const bare = l
-    .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)?/g, "")
-    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
-    .replace(/\x1b[@-Z\\-_]/g, "")
-    .replace(/\r+$/, "");
-  const shown = bare.slice(bare.lastIndexOf("\r") + 1);
-  let out = "";
-  let col = 0;
-  for (const c of shown) {
-    if (c === "\t") {
-      const pad = TAB - col % TAB;
-      out += " ".repeat(pad);
-      col += pad;
-    } else if (!/[\x00-\x1f\x7f-\x9f]/.test(c)) {
-      out += c;
-      col += 1;
-    }
-  }
-  return out;
 }
 
 /** The last `n` lines of `text`, a log's tail, each drawable: its first

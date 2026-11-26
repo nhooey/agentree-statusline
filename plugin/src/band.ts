@@ -622,7 +622,8 @@ export function treeAgents(fig: Dict, running: boolean, linger: number):
     mainEnded: (doc.main_background_ended ?? []) as BgTask[],
     linger,
     spending: docSpending(fig),
-    home: typeof doc.home === "string" ? doc.home : "" };
+    home: typeof doc.home === "string" ? doc.home : "",
+    cwd: typeof doc.cwd === "string" ? doc.cwd : "" };
 }
 
 /** Whether the band's tree draws its root, 🎮, now: `rows.session`'s

@@ -258,8 +258,8 @@ export function treeTasks(agents: readonly AgentInput[], now: number,
     const gone = endedTasks(a.fold?.bgEnded);
     return { task, usage: filled, meta,
       shares: agentShares(filled, calib, snap), progress: a.progress,
-      bgTasks: a.fold ? backgroundTasks(a.fold.background, a.fold.bgInfo)
-        : [], ...gone.length ? { bgEnded: gone } : {} };
+      bgTasks: a.fold ? backgroundTasks(a.fold.background, a.fold.bgInfo,
+        a.fold.bgEvents) : [], ...gone.length ? { bgEnded: gone } : {} };
   });
 }
 

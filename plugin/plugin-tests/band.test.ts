@@ -1353,9 +1353,11 @@ const SHELL_OUTPUT = '/private/tmp/claude-501/p/tasks/bsh1.output'
  * result naming SHELL_OUTPUT, and with `monitor` a Monitor after it,
  * `mon1`, labelled `Watch the CI checks` and started at `monitor`, an
  * event's notification naming its output file under HOME, placed as the
- * status line's; its path.  `command` is the shell's. */
+ * status line's; its path.  `command` is the shell's, and `description`
+ * its call's, none where "". */
 function withShell(w: World, stamp: string, monitor?: string,
-  command = 'make docs\n  && open site'): string {
+  command = 'make docs\n  && open site', description = 'Build the docs'):
+  string {
   const path = sessionFile('-shell')
   place(w, STATUS, path)
   const call = (ts: string, id: string, name: string, input: Dict) => ({
@@ -1367,7 +1369,7 @@ function withShell(w: World, stamp: string, monitor?: string,
     toolUseResult: res })
   const records = [
     call(stamp, 'tu-bg', 'Bash', { command,
-      description: 'Build the docs', run_in_background: true }),
+      ...description ? { description } : {}, run_in_background: true }),
     result(stamp, 'tu-bg', { backgroundTaskId: 'bsh1' },
       'Command running in background with ID: bsh1. Output is being ' +
       'written to: ' + SHELL_OUTPUT + '. You will be notified when it ' +
@@ -1406,6 +1408,38 @@ test('the main thread\'s open background shell is in the document and ' +
   const rows = (await treeRowsOf(ui.above)).map((r) => r.text)
   expect(rows.some((r) => /^ *   [├╰]─ 💻 +🟢 Build the docs /u.test(r)))
     .toBe(true)
+})
+
+test('a shell\'s and a Monitor\'s rows draw an agent row\'s columns: the ' +
+  'folder and the command short in the names\' column, the last line of ' +
+  'their output after it, and ⌛ in its own', async ($, on) => {
+  const w = world(on)
+  const stamp = '2026-08-16T01:44:00Z'
+  const path = withShell(w, stamp, '2026-08-16T01:50:00Z',
+    'cd ' + CWD + '/docs && make html 2>&1 | tail -20', '')
+  // Its log: the last line with text, a progress line as its carriage
+  // returns left it, colour and all, after a blank line.
+  w.files.set(SHELL_OUTPUT, encoder.encode('reading sources\n' +
+    '\x1b[33mwriting\x1b[0m 10%\rwriting 100%\n\n'))
+  await start($, w, 'terminal', path)
+  const doc = lastDoc(w).agents as Dict
+  expect(doc.cwd).toBe(CWD)
+  expect((doc.main_background as Dict[]).map((b) => b.last))
+    .toEqual(['writing 100%', 'green'])
+  const ui = await mountBand($, 'terminal', { ...BAND, isWorking: true })
+  const rows = (await treeRowsOf(ui.above)).map((r) => r.text.trimEnd())
+  const shell = rows.find((r) => r.includes('💻'))!
+  const monitor = rows.find((r) => r.includes('📡'))!
+  expect(shell).toMatch(/💻 +🟢 📂docs make html  writing 100% +⌛ +\S+$/u)
+  expect(monitor).toMatch(/📡 +🟢 Watch the CI checks  green +⌛ +\S+$/u)
+  // The names and the ⌛ stand in the columns the threads' do.
+  const main = rows.find((r) => r.includes('🧵'))!
+  const col = (r: string, s: string) => visWidth(r.slice(0, r.indexOf(s)),
+    BAND_ST.widths)
+  expect(col(shell, '📂')).toBe(col(main, 'main'))
+  expect(col(monitor, 'Watch')).toBe(col(main, 'main'))
+  expect(col(shell, '⌛')).toBe(col(main, '⌛'))
+  expect(col(monitor, '⌛')).toBe(col(main, '⌛'))
 })
 
 test('a shell that closed stays drawn, ended, for finished-within, and ' +

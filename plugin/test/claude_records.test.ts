@@ -367,6 +367,68 @@ test("a Monitor closes on its expiry, not on an event quoting it", () => {
   assert.equal(open.has("m7"), false);
 });
 
+// The summary's exit code, as Claude Code words it for a shell and a
+// Monitor's script; the command it quotes can hold the same words.
+test("a task's exit code is its notification's summary's last", () => {
+  const note = (summary: string) => "<task-notification><task-id>b1" +
+    "</task-id><status>completed</status><summary>" + summary +
+    "</summary></task-notification>";
+  assert.equal(cr.taskExit(note("Background command \"make\" completed " +
+    "(exit code 0)")), 0);
+  assert.equal(cr.taskExit(note("Background command \"make\" failed with " +
+    "exit code 143")), 143);
+  assert.equal(cr.taskExit(note("Background command \"grep x\" completed " +
+    "(exit code 1: No matches found)")), 1);
+  assert.equal(cr.taskExit(note("Monitor \"watch\" script failed (exit 2)")),
+    2);
+  assert.equal(cr.taskExit(note("Background command \"echo exit code 5\" " +
+    "completed (exit code 0)")), 0);
+  assert.equal(cr.taskExit(note("Background command \"x\" was stopped")),
+    null);
+  assert.equal(cr.taskExit("<task-notification><task-id>b1</task-id>" +
+    "<status>completed</status></task-notification>"), null);
+});
+
+// A Monitor's latest event's last line is its row's text, kept while it
+// is open and onto its BgEnded once it closes; a shell's notification and
+// a closed task's set none.  A shell's exit code goes onto its BgEnded.
+test("a Monitor keeps its latest event's last line, and a shell its exit " +
+  "code once it closes", () => {
+  const open = new Map<string, string>([["m1", "monitor"], ["b1", "bash"]]);
+  const info: cr.BgInfo = new Map();
+  const ended: cr.BgEnded = new Map();
+  const events: cr.BgEvents = new Map();
+  const note = (body: string) => ({ type: "user",
+    timestamp: "2026-08-17T20:55:00.000Z", message: { content:
+      "<task-notification>" + body + "</task-notification>" } });
+  const scan = (body: string) =>
+    cr.scanBackground(note(body), open, info, ended, events);
+  scan("<task-id>m1</task-id><summary>Monitor event: \"ci\"</summary>" +
+    "<event>lint &amp; test\n\x1b[32mgreen\x1b[0m &lt;3\n\n</event>");
+  assert.equal(events.get("m1"), "green <3");
+  assert.equal(cr.backgroundTasks(open, info, events)
+    .find((t) => t.id === "m1")!.last, "green <3");
+  assert.equal(cr.backgroundTasks(open, info, events)
+    .find((t) => t.id === "b1")!.last, undefined);
+  scan("<task-id>b1</task-id><event>not a Monitor's</event>");
+  assert.equal(events.has("b1"), false);
+  scan("<task-id>m1</task-id><event>[Monitor expired after 30m]</event>");
+  assert.equal(cr.endedTasks(ended).find((t) => t.id === "m1")!.last,
+    "[Monitor expired after 30m]");
+  assert.equal(events.has("m1"), false);
+  scan("<task-id>b1</task-id><status>failed</status><summary>Background " +
+    "command \"make\" failed with exit code 2</summary>");
+  const b1 = cr.endedTasks(ended).find((t) => t.id === "b1")!;
+  assert.equal(b1.exit, 2);
+  assert.equal(b1.last, undefined);
+  // Stopped, with no exit code: none.
+  open.set("b2", "bash");
+  scan("<task-id>b2</task-id><status>killed</status><summary>Background " +
+    "command \"make\" was stopped</summary>");
+  assert.equal(cr.endedTasks(ended).find((t) => t.id === "b2")!.exit,
+    undefined);
+});
+
 // The plugin reads an agent's file as it grows, folding only what was appended
 // since its last read: cut anywhere, mid-line included, the file folded
 // piece by piece reads as it does read whole.
