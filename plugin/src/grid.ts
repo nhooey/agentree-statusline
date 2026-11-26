@@ -43,6 +43,9 @@ export type Piece = {
  * row has nothing for; one that is present is drawn, even as no spans. */
 export type Row = {
   readonly scope: string;
+  /** The subagent's id, on a subagent's row of the band's tree: the id
+   * Claude Code's agent panel asks for its own row of the agent under. */
+  readonly agentId?: string;
   readonly depth?: number;
   readonly label: readonly Piece[];
   readonly cells: { readonly [key: string]: readonly Span[] };

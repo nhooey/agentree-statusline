@@ -13,7 +13,9 @@
 //                 no line, the turn's receipt (underAnswer);
 //   UserMessage   under a prompt typed at the composer, its turn's tag;
 //                 and a message another agent sent, folded, as that
-//                 agent's task and the message's first line.
+//                 agent's task and the message's first line;
+//   AgentRow      Claude Code's agent panel row of each agent the band's
+//                 tree draws, hidden (agent-panel-dedupe).
 //
 // The band's 🎤 and 🎮 rows are live while a turn runs; once the turn has
 // ended and Claude Code has written its records, the plugin stamps them,
@@ -45,9 +47,9 @@ import type { Turn } from '../src/claude_records.ts'
 import {
   ROW_NAMES, accountHide, accountLine, bandRows, bandRule, bandScoped,
   drawnIn, footerRuler, footerTail,
-  modeOfHint, rootDrawn, ruleDrawn, treeAgents,
+  modeOfHint, rootDrawn, ruleDrawn, treeAgentIds, treeAgents,
 } from '../src/band.ts'
-import type { RowsLive, RowsPlace } from '../src/band.ts'
+import type { BandOpts, RowsLive, RowsPlace } from '../src/band.ts'
 import {
   answerText, billedNothing, closingLine, newestBilled, receiptScoped,
   stampedOf, startTag, tagsHidden, turnKey,
@@ -927,27 +929,38 @@ function pressLine(ui: any, $: $, spans: readonly Span[], key: string):
  * indented that much.  So every mark stands on one column. */
 async function bandNow($: $, isWorking: boolean, place: Place):
   Promise<{ scope: string; spans: Span[] }[]> {
-  const doc = await read($, status)
-  const o = options()
-  if (doc === null || o === null) return []
-  const inset = place === 'footer' ? o.hintInset : 0
-  const indent = place === 'above' ? o.hintInset : 0
-  const st = await settingsOf($, o)
-  const fig = at(doc as Dict, await read($, clockNow))
-  const cols = bandCols || 80
   const running = isWorking || await read($, held)
+  const b = await bandBasis($, running, place)
+  if (b === null) return []
+  const { o, st, opts } = b
+  const fig = at(b.doc, await read($, clockNow))
+  const cols = bandCols || 80
   const account = o.accountPlace === 'row' &&
     o.rows.account.place === place && accountedIn(o, running)
     ? accountLine(st, fig, accountHide(o.hide, o.weeklyWindows),
-      cols - inset, await home($), indent, rootedIn(o, running)) : []
+      cols - (opts.inset ?? 0), await home($), opts.indent ?? 0,
+      rootedIn(o, running)) : []
   return [...account.length ? [{ scope: 'account', spans: account }] : [],
-    ...bandScoped(st, fig, cols, o.hide,
-      { rate: await read($, rate), phase: running ? 'running' : 'done',
-        live: liveOf(o), place, places: rowPlacesOf(o), inset, indent,
-        agents: o.rows.subagents.live,
-        linger: o.finishedWithin,
-        folds: place === 'above' ? heldFolds(await read($, folds)).folds
-          : {} })]
+    ...bandScoped(st, fig, cols, o.hide, opts)]
+}
+
+/** What the band's rows of `place` are drawn from as they stand, a turn
+ * running or not by `running`: the options, the settings, the last status
+ * document as it was read, and the band's options from them; null without
+ * a document or options. */
+async function bandBasis($: $, running: boolean, place: Place):
+  Promise<{ o: Options; st: Settings; doc: Dict; opts: BandOpts } | null> {
+  const doc = await read($, status)
+  const o = options()
+  if (doc === null || o === null) return null
+  return { o, st: await settingsOf($, o), doc: doc as Dict, opts: {
+    rate: await read($, rate), phase: running ? 'running' : 'done',
+    live: liveOf(o), place, places: rowPlacesOf(o),
+    inset: place === 'footer' ? o.hintInset : 0,
+    indent: place === 'above' ? o.hintInset : 0,
+    agents: o.rows.subagents.live,
+    linger: o.finishedWithin,
+    folds: place === 'above' ? heldFolds(await read($, folds)).folds : {} } }
 }
 
 /** What a press on a background shell's row opens its log band with. */
@@ -1018,6 +1031,57 @@ function accountedIn(o: Options, running: boolean): boolean {
 
 async function home($: $): Promise<string> {
   return (await placesFor($)).home
+}
+
+/** What the band above the prompt on a surface showed at its last draw,
+ * of what its props alone tell: whether its tree is on screen (options
+ * read, no survey holding the band, the band not collapsed), whether a
+ * turn was running, and whether the band's rows that fit held this
+ * plugin's, as AbovePromptList last handed them (absent, they did). */
+type BandView = { shown: boolean; working: boolean; listed?: boolean }
+
+// Each surface's BandView as its band last drew, by surface.  Kept here,
+// not in `$.state`: a drawing never writes it, so a change asks every
+// drawing again ($.ui.invalidate), the agent panel's rows among them
+// (panelHidden).  A surface whose band has not drawn since this load has
+// none, and hides no row.
+const bandViews = new Map<string, BandView>()
+// What each drawing instance last noted, by component and requestId: a
+// redraw asks the others again only where its own props have moved, so
+// two instances of the band on one surface never ask each other again
+// without end.
+const bandNoted = new Map<string, string>()
+// The surfaces whose agent panel has asked for a row since this load:
+// only there does a change of the band ask the drawings again.
+const panelSurfaces = new Set<string>()
+
+/** Records `seen`, of the band on `surface` as the instance `e` (an
+ * AbovePrompt or AbovePromptList drawing) shows it, over what the surface
+ * held, and asks every drawing again where the instance's own `seen` has
+ * changed since it last drew, the surface's agent panel has rows and
+ * agent-panel-dedupe is on: turned on later, the option's change asks
+ * the rows again itself. */
+function noteBand($: $, e: { surface: string; component: string;
+  requestId: string }, seen: Partial<BandView>): void {
+  bandViews.set(e.surface, { shown: false, working: false,
+    ...bandViews.get(e.surface), ...seen })
+  const key = e.component + '\0' + e.requestId
+  const own = JSON.stringify(seen)
+  if (bandNoted.get(key) === own) return
+  bandNoted.set(key, own)
+  if (panelSurfaces.has(e.surface) && options()?.agentPanelDedupe) {
+    $.ui.invalidate('ui.render')
+  }
+}
+
+/** Whether the agent panel's row of agent `id` is hidden: where `seen`,
+ * the band on the row's surface, shows its tree on screen and its rows
+ * hold this plugin's, and `drawn`, the ids of the agents its tree draws
+ * (treeAgentIds), holds `id`. */
+export function panelHidden(seen: BandView | undefined,
+  drawn: readonly string[], id: string): boolean {
+  return seen !== undefined && seen.shown && seen.listed !== false &&
+    drawn.includes(id)
 }
 
 export const register: Register = on => {
@@ -1174,7 +1238,10 @@ export const register: Register = on => {
 
   // The band above the prompt: the rows whose rows.<row>.place is
   // "above".  Its width is taken either way: the footer and the receipt
-  // are laid out at it.
+  // are laid out at it.  Whether its tree is on screen on this surface,
+  // and whether a turn runs, is noted for the agent panel's rows
+  // (noteBand): not under a survey, nor while the band is collapsed, its
+  // tree then drawn and off screen.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const draw = drawStart('AbovePrompt')
     try {
@@ -1194,9 +1261,10 @@ export const register: Register = on => {
         void log($, 'band: ' + seen)
       }
       await read($, configured)
-      if (await optionsFor($) === null || e.props.hasSurvey) {
-        return await drawNext(draw, () => next(e))
-      }
+      const drawing = await optionsFor($) !== null && !e.props.hasSurvey
+      noteBand($, e, { shown: drawing && !e.props.isCollapsed,
+        working: e.props.isWorking })
+      if (!drawing) return await drawNext(draw, () => next(e))
       const lines = await bandNow($, e.props.isWorking, 'above')
       // Between turns the receipt carries the rows, and the band has none.
       if (!lines.length) return await drawNext(draw, () => next(e))
@@ -1232,11 +1300,49 @@ export const register: Register = on => {
 
   // The band's rows, this plugin's first (ownRowFirst), so band-rule's
   // rule over it is the band's top edge.  A later AbovePromptList hook in
-  // the chain may still reorder them.
+  // the chain may still reorder them.  Whether they hold this plugin's at
+  // all is noted (noteBand): a row past the band's limits, or one a hook
+  // above left out, is not drawn, and nor are its agents.
   on('ui.render', { component: 'AbovePromptList' }, async ($, e, next) => {
+    noteBand($, e,
+      { listed: e.props.rows.some((r) => r.plugin === $.plugin.name) })
     const rows = ownRowFirst(e.props.rows, $.plugin.name)
     return next(rows === e.props.rows ? e
       : { ...e, props: { ...e.props, rows } })
+  })
+
+  // Claude Code's agent panel under the prompt: the row of each agent the
+  // band's tree draws on this surface is hidden (panelHidden), so no agent
+  // is drawn twice, under the option agent-panel-dedupe.  The row is asked
+  // for its agent's id, the id the tree's row carries ($.agent.list's).
+  // The tree's agents are worked out here from what the band reads
+  // (bandBasis, treeAgentIds), so a new document or fold asks the row
+  // again; what only the band's props tell, a collapse or a survey, asks
+  // it again through noteBand.  So the row comes back as soon as the band
+  // no longer draws the agent.  The document is taken as it was read, not
+  // moved on to the band's clock, so the row is not asked every second:
+  // an agent the clock alone takes off the tree is one that ended
+  // `finished-within` ago, whose row the panel no longer draws.  Hidden,
+  // the agent stays in /tasks, and opening or stopping it still works.
+  on('ui.render', { component: 'AgentRow' }, async ($, e, next) => {
+    const draw = drawStart('AgentRow')
+    try {
+      panelSurfaces.add(e.surface)
+      await read($, configured)
+      const o = await optionsFor($)
+      const seen = bandViews.get(e.surface)
+      let hide = false
+      if (o?.agentPanelDedupe && !e.props.isHidden && seen?.shown) {
+        const b = await bandBasis($, seen.working || await read($, held),
+          'above')
+        hide = b !== null && panelHidden(seen,
+          treeAgentIds(b.st, b.doc, b.o.hide, b.opts), e.requestId)
+      }
+      return await drawNext(draw, () => hide
+        ? next({ ...e, props: { ...e.props, isHidden: true } }) : next(e))
+    } finally {
+      drawEnd(draw)
+    }
   })
 
   // Claude Code's closing line, `✻ <word> for <duration>`, drawn as the

@@ -944,3 +944,13 @@ export function bandScoped(st: Settings, fig: Dict, cols: number,
     .map((r) => ({ scope: r.scope,
       spans: draw(st, indented(r, opts.indent ?? 0), keys, drawn, hide) }));
 }
+
+/** The ids of the subagents whose rows the band's tree above the prompt
+ * draws (treeOf), top to bottom, from the same document and options
+ * bandScoped draws them with: none folded away under another row, ended
+ * past `finished-within`, left out by the phase or under `hide`. */
+export function treeAgentIds(st: Settings, fig: Dict,
+  hide: readonly string[], opts: BandOpts): string[] {
+  return treeOf(st, fig, bandRows(st, fig, opts), opts, hide)
+    .flatMap((r) => r.agentId === undefined ? [] : [r.agentId]);
+}

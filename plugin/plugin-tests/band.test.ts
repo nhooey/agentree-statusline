@@ -164,6 +164,7 @@ async function treeRowsOf(ui: { drawn: () => Promise<unknown> }) {
 
 const BAND: RenderPropsOf['AbovePrompt'] = {
   hasSurvey: false,
+  isCollapsed: false,
   isWorking: false,
   maxRows: 10,
   bodyColumns: COLS - 5,
@@ -3321,6 +3322,155 @@ test('a press on a label switches the transcript to its agent, and 🧵 ' +
   await band.press({ key: 'view:turn' })
   expect(views).toEqual([{ agentId: 'c1' }, {}, { agentId: 'p1' }, {}])
 })
+
+// ════════════════════════════════════════════════════════════════════════════
+// The agent panel's rows of the agents the band draws.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Whether each agent's row in Claude Code's agent panel reaches core
+ * hidden, by the agent's id, as last asked: a hook beneath every
+ * plugin's, registered before `world`, whose own hook draws every
+ * component and would answer first. */
+function panelRows(on: On): Map<string, boolean> {
+  const seen = new Map<string, boolean>()
+  on('ui.render', { component: 'AgentRow' }, async ($, e, next) => {
+    seen.set(e.requestId, e.props.isHidden)
+    return next(e)
+  })
+  return seen
+}
+
+/** What an agent of the list carries beyond what PARENT and KID give. */
+const LISTED = { kind: 'local_agent', taskStatus: 'running', label: '',
+  startTime: NOW * 1000, cwd: CWD, tokenCount: 0, tokenSamples: [],
+  hasRow: true } as const
+
+/** The agent panel's row of `a` on `surface`, mounted as Claude Code asks
+ * for it: shown, among the rows of `PANEL_IDS`. */
+const PANEL_IDS = ['p1', 'c1', 'x1']
+const mountPanelRow = ($: any,
+  a: Pick<AgentInfo, 'id' | 'type' | 'description' | 'status'>,
+  surface: 'terminal' | 'desktop' = 'terminal') =>
+  $.ui.mount({ plugin: 'agentree-statusline', surface,
+    component: 'AgentRow', requestId: a.id,
+    props: { ...LISTED, ...a, tokenSamples: [], rowIds: PANEL_IDS,
+      isHidden: false } })
+
+// In the panel but in no document the band has read, as an agent started
+// since the last read is: not in the band's tree.
+const STRAY: AgentInfo = { ...LISTED, tokenSamples: [], id: 'x1',
+  type: 'Explore', name: 'Stray', description: 'Not in the tree',
+  status: 'running' }
+
+test('the agent panel\'s row of an agent the band\'s tree draws is hidden, ' +
+  'and comes back once the tree no longer draws it', async ($, on) => {
+    const seen = panelRows(on)
+    const { w } = clicking(on, [PARENT, KID])
+    await start($, w, 'terminal', STATUS)
+    const { band } = await clickBand($, w)
+    for (const a of [PARENT, KID, STRAY]) await mountPanelRow($, a)
+    expect(Object.fromEntries(seen))
+      .toEqual({ p1: true, c1: true, x1: false })
+    // Folded under its parent, the kid is no longer drawn: its own row
+    // comes back, and goes again once the parent is opened.
+    await band.press({ key: 'fold:p1' })
+    expect(Object.fromEntries(seen))
+      .toEqual({ p1: true, c1: false, x1: false })
+    await band.press({ key: 'fold:p1' })
+    expect(seen.get('c1')).toBe(true)
+  })
+
+test('the agent panel keeps every row while the band is collapsed, under ' +
+  'a survey, or left out of the band, and hides them again after',
+  async ($, on) => {
+    const seen = panelRows(on)
+    const { w } = clicking(on, [PARENT, KID])
+    await start($, w, 'terminal', STATUS)
+    const { band } = await clickBand($, w)
+    const rows: { drawn: () => Promise<unknown> }[] = []
+    for (const a of [PARENT, KID]) rows.push(await mountPanelRow($, a))
+    // The kit draws again what the plugin invalidated as a drawing is
+    // next read.
+    const now = async () => {
+      for (const r of rows) await r.drawn()
+      return Object.fromEntries(seen)
+    }
+    expect(await now()).toEqual({ p1: true, c1: true })
+    const drawing = { ...BAND, isWorking: true }
+    for (const props of [{ isCollapsed: true }, { hasSurvey: true }]) {
+      await band.redraw({ ...drawing, ...props })
+      expect(await now()).toEqual({ p1: false, c1: false })
+      await band.redraw(drawing)
+      expect(await now()).toEqual({ p1: true, c1: true })
+    }
+  })
+
+test('the agent panel keeps every row while a hook above leaves this ' +
+  'plugin\'s row out of the band', {
+  // Leaving it out while the world's store holds `left-out`.
+  plugins: [{ name: 'other-band', tier: 'prepend', register(on) {
+    on('ui.render', { component: 'AbovePromptList' }, async ($, e, next) =>
+      next(await $.store.get('left-out') ? { ...e, props: { ...e.props,
+        rows: e.props.rows.filter((r) => r.plugin !== 'agentree-statusline') } }
+        : e))
+  } }],
+}, async ($, on) => {
+  const seen = panelRows(on)
+  const { w } = clicking(on, [PARENT, KID])
+  await start($, w, 'terminal', STATUS)
+  const { band } = await clickBand($, w)
+  const rows: { drawn: () => Promise<unknown> }[] = []
+  for (const a of [PARENT, KID]) rows.push(await mountPanelRow($, a))
+  const now = async () => {
+    for (const r of rows) await r.drawn()
+    return Object.fromEntries(seen)
+  }
+  expect(await now()).toEqual({ p1: true, c1: true })
+  w.store.set('left-out', true)
+  await band.redraw({ ...BAND, isWorking: true })
+  expect(await now()).toEqual({ p1: false, c1: false })
+  w.store.delete('left-out')
+  await band.redraw({ ...BAND, isWorking: true })
+  expect(await now()).toEqual({ p1: true, c1: true })
+})
+
+test('between turns the agent panel hides the rows of the agents the band ' +
+  'still draws, and of no other', async ($, on) => {
+    const seen = panelRows(on)
+    const { w } = clicking(on, [PARENT, KID])
+    await start($, w, 'terminal', STATUS)
+    const { band } = await clickBand($, w)
+    await band.redraw({ ...BAND, isWorking: false })
+    const rows = await treeRowsOf(band)
+    for (const a of [PARENT, KID]) await mountPanelRow($, a)
+    expect(seen.get('p1'))
+      .toBe(rows.some((r) => r.text.includes('Parent')))
+    expect(seen.get('c1')).toBe(rows.some((r) => r.text.includes('Kid')))
+  })
+
+test('the agent panel of another surface keeps the rows of the agents ' +
+  'this surface\'s band draws', async ($, on) => {
+    const seen = panelRows(on)
+    const { w } = clicking(on, [PARENT, KID])
+    await start($, w, 'terminal', STATUS)
+    await clickBand($, w)
+    await mountPanelRow($, PARENT, 'desktop')
+    expect(seen.get('p1')).toBe(false)
+  })
+
+test('agent-panel-dedupe false keeps every row of the agent panel',
+  async ($, on) => {
+    const seen = panelRows(on)
+    const { w } = clicking(on, [PARENT, KID])
+    w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
+      encoder.encode('{"agent-panel-dedupe": false}'))
+    await start($, w, 'terminal', STATUS)
+    const { band } = await clickBand($, w)
+    expect((await treeRowsOf(band)).some((r) => r.text.includes('Kid')))
+      .toBe(true)
+    for (const a of [PARENT, KID]) await mountPanelRow($, a)
+    expect(Object.fromEntries(seen)).toEqual({ p1: false, c1: false })
+  })
 
 /** The band above the prompt over a session with an open background
  * shell, `bsh1`, and Monitor, `mon1`, mounted; each `$.ui.toast` kept in

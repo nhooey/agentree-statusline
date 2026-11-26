@@ -8,6 +8,7 @@ The plugin, `agentree-statusline` in [`plugin/`](../plugin/README.md), draws ins
 The subagent rows, one per subagent, hang in the band's tree, drawn by `agent_row.ts`.
 Every row of all of them has the same columns in the same order, so a figure stands on the same screen column wherever it is drawn.
 Claude Code's own agent panel draws its rows itself.
+The plugin hides the panel's row of each subagent or teammate the band's tree draws on screen on that surface, so no agent is shown twice ([The tree](#the-tree)); the option `agent-panel-dedupe` keeps every row.
 
 All examples below are the programs' own output against the test fixtures (clock pinned to 2026-08-16 02:23:20 UTC, the `unknown` terminal profile), with colour stripped: `usage-dev figures` for the plugin's rows, from `tests/fixtures/figures/`, with the subagents of a case of `tests/fixtures/panel/inputs.json` where the tree has some (`--agents`).
 Colour and brightness carry meaning of their own — see [Colour and brightness](#colour-and-brightness).
@@ -152,6 +153,9 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
   A folded agent keeps its own figures and draws 👶🏻 and how many agents are hidden under it, and 💻 📡 how many of its own shells and Monitors; 🧵 folded hides 🎤 with its agents, and counts its own shells and Monitors with 💻 📡.
   Every row starts opened.
 - **Every row drawn.** The tree draws every agent, shell and Monitor it holds, however many there are: when they outgrow the screen, scroll the band, or fold a row to hide its subtree.
+- **Claude Code's agent panel.** The panel under the prompt leaves out the row of every agent the tree draws, a row scrolled out of the band's window included, and draws it again as soon as the tree no longer does: the agent folded away under another row, ended past `finished-within`, the band collapsed, held by a survey or, under another plugin's hook, left without this plugin's row.
+  A hidden agent stays in `/tasks`, where it opens and stops as before; the `main` row, a workflow's and the panel's folded summary of idle agents are always the panel's own.
+  The option `agent-panel-dedupe` (on by default) turns this off.
 - **The fold state.** Each row stays as it was left for the rest of the conversation, kept in the plugin's `$.state` by key: an agent's id, and fixed keys for 🎮 and 🧵.
   Each change also keeps the folds in the plugin's store under the session's id, so a restart, a `--resume` or a `--continue` of the conversation draws 🎮 and 🧵, and any agent still drawn, as they were left; an entry not written for 31 days is dropped as a session starts.
   A `/clear` or a forked session starts a new conversation, with every row opened.

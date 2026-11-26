@@ -644,7 +644,7 @@ function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
       folded ? under(id).length : 0, 0, null, true, a.now)
       .filter((p) => !drawn ||
         (p.path !== "state.shells" && p.path !== "state.monitors"));
-    return { scope: "agent",
+    return { scope: "agent", agentId: id,
       label: pressingAll([...label, ...progressPiece(t.progress)],
       { kind: "view", agent: id }),
       cells: spendOn(st, a, [t], agentCells(st, t.task, t.usage, t.meta,

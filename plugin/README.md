@@ -91,7 +91,8 @@ and `subscript-decimals`, the `rows` table (for each of 🎤, 🧵, 🎮, the su
 footer line, when, and whether a turn's end stamps it into the
 transcript), `band-rule` (a rule in the session's `/color` over the band above the prompt), `account-place`, `weekly-windows` (the 💳 row's other weekly windows, all off by default), `right-edge` (following the rows' places),
 the footer's layout (`hint-inset`, `hint-tuck`, `footer-ruler`),
-`agent-message-row`, `slow-toast` (a slow read shown as a toast as well as
+`agent-message-row`, `agent-panel-dedupe` (Claude Code's agent panel row of
+each agent the band's tree draws hidden), `slow-toast` (a slow read shown as a toast as well as
 in the log) and `starts-kept` (how many start lines and receipts the
 plugin's store keeps). `hooks/configuration.ts` reads the
 files at each load, on `session.start`, and every 30 seconds on the tick,

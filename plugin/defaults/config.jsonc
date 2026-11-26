@@ -120,6 +120,9 @@
   "footer-ruler": false,
   // Draw a folded message from another agent as its task and first line.
   "agent-message-row": true,
+  // Hide Claude Code's own agent panel row of each agent the band's tree
+  // draws; the row comes back while the band does not draw the agent.
+  "agent-panel-dedupe": true,
   // Show a slow read as a toast as well as in the plugin's log.  Off: a toast
   // takes the footer's line, and the 💳 at its right end under
   // account-place "tail".
