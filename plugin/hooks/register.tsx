@@ -114,15 +114,17 @@ const shellLog = atom(
 export const startKey = (text: string) =>
   'start:' + sha256Hex(text).slice(0, 32)
 
-/** The band's rows with `plugin`'s first and the others after them in the
- * order they came, each row itself as it came, since the engine refuses a
- * row changed or repeated; `rows` itself where `plugin` has none, or its
- * are first already. */
-export function ownRowFirst<R extends { readonly plugin: string }>(
-  rows: readonly R[], plugin: string): readonly R[] {
-  const own = rows.filter((r) => r.plugin === plugin)
-  if (!own.length || own.every((r, i) => rows[i] === r)) return rows
-  return [...own, ...rows.filter((r) => r.plugin !== plugin)]
+/** The band's rows in `band-order`'s `order`: the rows of each plugin it
+ * names first, in its order, then every other row in the order it came,
+ * each a plugin's rows in theirs.  Each row is passed on itself, once,
+ * since the engine refuses a row changed or repeated; `rows` itself where
+ * no row moves. */
+export function orderRows<R extends { readonly plugin: string }>(
+  rows: readonly R[], order: readonly string[]): readonly R[] {
+  const names = [...new Set(order)]
+  const named = names.flatMap((p) => rows.filter((r) => r.plugin === p))
+  if (named.every((r, i) => rows[i] === r)) return rows
+  return [...named, ...rows.filter((r) => !names.includes(r.plugin))]
 }
 
 let st: Settings | null = null
@@ -1298,15 +1300,19 @@ export const register: Register = on => {
     }
   })
 
-  // The band's rows, this plugin's first (ownRowFirst), so band-rule's
-  // rule over it is the band's top edge.  A later AbovePromptList hook in
-  // the chain may still reorder them.  Whether they hold this plugin's at
-  // all is noted (noteBand): a row past the band's limits, or one a hook
-  // above left out, is not drawn, and nor are its agents.
+  // The band's rows in band-order's order (orderRows), this plugin's first
+  // in the defaults, so band-rule's rule over it is the band's top edge.
+  // As they came while the options cannot be read.  A later
+  // AbovePromptList hook in the chain may still reorder them.  Whether
+  // they hold this plugin's at all is noted (noteBand): a row past the
+  // band's limits, or one a hook above left out, is not drawn, and nor
+  // are its agents.
   on('ui.render', { component: 'AbovePromptList' }, async ($, e, next) => {
     noteBand($, e,
       { listed: e.props.rows.some((r) => r.plugin === $.plugin.name) })
-    const rows = ownRowFirst(e.props.rows, $.plugin.name)
+    await read($, configured)
+    const o = await optionsFor($)
+    const rows = orderRows(e.props.rows, o?.bandOrder ?? [])
     return next(rows === e.props.rows ? e
       : { ...e, props: { ...e.props, rows } })
   })

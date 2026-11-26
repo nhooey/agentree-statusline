@@ -18,7 +18,7 @@ const TYPES = ["bool", "int", "string", "enum", "list", "table", "record"];
 const RECORD_FIELDS = ["bool", "string", "enum", "conditions",
   "conditions-by"];
 const FIELDS = ["type", "items", "fields", "rows", "derived", "minimum",
-  "doc-table", "doc-default", "doc"];
+  "distinct", "doc-table", "doc-default", "doc"];
 const REQUIRED = ["type", "doc-table", "doc"];
 
 type Field = { type: string; items?: readonly string[];
@@ -27,7 +27,8 @@ type Rec = { type: string; items?: readonly string[];
   fields?: { readonly [k: string]: Field }; rows?: readonly string[];
   derived?: { from: string; field?: string; any?: string;
     map: { readonly [k: string]: unknown } };
-  minimum?: number; "doc-table": string | null; doc: string };
+  minimum?: number; distinct?: boolean; "doc-table": string | null;
+  doc: string };
 const SPEC = OPTIONS as unknown as { readonly [name: string]: Rec };
 
 const subset = (xs: Iterable<string>, of: readonly string[]): boolean =>
@@ -72,6 +73,8 @@ test("every record is in the form the reader takes", () => {
     }
     assert.ok(!("minimum" in o) || o.type === "int",
       bad("only an int has a minimum"));
+    assert.ok(!("distinct" in o) || (o.type === "list" && o.distinct === true),
+      bad("only a list is distinct, and then true"));
     assert.ok(o["doc-table"] === null ||
       (DOC_TABLES as readonly string[]).includes(o["doc-table"]),
       bad(`no doc table ${o["doc-table"]}`));

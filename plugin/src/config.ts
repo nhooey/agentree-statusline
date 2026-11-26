@@ -69,8 +69,8 @@ export const CONFIG_ENV = ["HOME", "XDG_CONFIG_HOME", CONFIG_DIR_ENV] as const;
 // ── The spec, loosely typed ───────────────────────────────────────────────
 
 type Scalar = { type: string; items?: readonly string[];
-  minimum?: number; fixed?: readonly string[]; keys?: readonly string[];
-  nullable?: boolean };
+  minimum?: number; distinct?: boolean; fixed?: readonly string[];
+  keys?: readonly string[]; nullable?: boolean };
 // Every option's default is in the defaults file alone (Defaults).
 type OptionRec = Scalar & {
   fields?: { readonly [field: string]: Scalar };
@@ -538,10 +538,16 @@ function scalar(kind: string, value: Json, spec: Scalar, where: string):
     return { got: null, bad: `${where} must be one of ${quoted(items)}${near}` };
   }
   if (kind === "list") {
-    if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
-      return { got: [...value] as string[], bad: null };
+    if (!(Array.isArray(value) && value.every((v) => typeof v === "string"))) {
+      return { got: null, bad: `${where} must be a list of strings` };
     }
-    return { got: null, bad: `${where} must be a list of strings` };
+    const twice = spec.distinct
+      ? value.find((v, i) => value.indexOf(v) !== i) : undefined;
+    if (twice !== undefined) {
+      return { got: null,
+        bad: `${where} names ${dumpsUnicode(twice)} more than once` };
+    }
+    return { got: [...value] as string[], bad: null };
   }
   throw new Error("no such type: " + kind);
 }

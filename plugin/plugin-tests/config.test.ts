@@ -172,6 +172,7 @@ test('with no configuration file the options are the defaults', () => {
     },
     finishedWithin: 120,
     bandRule: true,
+    bandOrder: ['agentree-statusline'],
     accountPlace: 'row',
     planUsage: true,
     weeklyWindows: { opus: false, sonnet: false, omelette: false,

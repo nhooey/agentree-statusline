@@ -213,6 +213,12 @@ const INPUTS: Input[] = [
     { [PROJECT]: '{"hint-inset": 3.0, "starts-kept": 2.5}', ...GIT }),
   input("list-bad-item", "one bad item skips the whole list",
     { [USER]: '{"hide": ["u"]}', [PROJECT]: '{"hide": ["a", 1]}', ...GIT }),
+  input("list-distinct-repeated", "a name given twice in a distinct list" +
+    " skips the whole list, and the layer under supplies it; a name no" +
+    " plugin draws under is kept",
+    { [USER]: '{"band-order": ["no-such-plugin", "agentree-statusline"]}',
+      [PROJECT]: '{"band-order": ["a", "agentree-statusline", "a"]}',
+      ...GIT }),
   input("table-bad-parts", "a table's bad rows and fields are skipped" +
     " alone, and the account row refuses to be stamped",
     { [PROJECT]: '{"rows": {"turn": {"live": "allways",' +

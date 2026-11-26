@@ -76,6 +76,15 @@
   // prompt, in the session's /color, or the prompt box's border colour
   // with none.
   "band-rule": true,
+  // The order the plugins' rows stack in the band above the prompt, by
+  // plugin name: those named here first, in this order, then every other
+  // plugin's as Claude Code gave them; [] leaves them as they came.  A
+  // name no plugin draws under is passed over.  A file that sets it
+  // restates the whole list, since a list replaces this one whole:
+  // ["other-plugin", "agentree-statusline"] to put another's row over
+  // this plugin's.  The rule above tops the band only while
+  // agentree-statusline is first.
+  "band-order": ["agentree-statusline"],
   // Where the 💳 account is drawn: "row", a row of its own where
   // rows.account.place puts it, in its colours, or "tail", at the footer
   // line's right end, plain and dim, whatever rows.account.place says.

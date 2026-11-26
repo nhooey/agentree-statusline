@@ -89,7 +89,7 @@ the account and period, the `hide` paths, `mark-spacing`
 and `subscript-decimals`, the `rows` table (for each of 🎤, 🧵, 🎮, the subagents, the
 🔖 tag lines and 💳, where it is drawn, above the prompt or under the
 footer line, when, and whether a turn's end stamps it into the
-transcript), `band-rule` (a rule in the session's `/color` over the band above the prompt), `account-place`, `weekly-windows` (the 💳 row's other weekly windows, all off by default), `right-edge` (following the rows' places),
+transcript), `band-rule` (a rule in the session's `/color` over the band above the prompt), `band-order` (the plugins whose rows stack first in that band, in order; `["agentree-statusline"]` by default), `account-place`, `weekly-windows` (the 💳 row's other weekly windows, all off by default), `right-edge` (following the rows' places),
 the footer's layout (`hint-inset`, `hint-tuck`, `footer-ruler`),
 `agent-message-row`, `agent-panel-dedupe` (Claude Code's agent panel row of
 each agent the band's tree draws hidden), `slow-toast` (a slow read shown as a toast as well as
