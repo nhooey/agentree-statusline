@@ -211,6 +211,11 @@ The tree draws every row it holds, however many subagents there are; scroll the 
 `band-rule` is on in the defaults: the band above the prompt opens on a rule, `─` across the band, in the session's colour (its latest `/color`) as Claude Code draws it, or the prompt box's border colour with none, whenever the band draws a row and still fits the rows it may take with it ([The rule](layout.md#the-rule)).
 `false` leaves it out.
 
+`band-order` is the order the plugins' rows stack in the band above the prompt, by plugin name: the rows of each plugin it names come first, in its order, and every other plugin's follow in the order Claude Code gave them.
+The defaults say `["agentree-statusline"]`, so this plugin's row, and the rule over it, tops the band.
+A file that sets it restates the whole list, since a list replaces the defaults' whole: `["coding-agent-kanban-turns", "agentree-statusline"]` puts that plugin's row over this one's, and the rule then sits between them ([The rule](layout.md#the-rule)).
+A name no plugin draws a row under is passed over, `[]` leaves the rows as they came, and a name given twice, or an entry that is not a string, skips the file's value with a warning.
+
 The log's `config options:` line lists every option a layer above the defaults gave, each with its value and layer.
 
 ### The credits

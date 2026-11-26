@@ -20,6 +20,7 @@
 //               by that field's values and naming every value it can
 //               take; its default in plugin/defaults/config.jsonc is null
 //   minimum     an int's least value
+//   distinct    true where a list may not name one string twice
 //   doc-table   the table of docs/options.md it is a row of, or null
 //   doc-default the Default cell, where the default alone does not say it
 //   doc         the Effect cell, in Markdown
@@ -133,6 +134,14 @@ export const OPTIONS = {
     "type": "bool",
     "doc-table": null,
     "doc": "Draw a rule, `─` across the band, as the first row of the band above the prompt, in the session's colour (its latest `/color`) as Claude Code draws it, or the prompt box's border colour with none. Not drawn while the band draws nothing, or where it would make the band taller than the rows it may take.",
+  },
+  // Plugins' names, not rows of this plugin's: a name no plugin draws a
+  // row under is passed over.  A list replaces the defaults' whole.
+  "band-order": {
+    "type": "list",
+    "distinct": true,
+    "doc-table": null,
+    "doc": "The order the plugins' rows stack in the band above the prompt, by plugin name: the rows of a plugin named here come first, in this list's order, and every other plugin's follow in the order Claude Code gave them. A name no plugin draws a row under is passed over, and `[]` leaves the order as it came. `band-rule`'s rule tops this plugin's row, so it is the band's top edge only while `agentree-statusline` is first.",
   },
   "account-place": {
     "type": "enum",
@@ -282,6 +291,7 @@ export type Options = {
   };
   readonly finishedWithin: number;
   readonly bandRule: boolean;
+  readonly bandOrder: readonly string[];
   readonly accountPlace: "row" | "tail";
   readonly planUsage: boolean;
   readonly weeklyWindows: {

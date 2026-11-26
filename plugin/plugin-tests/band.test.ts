@@ -31,7 +31,7 @@ import {
 } from './world.ts'
 import type { Ran, Run, World } from './world.ts'
 import {
-  ownRowFirst, partsOf, receiptKey, startKey,
+  orderRows, partsOf, receiptKey, startKey,
 } from '../hooks/register.tsx'
 import { drawingNote, ioText } from '../hooks/profile.ts'
 import { LOG_NAME } from '../hooks/log.ts'
@@ -1796,7 +1796,8 @@ const listRow = (plugin: string) =>
 
 /** Each arrangement of the band's rows as it reaches core, by plugin,
  * oldest first: a hook beneath every plugin's, registered before the
- * test's first call on `$`. */
+ * test's first call on `$`.  The engine hands it copies of the rows, so
+ * whether a row is passed on itself is orderRows' test's to say. */
 function stackedRows(on: On): string[][] {
   const seen: string[][] = []
   on('ui.render', { component: 'AbovePromptList' }, async ($, e, next) => {
@@ -1813,8 +1814,13 @@ const mountList = ($: any, rows: { plugin: string }[]) =>
     component: 'AbovePromptList', props: { ...BAND, isCollapsed: false,
       rows } })
 
-test('the band above the prompt has this plugin\'s row first, the ' +
-  'others after it in their order', async ($, on) => {
+/** `w`'s project-local file setting band-order to `order`. */
+const bandOrder = (w: World, order: unknown) =>
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
+    encoder.encode(JSON.stringify({ 'band-order': order })))
+
+test('the band above the prompt has this plugin\'s row first in the ' +
+  'defaults, the others after it in their order', async ($, on) => {
     world(on)
     const seen = stackedRows(on)
     await mountList($, ['other-band', 'agentree-statusline', 'third-band']
@@ -1852,16 +1858,66 @@ test('a second plugin\'s row drawn above this plugin\'s in the chain is ' +
     'other-band'])
 })
 
-test('ownRowFirst moves the plugin\'s rows to the front, each row the ' +
-  'same one, and hands back the rows themselves where there is nothing to ' +
-  'move', async () => {
-    const [a, ours, b] = ['a', 'agentree-statusline', 'b'].map(listRow)
-    const moved = ownRowFirst([a, ours, b], 'agentree-statusline')
-    expect(moved.map((r) => r.plugin))
-      .toEqual(['agentree-statusline', 'a', 'b'])
-    expect(moved[0] === ours && moved[1] === a && moved[2] === b).toBe(true)
-    for (const rows of [[ours, a, b], [a, b], []]) {
-      expect(ownRowFirst(rows, 'agentree-statusline') === rows).toBe(true)
+test('band-order stacks the rows of the plugins it names first, in its ' +
+  'order, and every other row after them in the order it came',
+  async ($, on) => {
+    const w = world(on)
+    bandOrder(w, ['other-band', 'agentree-statusline'])
+    const seen = stackedRows(on)
+    await mountList($, ['third-band', 'agentree-statusline', 'other-band',
+      'fourth-band'].map(listRow))
+    expect(seen.at(-1)).toEqual(['other-band', 'agentree-statusline',
+      'third-band', 'fourth-band'])
+  })
+
+test('band-order passes over a plugin that draws no row, and stacks a ' +
+  'second plugin\'s row in the chain over this plugin\'s', {
+  plugins: [{ name: 'other-band', tier: 'prepend', register(on) {
+    on('ui.render', { component: 'AbovePrompt' }, async ($, e) => {
+      const { Text } = $.ui.resolve(e)
+      return h(Text, { key: 'other' }, 'the other row') as RenderElement
+    })
+  } }],
+}, async ($, on) => {
+  const w = world(on)
+  bandOrder(w, ['no-such-band', 'other-band', 'agentree-statusline'])
+  const seen = stackedRows(on)
+  await start($, w, 'terminal', STATUS)
+  await bandAbove($)
+  expect(seen.at(-1)?.slice(0, 2)).toEqual(['other-band',
+    'agentree-statusline'])
+})
+
+test('an empty band-order hands the band\'s rows on as they came',
+  async ($, on) => {
+    const w = world(on)
+    bandOrder(w, [])
+    const seen = stackedRows(on)
+    await mountList($, ['other-band', 'agentree-statusline', 'third-band']
+      .map(listRow))
+    expect(seen.at(-1))
+      .toEqual(['other-band', 'agentree-statusline', 'third-band'])
+  })
+
+test('orderRows moves the named plugins\' rows to the front in the ' +
+  'order\'s order, each row the same one once, and hands back the rows ' +
+  'themselves where nothing moves', async () => {
+    const [a, ours, b, ours2] =
+      ['a', 'agentree-statusline', 'b', 'agentree-statusline'].map(listRow)
+    const moved = orderRows([a, ours, b, ours2], ['b', 'agentree-statusline'])
+    expect(moved.length).toBe(4)
+    expect(moved[0] === b && moved[1] === ours && moved[2] === ours2 &&
+      moved[3] === a).toBe(true)
+    // A name with no row is passed over, and a name given twice moves its
+    // rows once.
+    const twice = orderRows([a, ours], ['none', 'agentree-statusline',
+      'agentree-statusline'])
+    expect(twice.length === 2 && twice[0] === ours && twice[1] === a)
+      .toBe(true)
+    for (const [rows, order] of [[[ours, a, b], ['agentree-statusline']],
+      [[a, b], ['agentree-statusline']], [[], ['a']], [[b, a], []],
+      [[a, b], ['a', 'b']], [[a, b], ['none', 'a']]] as const) {
+      expect(orderRows(rows, order) === rows).toBe(true)
     }
   })
 
@@ -3192,6 +3248,30 @@ test('a bad value in a file is logged, noticed once, and its default kept',
     await w.clock.advance(1_000)
     expect(await drawnRows(await mountBand($, 'terminal', BAND)))
       .toEqual([])
+  })
+
+test('a band-order with an entry not a string, or a name given twice, is ' +
+  'logged and the defaults\' order kept', async ($, on) => {
+    const w = world(on)
+    const seen = stackedRows(on)
+    const bad: [unknown[], string][] = [
+      [['other-band', 1], 'must be a list of strings'],
+      [['other-band', 'agentree-statusline', 'other-band'],
+        'names "other-band" more than once'],
+    ]
+    for (const [i, [order, why]] of bad.entries()) {
+      w.files.set(LOCAL, encoder.encode(JSON.stringify(
+        { 'band-order': order })))
+      // A new modification time, so the next start reads the file again.
+      w.mtimes.set(LOCAL, NOW * 1000 + i + 1)
+      await $.session.start({ cwd: CWD, surface: 'terminal',
+        isInteractive: true })
+      await settle()
+      expect(logOf(w))
+        .toContain(`config: ${LOCAL}: "band-order" ${why}; skipped`)
+      await mountList($, ['other-band', 'agentree-statusline'].map(listRow))
+      expect(seen.at(-1)).toEqual(['agentree-statusline', 'other-band'])
+    }
   })
 
 test('a turn before any session.start still draws all three',
