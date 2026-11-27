@@ -80,12 +80,12 @@ claude plugin install agentree-statusline@agentree-statusline
 
 Its settings, such as the usage source and what it hides, are in the [configuration files](docs/options.md#configuration-files); [`plugin/README.md`](plugin/README.md) has the rest.
 
-Every setting's default is in one file, [`plugin/defaults/config.jsonc`](plugin/defaults/config.jsonc), which the plugin reads at every load.
+Every setting's default is in one YAML file, [`plugin/defaults/config.yaml`](plugin/defaults/config.yaml), which the plugin reads at every load.
 To change a setting, write only that key in your own file; every key it leaves out keeps the default, and follows the defaults file as it changes:
 
 ```sh
 mkdir -p ~/.config/agentree-statusline
-echo '{"mark-spacing": false}' > ~/.config/agentree-statusline/config.jsonc
+echo 'mark-spacing: false' > ~/.config/agentree-statusline/config.yaml
 ```
 
 A project's settings go in its own `.config/agentree-statusline/` instead; see [Configuration files](docs/options.md#configuration-files).

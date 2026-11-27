@@ -75,7 +75,7 @@ files keep their reads in `src/*_node.ts`, which only Node imports, and
 The plugin draws from the options merged from the
 [configuration files](../docs/options.md#configuration-files): the
 project's local file, the project's, the user's, then the defaults file,
-`defaults/config.jsonc` here, which the plugin carries, with `right-edge`
+`defaults/config.yaml` here, which the plugin carries, with `right-edge`
 following the rows' places where no file sets it. The plugin reads the defaults file once per load, so a change
 to it waits for `/reload-plugins` with the code written for it. It is
 read strictly: while anything in it is
@@ -160,7 +160,7 @@ option `rows` sets, for each of `turn`, `agent` and `session`, where it
 is drawn (`place`), whether it is drawn while a turn runs, always or
 never (`live`), and whether the receipt stamps it (`transcript`), apart;
 `--rows` to `tools/draw-figures.ts` takes the same table.
-`"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}`
+`rows: {agent: {transcript: true}, session: {transcript: true}}`
 stamps 🧵 and 🎮 under 🎤. A turn that ran subagents stamps the band's
 tree, drawn whole and pressing nothing: 🧵 the parent, under it 🎤 and
 then every agent the turn ran that had finished, 🏁, from the

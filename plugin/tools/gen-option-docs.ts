@@ -5,15 +5,16 @@
 // Each table goes between its `<!-- options:begin NAME -->` and
 // `<!-- options:end NAME -->` markers: a row for every option whose
 // `doc-table` is NAME, its Default cell the option's `doc-default`, or its
-// value in the defaults file, and its Effect cell its `doc`.  The
-// `generated` suite of tests/all.sh runs this and fails while the docs
-// differ from what it writes.
+// value in the defaults file in YAML's flow style, and its Effect cell its
+// `doc`.  The `generated` suite of tests/all.sh runs this and fails while
+// the docs differ from what it writes.
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
-import type { Defaults, Value } from "../src/config.ts";
+import type { Defaults } from "../src/config.ts";
 import { OPTIONS } from "../src/options_spec.ts";
+import { yamlOption } from "../src/yaml.ts";
 
 const PLUGIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DOC = path.join(PLUGIN, "..", "docs", "options.md");
@@ -22,12 +23,6 @@ export const DOC_TABLES = ["settings"] as const;
 
 type DocRecord = { "doc-table": string | null; "doc-default"?: string;
   doc: string };
-
-/** A default as json.dumps writes it: ", " between a list's items. */
-function dumps(v: Value): string {
-  return Array.isArray(v) ? `[${v.map((x) => dumps(x)).join(", ")}]`
-    : JSON.stringify(v);
-}
 
 const cell = (text: string): string => text.replaceAll("|", "\\|");
 
@@ -38,7 +33,7 @@ export function optionTable(which: string, defaults: Defaults): string[] {
     if (o["doc-table"] !== which) continue;
     const d = defaults[name];
     const mid = o["doc-default"] ??
-      (Array.isArray(d) && d.length === 0 ? "none" : "`" + dumps(d) + "`");
+      (Array.isArray(d) && d.length === 0 ? "none" : "`" + yamlOption(d) + "`");
     rows.push(`| ${cell("`" + name + "`")} | ${cell(mid)} | ${cell(o.doc)} |`);
   }
   return rows;

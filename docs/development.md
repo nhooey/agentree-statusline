@@ -16,7 +16,7 @@ plugin/
                   through the engine's `$`
   src/            the pure modules the hooks import, and their *_node.ts
                   readers for the tests and tools
-  defaults/       config.jsonc, every option's default
+  defaults/       config.yaml, every option's default
   test/           node --test suites, against tests/fixtures
   plugin-tests/   the hooks' own suites, run in the engine (npm run
                   test:plugin)
@@ -39,6 +39,7 @@ tests/            all.sh, usage-dev.py, probe-advance.sh, the committed
 | `main_fold.ts`, `agent_fold.ts`, `inbox_fold.ts` | The transcript's, each agent's and the inbox's folds, read on from where the last read stopped, and their saves. |
 | `sources.ts`, `claude_sources.ts`, `credits.ts` | The usage source: the version-1 reading, the payload's own windows, the scoped cache, the custom command, the tracker, and the credits' conditions. See [Usage sources](usage-sources.md). |
 | `config.ts` | The configuration files: the walk, the strict defaults file, the merge and its warnings. See [Options](options.md#configuration-files). |
+| `yaml.ts` | The YAML the configuration files are written in: a reader of the part of YAML 1.2 they need, by the core schema, refusing the rest at its line and column, and `yamlFlow`, which writes a value in flow style for the warnings. |
 | `formatting.ts`, `spans.ts` | The `S_*` glyph forms and widths, the fixed-width number formats, the dim and tier rules, and `Span`, a run of text with a colour named by its `F_*` constant, joined into escape codes once, where a line is drawn. |
 | `state.ts` | Each file the plugin keeps in the state directory, named from `plugin/src/state_spec.ts`. |
 | `exact.ts` | The helpers whose bytes land in a file, a hash or a fixture, each named for the form it makes: `stableJson` and `parseJson`, `floatRepr`, `fixed` and `intText`, `UNICODE_SPACE`, the code-point string helpers, `joinPath`. |
@@ -80,7 +81,7 @@ These hold across the plugin.
 | A cell on the plugin's rows or its receipt | `plugin/src/cells.ts`, and the row builders in `plugin/src/band.ts` and `plugin/src/receipt.ts` | Regenerate the row cases (`usage-dev row-cases`) and read the diff; `usage-dev figures` draws a figures document to look at; update [Layout](layout.md). |
 | A subagent row's state, label or cells | `plugin/src/agent_row.ts`, and the cell itself in `plugin/src/cells.ts` | Regenerate the row cases and read the diff. |
 | A glyph, colour, width or cut | Its constant in `plugin/src/spec.ts`; a colour's true value in its `TRUE_COLOURS` | The node suite's `spec.test.ts` holds the colours to the palette. For a glyph, follow [Glyphs and terminals](glyphs-and-terminals.md) and run `usage-dev probe-advance` in a real terminal. For a colour, pick a palette entry; see [Under tmux](layout.md#under-tmux). |
-| An option | Its record in `plugin/src/options_spec.ts`, its field in `Options` there and its default in `plugin/defaults/config.jsonc`, then `usage-dev option-docs`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
+| An option | Its record in `plugin/src/options_spec.ts`, its field in `Options` there and its default in `plugin/defaults/config.yaml`, then `usage-dev option-docs`; read it from `Options` | Regenerate the configuration cases (`usage-dev fixtures`) and read the diff; update [Options](options.md). |
 | Claude accounting (prices, turns, agents) | `plugin/src/claude_records.ts`; window shares and calibration in `plugin/src/claude_calib.ts` | The node suite; update [Accounting](accounting.md). |
 | A saved fold's text | `plugin/src/main_fold.ts`, `agent_fold.ts` or `inbox_fold.ts`, and its format in `plugin/src/state_spec.ts` | Run `usage-dev fixtures`; `node plugin/tools/gen-fold-saves.ts --show PATH` prints a fixture's saves, to read the change by running it before and after. |
 | A usage source | `plugin/src/sources.ts`, and `validateSource` for its spec | `plugin/test/sources.test.ts`; update [Usage sources](usage-sources.md). |

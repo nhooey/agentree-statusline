@@ -7,8 +7,9 @@
 // directory the walk starts from, and what src/config.ts's `load` makes of
 // them, recorded under "expected":
 //
-//   tree      relative path -> the file's text, or null for a directory.
-//             `${ROOT}` in a text is the case's root
+//   tree      relative path -> the file's text, YAML for a configuration
+//             file, or null for a directory.  `${ROOT}` in a text is the
+//             case's root
 //   env       the variables the reader sees; `${ROOT}` as above.  HOME is
 //             ${ROOT}/home unless the case says otherwise
 //   start     where the walk starts
@@ -66,13 +67,12 @@ export type DefaultsCase = { id: string; about: string; path: string;
   text: string; expected: string | null };
 
 const D = ".config/agentree-statusline/";
-const USER = "home/" + D + "config.jsonc";
-const PROJECT = "home/p/" + D + "config.jsonc";
-const LOCAL = "home/p/" + D + "config.local.jsonc";
+const USER = "home/" + D + "config.yaml";
+const PROJECT = "home/p/" + D + "config.yaml";
+const LOCAL = "home/p/" + D + "config.local.yaml";
 const GIT = { "home/p/.git/": null };
-const FOOTER = '{"rows": {"turn": {"place": "footer"},' +
-  ' "agent": {"place": "footer"}, "session": {"place": "footer"},' +
-  ' "subagents": {"live": "never"}}}';
+const FOOTER = "rows:\n  turn: {place: footer}\n  agent: {place: footer}\n" +
+  "  session: {place: footer}\n  subagents: {live: never}\n";
 
 type Input = Omit<Case, "expected">;
 const input = (id: string, about: string, tree: Tree,
@@ -83,158 +83,165 @@ const INPUTS: Input[] = [
   // ── Precedence ──────────────────────────────────────────────────────
   input("defaults", "no file anywhere: the defaults", { ...GIT }),
   input("empty-user", "an empty user file: exactly the defaults",
-    { [USER]: '{}', ...GIT }),
+    { [USER]: "", ...GIT }),
+  input("comments-only-user", "a user file of comments alone, or of an" +
+    " empty mapping: exactly the defaults",
+    { [USER]: "# account: u\n\n# mark-spacing: false\n",
+      [PROJECT]: "{}\n", ...GIT }),
   input("user", "the user file alone",
-    { [USER]: '{"account": "u", "mark-spacing": false}', ...GIT }),
+    { [USER]: "account: u\nmark-spacing: false\n", ...GIT }),
   input("project-over-user", "the committed project file over the user's",
-    { [USER]: '{"account": "u", "account-period": "week"}',
-      [PROJECT]: '{"account": "p"}', ...GIT }),
+    { [USER]: "account: u\naccount-period: week\n",
+      [PROJECT]: "account: p\n", ...GIT }),
   input("local-over-project", "the local file over the committed one, and" +
     " each key from the highest layer that has it",
-    { [USER]: '{"account": "u", "account-period": "week",' +
-        ' "subscript-decimals": true}',
-      [PROJECT]: '{"account": "p", "account-period": "month"}',
-      [LOCAL]: '{"account": "l"}', ...GIT }),
+    { [USER]: "account: u\naccount-period: week\nsubscript-decimals: true\n",
+      [PROJECT]: "account: p\naccount-period: month\n",
+      [LOCAL]: "account: l\n", ...GIT }),
   input("config-dir-over-xdg", "the tests' directory over XDG's",
-    { "cfg/config.jsonc": '{"account": "cfg"}',
-      "xdg/agentree-statusline/config.jsonc": '{"account": "xdg"}',
-      [USER]: '{"account": "home"}' }, undefined,
+    { "cfg/config.yaml": "account: cfg\n",
+      "xdg/agentree-statusline/config.yaml": "account: xdg\n",
+      [USER]: "account: home\n" }, undefined,
     { AGENTREE_STATUSLINE_CONFIG_DIR: "${ROOT}/cfg",
       XDG_CONFIG_HOME: "${ROOT}/xdg" }),
   input("xdg-over-home", "XDG_CONFIG_HOME over ~/.config",
-    { "xdg/agentree-statusline/config.jsonc": '{"account": "xdg"}',
-      [USER]: '{"account": "home"}' }, undefined,
+    { "xdg/agentree-statusline/config.yaml": "account: xdg\n",
+      [USER]: "account: home\n" }, undefined,
     { XDG_CONFIG_HOME: "${ROOT}/xdg" }),
   input("xdg-relative-ignored", "a relative XDG_CONFIG_HOME is ignored",
-    { [USER]: '{"account": "home"}' }, undefined, { XDG_CONFIG_HOME: "xdg" }),
+    { [USER]: "account: home\n" }, undefined, { XDG_CONFIG_HOME: "xdg" }),
 
   // ── Lists replace ───────────────────────────────────────────────────
   input("list-empty-replaces", "a project's empty hide means none",
-    { [USER]: '{"hide": ["a", "b"]}', [PROJECT]: '{"hide": []}', ...GIT }),
+    { [USER]: "hide: [a, b]\n", [PROJECT]: "hide: []\n", ...GIT }),
 
   // ── Tables merge per field ──────────────────────────────────────────
   input("table-per-field", "rows merged field by field across three files",
-    { [USER]: '{"rows": {"agent": {"transcript": true}}}',
-      [PROJECT]: '{"rows": {"agent": {"live": "never"},' +
-        ' "turn": {"live": "never"}}}',
-      [LOCAL]: '{"rows": {"turn": {"live": "always"}}}', ...GIT }),
+    { [USER]: "rows:\n  agent:\n    transcript: true\n",
+      [PROJECT]: "rows:\n  agent: {live: never}\n  turn: {live: never}\n",
+      [LOCAL]: "rows: {turn: {live: always}}\n", ...GIT }),
 
   // ── The walk ────────────────────────────────────────────────────────
   input("walk-two-up", "a file two directories above the start",
-    { [PROJECT]: '{"account": "p"}', ...GIT, "home/p/a/b/": null },
+    { [PROJECT]: "account: p\n", ...GIT, "home/p/a/b/": null },
     "${ROOT}/home/p/a/b"),
   input("walk-git-stops", "a .git between the start and the file stops" +
     " the walk",
-    { [PROJECT]: '{"account": "p"}', "home/p/sub/.git/": null,
+    { [PROJECT]: "account: p\n", "home/p/sub/.git/": null,
       "home/p/sub/a/": null }, "${ROOT}/home/p/sub/a"),
   input("walk-file-at-git", "the directory with .git is still looked in",
-    { [LOCAL]: '{"account": "l"}', ...GIT, "home/p/a/": null },
+    { [LOCAL]: "account: l\n", ...GIT, "home/p/a/": null },
     "${ROOT}/home/p/a"),
   input("walk-none", "no project file up to $HOME",
     { "home/p/a/": null }, "${ROOT}/home/p/a"),
   input("walk-stops-at-home", "$HOME's .config is the user file's, never" +
     " a project's, and nothing above $HOME is looked in",
-    { [USER]: '{"account": "home"}',
-      [D + "config.jsonc"]: '{"account": "above-home"}', "home/p/": null }),
+    { [USER]: "account: home\n",
+      [D + "config.yaml"]: "account: above-home\n", "home/p/": null }),
   input("walk-missing-start", "a start that does not exist still walks up",
-    { [PROJECT]: '{"account": "p"}' }, "${ROOT}/home/p/gone/deeper"),
+    { [PROJECT]: "account: p\n" }, "${ROOT}/home/p/gone/deeper"),
   input("worktree-takes-main-local", "a worktree with no local file reads" +
     " its main checkout's, at the same place",
-    { ["home/main/" + D + "config.local.jsonc"]: '{"account": "main"}',
+    { ["home/main/" + D + "config.local.yaml"]: "account: main\n",
       "home/main/.git/worktrees/wt/commondir": "../..\n",
       "home/wt/.git": "gitdir: ${ROOT}/home/main/.git/worktrees/wt\n",
       "home/wt/a/": null }, "${ROOT}/home/wt/a"),
   input("worktree-committed-and-main-local", "a worktree's committed file," +
     " with the main checkout's local file over it",
-    { ["home/main/" + D + "config.jsonc"]: '{"account": "main-p"}',
-      ["home/main/" + D + "config.local.jsonc"]: '{"account": "main-l"}',
+    { ["home/main/" + D + "config.yaml"]: "account: main-p\n",
+      ["home/main/" + D + "config.local.yaml"]: "account: main-l\n",
       "home/main/.git/worktrees/wt/commondir": "../..\n",
-      ["home/wt/" + D + "config.jsonc"]: '{"account": "wt-p",' +
-        ' "account-period": "week"}',
+      ["home/wt/" + D + "config.yaml"]: "account: wt-p\naccount-period: week\n",
       "home/wt/.git": "gitdir: ../main/.git/worktrees/wt\n" },
     "${ROOT}/home/wt"),
   input("worktree-own-local", "a worktree's own local file wins",
-    { ["home/main/" + D + "config.local.jsonc"]: '{"account": "main"}',
+    { ["home/main/" + D + "config.local.yaml"]: "account: main\n",
       "home/main/.git/worktrees/wt/commondir": "../..\n",
-      ["home/wt/" + D + "config.local.jsonc"]: '{"account": "wt"}',
+      ["home/wt/" + D + "config.local.yaml"]: "account: wt\n",
       "home/wt/.git": "gitdir: ${ROOT}/home/main/.git/worktrees/wt\n" },
     "${ROOT}/home/wt"),
   input("submodule-no-main", "a submodule's .git file has no commondir," +
     " so no main checkout",
-    { ["home/sup/" + D + "config.local.jsonc"]: '{"account": "sup"}',
+    { ["home/sup/" + D + "config.local.yaml"]: "account: sup\n",
       "home/sup/.git/modules/sub/HEAD": "ref: refs/heads/main\n",
       "home/sup/sub/.git": "gitdir: ../.git/modules/sub\n" },
     "${ROOT}/home/sup/sub"),
 
-  // ── JSONC ───────────────────────────────────────────────────────────
-  input("jsonc", "// in a string kept, // after a value stripped, trailing" +
-    " commas stripped, and one inside a string kept",
-    { [PROJECT]: '{\n  // a comment\n  "hide": ["a//b", // after\n' +
-        '    "x,}", "q",],\n  "account": "a\\"//,]",\n}\n', ...GIT }),
-  input("version", "\"version\": 1 is read past",
-    { [PROJECT]: '{"version": 1, "account": "v1"}', ...GIT }),
+  // ── YAML ────────────────────────────────────────────────────────────
+  input("yaml", "comments kept out, a # and a colon inside a scalar kept," +
+    " a block list, and a flow list over two lines with a trailing comma",
+    { [PROJECT]: "# a comment\nhide:\n  - a#b      # after\n" +
+        "  - 'x: }'\n  - \"q\"\nband-order: [b,\n  agentree-statusline,]\n" +
+        "account: \"a\\\"#,]\"   # quoted\n", ...GIT }),
+  input("core-schema", "YAML 1.2's core schema: no is a string, TRUE a" +
+    " boolean, 0o3 an integer, and a quoted 0x10 a string",
+    { [USER]: "account: \"0x10\"\nsubscript-decimals: TRUE\nhint-inset: 0o3\n",
+      [PROJECT]: "mark-spacing: no\n", ...GIT }),
+  input("version", "version: 1 is read past",
+    { [PROJECT]: "version: 1\naccount: v1\n", ...GIT }),
   input("version-unknown", "another version skips the file",
-    { [USER]: '{"account": "u"}',
-      [PROJECT]: '{"version": 2, "account": "v2"}', ...GIT }),
+    { [USER]: "account: u\n",
+      [PROJECT]: "version: 2\naccount: v2\n", ...GIT }),
 
   // ── Bad files and values ────────────────────────────────────────────
-  input("bad-json", "a file that is not JSONC is skipped whole",
-    { [USER]: '{"account": "u"}', [PROJECT]: '{"account": "p",,}', ...GIT }),
-  input("not-object", "a file that is not an object is skipped whole",
-    { [USER]: '{"account": "u"}', [PROJECT]: '["account"]', ...GIT }),
+  input("bad-yaml", "a file that is not YAML is skipped whole, the line" +
+    " and column named",
+    { [USER]: "account: u\n", [PROJECT]: "account: p\nhide: [a,\n", ...GIT }),
+  input("yaml-refused", "YAML past what the reader reads, an alias here," +
+    " is refused, never read some other way",
+    { [USER]: "account: u\n",
+      [PROJECT]: "account: &name p\naccount-period: *name\n", ...GIT }),
+  input("not-object", "a file that is not a mapping is skipped whole",
+    { [USER]: "account: u\n", [PROJECT]: "- account\n", ...GIT }),
   input("unknown-keys", "an unknown key skips the whole file, each named" +
     " with the nearest known one when one is near, and the layer under" +
     " supplies every value",
-    { [USER]: '{"account": "u"}',
-      [PROJECT]: '{"rwos": {}, "usage-sorce": "none", "zzzzzz": 1,' +
-        ' "account": "refused"}', ...GIT }),
+    { [USER]: "account: u\n",
+      [PROJECT]: "rwos: {}\nusage-sorce: none\nzzzzzz: 1\naccount: refused\n",
+      ...GIT }),
   input("table-unknown-parts", "an unknown row or field of a table skips" +
     " the whole file",
-    { [USER]: '{"rows": {"turn": {"live": "never"}}}',
-      [PROJECT]: '{"rows": {"tunr": {}, "session": {"lvie": "never",' +
-        ' "live": "running"}}}', ...GIT }),
+    { [USER]: "rows: {turn: {live: never}}\n",
+      [PROJECT]: "rows:\n  tunr: {}\n  session: {lvie: never, live: running}\n",
+      ...GIT }),
   input("credits-unknown-parts", "an unknown field of a record, or key of" +
     " its show, skips the whole file",
-    { [PROJECT]: '{"credits": {"place": "row", "show": {"gift": []},' +
-        ' "x": 1}}', ...GIT }),
+    { [PROJECT]: "credits: {place: row, show: {gift: []}, x: 1}\n", ...GIT }),
   input("bad-values", "each value of the wrong type, out of range or not" +
     " the enum's is skipped, and the layer under supplies it",
-    { [USER]: '{"mark-spacing": false, "hint-inset": 4,' +
-        ' "account-place": "tail", "account-period": "week",' +
-        ' "account": "U"}',
-      [PROJECT]: '{"mark-spacing": "no", "hint-inset": -1,' +
-        ' "account-place": "rwo", "account-period": "year",' +
-        ' "account": 7, "starts-kept": 0}', ...GIT }),
+    { [USER]: "mark-spacing: false\nhint-inset: 4\naccount-place: tail\n" +
+        "account-period: week\naccount: U\n",
+      [PROJECT]: "mark-spacing: no\nhint-inset: -1\naccount-place: rwo\n" +
+        "account-period: year\naccount: 7\nstarts-kept: 0\n", ...GIT }),
   input("usage-source-unknown", "a usage source that is none is" +
     " skipped, and the layer under supplies it",
-    { [USER]: '{"usage-source": "native"}',
-      [PROJECT]: '{"usage-source": "bogus"}', ...GIT }),
+    { [USER]: "usage-source: native\n",
+      [PROJECT]: "usage-source: bogus\n", ...GIT }),
   input("whole-floats", "a whole float is an int, another float is not",
-    { [PROJECT]: '{"hint-inset": 3.0, "starts-kept": 2.5}', ...GIT }),
+    { [PROJECT]: "hint-inset: 3.0\nstarts-kept: 2.5\n", ...GIT }),
   input("list-bad-item", "one bad item skips the whole list",
-    { [USER]: '{"hide": ["u"]}', [PROJECT]: '{"hide": ["a", 1]}', ...GIT }),
+    { [USER]: "hide: [u]\n", [PROJECT]: "hide: [a, 1]\n", ...GIT }),
   input("list-distinct-repeated", "a name given twice in a distinct list" +
     " skips the whole list, and the layer under supplies it; a name no" +
     " plugin draws under is kept",
-    { [USER]: '{"band-order": ["no-such-plugin", "agentree-statusline"]}',
-      [PROJECT]: '{"band-order": ["a", "agentree-statusline", "a"]}',
+    { [USER]: "band-order: [no-such-plugin, agentree-statusline]\n",
+      [PROJECT]: "band-order:\n  - a\n  - agentree-statusline\n  - a\n",
       ...GIT }),
   input("table-bad-parts", "a table's bad rows and fields are skipped" +
     " alone, and the account row refuses to be stamped",
-    { [PROJECT]: '{"rows": {"turn": {"live": "allways",' +
-        ' "transcript": false}, "agent": 3,' +
-        ' "session": {"live": "running"},' +
-        ' "account": {"transcript": true, "live": "never"}}}', ...GIT }),
-  input("table-not-object", "a table that is not an object is skipped",
-    { [USER]: '{"rows": {"tag": {"live": "always"}}}',
-      [PROJECT]: '{"rows": []}', ...GIT }),
+    { [PROJECT]: "rows:\n  turn: {live: allways, transcript: false}\n" +
+        "  agent: 3\n  session: {live: running}\n" +
+        "  account: {transcript: true, live: never}\n", ...GIT }),
+  input("table-not-object", "a table that is not a mapping is skipped",
+    { [USER]: "rows: {tag: {live: always}}\n",
+      [PROJECT]: "rows: []\n", ...GIT }),
   input("table-fixed-place", "the tag lines' place is always footer: a" +
     " file that moves it is warned about, and another row's place is kept",
-    { [PROJECT]: '{"rows": {"tag": {"place": "above"},' +
-        ' "agent": {"place": "above"}}}', ...GIT }),
+    { [PROJECT]: "rows:\n  tag: {place: above}\n  agent: {place: above}\n",
+      ...GIT }),
   input("live-place-unknown", "live-place is no option: a file that sets" +
     " it is skipped with a warning, and the rows keep their places",
-    { [USER]: '{"live-place": "above"}', ...GIT }),
+    { [USER]: "live-place: above\n", ...GIT }),
 
   // ── Derived values ──────────────────────────────────────────────────
   input("right-edge-derived", "right-edge follows rows.*.place: with no" +
@@ -245,51 +252,46 @@ const INPUTS: Input[] = [
   input("right-edge-derived-above", "right-edge follows rows.*.place" +
     " merged across the layers: one row above, from another file than" +
     " the rest, gives 5",
-    { [USER]: FOOTER, [PROJECT]: '{"rows": {"agent": {"place": "above"}}}',
-      ...GIT }),
+    { [USER]: FOOTER, [PROJECT]: "rows: {agent: {place: above}}\n", ...GIT }),
   input("right-edge-derived-never", "right-edge follows rows.*.place:" +
     " a row above that is never drawn does not count, so 2",
-    { [PROJECT]: '{"rows": {"turn": {"place": "footer"},' +
-        ' "agent": {"place": "footer"},' +
-        ' "session": {"place": "above", "live": "never"},' +
-        ' "subagents": {"live": "never"}}}', ...GIT }),
+    { [PROJECT]: "rows:\n  turn: {place: footer}\n  agent: {place: footer}\n" +
+        "  session: {place: above, live: never}\n" +
+        "  subagents: {live: never}\n", ...GIT }),
   input("right-edge-set", "a right-edge a layer sets is not derived",
-    { [USER]: '{"right-edge": 0}',
-      [PROJECT]: '{"rows": {"agent": {"place": "above"}}}', ...GIT }),
+    { [USER]: "right-edge: 0\n",
+      [PROJECT]: "rows: {agent: {place: above}}\n", ...GIT }),
   input("derived-null", "a derived option's null, the defaults file's own," +
     " is not set: no warning, and the value derived",
-    { [USER]: '{"right-edge": null}', [PROJECT]: FOOTER, ...GIT }),
+    { [USER]: "right-edge: null\n", [PROJECT]: FOOTER, ...GIT }),
 
   // ── A record: credits ───────────────────────────────────────────────
   input("credits-merge", "a record merges per field, and show per credit:" +
     " the project's cloud list over the user's, the user's promo and" +
     " place kept, each list replaced whole",
-    { [USER]: '{"credits": {"place": "none", "show": {"cloud": [],' +
-        ' "promo": [{"field": "balance", "op": ">=", "value": 0,' +
-        ' "unit": "usd"}]}}}',
-      [PROJECT]: '{"credits": {"show": {"cloud": [{"field": "expiry",' +
-        ' "op": "<", "value": 2.5, "unit": "hours"}]},' +
-        ' "red": [], "command": "/bin/credits"}}', ...GIT }),
+    { [USER]: "credits:\n  place: none\n  show:\n    cloud: []\n" +
+        "    promo: [{field: balance, op: \">=\", value: 0, unit: usd}]\n",
+      [PROJECT]: "credits:\n  show:\n    cloud:\n      - field: expiry\n" +
+        "        op: \"<\"\n        value: 2.5\n        unit: hours\n" +
+        "  red: []\n  command: /bin/credits\n", ...GIT }),
   input("credits-bad", "a record's faults, each named: a list with one bad" +
     " condition is skipped whole, the rest kept",
-    { [PROJECT]: '{"credits": {"place": "row", "original": true,' +
-        ' "show": {"cloud": [{"field": "balance", "op": ">",' +
-        ' "value": 0, "unit": "usd"}, {"field": "balnce",' +
-        ' "op": ">", "value": 0, "unit": "usd"}],' +
-        ' "extra": [{"field": "spent", "op": "=>", "value": 1,' +
-        ' "unit": "usd"}]}, "amber": [{"field": "spent",' +
-        ' "op": ">", "value": 1, "unit": "days"}],' +
-        ' "red": [{"field": "expiry", "op": "<", "value": "1",' +
-        ' "unit": "days"}, 4], "command": 7}}', ...GIT }),
-  input("credits-not-object", "a record that is not an object",
-    { [PROJECT]: '{"credits": ["account"]}', ...GIT }),
+    { [PROJECT]: "credits:\n  place: row\n  original: true\n  show:\n" +
+        "    cloud:\n" +
+        "      - {field: balance, op: \">\", value: 0, unit: usd}\n" +
+        "      - {field: balnce, op: \">\", value: 0, unit: usd}\n" +
+        "    extra: [{field: spent, op: \"=>\", value: 1, unit: usd}]\n" +
+        "  amber: [{field: spent, op: \">\", value: 1, unit: days}]\n" +
+        "  red: [{field: expiry, op: \"<\", value: \"1\", unit: days}, 4]\n" +
+        "  command: 7\n", ...GIT }),
+  input("credits-not-object", "a record that is not a mapping",
+    { [PROJECT]: "credits: [account]\n", ...GIT }),
 
   // ── The defaults file, copied ───────────────────────────────────────
   input("copied-defaults", "the defaults file copied as the user's with" +
     " one value changed: every key is the user's, at the default's" +
     " value but that one, and nothing warns",
-    { [USER]: swap(SHIPPED, '"account": "default"', '"account": "work"'),
-      ...GIT }),
+    { [USER]: swap(SHIPPED, "account: default", "account: work"), ...GIT }),
 ];
 
 /** `text` with the one `old` in it made `next`. */
@@ -307,51 +309,53 @@ function without(text: string, line: string): string {
   return lines.join("\n");
 }
 
-export const DEFAULTS_PATH = "/plugin/defaults/config.jsonc";
+export const DEFAULTS_PATH = "/plugin/defaults/config.yaml";
 const DEFAULTS_INPUTS: [string, string, string][] = [
   ["shipped", "the shipped file reads whole", SHIPPED],
   ["missing-key", "a key left out is missing",
-    without(SHIPPED, '"account": "default"')],
+    without(SHIPPED, "account: default")],
   ["unknown-key", "a key that is no option, with the nearest",
-    swap(SHIPPED, '"hide": [],', '"hide": [],\n  "acount": "x",')],
-  ["wrong-type", "a value of another type",
-    swap(SHIPPED, '"mark-spacing": true', '"mark-spacing": "yes"')],
+    swap(SHIPPED, "hide: []\n", "hide: []\nacount: x\n")],
+  ["wrong-type", "a value of another type: yes is a string",
+    swap(SHIPPED, "mark-spacing: true", "mark-spacing: yes")],
   ["under-minimum", "an int under its minimum",
-    swap(SHIPPED, '"starts-kept": 400', '"starts-kept": 0')],
+    swap(SHIPPED, "starts-kept: 400", "starts-kept: 0")],
   ["not-in-enum", "an enum's value it has not",
-    swap(SHIPPED, '"account-place": "row"', '"account-place": "rwo"')],
+    swap(SHIPPED, "account-place: row", "account-place: rwo")],
   ["live-place", "live-place is no option",
-    swap(SHIPPED, '"rows": {', '"live-place": "footer",\n  "rows": {')],
+    swap(SHIPPED, "rows:\n", "live-place: footer\nrows:\n")],
   ["null-default", "null for an option that is not derived",
-    swap(SHIPPED, '"account": "default"', '"account": null')],
+    swap(SHIPPED, "account: default", "account: null")],
   ["derived-set", "a value for a derived option, which follows another",
-    swap(SHIPPED, '"right-edge": null', '"right-edge": 5')],
+    swap(SHIPPED, "right-edge: null", "right-edge: 5")],
   ["table-missing-row", "a table's row left out",
-    without(SHIPPED, '"tag":     {"place"')],
+    without(SHIPPED, "tag:       {place")],
   ["table-missing-field", "a row's field left out",
-    swap(SHIPPED, '"agent":   {"place": "above",  "live": "always", ',
-      '"agent":   {"place": "above", ')],
+    swap(SHIPPED, "agent:     {place: above,  live: always,  transcript",
+      "agent:     {place: above,  transcript")],
   ["table-missing-place", "a row without its place",
-    swap(SHIPPED, '"turn":    {"place": "above",  "live"', '"turn": {"live"')],
+    swap(SHIPPED, "turn:      {place: above,  live", "turn:      {live")],
   ["table-bad-field", "a row's field of another type, and one unknown",
-    swap(SHIPPED, '"session": {"place": "above",  "live": "always", ',
-      '"session": {"place": "above", "live": "sometimes", "x": 1, ')],
-  ["table-not-object", "a table that is not an object",
-    swap(SHIPPED, '"rows": {', '"rows": 3, "_": {')],
+    swap(SHIPPED, "session:   {place: above,  live: always, ",
+      "session:   {place: above, live: sometimes, x: 1, ")],
+  ["table-not-object", "a table that is not a mapping",
+    swap(SHIPPED, "rows:\n", "rows: 3\n_:\n")],
   ["several", "every fault named, in the file's order, the missing last",
-    swap(without(SHIPPED, '"subscript-decimals": false'),
-      '"mark-spacing": true', '"mark-spacing": 1')],
+    swap(without(SHIPPED, "subscript-decimals: false"),
+      "mark-spacing: true", "mark-spacing: 1")],
   ["record-missing-field", "a record's field left out",
-    without(SHIPPED, '"original": false,')],
+    without(SHIPPED, "original: false")],
   ["record-missing-key", "a conditions-by key left out",
-    without(SHIPPED, '"passes":  []')],
+    without(SHIPPED, "passes:  []")],
   ["record-bad-condition", "a condition of another shape",
-    swap(SHIPPED, '"unit": "percent"}]', '"unit": "dollars"}]')],
+    swap(SHIPPED, "unit: percent}]", "unit: dollars}]")],
   ["version", "a version the plugin does not read",
-    swap(SHIPPED, '"usage-source": "auto"',
-      '"version": 2, "usage-source": "auto"')],
-  ["not-jsonc", "text that is not JSONC", SHIPPED + "}"],
-  ["not-object", "JSONC that is not an object", "[1, 2]"],
+    swap(SHIPPED, "usage-source: auto", "version: 2\nusage-source: auto")],
+  ["not-yaml", "text that is not YAML, at its line and column",
+    SHIPPED + "}\n"],
+  ["tab-indent", "a tab that indents, at its line and column",
+    swap(SHIPPED, "  place: account", "\tplace: account")],
+  ["not-object", "YAML that is not a mapping", "[1, 2]\n"],
 ];
 
 const fill = (text: string) => text.replaceAll("${ROOT}", ROOT);

@@ -111,36 +111,34 @@ lower layers' whole list, as `hide` does.
 | `spent`   | `usd`                        | what it has paid for since its period began        |
 | `expiry`  | `days`, `hours` or `minutes` | the time to its expiry                             |
 
-```jsonc
-"credits": {
-  // Where: "account" on the 💳 row, "row" on a row of their own, or false.
-  "place": "account",
-  // Each credit is drawn when any one condition in its list holds;
-  // an empty list never draws it.  op: "<", "<=", "=", "!=", ">=", ">".
-  "show": {
-    "cloud":   [{"field": "balance", "op": ">", "value": 0, "unit": "usd"}],
-    "promo":   [{"field": "balance", "op": ">", "value": 0, "unit": "usd"}],
-    "prepaid": [{"field": "balance", "op": "<=", "value": 20, "unit": "usd"},
-                {"field": "expiry", "op": "<", "value": 7, "unit": "days"}],
-    "extra":   [{"field": "spent", "op": ">", "value": 0, "unit": "usd"}],
-    "passes":  []
-  },
-  // The colours, by the same conditions, for every credit: red wins.
-  "amber": [{"field": "expiry", "op": "<", "value": 7, "unit": "days"},
-            {"field": "balance", "op": "<", "value": 20, "unit": "percent"}],
-  "red":   [{"field": "expiry", "op": "<", "value": 1, "unit": "days"},
-            {"field": "balance", "op": "=", "value": 0, "unit": "usd"}],
-  // A credit with no figure, its source failing or unset: "?" or nothing.
-  "show-missing": false,
-  // Each credit's original amount after its figure: $4.4/250.
-  "original": false,
-  // A program that prints the credits[] JSON, for the Console's credits.
-  "command": null
-}
+```yaml
+credits:
+  # Where: account on the 💳 row, row on a row of their own, or false.
+  place: account
+  # Each credit is drawn when any one condition in its list holds;
+  # an empty list never draws it.  op: "<", "<=", "=", "!=", ">=", ">".
+  show:
+    cloud:   [{field: balance, op: ">", value: 0, unit: usd}]
+    promo:   [{field: balance, op: ">", value: 0, unit: usd}]
+    prepaid: [{field: balance, op: "<=", value: 20, unit: usd},
+              {field: expiry, op: "<", value: 7, unit: days}]
+    extra:   [{field: spent, op: ">", value: 0, unit: usd}]
+    passes:  []
+  # The colours, by the same conditions, for every credit: red wins.
+  amber: [{field: expiry, op: "<", value: 7, unit: days},
+          {field: balance, op: "<", value: 20, unit: percent}]
+  red:   [{field: expiry, op: "<", value: 1, unit: days},
+          {field: balance, op: "=", value: 0, unit: usd}]
+  # A credit with no figure, its source failing or unset: "?" or nothing.
+  show-missing: false
+  # Each credit's original amount after its figure: $4.4/250.
+  original: false
+  # A program that prints the credits[] JSON, for the Console's credits.
+  command: null
 ```
 
-To draw a credit always, give it `{"field": "balance", "op": ">=",
-"value": 0, "unit": "usd"}`, which every known figure meets.
+To draw a credit always, give it `{field: balance, op: ">=", value: 0,
+unit: usd}`, which every known figure meets.
 
 ## Spending on the rows
 
@@ -220,9 +218,9 @@ and its plan windows:
    signed-in account in a file the Python port reads without asking.
 5. **`CB4`, the conditions and the cells.** The conditions evaluated in
    both ports (`coding_agent_usage_line/credits.py`, `plugin/src/credits.ts`)
-   with shared cases, the five glyphs in `spec/layout.jsonc`, and each
+   with shared cases, the five glyphs in `spec/layout.yaml`, and each
    credit's cell in the plugin.
-6. **`CB4b`, the credits drawn.** `credits` in `spec/options.jsonc`, the
+6. **`CB4b`, the credits drawn.** `credits` in `spec/options.yaml`, the
    defaults file and both ports' configuration readers, through a
    `record` type; the credits on the 💳 row; the Console credits from
    `credits.command`, merged into the kept credits. Its `place` is
@@ -242,6 +240,6 @@ and its plan windows:
 `plugin/hooks/usage.ts` and
 `plugin/src/sources.ts` (the fetch and the reading),
 `coding_agent_usage_line/sources.py`, `plugin/src/band.ts`,
-`spec/options.jsonc` and its generated files, `plugin/defaults/config.jsonc`,
+`spec/options.yaml` and its generated files, `plugin/defaults/config.yaml`,
 `plugin/plugin-tests/band.test.ts`, `docs/usage-sources.md`, `docs/layout.md`,
 `docs/options.md`.

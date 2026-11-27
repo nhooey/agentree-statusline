@@ -5,7 +5,7 @@
 //   node plugin/tools/draw-figures.ts FILE [--cols N] [--part PART]
 //        [--phase running|done] [--hide PATH ...] [--rate N]
 //        [--home DIR] [--status STATUS_FILE]
-//        [--rows JSON] [--right-edge N] [--inset N]
+//        [--rows YAML] [--right-edge N] [--inset N]
 //        [--hint TEXT] [--plain]
 //
 // FILE is a figures document, such as one of tests/fixtures/figures/,
@@ -33,8 +33,8 @@
 // second.  --home stands for HOME, "${HOME}" by default, which is what
 // the fixtures' paths are written under.
 // --rows is a rows table as a configuration file sets it, such as
-// '{"agent": {"transcript": true}}', merged field by field over the
-// defaults file's (plugin/defaults/config.jsonc): each row's place picks the
+// '{agent: {transcript: true}}', merged field by field over the
+// defaults file's (plugin/defaults/config.yaml): each row's place picks the
 // part it is drawn in, its live when the band draws it (the done phase
 // draws those "always"), and its transcript whether the receipt stamps
 // it; 🤖 on the receipt comes from --status, a status document standing
@@ -73,6 +73,8 @@ import { RIGHT_EDGE } from "../src/spec.ts";
 import { DEFAULTS_REL, parseDefaults } from "../src/config.ts";
 import type { Rows } from "../src/config.ts";
 import { OPTIONS } from "../src/options_spec.ts";
+import { parseYaml, yamlFlow } from "../src/yaml.ts";
+import type { Yaml } from "../src/yaml.ts";
 import { corpusAgents, withBackground } from "./gen-row-cases.ts";
 import { full } from "../test/figures_doc.ts";
 
@@ -80,7 +82,7 @@ const USAGE = "usage: draw-figures.ts FILE [--cols N] " +
   "[--part {band,account,above,footer,tail,receipt,start}] " +
   "[--phase {running,done}] " +
   "[--hide PATH] [--rate N] [--home DIR] [--status STATUS_FILE] " +
-  "[--rows JSON] [--right-edge N] [--inset N] " +
+  "[--rows YAML] [--right-edge N] [--inset N] " +
   "[--hint TEXT] [--agents CASE] [--progress TEXT] " +
   "[--background] [--session-name NAME[:COLOUR]] [--plain]";
 
@@ -142,26 +144,24 @@ function rowsOf(arg: string): Rows {
   const rows = structuredClone(
     parseDefaults(path, readFileSync(path, "utf8")).rows as Rows);
   if (!arg) return rows;
-  let got: unknown;
+  let got: Yaml;
   try {
-    got = JSON.parse(arg);
-  } catch {
-    fail("--rows takes a JSON object");
+    got = parseYaml(arg);
+  } catch (err) {
+    fail("--rows takes a YAML mapping: " + (err as Error).message);
   }
-  if (typeof got !== "object" || got === null || Array.isArray(got)) {
-    fail("--rows takes a JSON object");
-  }
+  if (!(got instanceof Map)) fail("--rows takes a YAML mapping");
   const fields = OPTIONS.rows.fields as { readonly [f: string]:
     { readonly type: string; readonly items?: readonly string[] } };
-  for (const [row, rec] of Object.entries(got as Dict)) {
-    if (!(row in rows)) fail("--rows: no row " + JSON.stringify(row));
-    for (const [field, v] of Object.entries(rec as Dict)) {
+  for (const [row, rec] of got) {
+    if (!(row in rows)) fail("--rows: no row " + yamlFlow(row));
+    if (!(rec instanceof Map)) fail("--rows: " + row + " must be a mapping");
+    for (const [field, v] of rec) {
       const f = fields[field];
       const ok = f !== undefined && (f.type === "bool"
         ? typeof v === "boolean" : (f.items ?? []).includes(v as string));
       if (!ok) {
-        fail("--rows: " + row + "." + field + " cannot be " +
-          JSON.stringify(v));
+        fail("--rows: " + row + "." + field + " cannot be " + yamlFlow(v));
       }
       rows[row][field] = v as string | boolean;
     }

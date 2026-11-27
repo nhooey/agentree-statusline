@@ -7,9 +7,9 @@ Most people need no configuration.
 Claude Code gives the plugin the plan's week, and the plugin asks the account's usage endpoint for the rest; the default, `auto`, reads those.
 To pick another, set `usage-source` in a [configuration file](options.md#configuration-files):
 
-```jsonc
-"usage-source": "auto"                       // the default
-"usage-source": "cmd:/path/to/your-reader"   // your own program
+```yaml
+usage-source: auto                       # the default
+usage-source: cmd:/path/to/your-reader   # your own program
 ```
 
 ## Sources
@@ -48,7 +48,7 @@ The session's own figures are unaffected.
 
 ## Writing a custom command
 
-`"usage-source": "cmd:PATH"` runs your program and reads one JSON object from its stdout.
+`usage-source: cmd:PATH` runs your program and reads one JSON object from its stdout.
 This is the way to plug in anything the built-in sources don't cover.
 
 **How it is run.** `PATH` is run directly, with no shell, or through `bash` if the file isn't executable.
@@ -192,7 +192,7 @@ With `plan-usage` on, the default, the plugin asks the account's usage endpoint 
   Key names only, never a figure or a header.
   The line says which key carries a window when one is in doubt, read or not.
 
-Turn it off with `"plan-usage": false` in a configuration file.
+Turn it off with `plan-usage: false` in a configuration file.
 The [credits](#the-accounts-credits) are read from a session's answer of the last minute, where it has one, rather than asked for again.
 
 ## Claude Usage Tracker
@@ -231,7 +231,7 @@ Concurrent sessions don't refresh the same cache twice: each refresh takes a loc
 Caches live under `$XDG_STATE_HOME/agentree-statusline` (`~/.local/state/agentree-statusline` by default), or `AGENTREE_STATUSLINE_STATE_DIR`.
 The directory is mode 0700 and files 0600, written atomically.
 Each cache is keyed by source, account and the start of the `account-period`, so readings never leak between them.
-With `"account": "default"`, the account scope is the credential in use (hashed) for a source that has one, and otherwise the session — so two sessions never share a reading that might belong to different accounts.
+With `account: default`, the account scope is the credential in use (hashed) for a source that has one, and otherwise the session — so two sessions never share a reading that might belong to different accounts.
 Name the account with `account` to share a reading across sessions.
 
 ### The account's high for each window
@@ -267,7 +267,7 @@ The account part is a hashed id, the first 24 hex digits of a sha256, from the s
 
 Only those two fields are read, and only the hash is kept.
 The id is what keeps two accounts apart, since the percentage stored with a scan is one account's and two accounts' windows can open at the same minute.
-A source with no id, or a tracker profile without one, falls back to the reading cache's account scope above (for `"account": "default"`, the session).
+A source with no id, or a tracker profile without one, falls back to the reading cache's account scope above (for `account: default`, the session).
 
 A calibration file untouched for eight days belongs to a period, account or session that has passed, and is removed.
 The plugin sweeps at most once a day, by the stamp on `claude-calibration-swept`, and removes files with `rm`, since its file API cannot.

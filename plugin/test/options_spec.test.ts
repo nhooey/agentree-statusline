@@ -8,8 +8,9 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { OPTIONS, type Options } from "../src/options_spec.ts";
-import { DEFAULTS_REL, jsonLoads, merge, optionsOf, parseDefaults, stripJsonc }
+import { DEFAULTS_REL, merge, optionsOf, parseDefaults }
   from "../src/config.ts";
+import { parseYaml } from "../src/yaml.ts";
 import { DOC_TABLES, withOptionTables } from "../tools/gen-option-docs.ts";
 
 const TYPES = ["bool", "int", "string", "enum", "list", "table", "record"];
@@ -111,7 +112,7 @@ test("every derived option can be worked out", () => {
 
 test("the defaults file holds every option, in the spec's order", () => {
   const p = path.join(import.meta.dirname, "..", DEFAULTS_REL);
-  const data = jsonLoads(stripJsonc(fs.readFileSync(p, "utf8")));
+  const data = parseYaml(fs.readFileSync(p, "utf8"));
   assert.ok(data instanceof Map);
   assert.deepEqual([...data.keys()], Object.keys(OPTIONS));
 });

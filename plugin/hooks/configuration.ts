@@ -15,6 +15,7 @@ import type {
 import { OPTIONS } from '../src/options_spec.ts'
 import type { Options } from '../src/options_spec.ts'
 import { LOG_NAME } from '../src/pluginlog.ts'
+import { yamlOption } from '../src/yaml.ts'
 import { SETTINGS } from './config.ts'
 import { log } from './log.ts'
 import { found, fromBase64, readBytesVia } from './engine.ts'
@@ -24,7 +25,7 @@ type $ = EngineInterface
 /** `$.fs` as src/config.ts's walk reaches it: a stat or a read that fails
  * is null, and a file is read as bytes and decoded strictly with its
  * byte-order mark kept, as a file opened with encoding "utf-8" reads,
- * so a file the panel finds unreadable or not JSON the band does too. */
+ * so a file the panel finds unreadable or not YAML the band does too. */
 function configFs($: $): ConfigFs {
   return {
     stat: async (path) => {
@@ -239,7 +240,7 @@ async function reread($: $): Promise<boolean> {
 }
 
 /** Each option, and each table field, that a layer above the defaults
- * gave, `name value (layer)`, "; " between them, in the spec's order;
+ * gave, `name value (layer)` with the value in YAML's flow style, "; " between them, in the spec's order;
  * "defaults" for none. */
 export function optionsTable(m: Merged): string {
   const out: string[] = []
@@ -251,12 +252,12 @@ export function optionsTable(m: Merged): string {
       for (const [row, rec] of Object.entries(value as Rows)) {
         for (const [field, v] of Object.entries(rec)) {
           const by = m.fields[`${name}.${row}.${field}`]
-          if (by) out.push(`${name}.${row}.${field} ${JSON.stringify(v)} (${by})`)
+          if (by) out.push(`${name}.${row}.${field} ${yamlOption(v)} (${by})`)
         }
       }
       continue
     }
-    out.push(`${name} ${JSON.stringify(value)} (${layer})`)
+    out.push(`${name} ${yamlOption(value)} (${layer})`)
   }
   return out.length ? out.join('; ') : 'defaults'
 }

@@ -7,29 +7,33 @@
 // found, the values kept and the warnings, word for word.  There is no
 // command line, so no flags layer.
 //
-// Under the files is the defaults file, defaults/config.jsonc in the plugin's
+// Under the files is the defaults file, defaults/config.yaml in the plugin's
 // folder, every option a file may set with its default, read strictly by
 // parseDefaults: anything wrong with it is a DefaultsError, never a value
 // made up in its place (config-merge.md, Decided 18).
+//
+// Every file is YAML, read by src/yaml.ts.
 //
 // Pure: the files are reached through a ConfigFs the caller hands in, `$.fs`
 // in the plugin (hooks/configuration.ts, configVia), a fake built from a case's files
 // in the tests; the environment is a plain object.  Paths are POSIX, and the
 // path functions are posixpath's.
 //
-// A warning quotes a file's key or value in one exact form, which this
-// file spells out: the keys of an object in the order written (a
-// JavaScript object puts "1" first), 1 told from 1.0, and JSON written
-// with and without its non-ASCII characters escaped.
+// A warning quotes a file's key or value in one exact form, YAML's flow
+// style as yamlFlow writes it: the keys of a mapping in the order written
+// (a JavaScript object puts "1" first), 1 told from 1.0, and a string
+// plain where it reads back as itself, else double-quoted.
 
 import { OPTIONS } from "./options_spec.ts";
 import type { Options } from "./options_spec.ts";
-import { floatRepr, stableJson, stripSpace, UNICODE_SPACE } from "./exact.ts";
+import { stripSpace } from "./exact.ts";
 import { validateSource } from "./sources.ts";
+import { parseYaml, yamlFlow, YamlError } from "./yaml.ts";
+import type { Yaml } from "./yaml.ts";
 
 export const NAME = "agentree-statusline";
-export const PROJECT_FILE = "config.jsonc";
-export const LOCAL_FILE = "config.local.jsonc";
+export const PROJECT_FILE = "config.yaml";
+export const LOCAL_FILE = "config.local.yaml";
 // A config file is a few hundred bytes; one this size is something else.
 export const MAX_BYTES = 64 * 1024;
 // The user-global directory, for the tests, as _STATE_DIR is for state.
@@ -84,184 +88,6 @@ type Derived = { from: string; field?: string; any?: string;
   map: { readonly [key: string]: unknown } };
 const SPEC = OPTIONS as unknown as { readonly [name: string]: OptionRec };
 const NAMES = Object.keys(SPEC);
-
-// ── JSON with its integers and key order kept ─────────────────────────────
-
-/** A value json.loads gives: an int as a bigint and a float as a number,
- * so 1 is told from 1.0, and an object as a Map, whose keys keep
- * the order written (a repeated key keeps its first place and its last
- * value, as a dict's does). */
-export type Json = null | boolean | bigint | number | string | Json[] |
-  Map<string, Json>;
-
-const NUMBER = /-?(?:0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
-const ESCAPES: { readonly [c: string]: string } = {
-  '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r",
-  t: "\t" };
-
-/** json.loads(text), or a SyntaxError. */
-export function jsonLoads(text: string): Json {
-  let i = 0;
-  const fail = (): never => {
-    throw new SyntaxError("invalid JSON at " + i);
-  };
-  const ws = () => {
-    while (i < text.length && " \t\n\r".includes(text[i])) i++;
-  };
-  const string = (): string => {
-    i++;
-    let out = "";
-    for (;;) {
-      if (i >= text.length) fail();
-      const ch = text[i++];
-      if (ch === '"') return out;
-      if (ch < " ") fail();
-      if (ch !== "\\") {
-        out += ch;
-        continue;
-      }
-      const esc = text[i++];
-      if (esc !== undefined && Object.hasOwn(ESCAPES, esc)) {
-        out += ESCAPES[esc];
-      } else if (esc === "u") {
-        const hex = text.slice(i, i + 4);
-        if (!/^[0-9a-fA-F]{4}$/.test(hex)) fail();
-        out += String.fromCharCode(parseInt(hex, 16));
-        i += 4;
-      } else fail();
-    }
-  };
-  const value = (): Json => {
-    ws();
-    const ch = text[i];
-    if (ch === "{") {
-      i++;
-      const obj = new Map<string, Json>();
-      ws();
-      if (text[i] === "}") {
-        i++;
-        return obj;
-      }
-      for (;;) {
-        ws();
-        if (text[i] !== '"') fail();
-        const key = string();
-        ws();
-        if (text[i++] !== ":") fail();
-        obj.set(key, value());
-        ws();
-        const sep = text[i++];
-        if (sep === "}") return obj;
-        if (sep !== ",") fail();
-      }
-    }
-    if (ch === "[") {
-      i++;
-      const arr: Json[] = [];
-      ws();
-      if (text[i] === "]") {
-        i++;
-        return arr;
-      }
-      for (;;) {
-        arr.push(value());
-        ws();
-        const sep = text[i++];
-        if (sep === "]") return arr;
-        if (sep !== ",") fail();
-      }
-    }
-    if (ch === '"') return string();
-    for (const [word, val] of [["true", true], ["false", false],
-      ["null", null], ["NaN", NaN], ["Infinity", Infinity],
-      ["-Infinity", -Infinity]] as const) {
-      if (text.startsWith(word, i)) {
-        i += word.length;
-        return val;
-      }
-    }
-    NUMBER.lastIndex = i;
-    const m = NUMBER.exec(text);
-    if (!m) return fail();
-    i += m[0].length;
-    return m[1] === undefined && m[2] === undefined
-      ? BigInt(m[0]) : Number(m[0]);
-  };
-  const result = value();
-  ws();
-  if (i !== text.length) fail();
-  return result;
-}
-
-/** A string as stableJson writes it, every non-ASCII character escaped. */
-const dumps = (s: string): string => stableJson(s);
-
-const SHORT: { readonly [c: string]: string } = {
-  '"': '\\"', "\\": "\\\\", "\n": "\\n", "\r": "\\r", "\t": "\\t",
-  "\b": "\\b", "\f": "\\f" };
-
-/** json.dumps(value, ensure_ascii=False). */
-export function dumpsUnicode(value: Json): string {
-  if (value === null) return "null";
-  if (value === true) return "true";
-  if (value === false) return "false";
-  if (typeof value === "bigint") return value.toString();
-  if (typeof value === "number") {
-    if (Number.isNaN(value)) return "NaN";
-    if (!Number.isFinite(value)) return value > 0 ? "Infinity" : "-Infinity";
-    return floatRepr(value);
-  }
-  if (typeof value === "string") {
-    return '"' + value.replace(/[\x00-\x1f\\"]/g, (c) => SHORT[c] ??
-      "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")) + '"';
-  }
-  if (Array.isArray(value)) return "[" + value.map(dumpsUnicode).join(", ") + "]";
-  return "{" + [...value].map(([k, v]) => dumpsUnicode(k) + ": " +
-    dumpsUnicode(v)).join(", ") + "}";
-}
-
-// ── JSONC ─────────────────────────────────────────────────────────────────
-
-const IS_SPACE = new RegExp(`^[${UNICODE_SPACE}]$`, "u");
-
-/** `text` with each `//` comment and each trailing comma blanked to
- * spaces, outside strings, so jsonLoads reads what is left.  A trailing
- * comma is one followed, past blanks and comments, by `}` or `]`. */
-export function stripJsonc(text: string): string {
-  const out = text.split("");
-  const n = text.length;
-  let i = 0;
-  let inString = false;
-  let comma: number | null = null;
-  while (i < n) {
-    const c = text[i];
-    if (inString) {
-      if (c === "\\") {
-        i += 2;
-        continue;
-      }
-      if (c === '"') inString = false;
-    } else if (c === '"') {
-      inString = true;
-      comma = null;
-    } else if (c === "/" && text.startsWith("//", i)) {
-      while (i < n && text[i] !== "\n") {
-        out[i] = " ";
-        i++;
-      }
-      continue;
-    } else if (c === ",") {
-      comma = i;
-    } else if (c === "}" || c === "]") {
-      if (comma !== null) out[comma] = " ";
-      comma = null;
-    } else if (!IS_SPACE.test(c)) {
-      comma = null;
-    }
-    i++;
-  }
-  return out.join("");
-}
 
 // ── Paths, as posixpath has them ──────────────────────────────────────────
 
@@ -481,11 +307,11 @@ function distance(a: string, b: string): number {
 
 function hint(word: string, known: readonly string[]): string {
   const near = nearest(word, known);
-  return near !== null ? ` (did you mean ${dumps(near)}?)` : "";
+  return near !== null ? ` (did you mean ${yamlFlow(near)}?)` : "";
 }
 
 const quoted = (items: readonly string[]) =>
-  items.map((i) => dumpsUnicode(i)).join(", ");
+  items.map((i) => yamlFlow(i)).join(", ");
 
 /** One row of a table, field by field. */
 export type Row = { [field: string]: string | boolean };
@@ -505,7 +331,7 @@ export type Value = string | boolean | number | readonly string[] | Rows |
 type Checked = { got: Value; bad: null } | { got: null; bad: string };
 
 /** `value` checked as a `kind`. */
-function scalar(kind: string, value: Json, spec: Scalar, where: string):
+function scalar(kind: string, value: Yaml, spec: Scalar, where: string):
     Checked {
   if (kind === "bool") {
     if (typeof value === "boolean") return { got: value, bad: null };
@@ -545,7 +371,7 @@ function scalar(kind: string, value: Json, spec: Scalar, where: string):
       ? value.find((v, i) => value.indexOf(v) !== i) : undefined;
     if (twice !== undefined) {
       return { got: null,
-        bad: `${where} names ${dumpsUnicode(twice)} more than once` };
+        bad: `${where} names ${yamlFlow(twice)} more than once` };
     }
     return { got: [...value] as string[], bad: null };
   }
@@ -556,27 +382,27 @@ function scalar(kind: string, value: Json, spec: Scalar, where: string):
  * passed, and why for each that did not.  `fixed` is the table's default,
  * which a fixed field may not move from; null while the defaults are what
  * is being read. */
-function table(name: string, option: OptionRec, value: Json,
+function table(name: string, option: OptionRec, value: Yaml,
     fixed: Rows | null): { kept: Rows; why: string[] } {
   if (!(value instanceof Map)) {
-    return { kept: {}, why: [`${dumps(name)} must be an object`] };
+    return { kept: {}, why: [`${yamlFlow(name)} must be a mapping`] };
   }
   const fields = option.fields ?? {};
   const rows = option.rows ?? [];
   const kept: Rows = {};
   const why: string[] = [];
   for (const [row, rec] of value) {
-    let where = dumps(`${name}.${row}`);
+    let where = yamlFlow(`${name}.${row}`);
     if (!rows.includes(row)) {
       why.push(`${where} is no row${hint(row, rows)}`);
       continue;
     }
     if (!(rec instanceof Map)) {
-      why.push(`${where} must be an object`);
+      why.push(`${where} must be a mapping`);
       continue;
     }
     for (const [field, v] of rec) {
-      where = dumps(`${name}.${row}.${field}`);
+      where = yamlFlow(`${name}.${row}.${field}`);
       if (!Object.hasOwn(fields, field)) {
         why.push(`${where} is no field${hint(field, Object.keys(fields))}`);
         continue;
@@ -585,7 +411,7 @@ function table(name: string, option: OptionRec, value: Json,
       let { got, bad } = scalar(spec.type, v, spec, where);
       if (bad === null && fixed !== null && (spec.fixed ?? []).includes(row) &&
           got !== fixed[row][field]) {
-        bad = `${where} is always ${dumpsUnicode(fixed[row][field])}`;
+        bad = `${where} is always ${yamlFlow(fixed[row][field])}`;
       }
       if (bad !== null) why.push(bad);
       else (kept[row] ??= {})[field] = got as string | boolean;
@@ -600,15 +426,23 @@ const CONDITION_UNITS: { [field: string]: readonly string[] } = {
 const CONDITION_OPS = ["<", "<=", "=", "!=", ">=", ">"];
 const CONDITION_KEYS = ["field", "op", "value", "unit"];
 
+/** A condition's path as a warning names it: as yamlFlow writes it, but
+ * with each list index, `[0]`, left plain, as in credits.red[0].value. */
+function named(path: string): string {
+  const parts = path.split(/(\[[0-9]+\])/);
+  const bare = parts.filter((_, i) => i % 2 === 0).join("");
+  return yamlFlow(bare) === bare ? path : yamlFlow(path);
+}
+
 /** The condition `value` is, or why not, `path` naming it:
  * condition's words. */
-function condition(value: Json, path: string):
+function condition(value: Yaml, path: string):
     { got: Condition; bad: null } | { got: null; bad: string } {
-  const at = (part: string) => dumps(path + part);
+  const at = (part: string) => named(path + part);
   if (!(value instanceof Map) || value.size !== 4 ||
       !CONDITION_KEYS.every((k) => value.has(k))) {
     return { got: null,
-      bad: `${at("")} must be an object of field, op, value and unit` };
+      bad: `${at("")} must be a mapping of field, op, value and unit` };
   }
   const field = value.get("field"), op = value.get("op");
   const unit = value.get("unit"), number = value.get("value");
@@ -624,7 +458,7 @@ function condition(value: Json, path: string):
   const units = CONDITION_UNITS[field];
   if (typeof unit !== "string" || !units.includes(unit)) {
     return { got: null, bad: `${at(".unit")} must be one of ` +
-      `${quoted(units)} for ${dumps(field)}` };
+      `${quoted(units)} for ${yamlFlow(field)}` };
   }
   if (!(typeof number === "bigint" ||
         (typeof number === "number" && Number.isFinite(number)))) {
@@ -635,10 +469,10 @@ function condition(value: Json, path: string):
 
 /** The list of conditions, or why not for each fault: a list is kept
  * whole or not at all. */
-function conditions(value: Json, path: string):
+function conditions(value: Yaml, path: string):
     { got: Condition[] | null; why: string[] } {
   if (!Array.isArray(value)) {
-    return { got: null, why: [`${dumps(path)} must be a list of conditions`] };
+    return { got: null, why: [`${named(path)} must be a list of conditions`] };
   }
   const kept: Condition[] = [];
   const why: string[] = [];
@@ -652,16 +486,16 @@ function conditions(value: Json, path: string):
 
 /** A record's value checked field by field: the fields that passed, and
  * why for each that did not.  A conditions-by field passes per key. */
-function record(name: string, option: OptionRec, value: Json):
+function record(name: string, option: OptionRec, value: Yaml):
     { kept: RecordValue; why: string[] } {
   if (!(value instanceof Map)) {
-    return { kept: {}, why: [`${dumps(name)} must be an object`] };
+    return { kept: {}, why: [`${yamlFlow(name)} must be a mapping`] };
   }
   const fields = option.fields ?? {};
   const kept: RecordValue = {};
   const why: string[] = [];
   for (const [field, v] of value) {
-    const where = dumps(`${name}.${field}`);
+    const where = yamlFlow(`${name}.${field}`);
     if (!Object.hasOwn(fields, field)) {
       why.push(`${where} is no field${hint(field, Object.keys(fields))}`);
       continue;
@@ -673,14 +507,14 @@ function record(name: string, option: OptionRec, value: Json):
       if (got.got !== null) kept[field] = got.got;
     } else if (spec.type === "conditions-by") {
       if (!(v instanceof Map)) {
-        why.push(`${where} must be an object`);
+        why.push(`${where} must be a mapping`);
         continue;
       }
       const keys = spec.keys ?? [];
       for (const [key, item] of v) {
         const at = `${name}.${field}.${key}`;
         if (!keys.includes(key)) {
-          why.push(`${dumps(at)} is no key${hint(key, keys)}`);
+          why.push(`${yamlFlow(at)} is no key${hint(key, keys)}`);
           continue;
         }
         const got = conditions(item, at);
@@ -705,7 +539,7 @@ function record(name: string, option: OptionRec, value: Json):
 function known(name: string): { option: OptionRec; why: null } |
     { option: null; why: string } {
   if (!Object.hasOwn(SPEC, name)) {
-    return { option: null, why: `${dumps(name)} is no option${hint(name, NAMES)}` };
+    return { option: null, why: `${yamlFlow(name)} is no option${hint(name, NAMES)}` };
   }
   return { option: SPEC[name], why: null };
 }
@@ -714,7 +548,7 @@ function known(name: string): { option: OptionRec; why: null } |
  * depth: an option, a table's row or a row's field, a record's field, or
  * a key of a record's conditions-by field, each with the nearest known
  * name. */
-export function unknownKeys(data: Map<string, Json>): string[] {
+export function unknownKeys(data: Map<string, Yaml>): string[] {
   const why: string[] = [];
   for (const [name, value] of data) {
     if (name === "version") continue;
@@ -730,13 +564,13 @@ export function unknownKeys(data: Map<string, Json>): string[] {
       const rows = option.rows ?? [];
       for (const [row, rec] of value) {
         if (!rows.includes(row)) {
-          why.push(`${dumps(`${name}.${row}`)} is no row${hint(row, rows)}`);
+          why.push(`${yamlFlow(`${name}.${row}`)} is no row${hint(row, rows)}`);
           continue;
         }
         if (!(rec instanceof Map)) continue;
         for (const field of rec.keys()) {
           if (!Object.hasOwn(fields, field)) {
-            why.push(`${dumps(`${name}.${row}.${field}`)} is no field` +
+            why.push(`${yamlFlow(`${name}.${row}.${field}`)} is no field` +
               hint(field, names));
           }
         }
@@ -744,7 +578,7 @@ export function unknownKeys(data: Map<string, Json>): string[] {
     } else if (option.type === "record") {
       for (const [field, v] of value) {
         if (!Object.hasOwn(fields, field)) {
-          why.push(`${dumps(`${name}.${field}`)} is no field` +
+          why.push(`${yamlFlow(`${name}.${field}`)} is no field` +
             hint(field, names));
           continue;
         }
@@ -753,7 +587,7 @@ export function unknownKeys(data: Map<string, Json>): string[] {
         const keys = spec.keys ?? [];
         for (const key of v.keys()) {
           if (!keys.includes(key)) {
-            why.push(`${dumps(`${name}.${field}.${key}`)} is no key` +
+            why.push(`${yamlFlow(`${name}.${field}.${key}`)} is no key` +
               hint(key, keys));
           }
         }
@@ -766,7 +600,7 @@ export function unknownKeys(data: Map<string, Json>): string[] {
 /** One key of a file: the value to merge, or null to skip it, and why for
  * each part skipped.  A derived option's null is the defaults file's own
  * spelling of "not set", so a copy of that file says nothing. */
-export function check(name: string, value: Json, defaults: Defaults):
+export function check(name: string, value: Yaml, defaults: Defaults):
     { got: Value; why: string[] } {
   const { option, why: unknown } = known(name);
   if (option === null) return { got: null, why: [unknown] };
@@ -779,7 +613,7 @@ export function check(name: string, value: Json, defaults: Defaults):
     const { kept, why } = table(name, option, value, defaults[name] as Rows);
     return { got: Object.keys(kept).length ? kept : null, why };
   }
-  const { got, bad } = scalar(option.type, value, option, dumps(name));
+  const { got, bad } = scalar(option.type, value, option, yamlFlow(name));
   return { got, why: bad === null ? [] : [bad] };
 }
 
@@ -810,24 +644,27 @@ async function textOf(path: string, fs: ConfigFs, st: FileStat | null):
   return text === null ? { text: null, why: "unreadable" } : { text, why: null };
 }
 
-/** The JSONC object `text` holds, or why not. */
+/** The YAML mapping `text` holds, or why not.  A file of nothing but
+ * comments, or of nothing, sets nothing. */
 function objectOf(text: string):
-    { data: Map<string, Json>; why: null } | { data: null; why: string } {
-  let data: Json;
+    { data: Map<string, Yaml>; why: null } | { data: null; why: string } {
+  let data: Yaml;
   try {
-    data = jsonLoads(stripJsonc(text));
-  } catch {
-    return { data: null, why: "not valid JSONC" };
+    data = parseYaml(text);
+  } catch (err) {
+    if (!(err instanceof YamlError)) throw err;
+    return { data: null, why: `not valid YAML (${err.message})` };
   }
-  if (!(data instanceof Map)) return { data: null, why: "not an object" };
+  if (data === null) return { data: new Map(), why: null };
+  if (!(data instanceof Map)) return { data: null, why: "not a mapping" };
   return { data, why: null };
 }
 
-/** Why a file's "version" is not one this program reads, or null.  The
+/** Why a file's version is not one this program reads, or null.  The
  * key is reserved for a later change of shape. */
-function versionFault(value: Json): string | null {
+function versionFault(value: Yaml): string | null {
   if (value === 1n || value === 1) return null;
-  return `"version" ${dumpsUnicode(value)} is not one this program reads`;
+  return `version ${yamlFlow(value)} is not one this program reads`;
 }
 
 /** One file's checked values, by option name, its warnings, each "PATH:
@@ -869,7 +706,7 @@ export async function readFile(path: string, fs: ConfigFs,
 
 /** The defaults file's path under the plugin's folder (`$.plugin.root`): the
  * plugin carries it wherever it is installed. */
-export const DEFAULTS_REL = "defaults/config.jsonc";
+export const DEFAULTS_REL = "defaults/config.yaml";
 
 /** Every option's default, by name, from the defaults file: null where
  * derived. */
@@ -905,11 +742,11 @@ export function parseDefaults(path: string, text: string): Defaults {
       faults.push(unknown);
       continue;
     }
-    const where = dumps(name);
+    const where = yamlFlow(name);
     if (option.derived) {
       if (value !== null) {
         faults.push(`${where} must be null, to follow ` +
-          dumps(option.derived.from));
+          yamlFlow(option.derived.from));
       }
       values[name] = null;
       continue;
@@ -927,7 +764,7 @@ export function parseDefaults(path: string, text: string): Defaults {
           if (!Object.hasOwn(by, k)) missing.push(`${f}.${k}`);
         }
       }
-      for (const m of missing) faults.push(`${dumps(`${name}.${m}`)} is missing`);
+      for (const m of missing) faults.push(`${yamlFlow(`${name}.${m}`)} is missing`);
       values[name] = kept;
       continue;
     }
@@ -942,7 +779,7 @@ export function parseDefaults(path: string, text: string): Defaults {
     values[name] = got;
   }
   for (const name of NAMES) {
-    if (!data.has(name)) faults.push(`${dumps(name)} is missing`);
+    if (!data.has(name)) faults.push(`${yamlFlow(name)} is missing`);
   }
   if (faults.length) throw new DefaultsError(`${path}: ${faults.join("; ")}`);
   const out: { [name: string]: Value } = {};
@@ -952,7 +789,7 @@ export function parseDefaults(path: string, text: string): Defaults {
 
 /** A table's default, and each fault: every row and every field must be
  * there. */
-function defaultsTable(name: string, option: OptionRec, value: Json):
+function defaultsTable(name: string, option: OptionRec, value: Yaml):
     { rows: Rows | null; faults: string[] } {
   const { kept, why: faults } = table(name, option, value, null);
   if (!(value instanceof Map)) return { rows: null, faults };
@@ -961,13 +798,13 @@ function defaultsTable(name: string, option: OptionRec, value: Json):
     rows[row] = { ...kept[row] };
     const rec = value.get(row);
     if (!value.has(row)) {
-      faults.push(`${dumps(`${name}.${row}`)} is missing`);
+      faults.push(`${yamlFlow(`${name}.${row}`)} is missing`);
       continue;
     }
     if (!(rec instanceof Map)) continue;
     for (const field of Object.keys(option.fields ?? {})) {
       if (!rec.has(field)) {
-        faults.push(`${dumps(`${name}.${row}.${field}`)} is missing`);
+        faults.push(`${yamlFlow(`${name}.${row}.${field}`)} is missing`);
       }
     }
   }
@@ -1145,7 +982,7 @@ export async function load(start: string, env: ConfigEnv, fs: ConfigFs,
       validateSource("claude", spec);
       break;
     } catch {
-      warnings.push(`${bad.path}: "usage-source" ${dumpsUnicode(spec)} is ` +
+      warnings.push(`${bad.path}: usage-source ${yamlFlow(spec)} is ` +
         "no usage source; skipped");
       const { ["usage-source"]: _, ...rest } = bad.values;
       files = files.map((f) => f === bad ? { ...f, values: rest } : f);

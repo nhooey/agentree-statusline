@@ -19,6 +19,6 @@ result-*
 !/.agents/skills/*.preferences.md
 /.claude/skills/
 
-# One person's settings under the project's .config/ (config.local.jsonc,
+# One person's settings under the project's .config/ (config.local.yaml,
 # mise's mise.local.toml, ...), never committed.
 /.config/**/*.local.*

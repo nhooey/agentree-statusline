@@ -3,7 +3,7 @@
 //
 // What the plugin draws is set by the options (options_spec.ts), merged
 // from the configuration files over the defaults file
-// (defaults/config.jsonc) (docs/options.md, "Configuration files";
+// (defaults/config.yaml) (docs/options.md, "Configuration files";
 // configuration.ts, options()).
 // What stays here are the constants no file may set: the version the
 // caches are keyed by, and the timings (agents/plans/open/config-merge.md,
@@ -78,6 +78,6 @@ export const CONFIG = {
 // One more layer under the configuration files, named "plugin": a setting
 // the plugin draws with that is not the options' default and that no file
 // gives.  Empty: a person's settings are in their own file,
-// ~/.config/agentree-statusline/config.jsonc (docs/options.md), which
+// ~/.config/agentree-statusline/config.yaml (docs/options.md), which
 // the band and the agent panel both read.
 export const SETTINGS: { readonly [option: string]: Value } = {}

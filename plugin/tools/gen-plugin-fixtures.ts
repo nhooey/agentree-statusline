@@ -63,10 +63,10 @@ export function render(): string {
     `export const CALIB = ${JSON.stringify(env.calib)}`,
     `export const TRACKER = ${JSON.stringify(tracker)}`,
     "",
-    "/** The defaults file, plugin/defaults/config.jsonc, as the harness's",
+    "/** The defaults file, plugin/defaults/config.yaml, as the harness's",
     " * `$.fs` answers the plugin's read of it. */",
     `export const DEFAULTS_TEXT = ${JSON.stringify(fs.readFileSync(
-      path.join(PLUGIN, "defaults", "config.jsonc"), "utf-8"))}`,
+      path.join(PLUGIN, "defaults", "config.yaml"), "utf-8"))}`,
     "",
   ].join("\n");
 }

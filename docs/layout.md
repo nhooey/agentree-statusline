@@ -380,8 +380,8 @@ With subagents running between turns (`--phase done --agents corpus/01-mixed`, a
 
 🎤 stays a second after the stamp lands (`CONFIG.receiptHoldMs`), so the turn's figures are never off screen.
 The option `rows` sets, for each row, whether it is drawn while a turn runs (`live` `"running"`), always (`"always"`) or never (`"never"`), and whether the receipt stamps it (`transcript`), apart; as the plugin ships, 🎤 is drawn while a turn runs and stamped, 🧵, 🎮 and 💳 are always drawn and not stamped, and the subagents are always drawn, between turns only those running or paused, and always stamped, every one the turn ran that had finished, with 🧵 over them.
-`"rows": {"subagents": {"live": "running"}}` draws no subagent between turns.
-`"rows": {"session": {"live": "running"}}` leaves the band empty between turns.
+`rows: {subagents: {live: running}}` draws no subagent between turns.
+`rows: {session: {live: running}}` leaves the band empty between turns.
 
 The rows are read again every 5 seconds while a turn runs, never more often than three times as long as the last read took, and every 30 seconds otherwise; their clocks (🔧 ⌛ ⛳ 🕐 🔜) move each second between reads.
 
@@ -433,7 +433,7 @@ At 160 columns, from a cost document (`usage-dev figures tests/fixtures/figures/
 🔺🔖 8f37748e #12  💳 🔋  41٪  🪫  63٪  📅 2026-08-16  🕐 02:23:20
 ```
 
-With `"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}` it stamps 🧵 and 🎮 too, as the tree above the prompt stacks them: 🎮 the root, 🧵 under it and 🎤 under 🧵, 🧵 from a status document (the same with `--rows` set so and `--status tests/fixtures/figures/status/18-agents.json`):
+With `rows: {agent: {transcript: true}, session: {transcript: true}}` it stamps 🧵 and 🎮 too, as the tree above the prompt stacks them: 🎮 the root, 🧵 under it and 🎤 under 🧵, 🧵 from a status document (the same with `--rows` set so and `--status tests/fixtures/figures/status/18-agents.json`):
 
 ```
   🎮                                       💰 0.2                 🧩 ▴ 27k ▾4.4k  🎯96٪  ⌛1.2h         🤖⠶⠆ 🔧⠆⠀ 🚦⠀⠀  🔋  .04٪  🪫  .059٪
@@ -847,7 +847,7 @@ Above the prompt they are the tree; under the footer line they stand in the one 
 The subagents are drawn in the tree alone.
 The 🔖 tag lines have no live row, and their place stays `"footer"`.
 
-Every row under the footer line, with `"rows": {"turn": {"place": "footer"}, "agent": {"place": "footer"}, "session": {"place": "footer"}, "subagents": {"live": "never"}}`: no row drawn live is above the prompt, so `right-edge` follows to 2, the edge of Claude Code's footer container (`--part footer --rows` set so, `--right-edge 2`):
+Every row under the footer line, with `rows: {turn: {place: footer}, agent: {place: footer}, session: {place: footer}, subagents: {live: never}}`: no row drawn live is above the prompt, so `right-edge` follows to 2, the edge of Claude Code's footer container (`--part footer --rows` set so, `--right-edge 2`):
 
 ```
   -- INSERT -- ⏵⏵ auto mode on (shift+tab to cycle)
@@ -857,7 +857,7 @@ Every row under the footer line, with `"rows": {"turn": {"place": "footer"}, "ag
   🎮                                  💰  35                         🧩 ▴2.7M ▾841k  🎯98٪  ⌛9.3h         🤖⠶⠄ 🔧⠆⠀ 🚦⠄⠀  🔋 3.8٪   🪫 8.45٪
 ```
 
-Every row above the prompt, with `"rows": {"account": {"place": "above"}}`, `right-edge` 5, and under the footer line only Claude Code's own line (`--part above --rows` set so, `--right-edge 5`):
+Every row above the prompt, with `rows: {account: {place: above}}`, `right-edge` 5, and under the footer line only Claude Code's own line (`--part above --rows` set so, `--right-edge 5`):
 
 ```
   📁~/src/statusline-fixture/deep/tree                                                    💳 🔜 6.7m 🔋  15٪  🔜 1.9d 🪫  87٪    📅 2026-08-16  🕐 02:23:20

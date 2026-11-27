@@ -69,7 +69,7 @@ finishes, and drawn under the notification of that run.
 ## Options
 
 `rows.agent-run` and `rows.compact`, each with `transcript` only, both
-`true` by default, in `spec/options.jsonc`, the defaults file, both ports'
+`true` by default, in `spec/options.yaml`, the defaults file, both ports'
 options and `docs/options.md`. The Python port reads them and draws
 nothing for them: its Stop hook's receipt is the main thread's alone.
 
@@ -101,5 +101,5 @@ nothing for them: its Stop hook's receipt is the main thread's alone.
 
 `plugin/hooks/register.tsx` (filing and drawing), `plugin/src/receipt.ts` (the
 rows), `plugin/hooks/transcripts.ts` (an agent's records by id),
-`spec/options.jsonc` and its generated files, `plugin/defaults/config.jsonc`,
+`spec/options.yaml` and its generated files, `plugin/defaults/config.yaml`,
 `plugin/plugin-tests/band.test.ts`, `docs/layout.md`, `docs/options.md`.
