@@ -15,7 +15,7 @@ import type {
 import { OPTIONS } from '../src/options_spec.ts'
 import type { Options } from '../src/options_spec.ts'
 import { LOG_NAME } from '../src/pluginlog.ts'
-import { yamlOption } from '../src/yaml.ts'
+import { quote, yamlOption } from '../src/yaml.ts'
 import { SETTINGS } from './config.ts'
 import { log } from './log.ts'
 import { found, fromBase64, readBytesVia } from './engine.ts'
@@ -87,7 +87,7 @@ export async function defaultsVia($: $): Promise<Defaults> {
              mtimeMs !== defaultsMovedAt) {
     defaultsMovedAt = mtimeMs
     await log($, 'config: the defaults file changed on disk; the plugin ' +
-      'keeps the one it loaded until /reload-plugins: ' + path)
+      'keeps the one it loaded until /reload-plugins: ' + quote(path))
   }
   return loadedDefaults.defaults
 }
@@ -224,8 +224,8 @@ async function reread($: $): Promise<boolean> {
   defaultsFault = null
   configStamp = stamp
   const files = found.layers.map((l) =>
-    `${l.name} ${l.path} (${Object.keys(l.values).join(', ')})`)
-  await log($, `config from ${found.start}: ` +
+    `${l.name} ${quote(l.path)} (${Object.keys(l.values).join(', ')})`)
+  await log($, `config from ${quote(found.start)}: ` +
     (files.length ? files.join('; ') : 'no files'))
   for (const w of found.options.warnings) await log($, 'config: ' + w)
   await notice($, found)
@@ -274,7 +274,7 @@ async function notice($: $, found: Found): Promise<void> {
     const path = found.paths[name]
     if (path === null) continue
     const said = found.options.warnings.filter((w) =>
-      w.startsWith(path + ': '))
+      w.startsWith(quote(path) + ': '))
     if (!said.length) continue
     const key = `${path}@${(await fs.stat(path))?.mtimeMs ?? '-'}`
     if (noticed.has(key)) continue

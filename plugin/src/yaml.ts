@@ -1,6 +1,6 @@
 // The YAML the configuration files are written in: a reader for the part
 // of YAML 1.2 they need, and a writer of values in YAML's flow style for
-// the warnings that quote them.
+// the warnings, messages and log lines that quote them.
 //
 // The reader is a scanner over the text's lines and a recursive descent
 // over its nodes.  It reads:
@@ -682,8 +682,7 @@ function write(value: Flowable, whole: boolean): string {
 }
 
 /** `value` in YAML's flow style, on one line, reading back as itself: a
- * string plain where it can be, else double-quoted, and a number a float,
- * 1.0 told from the bigint 1. */
+ * string double-quoted, and a number a float, 1.0 told from the bigint 1. */
 export function yamlFlow(value: Flowable): string {
   return write(value, false);
 }
@@ -692,4 +691,12 @@ export function yamlFlow(value: Flowable): string {
  * integer: for the options, whose numbers are kept as numbers. */
 export function yamlOption(value: Flowable): string {
   return write(value, true);
+}
+
+/** `value` as a message or a log line shows it: a string double-quoted
+ * with YAML's escapes, so a blank one, a newline or a leading space shows,
+ * and a value never reads as the words around it; null, undefined, a
+ * number and a boolean bare, so null is told from "null". */
+export function quote(value: Flowable | undefined): string {
+  return value === undefined ? "undefined" : write(value, true);
 }

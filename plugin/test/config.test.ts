@@ -94,11 +94,11 @@ test("a missing or unreadable defaults file is an error", async () => {
   const none: ConfigFs = { stat: async () => null, read: async () => null,
     realPath: async () => null };
   await assert.rejects(readDefaults("/m/defaults/config.yaml", none),
-    new DefaultsError("/m/defaults/config.yaml: missing"));
+    new DefaultsError('"/m/defaults/config.yaml": missing'));
   const unreadable: ConfigFs = { ...none,
     stat: async () => ({ kind: "file", size: 1, mtimeMs: 1 }) };
   await assert.rejects(readDefaults("/m/defaults/config.yaml", unreadable),
-    new DefaultsError("/m/defaults/config.yaml: unreadable"));
+    new DefaultsError('"/m/defaults/config.yaml": unreadable'));
 });
 
 test("a user file copied from the defaults with one change differs by that " +

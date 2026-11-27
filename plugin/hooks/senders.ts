@@ -10,6 +10,7 @@ import {
 } from '../src/agent_message.ts'
 import type { AgentLike, MessageLike } from '../src/agent_message.ts'
 import { sha256Hex } from '../src/sha256.ts'
+import { quote } from '../src/yaml.ts'
 import { CONFIG } from './config.ts'
 import { folderAgents, folderReplies } from './transcripts.ts'
 import { transcriptPath } from './edges.ts'
@@ -138,7 +139,7 @@ async function lookFor($: $, from: string, text: string,
       return [a, Array.isArray(got)
         ? lastReply(got as readonly MessageLike[]) : ''] as const
     } catch (err) {
-      await log($, 'no messages for ' + a.id, err)
+      await log($, 'no messages for ' + quote(a.id), err)
       return [a, ''] as const
     }
   }))

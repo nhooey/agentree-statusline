@@ -42,6 +42,7 @@ import {
 } from '../src/claude.ts'
 import type { RateSample } from '../src/claude.ts'
 import type { Dict } from '../src/py.ts'
+import { quote } from '../src/yaml.ts'
 import { log } from './log.ts'
 import {
   fileSize, found, listDir, readRange, runVia, steps, timed,
@@ -81,9 +82,10 @@ export async function payloadOf($: $, transcript: string): Promise<{
   const id = await $.session.id()
   const usage = await $.session.usage()
   // The kinds of rate limit the session names, logged as the set changes,
-  // so the log says which windows reach the plugin: `rate limits: five_hour
-  // seven_day seven_day_overage_included` where the Fable window does.
-  const kinds = usage.rateLimits.map((r) => r.kind).join(' ')
+  // so the log says which windows reach the plugin: `rate limits:
+  // "five_hour" "seven_day" "seven_day_overage_included"` where the Fable
+  // window does.
+  const kinds = usage.rateLimits.map((r) => quote(r.kind)).join(' ')
   if (kinds !== seenKinds) {
     seenKinds = kinds
     await log($, 'rate limits: ' + (kinds || 'none'))
@@ -132,11 +134,14 @@ export async function transcriptPath($: $, places: Places):
     if (await fileSize($, path) !== null) {
       found.session = id
       found.path = path
-      if (moved) await log($, 'transcript moved: ' + moved + ' -> ' + path)
+      if (moved) {
+        await log($, 'transcript moved: ' + quote(moved) + ' -> ' +
+          quote(path))
+      }
       return path
     }
   }
-  if (moved) await log($, 'transcript moved: ' + moved + ' -> none')
+  if (moved) await log($, 'transcript moved: ' + quote(moved) + ' -> none')
   return ''
 }
 
