@@ -90,7 +90,9 @@ echo 'mark-spacing: false' > ~/.config/agentree-statusline/config.yaml
 
 A project's settings go in its own `.config/agentree-statusline/` instead; see [Configuration files](docs/options.md#configuration-files).
 
-For ⛳ ETAs, the `agentree-statusline` plugin gives each session and subagent the ETA instruction at its start, the short form in [`plugin/hooks/eta-instruction.md`](plugin/hooks/eta-instruction.md).
+For ⛳ ETAs, the `agentree-statusline` plugin gives each session and subagent the ETA instruction, the short form in [`plugin/hooks/eta-instruction.md`](plugin/hooks/eta-instruction.md).
+A session gets it as its first prompt's context, and again after a compaction or `/clear`; a subagent gets it at the end of the prompt it is spawned with.
+Neither route relies on the `SessionStart` or `SubagentStart` hooks, whose events Claude Code's built-in cc-plugin-sec-default sends on past the plugin on a machine with managed settings, and each conversation gets one copy.
 Link the skill as well, which holds the full rules and what `recurse` asks for; where the plugin is not enabled, also tell agents to use the skill:
 
 ```sh

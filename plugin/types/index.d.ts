@@ -75,6 +75,11 @@ declare module 'claude-code' {
        * which takes either part of another shape, or a value absent, as
        * nothing kept. */
       spending: SpendingKept | null;
+      /** The key of the main conversation the ETA instruction was last
+       * added to as a prompt's context, its session's id and how many
+       * conversations its transcript ended before it
+       * (src/eta_instructed.ts); "" before the first. */
+      etaInstructed: string;
     }
   }
 }

@@ -6,8 +6,8 @@ kind: end-state
 
 # agentree-statusline sees every session and subagent start behind cc-plugin-sec-default
 
-agentree-statusline's `SessionStart` and `SubagentStart` hooks run on every start,
-whichever plugins load before it.
+What agentree-statusline does at a session's or a subagent's start reaches
+every session and subagent, whichever plugins load before it.
 
 ## Why
 
@@ -19,6 +19,22 @@ example: `usage-band: its classic.SessionStart hook was skipped.
 been seen on `SubagentStart`, and on `SessionStart` after
 `/reload-plugins`. A skipped start leaves the tree without the session's
 or the subagent's row until a later event draws it.
+
+## The choice
+
+agentree-statusline hooks neither `classic.SessionStart` nor
+`classic.SubagentStart`. The ETA instruction, the one thing those hooks
+gave, goes by two events of its own:
+
+- the main conversation gets it as a prompt's context from a
+  `prompt.submit` hook, once per conversation, the transcript showing
+  whether the conversation has it;
+- a subagent gets it at the end of its prompt from an `agent.spawn` hook.
+
+`cc-plugin-sec-default` hooks both events; whether it passes
+`agent.spawn` on to the user tier is still to be seen in a live session
+under managed settings (`claude --debug` has no `agent.spawn bypassed`
+line, and the subagent quotes the instruction).
 
 ## Done when
 
