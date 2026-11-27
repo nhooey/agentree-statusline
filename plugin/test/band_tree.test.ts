@@ -24,7 +24,7 @@ import {
 import { inboxCounts } from "../src/claude_records_node.ts";
 import type { TreeTask } from "../src/subagent_tasks.ts";
 import {
-  bgPath, bgText, drawnAgents, foldShut, foldsKey, foldsStale, heldFolds,
+  bgName, bgPath, bgText, drawnAgents, foldShut, foldsKey, foldsStale, heldFolds,
   keptFolds,
   pruneFolds, treeRows, workspaceLinks,
 } from "../src/band_tree.ts";
@@ -507,7 +507,8 @@ function bgTree(id: string, over: Partial<TreeInput> = {},
     mainProgress: "", turnPhase: "🟢", agents: {
       tasks: doc.tasks as TreeTask[], limits: LIMITS, now: NOW, turnStart,
       mainBackground: doc.main_background as BgTask[],
-      mainEnded: (doc.main_background_ended ?? []) as BgTask[], linger },
+      mainEnded: (doc.main_background_ended ?? []) as BgTask[], linger,
+      home: doc.home as string, cwd: doc.cwd as string },
     ...over }, hide);
   const keys = fixedKeys(ST, 200, hide);
   return rows.map((r) => stripAnsi(join(draw(ST, r, keys, 200, hide)))
@@ -515,19 +516,21 @@ function bgTree(id: string, over: Partial<TreeInput> = {},
 }
 
 test("each open shell and Monitor is a leaf under the thread that " +
-  "started it, after its agents, with its label and how long it has run",
-() => {
+  "started it, after its agents, with its label, its last line and how " +
+  "long it has run", () => {
   const lines = bgTree("corpus/02-parked");
   const at = (text: string) => lines.findIndex((l) => l.includes(text));
   // Under 🧵 main: 🎤 first, its agents, then its shell and its Monitor.
   assert.match(lines[1], /^├─ 🎤 +🟢 turn/u);
-  assert.match(lines.at(-2)!, /^├─ 💻 +🟢 Run the plugin tests +⌛6\.2m$/u);
-  assert.match(lines.at(-1)!, /^╰─ 📡 +🟢 Watch PR #38 for comments +⌛ 25m$/u);
+  assert.match(lines.at(-2)!, /^├─ 💻 +🟢 Run the plugin tests  Tests: 212 passed, 212 total +⌛6\.2m$/u);
+  assert.match(lines.at(-1)!, /^╰─ 📡 +🟢 Watch PR #38 for comments  2 new review comments +⌛ 25m$/u);
   assert.ok(at("Peony") < at("Run the plugin tests"));
-  // Under Poppy, its Monitor and its shell, in the order they opened.
+  // Under Poppy, its Monitor and its shell, in the order they opened; the
+  // shell's call has no description, so its command is drawn short, after
+  // the folder its `cd` changes to from Poppy's own.
   const poppy = at("Poppy");
-  assert.match(lines[poppy + 1], /^│  ├─ 📡 +🟢 Watch the CI checks +⌛2\.1m$/u);
-  assert.match(lines[poppy + 2], /^│  ╰─ 💻 +🟢 Build the docs site +⌛2\.1m$/u);
+  assert.match(lines[poppy + 1], /^│  ├─ 📡 +🟢 Watch the CI checks  lint: pass, test: pending +⌛2\.1m$/u);
+  assert.match(lines[poppy + 2], /^│  ╰─ 💻 +🟢 📂docs make html  build succeeded, 3 warnings\. +⌛2\.1m$/u);
   // Last under 🧵, with no agents that ended after them.
   const done = bgTree("corpus/01-mixed", {}, [], NOW - 3600);
   assert.match(done.at(-1)!, /📡 +🟢 Watch PR #38/u);
@@ -597,7 +600,7 @@ test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
   const kept = bgTree("corpus/02-parked", {}, [], null, gone(2), 5);
   // In the order they opened: the Monitor 25m ago, the shell 6.2m ago.
   assert.match(kept.at(-2)!, /^├─ 📡 +🟢 Watch PR #38 for comments/u);
-  assert.match(kept.at(-1)!, /^╰─ 💻 +⚫ Run the plugin tests +⌛6\.2m$/u);
+  assert.match(kept.at(-1)!, /^╰─ 💻 +⚫ Run the plugin tests  Tests: 212 passed, 212 total +⌛6\.2m$/u);
   for (const lines of [bgTree("corpus/02-parked", {}, [], null, gone(6), 5),
     bgTree("corpus/02-parked", {}, [], null, gone(2), 0)]) {
     assert.ok(!lines.some((l) => l.includes("Run the plugin tests")));
@@ -609,10 +612,67 @@ test("a closed shell or Monitor stays where it stood, ended, its ⌛ " +
       ? { ...t, bgTasks: [t.bgTasks[0]],
         bgEnded: [{ ...t.bgTasks[1], end: NOW - 1 }] } : t) }), 5);
   const at = poppy.findIndex((l) => l.includes("Poppy"));
-  assert.match(poppy[at + 2], /^│  ╰─ 💻 +⚫ Build the docs site/u);
+  assert.match(poppy[at + 2], /^│  ╰─ 💻 +⚫ 📂docs make html/u);
   const shown = bgText(ST, { id: "x", kind: "bash", label: "x",
     start: NOW - 60, end: NOW - 1 }, "Build", NOW);
   assert.equal(shown, "💻 shell · ⚫ ended · ⌛ 59s · Build");
+});
+
+test("a closed shell's circle is ⚫ on exit 0 or none known, and 🔴 on " +
+  "any other, on its row and in its toast", () => {
+  const ended = (exit?: number) => (d: Dict): Dict => ({ ...d,
+    main_background: [(d.main_background as BgTask[])[1]],
+    main_background_ended: [{ ...(d.main_background as BgTask[])[0],
+      end: NOW - 2, ...exit === undefined ? {} : { exit } }] });
+  const row = (exit?: number): string =>
+    bgTree("corpus/02-parked", {}, [], null, ended(exit), 5).at(-1)!;
+  assert.match(row(), /^╰─ 💻 +⚫ Run the plugin tests/u);
+  assert.match(row(0), /^╰─ 💻 +⚫ Run the plugin tests/u);
+  assert.match(row(1), /^╰─ 💻 +🔴 Run the plugin tests/u);
+  assert.match(row(143), /^╰─ 💻 +🔴 Run the plugin tests/u);
+  // The circle stands in the column every other row's does.
+  const open = bgTree("corpus/02-parked");
+  assert.equal(row(1).indexOf("🔴"), open.at(-2)!.indexOf("🟢"));
+  const b: BgTask = { id: "x", kind: "bash", label: "Build", start: NOW - 60,
+    end: NOW - 1 };
+  assert.equal(bgText(ST, { ...b, exit: 2 }, "Build", NOW),
+    "💻 shell · 🔴 ended, exit 2 · ⌛ 59s · Build");
+  assert.equal(bgText(ST, { ...b, exit: 0 }, "Build", NOW),
+    "💻 shell · ⚫ ended · ⌛ 59s · Build");
+});
+
+test("a task's row draws its call's description, else its command short, " +
+  "else its label, with 📂 and the folder a leading cd changes to apart " +
+  "from its thread's", () => {
+  const b = (label: string, command: string): BgTask =>
+    ({ id: "x", kind: "bash", label, start: NOW, command });
+  const home = "/Users/u", cwd = "/Users/u/git/p";
+  const cmd = "cd ~/git/p/plugin && npm test 2>&1 | tail -5";
+  // No description: the label is the command's first line, drawn short.
+  assert.deepEqual(bgName(b(cmd, cmd), cwd, home),
+    { name: "npm test", chip: "plugin" });
+  // A description is drawn as it is, the chip beside it all the same.
+  assert.deepEqual(bgName(b("Run the tests", cmd), cwd, home),
+    { name: "Run the tests", chip: "plugin" });
+  // A cd to the thread's own folder, or to one not known, draws no chip.
+  const same = "cd /Users/u/git/p && make";
+  assert.deepEqual(bgName(b(same, same), cwd, home),
+    { name: "make", chip: "" });
+  assert.deepEqual(bgName(b(cmd, cmd), "", home),
+    { name: "npm test", chip: "" });
+  // A command that will not split is drawn as its label was.
+  const open = "cd /tmp && echo \"unterminated";
+  assert.deepEqual(bgName(b(open, open), cwd, home),
+    { name: open, chip: "" });
+  // A command cut to BG_COMMAND_MAX is drawn as its label was too.
+  const cut = "cd /tmp && " + "x".repeat(200) + "…" + "y".repeat(99);
+  assert.deepEqual(bgName(b("cd /tmp && x", cut), cwd, home),
+    { name: "cd /tmp && x", chip: "" });
+  // A Monitor's command is drawn short the same way.
+  const mon = "cd /Users/u/src && gh pr checks 38 --watch | grep -v pending";
+  assert.deepEqual(bgName({ ...b(mon, mon), kind: "monitor" }, cwd, home),
+    { name: "gh pr checks 38 --watch", chip: "src" });
+  assert.deepEqual(bgName(b("", ""), cwd, home), { name: "shell", chip: "" });
 });
 
 test("a shell with no label draws its kind, and one with no start no ⌛",

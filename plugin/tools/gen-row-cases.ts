@@ -183,25 +183,42 @@ export function drawAccount(st: Settings, fig: Dict, c: AccountCase):
     c.indent));
 }
 
+/** The home folder and the main thread's directory of withBackground's
+ * document, which every agent works in too. */
+const BG_HOME = "/Users/u";
+const BG_CWD = BG_HOME + "/git/p";
+
+/** The command of withBackground's agents' shells, whose call has no
+ * description: its row draws it short, after 📂 and the folder it
+ * changes to. */
+const BG_DOCS = "cd " + BG_CWD + "/docs && make html 2>&1 | tail -20";
+
 /** `doc`, a document's `agents`, with open background tasks the tree draws
- * under their threads: a shell and a Monitor of the main thread's, and
- * for each task its usage's, each labelled and opened a while before
- * `now`. */
+ * under their threads, each with the last line of its output: a shell and
+ * a Monitor of the main thread's, each labelled by its call's
+ * description, and for each task its usage's, its shells labelled by
+ * their command, each opened a while before `now`; the home folder and
+ * the directory the main thread and every agent work in. */
 export function withBackground(doc: Dict, now: number): Dict {
-  const label = (kind: string): string =>
-    kind === "bash" ? "Build the docs site" : "Watch the CI checks";
-  return { ...doc, main_background: [
+  const task = (id: string, kind: string): Dict => kind === "bash"
+    ? { id, kind, label: BG_DOCS, start: now - 125, command: BG_DOCS,
+      last: "build succeeded, 3 warnings." }
+    : { id, kind, label: "Watch the CI checks", start: now - 125,
+      last: "lint: pass, test: pending" };
+  return { ...doc, home: BG_HOME, cwd: BG_CWD, main_background: [
     { id: "msh", kind: "bash", label: "Run the plugin tests",
       start: now - 372, command: "npm test -- --watch",
       output: "/private/tmp/claude-501/-Users-u-git-p/0f3c9a7e-5b1d-4e2a" +
-        "-9c8b-1a2b3c4d5e6f/tasks/b3qupkikw.output" },
+        "-9c8b-1a2b3c4d5e6f/tasks/b3qupkikw.output",
+      last: "Tests: 212 passed, 212 total" },
     { id: "mmon", kind: "monitor", label: "Watch PR #38 for comments",
       start: now - 1500, command: "gh pr view 38 --comments ⏎ sleep 30",
-      output: "/Users/u/.cache/tasks/mmon.output" }],
+      output: "/Users/u/.cache/tasks/mmon.output",
+      last: "2 new review comments" }],
   tasks: (doc.tasks as Dict[]).map((t) => ({ ...t,
+    usage: { ...t.usage as Dict, cwd: BG_CWD },
     bgTasks: ((t.usage as Dict).background as [string, string][] ?? [])
-      .map(([id, kind]) => ({ id, kind, label: label(kind),
-        start: now - 125 })) })) };
+      .map(([id, kind]) => task(id, kind)) })) };
 }
 
 /** The band case's rows: with `agents` or `progress`, the document's

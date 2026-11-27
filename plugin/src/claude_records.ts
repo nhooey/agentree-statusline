@@ -30,6 +30,7 @@
 //     object, a usage count that is not a number), this carries on with
 //     the field missing.  No shared case pins those inputs.
 
+import { lastLine } from "./output_lines.ts";
 import { sha256Hex } from "./sha256.ts";
 import { E_FOLD, E_ETA_INF, E_ETA_REPORT } from "./spec.ts";
 import { isDict, pyDig, pyGet, pyHas, pyOr, pyTruthy } from "./py.ts";
@@ -718,8 +719,12 @@ export type BgInfo = Map<string, [string, number | null, string, string]>;
 /** A background task as the band's tree draws it: its task id, its
  * kind, "bash" or "monitor", its label and the epoch it opened, null
  * where that is not known; its call's command on one line and the file
- * its output is written to, each "" or absent where not known; and for
- * one that has closed, the epoch of the record that closed it. */
+ * its output is written to, each "" or absent where not known; for one
+ * that has closed, the epoch of the record that closed it, and its exit
+ * code where the notification that closed it gives one (taskExit); and
+ * the last line of its output with text (lastLine), absent where none is
+ * known: a Monitor's off its latest event (BgEvents), a shell's off its
+ * log, which the plugin's hook reads. */
 export type BgTask = {
   readonly id: string;
   readonly kind: string;
@@ -728,7 +733,14 @@ export type BgTask = {
   readonly command?: string;
   readonly output?: string;
   readonly end?: number;
+  readonly exit?: number;
+  readonly last?: string;
 };
+
+/** The last line with text of each open Monitor's latest event, by task
+ * id, for the band's tree.  The plugin's alone, as BgEnded is: no save
+ * writes them. */
+export type BgEvents = Map<string, string>;
 
 /** The background tasks a thread has heard the end of, by task id, each
  * with its `end`, the latest BG_ENDED_KEEP of them, for the band's tree
@@ -764,6 +776,40 @@ const BG_OUTPUT = /Output is being written to: (\S+?)\.?(?=\s|$)/;
 
 /** Where a `<task-notification>` names its task's output file. */
 const TASK_OUTPUT = /<output-file>([^<]+)<\/output-file>/;
+
+/** A `<task-notification>`'s summary, and a Monitor's event in one. */
+const TASK_SUMMARY = /<summary>([^<]*)<\/summary>/;
+const TASK_EVENT = /<event>([^<]*)<\/event>/;
+
+/** An exit code as a summary states it: `completed (exit code 0)`,
+ * `failed with exit code 1`, a Monitor's `script failed (exit 2)`. */
+const EXIT_CODE = /\bexit(?: code)? (-?\d+)\b/g;
+
+/** The characters a notification's text escapes, by their entities. */
+const ENTITIES: { readonly [name: string]: string } = {
+  lt: "<", gt: ">", amp: "&", quot: '"', apos: "'", "#39": "'" };
+
+/** A notification's element text with its entities read. */
+function elementText(s: string): string {
+  return s.replace(/&(lt|gt|amp|quot|apos|#39);/g,
+    (_m, e: string) => ENTITIES[e]);
+}
+
+/** The exit code `<task-notification>` text gives in its summary, the last
+ * the summary states, as the quoted command before it can state one too;
+ * null where it gives none. */
+export function taskExit(text: string): number | null {
+  const sum = TASK_SUMMARY.exec(text);
+  const last = sum ? [...sum[1].matchAll(EXIT_CODE)].at(-1) : undefined;
+  return last ? Number(last[1]) : null;
+}
+
+/** The last line with text of the Monitor event `<task-notification>`
+ * text carries (lastLine), its entities read; "" for none. */
+export function taskEvent(text: string): string {
+  const ev = TASK_EVENT.exec(text);
+  return ev ? lastLine(elementText(ev[1])) : "";
+}
 
 /** A background task's label off its call's input: its `description`,
  * else its `command`, each cut to its first line with text and to
@@ -806,13 +852,15 @@ export function backgroundOutput(block: unknown): string {
 }
 
 /** The open tasks of `open`, in the order they opened, each with what
- * `info` knows of it. */
+ * `info` knows of it and its last event in `events`, where given. */
 export function backgroundTasks(open: ReadonlyMap<string, string>,
-  info: BgInfo): BgTask[] {
+  info: BgInfo, events?: BgEvents): BgTask[] {
   return [...open].map(([id, kind]) => {
     const got = info.get(id);
+    const last = events?.get(id) ?? "";
     return { id, kind, label: got?.[0] ?? "", start: got?.[1] ?? null,
-      command: got?.[2] ?? "", output: got?.[3] ?? "" };
+      command: got?.[2] ?? "", output: got?.[3] ?? "",
+      ...last ? { last } : {} };
   });
 }
 
@@ -860,9 +908,12 @@ export function copyBgInfo(info: BgInfo): BgInfo {
  * `<output-file>` of the first `<task-notification>` for it that names
  * one, as each of a Monitor's does.  Where `ended` is given, an open task
  * that closes on a stamped record goes into it with that stamp as its
- * end (BgEnded). */
+ * end, the exit code its notification gives (taskExit) and its last event
+ * (BgEnded).  Where `events` is given, an open Monitor's notification that
+ * carries an event sets its last line there (taskEvent, BgEvents). */
 export function scanBackground(r: Rec, open: Map<string, string>,
-  info: BgInfo | null = null, ended: BgEnded | null = null): void {
+  info: BgInfo | null = null, ended: BgEnded | null = null,
+  events: BgEvents | null = null): void {
   const content = pyDig(r, "message", "content");
   const calls: [string, string][] = [];
   if (info && Array.isArray(content)) {
@@ -892,20 +943,23 @@ export function scanBackground(r: Rec, open: Map<string, string>,
     }
     open.set(id, kind);
   };
-  const closed = (id: string): void => {
+  const closed = (id: string, exit: number | null = null): void => {
     const end = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
     if (ended && open.has(id) && end !== null) {
       const got = info?.get(id);
+      const last = events?.get(id) ?? "";
       ended.delete(id);
       ended.set(id, { id, kind: open.get(id)!, label: got?.[0] ?? "",
         start: got?.[1] ?? null, command: got?.[2] ?? "",
-        output: got?.[3] ?? "", end });
+        output: got?.[3] ?? "", end, ...exit === null ? {} : { exit },
+        ...last ? { last } : {} });
       for (const k of [...ended.keys()].slice(0, -BG_ENDED_KEEP)) {
         ended.delete(k);
       }
     }
     open.delete(id);
     info?.delete(id);
+    events?.delete(id);
   };
   const res = pyGet(r, "toolUseResult");
   if (isDict(res)) {
@@ -931,8 +985,10 @@ export function scanBackground(r: Rec, open: Map<string, string>,
     const got = open.has(id) ? info?.get(id) : undefined;
     const out = TASK_OUTPUT.exec(text);
     if (got && !got[3] && out) got[3] = stripSpace(out[1]);
+    const event = events && open.get(id) === "monitor" ? taskEvent(text) : "";
+    if (event) events!.set(id, event);
     if (text.includes("<status>") || text.includes(MONITOR_EXPIRED)) {
-      closed(id);
+      closed(id, taskExit(text));
     }
   }
 }
@@ -1732,6 +1788,8 @@ export interface AgentFold {
   readonly bgInfo: BgInfo;
   /** scanBackground's closed tasks; never saved. */
   readonly bgEnded?: BgEnded;
+  /** scanBackground's Monitors' latest events; never saved. */
+  readonly bgEvents?: BgEvents;
   effort: unknown;
   readonly keys: Set<unknown>;
 }
@@ -1742,7 +1800,7 @@ export function newAgentFold(): AgentFold {
     wrote: new Set(), added: 0, removed: 0, pos: 0, compactions: 0,
     lastSeen: null, apiError: false, cwd: "", blocks: 0,
     background: new Map(), bgInfo: new Map(), bgEnded: new Map(),
-    effort: "", keys: new Set() };
+    bgEvents: new Map(), effort: "", keys: new Set() };
 }
 
 /** A copy of `fold` that folds on apart from it. */
@@ -1754,7 +1812,8 @@ export function copyAgentFold(fold: AgentFold): AgentFold {
   tools: fold.tools.slice(), waiting: fold.waiting.slice(),
   recs: fold.recs.slice(), wrote: new Set(fold.wrote),
   background: new Map(fold.background), bgInfo: copyBgInfo(fold.bgInfo),
-  bgEnded: new Map(fold.bgEnded ?? []), keys: new Set(fold.keys) };
+  bgEnded: new Map(fold.bgEnded ?? []),
+  bgEvents: new Map(fold.bgEvents ?? []), keys: new Set(fold.keys) };
 }
 
 /** Fold `data`, the file's bytes from `fold.pos` on, into `fold`.  Short
@@ -1797,7 +1856,8 @@ export function foldAgentRecord(fold: AgentFold, length: number,
   liveEta(r, fold.etaState);
   agentSpan(r, fold.spanState, fold.work);
   scanToolSpans(r, fold.pending, fold.tools, fold.waiting);
-  scanBackground(r, fold.background, fold.bgInfo, fold.bgEnded ?? null);
+  scanBackground(r, fold.background, fold.bgInfo, fold.bgEnded ?? null,
+    fold.bgEvents ?? null);
   const [a, d] = diffLines(r, fold.wrote);
   fold.added += a;
   fold.removed += d;
@@ -2211,6 +2271,8 @@ export interface TranscriptFold {
   bgInfo: BgInfo;
   /** scanBackground's closed tasks; never saved. */
   bgEnded?: BgEnded;
+  /** scanBackground's Monitors' latest events; never saved. */
+  bgEvents?: BgEvents;
   idleAt: number;
   lastSeen: number;
   /** The turn opened last, for its promptId alone. */
@@ -2237,7 +2299,7 @@ export function newTranscriptFold(): TranscriptFold {
     asstText: "", spans: [], tools: [], blocked: [], pending: new Map(),
     first: null, openAt: null, prev: null, etaState: newEtaState(),
     queued: 0, compactions: 0, background: new Map(), bgInfo: new Map(),
-    bgEnded: new Map(), idleAt: 0.0,
+    bgEnded: new Map(), bgEvents: new Map(), idleAt: 0.0,
     lastSeen: 0.0, opened: { pid: "", tidx: null }, wrote: new Set(),
     added: 0, removed: 0, ends: new Map(), gate: newTurnGate(), title: "",
     agentName: "", color: "" };
@@ -2261,7 +2323,8 @@ export function copyTranscriptFold(f: TranscriptFold): TranscriptFold {
     etaState: [f.etaState[0].slice(), f.etaState[1], f.etaState[2],
       f.etaState[3]],
     background: new Map(f.background), bgInfo: copyBgInfo(f.bgInfo),
-    bgEnded: new Map(f.bgEnded ?? []), opened: { ...f.opened },
+    bgEnded: new Map(f.bgEnded ?? []), bgEvents: new Map(f.bgEvents ?? []),
+    opened: { ...f.opened },
     wrote: new Set(f.wrote), ends: new Map(f.ends),
     gate: [f.gate[0], f.gate[1], f.gate[2], f.gate[3]] };
 }
@@ -2440,7 +2503,8 @@ function foldClock(f: TranscriptFold, r: Rec, opens: boolean): void {
   _stampTurnId(f.opened, r);
   if (pyGet(r, "isSidechain") !== true) {
     liveEta(r, f.etaState, opens);
-    scanBackground(r, f.background, f.bgInfo, f.bgEnded ?? null);
+    scanBackground(r, f.background, f.bgInfo, f.bgEnded ?? null,
+      f.bgEvents ?? null);
   }
   const t = tsEpoch(pyOr(pyGet(r, "timestamp"), ""));
   if (t === null) return;

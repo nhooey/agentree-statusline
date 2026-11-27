@@ -163,7 +163,7 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
 - **The clicks.** A click on an agent's label (its kind, name and progress update) switches the transcript to that agent, as Claude Code's tasks list does, and one on 🧵 main's or 🎤 turn's goes back to the main conversation, since the turn is the main thread's.
   A click on a shell's or a Monitor's row shows what the band knows of it as a toast for 8 seconds, one line, its parts parted by ` · `:
   - its glyph and kind;
-  - 🟢 running, or ⚫ ended for one that lingers;
+  - 🟢 running, or for one that lingers ⚫ ended, or 🔴 ended and its exit code where that is not 0;
   - ⌛ how long it has run, or ran, where its start is known;
   - its call's `description`, left out where it has none and its label is its command's own first line;
   - `$` and its whole `command`, on one line, each line break drawn as `⏎`, cut at 300 characters with `…`;
@@ -184,9 +184,21 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
   Its row is 🟡 paused, not 🟢: its 🛫 column is what it waits on, 💻 a shell, 📡 a Monitor, 💤 an agent under it, or 📋 for anything else, and how long since its last record ([State](#state)), not a work clock.
   It is live: it keeps its row and its progress update, and never goes while it waits.
 - **Shells and Monitors.** Each background shell (a Bash call run in the background, or moved there past its timeout) and each Monitor that a thread started and has not heard the end of is a leaf under that thread: under 🧵 for the main thread's, under the agent for an agent's, after its agents, in the order they opened.
-  Its label is 💻 for a shell or 📡 for a Monitor, 🟢, then the call's `description`, else the first line of its `command`, else `shell` or `monitor`; its one figure is ⌛, how long it has run.
+  Its row has an agent row's columns:
+  - **Its head**, 💻 for a shell or 📡 for a Monitor, then its state circle in the circles' column: 🟢 while it runs.
+  - **Its name**, in the names' column: the call's `description`, else its `command` short, else `shell` or `monitor`.
+    The short form lifts each leading `cd <dir> &&`, `cd <dir>;` or `cd <dir>` on a line of its own off, leaves out the output plumbing at its end (a redirection of output such as `> file`, `2>&1` or `&>file`, and a last pipeline stage of `tail`, `head` or `grep`), draws a path under the home folder from `~`, and one longer than 24 characters as `…/` and its last component: `cd ~/git/p/docs && make html 2>&1 | tail -20` is `make html`.
+    It splits the command into words as a shell does; a command it cannot split (an unclosed quote, a here-document, a process substitution) or one cut to 300 characters is drawn as its first line.
+  - **Its folder**: where the lifted `cd`s lead somewhere other than the directory of the thread that started it (the agent's latest `cwd`, or the session's for 🧵's), 📂 and that folder's last component before the name, `📂docs make html`; none where they lead back, or where either is not known.
+  - **Its text**, where an agent's latest message stands, dim, cut with `…` where the label ends: the last line of its output with text on it, its escape and control characters gone, and of a progress line the text after its last carriage return.
+    A shell's is read off the end of its log, its output file or, where that is empty, the file its command's last output redirection writes to: its last 64 KiB at most, and only once the file has changed.
+    A Monitor's is off its latest event.
+    The hide path `chat.progress` hides it.
+  - **⌛**, how long it has run, its one figure; the columns only agents draw stay blank.
+
   It does not fold; a click on it shows it as a toast, with its whole command and its output file (see the clicks above), which the folds keep with its label.
   Once the thread hears its end ([State](#state)) it stays where it stood, ⚫ with its ⌛ stopped at how long it ran, for `finished-within` seconds after the record that closed it (120 as the plugin ships), and then leaves.
+  A shell whose closing notification gives an exit code other than 0 is 🔴 instead, as is a Monitor whose script failed; one stopped, or closed by the thread itself (`TaskStop`, `TaskOutput`), gives none, and stays ⚫.
   An opened thread leaves its 💻 📡 counts to these rows; a folded one hides them and counts them.
   With the panel inputs' `corpus/02-parked`, whose Pine waits on a shell and Poppy on a Monitor and a shell, and a shell and a Monitor of the main thread's, at 120 columns (`--agents corpus/02-parked --background` and the progress above, `--cols 120`):
 
@@ -197,15 +209,15 @@ With seven subagents at work (the render above with `--agents corpus/01-mixed --
      ├⊟ 🎩    🟡 Parsley         🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 20m ⛳  29m  🔋  .02٪  🪫  .022٪
      │  ╰─ 🔍 🟢 Chive           🧬O⁵🐇  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 20m ⛳  29m  🔋  .01٪  🪫  .011٪
      ├⊟ 🔩    🟡 Pine            🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 17m          🔋  .02٪  🪫  .022٪
-     │  ╰─ 💻 🟢 Build the docs site                                            ⌛2.1m
+     │  ╰─ 💻 🟢 📂docs make html  build succeeded, 3 warnings.                 ⌛2.1m
      ├⊟ 🔩    🟡 Poppy           🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 21k ▾1.2k  ⌛ 17m          🔋  .02٪  🪫  .033٪
-     │  ├─ 📡 🟢 Watch the CI checks                                            ⌛2.1m
-     │  ╰─ 💻 🟢 Build the docs site                                            ⌛2.1m
+     │  ├─ 📡 🟢 Watch the CI checks  lint: pass, test: pending                 ⌛2.1m
+     │  ╰─ 💻 🟢 📂docs make html  build succeeded, 3 warnings.                 ⌛2.1m
      ├─ 🔍    🟢 Sage            🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +8m  🔋  .02٪  🪫  .022٪
      ├─ 🔍    🟢 Sorrel          🧬O⁵🐇  💰 0.1   🧠  32k  16٪  🧩 ▴ 14k ▾800   ⌛ 15m ⛳  +5m  🔋  .02٪  🪫  .022٪
      ├─ 📐    🟡 Peony           🧬O⁵🐇  💰 0.0   🧠  32k  16٪  🧩 ▴7.1k ▾400   ⌛ 10m ⛳  15m  🔋  .01٪  🪫  .011٪
-     ├─ 💻    🟢 Run the plugin tests                                           ⌛6.2m
-     ╰─ 📡    🟢 Watch PR #38 for comments                                      ⌛ 25m
+     ├─ 💻    🟢 Run the plugin tests  Tests: 212 passed, 212 total             ⌛6.2m
+     ╰─ 📡    🟢 Watch PR #38 for comments  2 new review comments               ⌛ 25m
   ```
 - **Finished agents.** A subagent that ends keeps its own row where it stood, ⚫ and its figures as they ended, for `finished-within` seconds after its last record (120 as the plugin ships), and its parents stay drawn with it; then it goes, and the turn's receipt holds it.
 

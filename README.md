@@ -210,8 +210,13 @@ Where a glyph means something different on one readout, the table says so.
 Both are drawn while the agent runs and while it is paused, and not once it has failed or been killed.
 Paused, the state mark after 🟡 still says which one it waits on; the count says how many.
 
-In the band's tree each open shell and Monitor is also a row of its own, under the thread that started it (🧵 main or the agent), after its agents: 💻 or 📡, the call's description (else its command's first line) and ⌛ how long it has run.
-It leaves when the thread hears its end.
+In the band's tree each open shell and Monitor is also a row of its own, under the thread that started it (🧵 main or the agent), after its agents, laid out as an agent's row: 💻 or 📡, the call's description (else its command, short), the last line of its output where an agent's latest message stands, and ⌛ how long it has run.
+It leaves a while after the thread hears its end ([The tree](docs/layout.md#the-tree)).
+
+| Glyph | Name | Meaning |
+|---|---|---|
+| 📂 | Folder | before a shell's or Monitor's name, the folder its command's leading `cd` changes to, where that is not its thread's own |
+| 🔴 | Failed | a shell or Monitor that ended with a non-zero exit code |
 The counts then stand only on a folded row, whose shells' rows are hidden.
 
 ### Agent kind

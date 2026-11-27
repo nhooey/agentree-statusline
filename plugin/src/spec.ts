@@ -32,6 +32,9 @@ export const E_HUMAN = "👤💬";       // chat row prefix — user.  U+1F464, 
 export const E_BOT = "🤖";           // chat row prefix — assistant
 export const E_PROJ = "📦";          // project name
 export const E_DIR = "📁";           // pwd
+export const E_BG_DIR = "📂";        // the folder a background task's command changes
+                                     // to, on its row in the band's tree, where that
+                                     // is not its thread's own
 export const E_GIT_OK = "🌿";        // branch, clean tree
 export const E_GIT_BAD = "🍂";       // branch, dirty tree
 export const E_DIRTY = "✱";          // dirty marker, after a dirty branch name
@@ -1067,6 +1070,9 @@ export const E_PHASE_END = "⚫";       // ⚫  not running: an agent that ended
 export const E_PHASE_DONE = "🏁";      // 🏁  finished, on the turn's receipt: a thread
                                        //    that ended by the time the turn's end
                                        //    stamped it
+export const E_PHASE_FAILED = "🔴";    // 🔴  ended with a non-zero exit code: a background
+                                       //    shell or Monitor whose closing notification
+                                       //    gives one, in the band's tree
 // Running, the ⌛ split's own marks: E_WORK, E_TOOL, E_WAIT.
 export const E_MODE_AGENTS = "💤";     // 💤  paused on agents it started
 export const E_MODE_SHELL = "💻";      // 💻  paused on a background shell; not 🐚, which

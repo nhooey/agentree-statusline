@@ -14,8 +14,11 @@
 // (alignHeads).
 //
 // After a thread's agents come its open background shells (💻) and
-// Monitors (📡), each a leaf row with its call's label and how long it has
-// run, in the order they opened.  A row that finishes, an agent that ends
+// Monitors (📡), in the order they opened, each a leaf row laid out as an
+// agent's: its call's description or its command short (shell_words.ts)
+// in the names' column, after 📂 and a folder its command changes to, the
+// last line of its output in the text's, and how long it has run.  A row
+// that finishes, an agent that ends
 // or a shell or Monitor that closes, stays where it stood, ⚫, for
 // `finished-within` seconds after it finished, its parents with it, and
 // then goes.  Every row is drawn: the person scrolls the band, or folds a
@@ -39,8 +42,8 @@
 // Pure: the rows' figures come in built (band.ts), and the agents as the
 // document's prepared tasks (subagent_tasks.ts).
 import {
-  E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_MONITOR, E_MODE_SHELL,
-  E_PHASE_DONE, E_PHASE_END, E_PHASE_RUN,
+  E_BG_DIR, E_FOLD_OPEN, E_FOLD_SHUT, E_MODE_MONITOR, E_MODE_SHELL,
+  E_PHASE_DONE, E_PHASE_END, E_PHASE_FAILED, E_PHASE_RUN,
   E_THREAD, E_TREE_BAR, E_TREE_DASH, E_TREE_LAST,
   E_TREE_MID, E_TURN, E_SESSION, E_IDLE,
 } from "./spec.ts";
@@ -50,8 +53,11 @@ import { paint, pressed, span, width } from "./spans.ts";
 import type { Press, Span } from "./spans.ts";
 import { isDict } from "./py.ts";
 import type { Dict } from "./py.ts";
-import { BG_LABEL_MAX, BG_NEWLINE, squash } from "./claude_records.ts";
+import {
+  BG_COMMAND_MAX, BG_LABEL_MAX, BG_NEWLINE, squash,
+} from "./claude_records.ts";
 import type { BgTask } from "./claude_records.ts";
+import { folderChip, shortCommand } from "./shell_words.ts";
 import type { Limits } from "./claude_sources.ts";
 import {
   A_STATE_W, agentCells, agentLabel, inheritedEtas, parked,
@@ -89,9 +95,13 @@ export type TreeAgents = {
    * closed, before it goes.  None where absent or 0. */
   readonly linger?: number;
   /** The home folder, the document's `agents.home`, which a background
-   * task's toast draws as `~` in its output file (bgPath); none where
-   * absent. */
+   * task's toast draws as `~` in its output file (bgPath), and its row in
+   * its command; none where absent. */
   readonly home?: string;
+  /** The main thread's working directory, the document's `agents.cwd`,
+   * which its background tasks' rows draw a folder apart from
+   * (folderChip); each agent's is its usage's `cwd`.  None where absent. */
+  readonly cwd?: string;
   /** The agents an earlier receipt left out while they were still at
    * work, by id: the stamped tree owes each its row once it has ended
    * (stampedSplit). */
@@ -289,8 +299,31 @@ export function bgPath(path: string, home = ""): string {
     ? [...segs.slice(0, lead), "…", segs.at(-1)].join("/") : p;
 }
 
+/** Whether background task `b`'s label is its command's first line, cut
+ * as backgroundLabel cuts it, its call having no description. */
+function labelIsCommand(b: BgTask): boolean {
+  const cmd = b.command ?? "";
+  return Boolean(cmd && b.label) && Array.from(cmd.split(BG_NEWLINE)[0])
+    .slice(0, BG_LABEL_MAX).join("") === b.label;
+}
+
+/** Whether background task `b`'s command is kept whole, not cut to
+ * BG_COMMAND_MAX characters (backgroundCommand). */
+function commandWhole(b: BgTask): boolean {
+  const cmd = b.command ?? "";
+  return Array.from(cmd).length < BG_COMMAND_MAX || !cmd.includes("…");
+}
+
+/** Its state circle: 🟢 running, ⚫ closed, and 🔴 closed with a non-zero
+ * exit code. */
+function bgPhase(b: BgTask): string {
+  return b.end === undefined ? E_PHASE_RUN
+    : b.exit !== undefined && b.exit !== 0 ? E_PHASE_FAILED : E_PHASE_END;
+}
+
 /** What a press on a background task's row shows, one line: its glyph
- * and kind, 🟢 running or ⚫ ended, ⌛ how long it has run, or ran, where
+ * and kind, 🟢 running, ⚫ ended, or 🔴 ended and its exit code where that
+ * is not 0, ⌛ how long it has run, or ran, where
  * its start is known; `label`, its call's description, else its
  * command's first line (backgroundLabel), left out where it is that
  * first line, cut as backgroundLabel cuts it; `$` and its command on one line (backgroundCommand),
@@ -302,30 +335,52 @@ export function bgText(st: Settings, b: BgTask, label: string,
   const age = bgAge(b, now);
   const cmd = b.command ?? "";
   const out = b.output ?? "";
+  const phase = bgPhase(b);
   return [shell ? E_MODE_SHELL + " shell" : E_MODE_MONITOR + " Monitor",
-    b.end === undefined ? E_PHASE_RUN + " running" : E_PHASE_END + " ended",
+    phase === E_PHASE_RUN ? phase + " running"
+      : phase + " ended" + (phase === E_PHASE_FAILED ? ", exit " + b.exit
+        : ""),
     ...(age === null ? [] : [E_IDLE + " " + durFmt(st, age).trim()]),
-    ...(cmd && b.label && Array.from(cmd.split(BG_NEWLINE)[0])
-      .slice(0, BG_LABEL_MAX).join("") === b.label ? [] : [label]),
+    ...(labelIsCommand(b) ? [] : [label]),
     ...(cmd ? ["$ " + cmd] : []),
     ...(out ? [TOAST_OUTPUT + " " + bgPath(out, home)] : [])].join(" · ");
 }
 
-/** The row of a background task: 💻 for a shell, 📡 for a Monitor, with
- * 🟢 as every running thread has, or ⚫ once it has closed, then its
- * call's label, or else its kind; ⌛ how long it has run, or ran, where
- * its start is known.  A leaf, as it has no transcript to switch to:
- * a shell's label opens its log band, and a Monitor's shows bgText as a
- * toast. */
-function bgNode(st: Settings, b: BgTask, now: number, home: string):
-  Node {
+/** The name and folder chip a background task's row draws: its call's
+ * description, else its command short (shortCommand), else its label as
+ * backgroundLabel cut it, else its kind; and the folder its command's
+ * leading `cd`s change to where that is not `cwd`, its thread's
+ * (folderChip), else "". */
+export function bgName(b: BgTask, cwd: string, home: string):
+  { readonly name: string; readonly chip: string } {
+  const short = commandWhole(b) ? shortCommand(b.command ?? "", home) : null;
+  const name = squash(labelIsCommand(b) && short ? short.text : b.label)
+    .trim() || (b.kind === "bash" ? "shell" : "monitor");
+  return { name, chip: short ? folderChip(short.dirs, cwd, home) : "" };
+}
+
+/** The row of a background task, laid out as an agent's: 💻 for a shell,
+ * 📡 for a Monitor, with 🟢 as every running thread has, or ⚫ once it has
+ * closed, 🔴 with a non-zero exit code (bgPhase); in the names' column 📂
+ * and its folder where its command changes to one apart from `cwd`, its
+ * thread's, and its name (bgName); in the text's, dim, the last line of
+ * its output, a shell's log's or a Monitor's latest event's; ⌛ how long
+ * it has run, or ran, where its start is known.  A leaf, as it has no
+ * transcript to switch to: a shell's label opens its log band, and a
+ * Monitor's shows bgText as a toast. */
+function bgNode(st: Settings, b: BgTask, now: number, home: string,
+  cwd: string): Node {
   const shell = b.kind === "bash";
   const label = squash(b.label).trim() || (shell ? "shell" : "monitor");
+  const { name, chip } = bgName(b, cwd, home);
   const age = bgAge(b, now);
   return { folded: false, kids: [], row: { scope: "agent",
     label: pressingAll([headPiece(st, shell ? E_MODE_SHELL : E_MODE_MONITOR,
-      b.end === undefined ? E_PHASE_RUN : E_PHASE_END),
-    { path: "name.label", spans: [span(label)], drop: 0 }],
+      bgPhase(b)),
+    { path: "name.label", spans: [
+      ...chip ? [span(E_BG_DIR + chip, "F_BLU"), span(" ")] : [],
+      span(name)], drop: 0 },
+    ...progressPiece(b.last ?? "")],
     shell ? { kind: "log", row: b.id, output: b.output ?? "",
       command: b.command ?? "" }
       : { kind: "task", row: b.id, text: bgText(st, b, label, now, home) }),
@@ -627,8 +682,13 @@ function agentNodes(st: Settings, a: TreeAgents, folds: Folds): Node[] {
   const bgDrawn = (id: string): readonly BgTask[] => bgRows(bgOf(id),
     id === "" ? a.mainEnded ?? [] : byId.get(id)!.bgEnded ?? [], a.now,
     linger);
+  // Where a thread works, which its tasks' rows draw a folder apart from.
+  const cwdOf = (id: string): string => {
+    const own = id === "" ? a.cwd : byId.get(id)!.usage.cwd;
+    return typeof own === "string" ? own : "";
+  };
   const bgNodes = (id: string): Node[] =>
-    bgDrawn(id).map((b) => bgNode(st, b, a.now, a.home ?? ""));
+    bgDrawn(id).map((b) => bgNode(st, b, a.now, a.home ?? "", cwdOf(id)));
   const shut = (id: string): boolean =>
     (shownKids(id).length > 0 || bgDrawn(id).length > 0) &&
     foldShut(folds, id, false);
