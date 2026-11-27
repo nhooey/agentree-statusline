@@ -639,25 +639,6 @@ const SHORT_ESCAPES: { readonly [c: string]: string } = {
   "\v": "\\v", "\f": "\\f", "\r": "\\r", "\x1b": "\\e", '"': '\\"',
   "\\": "\\\\", "\x85": "\\N", " ": "\\L", " ": "\\P" };
 
-/** Whether `s` reads back as itself written plain, in a flow collection or
- * after a key. */
-function plainSafe(s: string): boolean {
-  if (s === "" || typeof resolvePlain(s) !== "string") return false;
-  if (isWs(s[0]) || isWs(s[s.length - 1])) return false;
-  if ("-?:,[]{}#&*!|>'\"%@`".includes(s[0])) return false;
-  if (s.includes(": ") || s.includes(" #") || s.endsWith(":")) return false;
-  for (const ch of s) {
-    const code = ch.codePointAt(0)!;
-    if (FLOW.includes(ch) || code < 0x20 || (code >= 0x7f && code <= 0x9f) ||
-        code === 0x2028 || code === 0x2029 || code === 0xfeff ||
-        (code >= 0xd800 && code <= 0xdfff) || code === 0xfffe ||
-        code === 0xffff) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function doubleQuoted(s: string): string {
   let out = '"';
   for (const ch of s) {
@@ -689,7 +670,7 @@ function write(value: Flowable, whole: boolean): string {
   if (typeof value === "bigint") return value.toString();
   if (typeof value === "number") return number(value, whole);
   if (typeof value === "string") {
-    return plainSafe(value) ? value : doubleQuoted(value);
+    return doubleQuoted(value);
   }
   if (Array.isArray(value)) {
     return "[" + value.map((v) => write(v, whole)).join(", ") + "]";

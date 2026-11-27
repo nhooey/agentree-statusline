@@ -3229,12 +3229,12 @@ test('a project file found on the tick keeps the rows and stamps them, ' +
   expect(logOf(w)).toContain(`config from ${CWD}: project-local ${LOCAL}` +
     ` (rows); user ${USER_FILE} (usage-source, hide, rows)`)
   expect(logOf(w)).toContain('config options: ' +
-    'usage-source claude-usage-tracker (user); right-edge 5 (derived); ' +
-    'hide ' + yamlOption(HIDE) + ' (user); rows.turn.live always (project-local); ' +
+    'usage-source "claude-usage-tracker" (user); right-edge 5 (derived); ' +
+    'hide ' + yamlOption(HIDE) + ' (user); rows.turn.live "always" (project-local); ' +
     'rows.turn.transcript true (project-local); ' +
-    'rows.agent.live always (project-local); ' +
+    'rows.agent.live "always" (project-local); ' +
     'rows.agent.transcript true (project-local); ' +
-    'rows.session.live always (project-local); ' +
+    'rows.session.live "always" (project-local); ' +
     'rows.session.transcript true (project-local)')
   await askLive($, w, true)
   await until(w, 5_000)
@@ -3264,8 +3264,8 @@ test('a bad value in a file is logged, noticed once, and its default kept',
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    const warning = `${LOCAL}: rows.turn.live must be one of never, ` +
-      'running, always (did you mean always?); skipped'
+    const warning = `${LOCAL}: "rows.turn.live" must be one of "never", ` +
+      '"running", "always" (did you mean "always"?); skipped'
     expect(logOf(w)).toContain('config: ' + warning)
     expect(w.logged).toEqual(['config ' + warning])
     // Another session's start, and a tick: the file is as it was, so no
@@ -3292,7 +3292,7 @@ test('a band-order with an entry not a string, or a name given twice, is ' +
     const bad: [string, string][] = [
       ['band-order: [other-band, 1]\n', 'must be a list of strings'],
       ['band-order:\n  - other-band\n  - agentree-statusline\n' +
-        '  - other-band\n', 'names other-band more than once'],
+        '  - other-band\n', 'names "other-band" more than once'],
     ]
     for (const [i, [text, why]] of bad.entries()) {
       w.files.set(LOCAL, encoder.encode(text))
@@ -3302,7 +3302,7 @@ test('a band-order with an entry not a string, or a name given twice, is ' +
         isInteractive: true })
       await settle()
       expect(logOf(w))
-        .toContain(`config: ${LOCAL}: band-order ${why}; skipped`)
+        .toContain(`config: ${LOCAL}: "band-order" ${why}; skipped`)
       await mountList($, ['other-band', 'agentree-statusline'].map(listRow))
       expect(seen.at(-1)).toEqual(['agentree-statusline', 'other-band'])
     }

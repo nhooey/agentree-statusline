@@ -140,8 +140,8 @@ test('a session start reads the config files and logs every warning once',
     expect(log).toContain(`config from ${PROJECT}: project ${PROJECT_FILE}` +
       ` (hide); user ${USER_FILE} (account)`)
     const warnings = [
-      `${USER_FILE}: mark-spacing must be true or false; skipped`,
-      `${PROJECT_FILE}: usage-source bogus is no usage source; ` +
+      `${USER_FILE}: "mark-spacing" must be true or false; skipped`,
+      `${PROJECT_FILE}: usage-source "bogus" is no usage source; ` +
         'skipped',
     ]
     for (const w of warnings) {
@@ -212,7 +212,7 @@ test('a session start logs the options the files gave',
     await settle()
     const log = w.files.get(STATE + '/' + LOG_NAME) ?? ''
     expect(log).toContain('config options: ' +
-      'account u (user); right-edge 5 (derived); hide [] (project)\n')
+      'account "u" (user); right-edge 5 (derived); hide [] (project)\n')
   })
 
 // The plugin's own layer, were SETTINGS to hold any: under every file, over
@@ -233,8 +233,8 @@ test('a non-empty plugin layer merges under the files and is named in the log',
     expect(o.rows.agent).toEqual({ place: 'above', live: 'never',
       transcript: true })
     expect(optionsTable(m)).toBe(
-      'usage-source claude-usage-tracker (plugin); right-edge 5 (derived); ' +
-      'hide [] (user); rows.agent.live never (user); ' +
+      'usage-source "claude-usage-tracker" (plugin); right-edge 5 (derived); ' +
+      'hide [] (user); rows.agent.live "never" (user); ' +
       'rows.agent.transcript true (plugin)')
   })
 
@@ -269,16 +269,16 @@ test('a wrong defaults file is drawn in the footer and logged once',
     await settle()
     const log = w.files.get(STATE + '/' + LOG_NAME) ?? ''
     expect(log).toContain('config: the defaults file is wrong: ')
-    expect(log).toContain('account is missing')
+    expect(log).toContain('"account" is missing')
     expect(log).not.toContain('config options: ')
-    expect(w.logged.filter((n) => n.includes('account is missing')).length)
+    expect(w.logged.filter((n) => n.includes('"account" is missing')).length)
       .toBe(1)
     const hint = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'PromptHint', props: { isDraft: false,
         isWorking: false, hint: '-- INSERT --' } })
     const drawn = JSON.stringify(await hint.drawn())
     expect(drawn).toContain('⚠ agentree-statusline:the defaults file is wrong: ')
-    expect(drawn).toContain('account is missing')
+    expect(drawn).toContain('\\"account\\" is missing')
   })
 
 // The defaults file reshaped on disk under a running plugin, as a merge on

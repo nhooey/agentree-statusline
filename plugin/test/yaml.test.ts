@@ -205,8 +205,8 @@ test("explicit keys, collection keys and keys that are no string are " +
   });
 
 test("a key given twice is refused at its second place", () => {
-  refused("a: 1\nb: 2\na: 3\n", 3, 1, "the key a is given twice");
-  refused("a: {k: 1, k: 2}\n", 1, 11, "the key k is given twice");
+  refused("a: 1\nb: 2\na: 3\n", 3, 1, 'the key "a" is given twice');
+  refused("a: {k: 1, k: 2}\n", 1, 11, 'the key "k" is given twice');
   refused('"a": 1\na: 2\n', 2, 1, "given twice");
 });
 
@@ -263,20 +263,17 @@ test("reserved indicators are refused", () => {
 
 // ── Written ───────────────────────────────────────────────────────────────
 
-test("yamlFlow: plain where a string reads back as itself, else quoted",
-  () => {
-    assert.equal(yamlFlow("above"), "above");
-    assert.equal(yamlFlow("rows.turn.place"), "rows.turn.place");
-    assert.equal(yamlFlow("two words"), "two words");
-    assert.equal(yamlFlow("cmd:/bin/x"), "cmd:/bin/x");
-    for (const [s, w] of [["no", "no"], ["true", '"true"'], ["1", '"1"'],
-      ["", '""'], ["~", '"~"'], ["*.plan", '"*.plan"'], ["!=", '"!="'],
-      [">", '">"'], ["a: b", '"a: b"'], ["a #b", '"a #b"'], ["a,b", '"a,b"'],
-      [" a", '" a"'], ["x:", '"x:"'], ["-x", '"-x"'], ['say "hi"', 'say "hi"'],
-      ["é", "é"], ["a\nb", '"a\\nb"'], ["\x01", '"\\x01"'], ["\\", "\\"]]) {
-      assert.equal(yamlFlow(s), w, s);
-    }
-  });
+test("yamlFlow: every string double-quoted, escaped as YAML does", () => {
+  for (const [s, w] of [["above", '"above"'],
+    ["rows.turn.place", '"rows.turn.place"'], ["two words", '"two words"'],
+    ["cmd:/bin/x", '"cmd:/bin/x"'], ["no", '"no"'], ["true", '"true"'],
+    ["1", '"1"'], ["", '""'], ["~", '"~"'], ["*.plan", '"*.plan"'],
+    ["a: b", '"a: b"'], ["a,b", '"a,b"'], [" a", '" a"'],
+    ['say "hi"', '"say \\"hi\\""'], ["é", '"é"'], ["a\nb", '"a\\nb"'],
+    ["\x01", '"\\x01"'], ["\\", '"\\\\"']]) {
+    assert.equal(yamlFlow(s), w, s);
+  }
+});
 
 test("yamlFlow: numbers, null, booleans and collections", () => {
   assert.equal(yamlFlow(1n), "1");
@@ -286,13 +283,14 @@ test("yamlFlow: numbers, null, booleans and collections", () => {
   assert.equal(yamlFlow(-Infinity), "-.inf");
   assert.equal(yamlFlow(null), "null");
   assert.equal(yamlFlow(false), "false");
-  assert.equal(yamlFlow([1n, "a", ["b"]]), "[1, a, [b]]");
-  assert.equal(yamlFlow(map(["2", 1n], ["1", "x y"])), '{"2": 1, "1": x y}');
+  assert.equal(yamlFlow([1n, "a", ["b"]]), '[1, "a", ["b"]]');
+  assert.equal(yamlFlow(map(["2", 1n], ["1", "x y"])),
+    '{"2": 1, "1": "x y"}');
   assert.equal(yamlFlow({ place: "above", live: "never" }),
-    "{place: above, live: never}");
+    '{"place": "above", "live": "never"}');
   assert.equal(yamlOption(2), "2");
   assert.equal(yamlOption(2.5), "2.5");
-  assert.equal(yamlOption({ value: 0, op: ">" }), '{value: 0, op: ">"}');
+  assert.equal(yamlOption({ value: 0, op: ">" }), '{"value": 0, "op": ">"}');
 });
 
 test("yamlFlow reads back as the value written", () => {

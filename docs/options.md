@@ -19,9 +19,9 @@ The settings the table below lists apply to every row the plugin draws; the othe
 <!-- options:begin settings -->
 | Key | Default | Effect |
 |---|---|---|
-| `usage-source` | `auto` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
-| `account` | `default` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
-| `account-period` | `day` | The UTC calendar period for organization reports (`anthropic-admin`). Weeks start on Monday. |
+| `usage-source` | `"auto"` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
+| `account` | `"default"` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
+| `account-period` | `"day"` | The UTC calendar period for organization reports (`anthropic-admin`). Weeks start on Monday. |
 | `right-edge` | `5` with any of the plugin's rows above the prompt (`rows.*.place`), else `2` | The columns every grid row leaves blank at the terminal's right edge. `2` matches the plugin with its rows under the footer line, whose container stops two columns short of the edge; `5` is the room Claude Code keeps for the plugin's band `[-]` above the prompt. Unset, it follows the plugin's `rows.*.place` from the files: `5` when any row the plugin draws live is placed `above`, else `2`, so every row ends in one column. |
 | `hide` | none | Columns and parts of a row's label left out of the grid, or 🔋 and 🪫 off the turn tag lines (`tag.plan.five_hour`, `tag.plan.week`), each `scope[.group[.metric]]` with `*` for any one part; see [Hiding](#hiding). |
 | `mark-spacing` | `true` | A blank between a mark and its value; `false` closes it. |
