@@ -414,7 +414,8 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
     expect(String(limits.weekly_pct)).toMatch(/^87/)
     expect(String(limits.fable_pct)).toMatch(/^12\.5/)
     expect(limits.fable_reset).toBe(Date.parse('2026-08-19T01:00:00Z') / 1000)
-    const line = 'rate limits: five_hour seven_day seven_day_overage_included'
+    const line = 'rate limits: "five_hour" "seven_day" ' +
+      '"seven_day_overage_included"'
     await w.clock.advance(31_000)
     await settle()
     expect(logOf(w).split(line).length - 1).toBe(1)
@@ -422,7 +423,7 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
     w.usage.rateLimits = w.usage.rateLimits.slice(0, 2)
     await w.clock.advance(31_000)
     await settle()
-    expect(logOf(w)).toContain('rate limits: five_hour seven_day\n')
+    expect(logOf(w)).toContain('rate limits: "five_hour" "seven_day"\n')
     expect((lastDoc(w).limits as Dict).fable_pct).toBe(null)
   })
 
@@ -664,9 +665,9 @@ test('under plan-usage, the plan\'s windows are asked of the usage ' +
     await w.clock.advance(31_000)
     await settle()
     expect(w.oauth.asked.length).toBe(2)
-    const line = 'plan usage: five_hour seven_day seven_day_omelette ' +
-      'seven_day_overage_included · no reading: seven_day_opus ' +
-      'seven_day_sonnet\n'
+    const line = 'plan usage: "five_hour" "seven_day" "seven_day_omelette" ' +
+      '"seven_day_overage_included" · no reading: "seven_day_opus" ' +
+      '"seven_day_sonnet"\n'
     expect(logOf(w).split(line).length - 1).toBe(1)
     // The keys alone, never a figure.
     expect(logOf(w)).not.toContain('utilization')
@@ -676,8 +677,8 @@ test('under plan-usage, the plan\'s windows are asked of the usage ' +
     await w.clock.advance(61_000)
     await settle()
     expect(logOf(w)).toContain(
-      'plan usage: five_hour seven_day seven_day_omelette · no reading: ' +
-      'seven_day_opus seven_day_sonnet\n')
+      'plan usage: "five_hour" "seven_day" "seven_day_omelette" · ' +
+      'no reading: "seven_day_opus" "seven_day_sonnet"\n')
   })
 
 // The live answer: the per-model keys null, the weeks in `limits`.
@@ -714,8 +715,9 @@ test('under plan-usage, the Fable week of the answer\'s limits list is ' +
       .windows as Dict[]).map((x) => x.id)
     expect(ids).toEqual(['seven_day', 'seven_day_overage_included',
       'seven_day_opus'])
-    expect(logOf(w)).toContain('plan usage: seven_day · limits: fable opus' +
-      ' · no reading: five_hour seven_day_opus seven_day_sonnet\n')
+    expect(logOf(w)).toContain('plan usage: "seven_day" · limits: "fable" ' +
+      '"opus" · no reading: "five_hour" "seven_day_opus" ' +
+      '"seven_day_sonnet"\n')
   })
 
 for (const kind of ['none', 'api-key'] as const) {
@@ -2869,8 +2871,8 @@ test('a transcript moved while its turn is billed still gets the receipt',
     expect(stamped(w)).toBe(true)
     // On past the band's hold, which the stamp's handler sleeps through.
     await w.clock.advance(5_000)
-    expect(logOf(w)).toContain('transcript moved: ' + RESUMED + ' -> ' +
-      moved)
+    expect(logOf(w)).toContain('transcript moved: "' + RESUMED + '" -> "' +
+      moved + '"')
     expect(logOf(w)).not.toContain('no receipt')
   })
 
@@ -3005,8 +3007,8 @@ test('a load stamps the last finished turn its turn.complete never stamped',
     await settle()
     await until(w, 5_000)
     expect(w.store.has('receipt-at:' + ASKED_MS)).toBe(true)
-    expect(logOf(w)).toContain('receipt stamped on load: ' +
-      'p-resume'.slice(0, 8))
+    expect(logOf(w)).toContain('receipt stamped on load: "' +
+      'p-resume'.slice(0, 8) + '"')
     expect(logOf(w)).not.toContain('no receipt')
     await w.clock.advance(5_000)
     expect(filedCount(w)).toBe(1)
@@ -3105,7 +3107,7 @@ test('a prompt rewound before any reply logs that it billed nothing, at once',
     await until(w, 2_000)
     expect(stamped(w)).toBe(false)
     expect(logOf(w)).toContain('no receipt: the turn billed nothing ' +
-      '(interrupted): p-cut')
+      '(interrupted): "p-cut"')
     await w.clock.advance(31_000)
     expect(logOf(w)).not.toContain('not billed within')
     expect(logOf(w).split('no receipt').length).toBe(2)
@@ -3132,7 +3134,7 @@ test('a prompt replaced in its turn slot logs that it billed nothing',
     await until(w, 2_000)
     expect(stamped(w)).toBe(false)
     expect(logOf(w)).toContain('no receipt: the turn billed nothing ' +
-      '(replaced): p-cut')
+      '(replaced): "p-cut"')
     await w.clock.advance(31_000)
     expect(logOf(w)).not.toContain('not billed within')
   })
@@ -3198,7 +3200,7 @@ test('a resumed session whose first turn calls no tool draws all three',
     await settle()
     await askAndAnswer($, w)
     await drewAll($, w)
-    expect(logOf(w)).toContain('started by session.start in ' + CWD)
+    expect(logOf(w)).toContain('started by session.start in "' + CWD + '"')
   })
 
 // The project's local file the acceptance check writes
@@ -3219,15 +3221,15 @@ test('a project file found on the tick keeps the rows and stamps them, ' +
   await settle()
   await $.ui.mount({ plugin: 'agentree-statusline', surface: 'terminal',
     component: 'AbovePrompt', props: BAND })
-  expect(logOf(w)).toContain(`config from ${CWD}: user ${USER_FILE}` +
+  expect(logOf(w)).toContain(`config from "${CWD}": user "${USER_FILE}"` +
     ' (usage-source, hide, rows)')
   // The file comes after the session's start; the tick's next look at the
   // files reads it.
   w.files.set(LOCAL, encoder.encode(KEPT_AND_STAMPED))
   await w.clock.advance(CONFIG.tickMs)
   await settle()
-  expect(logOf(w)).toContain(`config from ${CWD}: project-local ${LOCAL}` +
-    ` (rows); user ${USER_FILE} (usage-source, hide, rows)`)
+  expect(logOf(w)).toContain(`config from "${CWD}": project-local ` +
+    `"${LOCAL}" (rows); user "${USER_FILE}" (usage-source, hide, rows)`)
   expect(logOf(w)).toContain('config options: ' +
     'usage-source "claude-usage-tracker" (user); right-edge 5 (derived); ' +
     'hide ' + yamlOption(HIDE) + ' (user); rows.turn.live "always" (project-local); ' +
@@ -3264,7 +3266,7 @@ test('a bad value in a file is logged, noticed once, and its default kept',
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    const warning = `${LOCAL}: "rows.turn.live" must be one of "never", ` +
+    const warning = `"${LOCAL}": "rows.turn.live" must be one of "never", ` +
       '"running", "always" (did you mean "always"?); skipped'
     expect(logOf(w)).toContain('config: ' + warning)
     expect(w.logged).toEqual(['config ' + warning])
@@ -3302,7 +3304,7 @@ test('a band-order with an entry not a string, or a name given twice, is ' +
         isInteractive: true })
       await settle()
       expect(logOf(w))
-        .toContain(`config: ${LOCAL}: "band-order" ${why}; skipped`)
+        .toContain(`config: "${LOCAL}": "band-order" ${why}; skipped`)
       await mountList($, ['other-band', 'agentree-statusline'].map(listRow))
       expect(seen.at(-1)).toEqual(['agentree-statusline', 'other-band'])
     }

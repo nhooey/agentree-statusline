@@ -60,6 +60,7 @@ import type { Options, Place } from '../src/options_spec.ts'
 import { messageBlock, messageSpans, taskOf } from '../src/agent_message.ts'
 import { sha256Hex } from '../src/sha256.ts'
 import type { Dict } from '../src/py.ts'
+import { quote } from '../src/yaml.ts'
 import { CONFIG } from './config.ts'
 import {
   fileSize, forgetPlaces, placesFor, readRange, steps,
@@ -199,7 +200,7 @@ async function inTime<T>($: $, what: string, p: Promise<T>): Promise<T> {
   const stop = new AbortController()
   const limit = $.clock.sleep(CONFIG.readLimitMs, { signal: stop.signal })
     .then(() => {
-      const done = Object.entries(steps).map(([k, v]) => `${k} ${v}`)
+      const done = Object.entries(steps).map(([k, v]) => `${k} ${quote(v)}`)
       throw new Error(`${what} still running after ` +
         `${CONFIG.readLimitMs / 1000}s, dropped` +
         (done.length ? ` (done: ${done.join(', ')})` : ''))
@@ -239,7 +240,7 @@ let toastAt = 0
  * slow.  Off by default: the toast takes the footer's line, hiding the 💳
  * account at its right end. */
 async function slow($: $, ms: number, used: string): Promise<void> {
-  const parts = Object.entries(steps).map(([k, v]) => `${k} ${v}`)
+  const parts = Object.entries(steps).map(([k, v]) => `${k} ${quote(v)}`)
   const text = `slow read: ${Math.round(ms)}ms (${parts.join(', ')}; ` +
     `${used})`
   await log($, text)
@@ -501,7 +502,7 @@ async function start($: $, by: string): Promise<void> {
   if (switched) forgetSession()
   try {
     const cwd = await $.session.cwd().catch(() => '?')
-    await log($, `started by ${by} in ${cwd}`)
+    await log($, `started by ${by} in ${quote(cwd)}`)
     // The configuration files, at each load; until they are read the
     // options are the plugin's settings and the defaults.
     void reconfigure($).catch((err) => log($, 'config', err))
@@ -579,8 +580,13 @@ function noteMode($: $, from: string, mode: string | undefined): void {
   }
   if (mode === undefined || mode === permissionMode) return
   permissionMode = mode
-  void log($, 'permission mode ' + mode + ' from ' + from)
+  void log($, 'permission mode ' + quote(mode) + ' from ' + from)
 }
+
+/** A turn's prompt id as a log line names it: its first eight characters,
+ * quoted, or "no prompt" for none. */
+const promptShown = (prompt: string): string =>
+  prompt ? quote(prompt.slice(0, 8)) : 'no prompt'
 
 /** The store's key for a stamped receipt: its session and its turn. */
 export const receiptKey = (session: string, turn: string) =>
@@ -670,7 +676,7 @@ async function stamp($: $, durationMs: number, prompt: string,
     const none = billed ? '' : billedNothing(turns, prompt, end)
     if (none) {
       await log($, 'no receipt: the turn billed nothing (' + none + '): ' +
-        (prompt.slice(0, 8) || 'no prompt'))
+        promptShown(prompt))
       return false
     }
     const key = billed ? turnKey(turns) : ''
@@ -763,8 +769,7 @@ async function stampMissed($: $): Promise<void> {
   const tr = (await read($, status))?.transcript as Dict | undefined
   const prompt = typeof tr?.prompt_id === 'string' ? tr.prompt_id : ''
   if (await stamp($, durationMs, prompt)) {
-    await log($, 'receipt stamped on load: ' +
-      (prompt.slice(0, 8) || 'no prompt'))
+    await log($, 'receipt stamped on load: ' + promptShown(prompt))
   }
 }
 
@@ -864,7 +869,8 @@ function onPressOf($: $, p: Press): () => Promise<void> {
     return async () => {
       const r = await $.ui.view(p.agent === null ? {} : { agentId: p.agent })
       if (r.deny) {
-        await log($, 'view ' + (p.agent ?? 'main') + ': ' + r.deny)
+        await log($, 'view ' + (p.agent === null ? 'main' : quote(p.agent)) +
+          ': ' + r.deny)
       }
     }
   }

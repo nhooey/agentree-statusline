@@ -19,10 +19,10 @@
 // in the tests; the environment is a plain object.  Paths are POSIX, and the
 // path functions are posixpath's.
 //
-// A warning quotes a file's key or value in one exact form, YAML's flow
-// style as yamlFlow writes it: the keys of a mapping in the order written
-// (a JavaScript object puts "1" first), 1 told from 1.0, and a string
-// plain where it reads back as itself, else double-quoted.
+// A warning quotes its file's path and a file's key or value in one exact
+// form, YAML's flow style as yamlFlow writes it: the keys of a mapping in
+// the order written (a JavaScript object puts "1" first), 1 told from 1.0,
+// and every string double-quoted.
 
 import { OPTIONS } from "./options_spec.ts";
 import type { Options } from "./options_spec.ts";
@@ -667,13 +667,14 @@ function versionFault(value: Yaml): string | null {
   return `version ${yamlFlow(value)} is not one this program reads`;
 }
 
-/** One file's checked values, by option name, its warnings, each "PATH:
- * what", and its modification time; nothing when there is no file. */
+/** One file's checked values, by option name, its warnings, each
+ * `"PATH": what` with the path quoted, and its modification time; nothing
+ * when there is no file. */
 export async function readFile(path: string, fs: ConfigFs,
     defaults: Defaults): Promise<Read> {
   const st = await fs.stat(path);
   const skipped = (why: string): Read => ({ values: {},
-    warnings: [`${path}: ${why}, so the file is skipped`],
+    warnings: [`${yamlFlow(path)}: ${why}, so the file is skipped`],
     mtimeMs: st?.mtimeMs ?? null });
   const got = await textOf(path, fs, st);
   if (got.text === null) {
@@ -685,7 +686,8 @@ export async function readFile(path: string, fs: ConfigFs,
   const unknown = unknownKeys(data);
   if (unknown.length) {
     return { values: {}, mtimeMs: st?.mtimeMs ?? null,
-      warnings: unknown.map((w) => `${path}: ${w}, so the file is skipped`) };
+      warnings: unknown.map((w) =>
+        `${yamlFlow(path)}: ${w}, so the file is skipped`) };
   }
   const values: Layer["values"] = {};
   const warnings: string[] = [];
@@ -696,7 +698,7 @@ export async function readFile(path: string, fs: ConfigFs,
       return skipped(fault);
     }
     const { got, why } = check(name, value, defaults);
-    warnings.push(...why.map((w) => `${path}: ${w}; skipped`));
+    warnings.push(...why.map((w) => `${yamlFlow(path)}: ${w}; skipped`));
     if (got !== null) values[name] = got;
   }
   return { values, warnings, mtimeMs: st?.mtimeMs ?? null };
@@ -713,7 +715,7 @@ export const DEFAULTS_REL = "defaults/config.yaml";
 export type Defaults = { readonly [option: string]: Value };
 
 /** The defaults file cannot be used: its path and every fault found,
- * "PATH: what; what". */
+ * `"PATH": what; what`, the path quoted. */
 export class DefaultsError extends Error {
   constructor(message: string) {
     super(message);
@@ -728,7 +730,7 @@ export class DefaultsError extends Error {
  * words tests/fixtures/config/defaults-cases.json holds. */
 export function parseDefaults(path: string, text: string): Defaults {
   const { data, why } = objectOf(text);
-  if (data === null) throw new DefaultsError(`${path}: ${why}`);
+  if (data === null) throw new DefaultsError(`${yamlFlow(path)}: ${why}`);
   const faults: string[] = [];
   const values: { [name: string]: Value } = {};
   for (const [name, value] of data) {
@@ -781,7 +783,9 @@ export function parseDefaults(path: string, text: string): Defaults {
   for (const name of NAMES) {
     if (!data.has(name)) faults.push(`${yamlFlow(name)} is missing`);
   }
-  if (faults.length) throw new DefaultsError(`${path}: ${faults.join("; ")}`);
+  if (faults.length) {
+    throw new DefaultsError(`${yamlFlow(path)}: ${faults.join("; ")}`);
+  }
   const out: { [name: string]: Value } = {};
   for (const name of NAMES) out[name] = values[name];
   return out;
@@ -816,7 +820,7 @@ export async function readDefaults(path: string, fs: ConfigFs):
     Promise<Defaults> {
   const got = await textOf(path, fs, await fs.stat(path));
   if (got.text === null) {
-    throw new DefaultsError(`${path}: ${got.why ?? "missing"}`);
+    throw new DefaultsError(`${yamlFlow(path)}: ${got.why ?? "missing"}`);
   }
   return parseDefaults(path, got.text);
 }
@@ -982,8 +986,8 @@ export async function load(start: string, env: ConfigEnv, fs: ConfigFs,
       validateSource("claude", spec);
       break;
     } catch {
-      warnings.push(`${bad.path}: usage-source ${yamlFlow(spec)} is ` +
-        "no usage source; skipped");
+      warnings.push(`${yamlFlow(bad.path)}: usage-source ` +
+        `${yamlFlow(spec)} is no usage source; skipped`);
       const { ["usage-source"]: _, ...rest } = bad.values;
       files = files.map((f) => f === bad ? { ...f, values: rest } : f);
     }

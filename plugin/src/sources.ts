@@ -30,6 +30,7 @@ import { isDict, pyGet, pyTruthy } from "./py.ts";
 import {
   daysFromCivil, daysIn, parseJson, stableJson, toFloat, utf8, valueText,
 } from "./exact.ts";
+import { quote } from "./yaml.ts";
 
 export type { Dict };
 export type Reading = Dict;
@@ -450,7 +451,7 @@ export function validateSource(_agent: string, spec: string | null): string {
   spec = spec || "auto";
   if (spec.startsWith("cmd:")) return spec;
   if (!(VALID_SOURCES as readonly string[]).includes(spec)) {
-    throw new Error("unknown usage source '" + spec + "'");
+    throw new Error("unknown usage source " + quote(spec));
   }
   return spec;
 }

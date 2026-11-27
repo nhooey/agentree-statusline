@@ -44,6 +44,7 @@ import type { Reading } from '../src/sources.ts'
 import { isDict, pyGet } from '../src/py.ts'
 import type { Dict } from '../src/py.ts'
 import { sha256Hex } from '../src/sha256.ts'
+import { quote } from '../src/yaml.ts'
 import { statePath } from '../src/state.ts'
 import { placesOf, readText, runVia, writeAtomicVia } from './engine.ts'
 import { log } from './log.ts'
@@ -233,9 +234,10 @@ export function windowKeys(raw: unknown):
 /** The log line for windowKeys' answer `w`. */
 export function windowLine(
   w: { read: string[]; empty: string[]; limits: string[] }): string {
-  return 'plan usage: ' + (w.read.join(' ') || 'none') +
-    (w.limits.length ? ' · limits: ' + w.limits.join(' ') : '') +
-    (w.empty.length ? ' · no reading: ' + w.empty.join(' ') : '')
+  const keys = (ks: string[]) => ks.map(quote).join(' ')
+  return 'plan usage: ' + (keys(w.read) || 'none') +
+    (w.limits.length ? ' · limits: ' + keys(w.limits) : '') +
+    (w.empty.length ? ' · no reading: ' + keys(w.empty) : '')
 }
 
 /** The account's plan windows as last asked for, while fresh, else the

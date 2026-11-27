@@ -12,6 +12,7 @@
 import type { EngineInterface } from 'claude-code'
 
 import { joinPath } from '../src/exact.ts'
+import { quote } from '../src/yaml.ts'
 
 type $ = EngineInterface
 
@@ -208,7 +209,7 @@ async function readPieces($: $, path: string, start: number, end: number):
     const r = await timed($, 'shell', () => runVia($, ['/bin/sh', '-c',
       'tail -c +"$1" "$2" | head -c "$3" | base64', 'sh',
       String(at + 1), path, String(want)], { timeoutMs: 30_000 }))
-    if (r.exitCode !== 0) throw new Error('could not read ' + path)
+    if (r.exitCode !== 0) throw new Error('could not read ' + quote(path))
     steps.pieces = ((steps.pieces as number) || 0) + 1
     const piece = await timed($, 'decode', async () => fromBase64(r.stdout))
     if (!piece.length) break

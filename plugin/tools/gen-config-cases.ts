@@ -21,11 +21,11 @@
 //                       under "fields"
 //             fields    "table.row.field" (or "record.field[.key]") ->
 //                       [value, layer], for each field a file set
-//             warnings  in order, each "PATH: what"
+//             warnings  in order, each `"PATH": what`, the path quoted
 //
 // defaults-cases.json: the shipped defaults file and changes to it, each
 // read by parseDefaults as if at DEFAULTS_PATH, with the error it raised
-// ("PATH: what; what") or null for none.
+// (`"PATH": what; what`) or null for none.
 //
 // The walk runs over a fake file system built from the case's tree, and
 // every path it asks for must lie under the case's root, so no developer's

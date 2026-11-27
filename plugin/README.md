@@ -244,7 +244,7 @@ first eight characters of its session's id, and goes two ways:
   each `$` call that failed.
 
 Each load of the plugin writes one line when its first event comes,
-`started by session.start in <cwd>`: a session whose turns drew nothing
+`started by session.start in "<cwd>"`: a session whose turns drew nothing
 and that has no such line never loaded the plugin. A status read that failed
 says why (`refresh: no status document: …`), as does a turn that got no
 receipt (`no receipt: …`). The plugin times each read, step by step, and a

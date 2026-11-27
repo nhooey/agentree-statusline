@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { parseYaml, resolvePlain, yamlFlow, yamlOption, YamlError }
+import { parseYaml, quote, resolvePlain, yamlFlow, yamlOption, YamlError }
   from "../src/yaml.ts";
 import type { Yaml } from "../src/yaml.ts";
 
@@ -305,4 +305,17 @@ test("yamlFlow reads back as the value written", () => {
     const top = parseYaml(yamlFlow(map(["v", v])));
     assert.deepEqual(top, map(["v", v]), yamlFlow(map(["v", v])));
   }
+});
+
+test("quote shows a string quoted and the rest bare", () => {
+  assert.equal(quote(""), '""');
+  assert.equal(quote("\n"), '"\\n"');
+  assert.equal(quote("  x"), '"  x"');
+  assert.equal(quote("null"), '"null"');
+  assert.equal(quote("/a b/c"), '"/a b/c"');
+  assert.equal(quote(null), "null");
+  assert.equal(quote(undefined), "undefined");
+  assert.equal(quote(3n), "3");
+  assert.equal(quote(2.5), "2.5");
+  assert.equal(quote(true), "true");
 });

@@ -24,6 +24,7 @@ import {
 import type {
   AccountOf, Dict, Env, Fetch, Reading, Store,
 } from "./sources.ts";
+import { quote } from "./yaml.ts";
 
 // The two plan windows, the weekly Fable window and the other weekly
 // windows, as
@@ -364,7 +365,7 @@ function decodeEntities(text: string): string {
     if (name === undefined) throw new Error("bad entity");
     if (Object.hasOwn(ENTITIES, name)) return ENTITIES[name];
     const m = /^#(?:x([0-9a-fA-F]+)|([0-9]+))$/.exec(name);
-    if (!m) throw new Error("undefined entity " + whole);
+    if (!m) throw new Error("undefined entity " + quote(whole));
     const code = m[1] !== undefined ? parseInt(m[1], 16) : parseInt(m[2], 10);
     const ok = code === 9 || code === 10 || code === 13 ||
       (code >= 0x20 && code <= 0xd7ff) || (code >= 0xe000 && code <= 0xfffd) ||

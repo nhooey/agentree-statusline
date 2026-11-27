@@ -1,13 +1,14 @@
 // The plugin's log file, as a file: its name, how much it keeps, and how a
 // line is written.  Pure, so the plugin (hooks/log.ts) writes it through `$`
 // and Node could write the same file the same way.
+import { quote } from "./yaml.ts";
 
 /** How many lines the log file keeps, the newest last. */
 export const LOG_KEPT = 500;
 export const LOG_NAME = "agentree-statusline.log";
 
 /** What was thrown, as one line's tail: the message, and where it was
- * thrown from when the error says. */
+ * thrown from when the error says; anything else that was thrown, quoted. */
 export function describe(err: unknown): string {
   if (err instanceof Error) {
     const where = (err.stack ?? "").split("\n").slice(1, 4)
@@ -15,7 +16,8 @@ export function describe(err: unknown): string {
     return err.message + (where ? " [" + where + "]" : "");
   }
   try {
-    return typeof err === "string" ? err : JSON.stringify(err);
+    return typeof err === "string" || err === undefined ? quote(err)
+      : JSON.stringify(err);
   } catch {
     return String(err);
   }

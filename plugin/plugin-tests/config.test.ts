@@ -137,11 +137,11 @@ test('a session start reads the config files and logs every warning once',
       isInteractive: true })
     await settle()
     const log = w.files.get(STATE + '/' + LOG_NAME) ?? ''
-    expect(log).toContain(`config from ${PROJECT}: project ${PROJECT_FILE}` +
-      ` (hide); user ${USER_FILE} (account)`)
+    expect(log).toContain(`config from "${PROJECT}": project ` +
+      `"${PROJECT_FILE}" (hide); user "${USER_FILE}" (account)`)
     const warnings = [
-      `${USER_FILE}: "mark-spacing" must be true or false; skipped`,
-      `${PROJECT_FILE}: usage-source "bogus" is no usage source; ` +
+      `"${USER_FILE}": "mark-spacing" must be true or false; skipped`,
+      `"${PROJECT_FILE}": usage-source "bogus" is no usage source; ` +
         'skipped',
     ]
     for (const w of warnings) {

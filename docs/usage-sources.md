@@ -187,7 +187,7 @@ With `plan-usage` on, the default, the plugin asks the account's usage endpoint 
 - **A failed ask** keeps the last reading, is written to `agentree-statusline.log` once per distinct failure (`plan usage failed: HTTP 429`), and the next ask, from any session on the account, waits: two minutes after the first failure in a row, doubling with each failure after it up to an hour, or as long as the answer's `Retry-After` says where that is longer.
   An answer ends the run.
   An ask with no answer in 20 seconds counts as failed.
-- **The window keys are logged** once per load, and again when they change: `plan usage: seven_day · limits: fable opus · no reading: five_hour seven_day_opus`.
+- **The window keys are logged** once per load, and again when they change: `plan usage: "seven_day" · limits: "fable" "opus" · no reading: "five_hour" "seven_day_opus"`.
   The keys with a utilization come first, then the weeks read from the `limits` list, by model, then the keys that are null or hold none.
   Key names only, never a figure or a header.
   The line says which key carries a window when one is in doubt, read or not.
