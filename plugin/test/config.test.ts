@@ -14,8 +14,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import {
-  CONFIG_ENV, DEFAULTS_REL, DefaultsError, dumpsUnicode, jsonLoads,
-  merge, nearest, parseDefaults, readDefaults, readFile, stripJsonc,
+  CONFIG_ENV, DEFAULTS_REL, DefaultsError, merge, nearest, parseDefaults,
+  readDefaults, readFile,
 } from "../src/config.ts";
 import type { ConfigFs } from "../src/config.ts";
 import { accountHide } from "../src/band.ts";
@@ -93,23 +93,23 @@ test("the shipped defaults hold every option, a derived one null", () => {
 test("a missing or unreadable defaults file is an error", async () => {
   const none: ConfigFs = { stat: async () => null, read: async () => null,
     realPath: async () => null };
-  await assert.rejects(readDefaults("/m/defaults/config.jsonc", none),
-    new DefaultsError("/m/defaults/config.jsonc: missing"));
+  await assert.rejects(readDefaults("/m/defaults/config.yaml", none),
+    new DefaultsError("/m/defaults/config.yaml: missing"));
   const unreadable: ConfigFs = { ...none,
     stat: async () => ({ kind: "file", size: 1, mtimeMs: 1 }) };
-  await assert.rejects(readDefaults("/m/defaults/config.jsonc", unreadable),
-    new DefaultsError("/m/defaults/config.jsonc: unreadable"));
+  await assert.rejects(readDefaults("/m/defaults/config.yaml", unreadable),
+    new DefaultsError("/m/defaults/config.yaml: unreadable"));
 });
 
 test("a user file copied from the defaults with one change differs by that " +
   "change alone", async () => {
-    const text = SHIPPED.replace('"hint-inset": 2', '"hint-inset": 3');
+    const text = SHIPPED.replace("hint-inset: 2", "hint-inset: 3");
     const fake: ConfigFs = {
       stat: async () => ({ kind: "file", size: text.length, mtimeMs: 1 }),
       read: async () => text, realPath: async (p) => p };
-    const got = await readFile("/u/config.jsonc", fake, DEFAULTS);
+    const got = await readFile("/u/config.yaml", fake, DEFAULTS);
     assert.deepEqual(got.warnings, []);
-    const mine = merge([{ name: "user", path: "/u/config.jsonc", mtimeMs: 1,
+    const mine = merge([{ name: "user", path: "/u/config.yaml", mtimeMs: 1,
       values: got.values }], [], DEFAULTS);
     const plain = merge([], [], DEFAULTS);
     const changed = Object.keys(plain.values).filter((k) =>
@@ -125,21 +125,21 @@ test("the other weekly windows stay off under a file's own hide, and a " +
       const fake: ConfigFs = {
         stat: async () => ({ kind: "file", size: text.length, mtimeMs: 1 }),
         read: async () => text, realPath: async (p) => p };
-      const got = await readFile("/u/config.jsonc", fake, DEFAULTS);
+      const got = await readFile("/u/config.yaml", fake, DEFAULTS);
       assert.deepEqual(got.warnings, []);
-      return merge([{ name: "user", path: "/u/config.jsonc", mtimeMs: 1,
+      return merge([{ name: "user", path: "/u/config.yaml", mtimeMs: 1,
         values: got.values }], [], DEFAULTS);
     };
     const windows = (m: { values: { [k: string]: unknown } }) =>
       m.values["weekly-windows"] as { [key in WeeklyKey]: boolean };
     const all = WEEKLY_WINDOWS.map(([key]) => "account.plan." + key);
     // A file's `hide` replaces the defaults' list, and the windows stay off.
-    const hiding = await read('{"hide": ["*.plan.five_hour"]}');
+    const hiding = await read('hide: ["*.plan.five_hour"]\n');
     assert.deepEqual(hiding.values.hide, ["*.plan.five_hour"]);
     assert.deepEqual(accountHide(hiding.values.hide as string[],
       windows(hiding)), ["*.plan.five_hour", ...all]);
     // One window on: the record merges per field.
-    const opus = await read('{"weekly-windows": {"opus": true}}');
+    const opus = await read("weekly-windows:\n  opus: true\n");
     assert.deepEqual(windows(opus), { opus: true, sonnet: false,
       omelette: false, oauth_apps: false, cowork: false });
     assert.equal(opus.layers["weekly-windows"], "user");
@@ -156,21 +156,6 @@ test("the reader reaches no file and no variable but those it is handed",
     assert.ok(!/\bprocess\.|from "node:/.test(source),
       "src/config.ts reaches past ConfigFs and ConfigEnv");
   });
-
-test("JSONC: comments and trailing commas outside strings only", () => {
-  assert.equal(stripJsonc('{"a": "//x", // c\n "b": [1,],}'),
-    '{"a": "//x",     \n "b": [1 ] }');
-});
-
-test("json.loads' shapes: key order kept, 1 apart from 1.0", () => {
-  const got = jsonLoads('{"2": 1, "1": 1.0, "2": NaN}') as Map<string, unknown>;
-  assert.deepEqual([...got.keys()], ["2", "1"]);
-  assert.equal(got.get("1"), 1);
-  assert.ok(Number.isNaN(got.get("2")));
-  assert.equal(jsonLoads("12345678901234567890"), 12345678901234567890n);
-  assert.equal(dumpsUnicode(jsonLoads('[2.0, {"é": "\\u0001"}]')),
-    '[2.0, {"é": "\\u0001"}]');
-});
 
 test("the nearest key: within a third of the word, ties to the first", () => {
   assert.equal(nearest("rwos", ["rows", "hide"]), "rows");

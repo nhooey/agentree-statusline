@@ -11,6 +11,7 @@ import { CALIB, FILES, NOW, TRACKER } from './fixtures.gen.ts'
 import { DEFAULTS_TEXT, isDefaults } from './defaults.ts'
 import { ATOMIC_WRITE_SH, fromBase64 } from '../hooks/engine.ts'
 import type { Dict } from '../src/py.ts'
+import { yamlFlow } from '../src/yaml.ts'
 
 export const HOME = '/home/fixture'
 export const STATE = '/state'
@@ -22,7 +23,7 @@ export const WINDOW = 1_000_000
 // The world's user file (world): the look these tests draw, the
 // tracker's store, five figures hidden, and 🎤, 🧵 and 🎮 drawn while a
 // turn runs and stamped into the transcript.
-export const USER_FILE = HOME + '/.config/agentree-statusline/config.jsonc'
+export const USER_FILE = HOME + '/.config/agentree-statusline/config.yaml'
 export const USER_SETTINGS = {
   'usage-source': 'claude-usage-tracker',
   'hide': ['*.plan.five_hour', '*.context.share', '*.tokens.cache',
@@ -97,7 +98,7 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const mtimes = new Map<string, number>()
   for (const [p, b64] of Object.entries(FILES)) files.set(p, fromBase64(b64))
   files.set('/tracker.plist', encoder.encode(TRACKER))
-  files.set(USER_FILE, encoder.encode(JSON.stringify(USER_SETTINGS)))
+  files.set(USER_FILE, encoder.encode(yamlFlow(USER_SETTINGS) + '\n'))
   const clock = mock.clock(on, { now: NOW * 1000 })
   const store = new Map<string, unknown>()
   const stored: string[] = []

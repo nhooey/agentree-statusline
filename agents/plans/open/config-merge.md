@@ -1,5 +1,5 @@
 ---
-title: Configuration: one set of options, merged from files and flags
+title: "Configuration: one set of options, merged from files and flags"
 state: approved
 kind: end-state
 ---
@@ -53,8 +53,8 @@ that must agree.
 
 ### One options spec, generated into both ports
 
-The options are written once, in `spec/options.jsonc`, the way the layout's
-constants are written in `spec/layout.jsonc`. `tools/gen-spec.py` writes it
+The options are written once, in `spec/options.yaml`, the way the layout's
+constants are written in `spec/layout.yaml`. `tools/gen-spec.py` writes it
 out beside the layout, comments and all:
 
 - `coding_agent_usage_line/options_spec.py`, a tuple of option records;
@@ -70,18 +70,17 @@ a hand edit.
 
 Each option is one member:
 
-```jsonc
-"live-place": {
-  "type": "enum",            // bool | int | string | enum | list | table
-  "items": ["footer", "above"],   // enum values, or a list's
-  "default": "footer",
-  "ports": ["plugin"],       // which ports read it: "py", "plugin" or both
-  "file": true,              // settable in a config file
-  "flag": null,              // the CLI flag, or null for none
-  // Where the plugin draws its live rows: under Claude Code's footer line,
-  // or above the prompt.
-  "doc": "..."
-}
+```yaml
+live-place:
+  type: enum                 # bool | int | string | enum | list | table
+  items: [footer, above]     # enum values, or a list's
+  default: footer
+  ports: [plugin]            # which ports read it: py, plugin or both
+  file: true                 # settable in a config file
+  flag: null                 # the CLI flag, or null for none
+  # Where the plugin draws its live rows: under Claude Code's footer line,
+  # or above the prompt.
+  doc: "..."
 ```
 
 The rules the records carry:
@@ -112,19 +111,19 @@ generated or built from it, and a new option is one member in one file.
 
 ### Files
 
-JSON, with `//` line comments allowed (JSONC). TOML would read better, but
-`tomllib` arrived in Python 3.11 and the floor is 3.9; YAML has no stdlib
-reader in either. The comment stripper is a dozen lines in each port, a
-string-aware scan that blanks `//` to the end of the line outside strings,
-and its shared cases pin the two to one answer. A file is an object of
-`name: value`; a top-level `"version": 1` is reserved for a later change of
-shape.
+YAML, with `#` comments. The plugin runs with no npm package, so it
+carries its own reader, `plugin/src/yaml.ts`: the part of YAML 1.2 a
+configuration needs, resolved by the core schema, so `no` is a string, and
+everything past that part (anchors, tags, block scalars, a second document)
+refused with its line and column. The shared cases pin what it reads. A
+file is a mapping of `name: value`; a top-level `version: 1` is reserved
+for a later change of shape.
 
 | Layer | Path | Committed |
 |---|---|---|
-| user-global | `$XDG_CONFIG_HOME/agentree-statusline/config.jsonc`, else `~/.config/agentree-statusline/config.jsonc` | n/a |
-| project | `<root>/.config/agentree-statusline/config.jsonc` | yes: what the project wants for everyone |
-| project, local | `<root>/.config/agentree-statusline/config.local.jsonc` | no: one person's, ignored by `/.config/**/*.local.*` |
+| user-global | `$XDG_CONFIG_HOME/agentree-statusline/config.yaml`, else `~/.config/agentree-statusline/config.yaml` | n/a |
+| project | `<root>/.config/agentree-statusline/config.yaml` | yes: what the project wants for everyone |
+| project, local | `<root>/.config/agentree-statusline/config.local.yaml` | no: one person's, ignored by `/.config/**/*.local.*` |
 
 The local file sits above the committed one within the project layer, as
 Claude Code's own `.claude/settings.local.json` sits above
@@ -163,7 +162,7 @@ file is a few hundred bytes, far under `$.fs.read`'s 4 MiB, and a file over
 `AGENTREE_STATUSLINE_CONFIG_DIR` joins them.
 
 **Reading them in Python.** The stdlib only: `os.path.isfile`, `open`,
-`json.loads` after the comment strip, in a new module,
+and a port of the plugin's YAML reader, in a new module,
 `coding_agent_usage_line/config.py`, that imports nothing else of the
 package but `options_spec`. Each run reads afresh: the panel runs every few
 seconds and each run is one process, so there is nothing to cache, and the
@@ -175,23 +174,20 @@ Each row the plugin can draw is set on its own, by when the plugin draws it and
 whether a turn's end stamps it into the transcript (decided 2026-10-20).
 Where the live rows go is `live-place`, one setting for all of them.
 
-```jsonc
-{
-  "live-place": "footer",            // "footer" | "above"
-  "rows": {
-    //   live:       "never"   — the plugin never draws it
-    //               "running" — drawn while a turn runs, gone at its end
-    //               "always"  — drawn while a turn runs, and kept after
-    //   transcript: stamped into the transcript when the turn ends
-    "turn":    { "live": "running", "transcript": true  },
-    "agent":   { "live": "always", "transcript": false },
-    "session": { "live": "always", "transcript": false },
-    // The 🔻🔖 line under the prompt and the receipt's 🔺🔖 line.
-    "tag":     { "live": "never",  "transcript": true  },
-    // The 💳 account row; `transcript` is always false for it.
-    "account": { "live": "always", "transcript": false }
-  }
-}
+```yaml
+live-place: footer            # footer | above
+rows:
+  #   live:       never   — the plugin never draws it
+  #               running — drawn while a turn runs, gone at its end
+  #               always  — drawn while a turn runs, and kept after
+  #   transcript: stamped into the transcript when the turn ends
+  turn:    {live: running, transcript: true}
+  agent:   {live: always,  transcript: false}
+  session: {live: always,  transcript: false}
+  # The 🔻🔖 line under the prompt and the receipt's 🔺🔖 line.
+  tag:     {live: never,   transcript: true}
+  # The 💳 account row; `transcript` is always false for it.
+  account: {live: always,  transcript: false}
 ```
 
 Those are the defaults. `live` is one enum, not two booleans, so "drawn
@@ -244,7 +240,7 @@ the smallest unit that can be. Each is said where the person will see it:
 
 | What | Effect |
 |---|---|
-| a file that is not valid JSON(C) or not an object | the whole file is skipped |
+| a file that is not valid YAML or not a mapping | the whole file is skipped |
 | an unknown key, at any depth: an option, a table's row or field, a record's field or key | the whole file is skipped; the warning names the nearest known key, so `rwos` says `rows` |
 | a key the spec knows but says `"file": false` (`mode`, `cols`) | the whole file is skipped |
 | a value of the wrong type, out of range, or not among the enum's | that key is skipped, and the layer under it supplies the value |
@@ -415,8 +411,9 @@ result. Together they cover:
   repeated flag;
 - the walk: a file two directories up, a `.git` between that stops it, a
   worktree's `.git` file, no file at all, `$HOME` reached;
-- JSONC: `//` in a string kept, `//` after a value stripped, a trailing comma
-  before `}` or `]` stripped, and one inside a string kept (Decided 14);
+- YAML: a `#` and a colon inside a scalar kept, a comment after a value
+  dropped, a flow list over two lines with a trailing comma (Decided 14),
+  `no` a string by the core schema, and an alias refused;
 - every row of the bad-value table, and the nearest-key hint;
 - the derived values: `right-edge` from `live-place`, `label` from
   `usage-text`.
@@ -440,7 +437,7 @@ result. Together they cover:
   the pure merge, with the walk run over a fake `$.fs` built from each
   case's files.
 - `plugin/test/options_spec.test.ts`: the generated `Options` type and records
-  agree with `spec/options.jsonc` (as `spec.test.ts` does for the layout).
+  agree with `spec/options.yaml` (as `spec.test.ts` does for the layout).
 - `plugin/plugin-tests/band.test.ts`: the band's rows during and after a turn,
   and the receipt's, for each `live` and `transcript` value of each row, read through `options()`, and a config change on
   the tick redrawing the band without a reload.
@@ -450,15 +447,15 @@ result. Together they cover:
 Each step is one commit and leaves both ports passing `bash tests/all.sh`
 and `npm test`.
 
-1. **The options spec, generated.** `spec/options.jsonc` with every option
+1. **The options spec, generated.** `spec/options.yaml` with every option
    in the tables above; `tools/gen-spec.py` writes `options_spec.py`,
    `options_spec.ts` and the doc tables, with `--check`. Nothing reads them
    yet; `docs/options.md` gains its markers and the same tables it has now,
    generated.
 
    **Status 2026-10-20: done.** As built:
-   - `spec/options.jsonc` is one `OPTIONS` object of 35 records, as
-     `spec/state.jsonc` is one `STATE_KINDS`: 26 flags of `cli.py` (with
+   - `spec/options.yaml` is one `OPTIONS` mapping of 35 records, as
+     `spec/state.yaml` is one `STATE_KINDS`: 26 flags of `cli.py` (with
      `--selftest` and `--help`, `-h` as an alias) and 9 the plugin alone reads,
      by the tables above, less the timings (Decided 5). `agentMessageRow`,
      newer than this plan, is `agent-message-row`; `agentListMs` and
@@ -542,14 +539,14 @@ and `npm test`.
      TypeScript mirror of the cost line that the shared cases drive with
      each case's flags, still read an argv; CM6 decides whether they take
      `options()` or stay a test's reading of a case's flags.
-4. **The Python reads the files.** `config.py`: the walk, JSONC, the merge,
+4. **The Python reads the files.** `config.py`: the walk, YAML, the merge,
    the warnings, `--show-config`, `AGENTREE_STATUSLINE_CONFIG_DIR`;
    `tests/config.py` and the shared cases.
 
    **Status 2026-10-20: done.** As built:
    - `config.py` finds the three files (`find`, the walk as above, with
      `$HOME` and `/` never looked in, so `$HOME/.config` is only ever the
-     user file), reads each (`read`: JSONC, 64 KiB, `"version": 1`) and
+     user file), reads each (`read`: YAML, 64 KiB, `version: 1`) and
      checks each key against the spec, keeping what passes; `load` gives
      the layers, highest first, and the warnings. `options.merge` lays
      them between the flags and the defaults, tables per field;
@@ -610,12 +607,11 @@ and `npm test`.
      usage-source loop, with no flags layer. `load(start, env, fs,
      agent)` takes a `ConfigFs` (`stat`, `read`, `realPath`, each null
      where Python would fail) and the three variables as a plain object,
-     so it is pure. Paths are `posixpath`'s, written out; JSON is read
-     by a `json.loads` port that keeps keys in the order written (a
-     `Map`) and ints apart from floats (a `bigint`), so `"version": 2.0`
-     and the warnings' quoting (`json.dumps` with and without
-     `ensure_ascii`) come out as the Python's. Each `Layer` carries its
-     file's `mtimeMs` for step 6's tick.
+     so it is pure. Paths are `posixpath`'s, written out; a file is read
+     by `plugin/src/yaml.ts`, which keeps keys in the order written (a
+     `Map`) and ints apart from floats (a `bigint`), so `version: 2.0`
+     and the warnings' quoting (YAML's flow style, `yamlFlow`) come out
+     exactly. Each `Layer` carries its file's `mtimeMs` for step 6's tick.
    - `plugin/hooks/edges.ts`: `configVia` reads through `$.fs` (bytes,
      decoded strictly with the byte-order mark kept, as Python's
      `open(…, encoding="utf-8")`), starts at `$.session.root()`, and
@@ -704,17 +700,14 @@ and `npm test`.
    The user file that draws as now, checked with
    `--show-config` (no warning; `right-edge` derived 2):
 
-   ```jsonc
-   {
-     "usage-source": "claude-usage-tracker",
-     "hide": ["*.plan.five_hour", "*.context.share", "*.tokens.cache",
-              "account.workspace.project", "account.workspace.branch"],
-     "rows": {
-       "turn":    { "live": "running", "transcript": true },
-       "agent":   { "live": "running", "transcript": true },
-       "session": { "live": "running", "transcript": true }
-     }
-   }
+   ```yaml
+   usage-source: claude-usage-tracker
+   hide: ["*.plan.five_hour", "*.context.share", "*.tokens.cache",
+          account.workspace.project, account.workspace.branch]
+   rows:
+     turn:    {live: running, transcript: true}
+     agent:   {live: running, transcript: true}
+     session: {live: running, transcript: true}
    ```
 
    Acceptance 1 has the user file with no `rows`, taking the defaults
@@ -742,19 +735,16 @@ The rows table set in this project only:
 1. The user-global file has no `rows`, so the defaults hold everywhere
    else: 🎤 `turn` live `"running"`, every other row live `"always"`, and
    only 🎤 `turn` and the tag lines stamped into the transcript.
-2. This repository gets `.config/agentree-statusline/config.local.jsonc`
+2. This repository gets `.config/agentree-statusline/config.local.yaml`
    (see [Decided](#decided-2026-10-20), 8 and 9):
 
-   ```jsonc
-   {
-     // 🎤, 🤖 and 🎮 kept under the footer line between turns, and every
-     // turn's three stamped into the transcript too.
-     "rows": {
-       "turn":    { "live": "always", "transcript": true },
-       "agent":   { "live": "always", "transcript": true },
-       "session": { "live": "always", "transcript": true }
-     }
-   }
+   ```yaml
+   # 🎤, 🤖 and 🎮 kept under the footer line between turns, and every
+   # turn's three stamped into the transcript too.
+   rows:
+     turn:    {live: always, transcript: true}
+     agent:   {live: always, transcript: true}
+     session: {live: always, transcript: true}
    ```
 
 3. With no `/reload-plugins`: within one tick (30 s) the plugin's log shows the
@@ -768,7 +758,7 @@ The rows table set in this project only:
 6. `/cd` from this repository to the other moves the session's root, and
    the next tick takes the other project's layer: the next turn there
    stamps 🎤 alone.
-7. Making the file invalid (`"live": "allways"`) leaves that row at its
+7. Making the file invalid (`live: allways`) leaves that row at its
    default, logs one warning naming `"always"`, and shows one notice.
 
 ## Decided (2026-10-20)
@@ -788,8 +778,8 @@ The rows table set in this project only:
 5. **The plugin's timings** stay constants in `config.ts`, out of the spec.
 6. **The project files,** XDG style inside the project (pi0's `config-dir`
    proposal, which cosmiconfig also searches):
-   `.config/agentree-statusline/config.jsonc`, committed, and
-   `config.local.jsonc` beside it, one person's own. A worktree that has no local file
+   `.config/agentree-statusline/config.yaml`, committed, and
+   `config.local.yaml` beside it, one person's own. A worktree that has no local file
    reads the main checkout's, found through the git common dir, so
    settings made once follow every worktree.
 7. **The ignore line** in the repository's `.gitignore`, added with the
@@ -797,7 +787,7 @@ The rows table set in this project only:
    root `.config/` (mise's `.config/mise.local.toml` included), and no
    `.config/` deeper in the tree.
 8. **This repository's rows** go in its
-   `.config/agentree-statusline/config.local.jsonc`: the user's own
+   `.config/agentree-statusline/config.local.yaml`: the user's own
    preference, not one for everyone who clones it. All five there are
    live `"always"`, and the three cost rows are stamped too.
 9. **The rows table** replaces `sticky`, `bandPlace` and the hide paths
@@ -805,20 +795,21 @@ The rows table set in this project only:
 10. **Tables merge per field** across layers, while lists replace: a
     project that sets `rows.agent.transcript` alone keeps every other row
     and field from the layers under it.
-11. **The files stay JSONC,** over YAML and TOML: each port parses it with
-    its own JSON reader after stripping comments and trailing commas, with
-    no vendored parser and no implicit typing (YAML would need PyYAML and
-    the `yaml` package vendored and agreeing; TOML a Python of 3.11 or
-    later for the panel and a vendored parser in the plugin).
+11. **The files are YAML,** over JSON and TOML, read by the plugin's own
+    reader (`plugin/src/yaml.ts`) of the part of YAML 1.2 a configuration
+    needs, with no package at run time: the core schema's typing, so `no`
+    is a string, and anything past that part refused with its line and
+    column rather than read some other way (TOML needs a Python of 3.11
+    or later for the panel and a parser in the plugin too).
 12. **🎤 `turn` defaults to live `"running"`:** shown while a turn runs,
     then left to the transcript's stamped copy; the other rows stay
     `"always"`.
 13. **`right-edge` is derived from `live-place` when unset,** in the panel
     too: 2 under the default `"footer"`, 5 under `"above"`. The panel run
     without the plugin sets `live-place` or `right-edge` to keep 5.
-14. **Trailing commas are accepted:** the comment stripper drops a comma
-    before `}` or `]`, and keeps one inside a string, as Decided 11 says;
-    the shared cases change to match.
+14. **Trailing commas are accepted** in a flow collection, as YAML has
+    them, and a comma inside a quoted string is kept; the shared cases
+    hold both.
 15. **The timings stay constants** in `config.ts` (Decided 5): every `-ms`
     field, `readSpacing`, `agentListMs` and `agentSenderMemo`. "What moves
     where" and step 6 say so.
@@ -833,18 +824,18 @@ The rows table set in this project only:
 ## Decided (2026-10-21, by the user)
 
 18. **The defaults are a file, and it governs.** Every option a file may
-    set has its default in `plugin/defaults/config.jsonc`, in exactly the
-    shape of a user's `config.jsonc`, with a short comment per option, so
-    a user copies it to `~/.config/agentree-statusline/config.jsonc`
+    set has its default in `plugin/defaults/config.yaml`, in exactly the
+    shape of a user's `config.yaml`, with a short comment per option, so
+    a user copies it to `~/.config/agentree-statusline/config.yaml`
     (or a project's `.config/agentree-statusline/`), edits the copy,
     and a `diff` against the repository's file shows only their changes.
-    The format stays JSONC (Decided 11; TOML was considered and dropped).
+    The format is YAML (Decided 11; TOML was considered and dropped).
     - **Where:** in `plugin/`, because the marketplace installs the plugin
       from `./plugin` alone, and the plugin reaches its own files through
       `$.fs` under `$.plugin.root`; the Python, which runs from the
       checkout, reads the same file beside its package
       (`config.DEFAULTS_FILE`).
-    - **One source of truth:** `spec/options.jsonc` keeps each option's
+    - **One source of truth:** `spec/options.yaml` keeps each option's
       type, allowed values and docs, and no default for an option a file
       may set (`rows` names a table's rows instead); an option no file
       sets (`mode`, `cols`, …) keeps its default there, as no file can
@@ -859,7 +850,7 @@ The rows table set in this project only:
       (`config.load_defaults`, `readDefaults` in the plugin), and a key
       missing, a key that is no option or describes one run, a value of
       the wrong type, `null` for an option that is not derived, or a
-      file unreadable or not JSONC is a `DefaultsError` naming the file
+      file unreadable or not YAML is a `DefaultsError` naming the file
       and each key, never a value made up in its place. The two ports
       give the same words, held by the shared
       `tests/fixtures/config/defaults-cases.json`.

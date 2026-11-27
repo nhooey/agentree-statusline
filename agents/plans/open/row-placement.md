@@ -1,5 +1,5 @@
 ---
-title: Row placement: each row where it reads best
+title: "Row placement: each row where it reads best"
 state: approved
 kind: end-state
 ---
@@ -102,35 +102,34 @@ Every row ends 2 columns short of the edge (`right-edge`, derived from
 
 A third field in each row of the `rows` table, `place`, and `live-place`
 retired ([Decided](#decided), 1). The defaults, in
-`plugin/defaults/config.jsonc`:
+`plugin/defaults/config.yaml`:
 
-```jsonc
-  // Each row the plugin draws.  place: "above", in the band above the
-  // prompt, or "footer", under Claude Code's footer line; live: "never",
-  // "running" (while a turn runs) or "always"; transcript: whether a
-  // turn's end stamps it into the transcript.  A file may set any one
-  // field; the rest stay.
-  "rows": {
-    // 🎤 drawn above the prompt while a turn runs, then left to the
-    // receipt stamped in the transcript just above it.
-    "turn":    {"place": "above",  "live": "running", "transcript": true},
-    // 🤖 under the footer line, just over the agent panel, kept.
-    "agent":   {"place": "footer", "live": "always",  "transcript": false},
-    // 🎮 above the prompt, under 🎤, kept.
-    "session": {"place": "above",  "live": "always",  "transcript": false},
-    // The 🔻🔖 line under the prompt and the receipt's 🔺🔖 line; its
-    // place is always "footer" (it has no live row).
-    "tag":     {"place": "footer", "live": "never",   "transcript": true},
-    // The 💳 account; its transcript is always false.
-    "account": {"place": "footer", "live": "always",  "transcript": false}
-  },
-  // Where the 💳 account is drawn under the footer line: "row", a row of
-  // its own, or "tail", at the footer line's right end, plain and dim.
-  "account-place": "row",
-  // Columns each agent-panel row leaves blank at the right edge.  null
-  // follows rows.*.place: 5 when any row drawn live is "above", where
-  // Claude Code's [-] stands, else 2.
-  "right-edge": null,
+```yaml
+# Each row the plugin draws.  place: "above", in the band above the
+# prompt, or "footer", under Claude Code's footer line; live: "never",
+# "running" (while a turn runs) or "always"; transcript: whether a
+# turn's end stamps it into the transcript.  A file may set any one
+# field; the rest stay.
+rows:
+  # 🎤 drawn above the prompt while a turn runs, then left to the
+  # receipt stamped in the transcript just above it.
+  turn:    {place: above,  live: running, transcript: true}
+  # 🤖 under the footer line, just over the agent panel, kept.
+  agent:   {place: footer, live: always,  transcript: false}
+  # 🎮 above the prompt, under 🎤, kept.
+  session: {place: above,  live: always,  transcript: false}
+  # The 🔻🔖 line under the prompt and the receipt's 🔺🔖 line; its
+  # place is always "footer" (it has no live row).
+  tag:     {place: footer, live: never,   transcript: true}
+  # The 💳 account; its transcript is always false.
+  account: {place: footer, live: always,  transcript: false}
+# Where the 💳 account is drawn under the footer line: "row", a row of
+# its own, or "tail", at the footer line's right end, plain and dim.
+account-place: row
+# Columns each agent-panel row leaves blank at the right edge.  null
+# follows rows.*.place: 5 when any row drawn live is "above", where
+# Claude Code's [-] stands, else 2.
+right-edge: null
 ```
 
 - **`place`** is an enum, `"above"` or `"footer"`, on every row; the spec
@@ -156,7 +155,7 @@ retired ([Decided](#decided), 1). The defaults, in
 
 ### What the user's file does after it
 
-`~/.config/agentree-statusline/config.jsonc` (read, not written by
+`~/.config/agentree-statusline/config.yaml` (read, not written by
 this plan) sets `rows.agent.transcript` and `rows.session.transcript` to
 `true`, and hides `account.workspace.project` and
 `account.workspace.branch` because 🎮 drew them. Left as it is, after the
@@ -221,7 +220,7 @@ column.
   the transcript's prompt and reply in the folds, which it reads.
 - **What the grid keeps.** Which columns drop on a narrow terminal is
   worked out once for every row the band, the receipt and the panel can
-  draw (`fixedKeys`, `LABEL_MIN` in `spec/layout.jsonc`): a column drops
+  draw (`fixedKeys`, `LABEL_MIN` in `spec/layout.yaml`): a column drops
   while the label would keep fewer than `LABEL_MIN` columns. It goes from
   20 to 12 for every row ([Decided](#decided), 8): an agent row's head on
   the panel, its spinner, kind and state marks and a blank, is 7
@@ -279,8 +278,8 @@ The plan takes that as it is, with no code for it
 
 | File | Change | Step |
 |---|---|---|
-| `spec/options.jsonc` | `rows.fields.place` (enum, `fixed: ["tag"]`); `live-place` removed; `right-edge`'s `derived` from `rows.*.place`; `account-place`'s doc | `RP2` |
-| `plugin/defaults/config.jsonc` | `place` on each row, `live-place` gone, `account-place` `"row"`, `right-edge`'s comment | `RP2`, `RP5` |
+| `spec/options.yaml` | `rows.fields.place` (enum, `fixed: ["tag"]`); `live-place` removed; `right-edge`'s `derived` from `rows.*.place`; `account-place`'s doc | `RP2` |
+| `plugin/defaults/config.yaml` | `place` on each row, `live-place` gone, `account-place` `"row"`, `right-edge`'s comment | `RP2`, `RP5` |
 | `tools/gen-spec.py` | the table form of `derived`, checked: the table and field exist, `any` is among the field's items, the map is keyed by every item | `RP2` |
 | `coding_agent_usage_line/options_spec.py`, `plugin/src/options_spec.ts`, `docs/options.md` tables | generated | `RP2` |
 | `coding_agent_usage_line/options.py` | `_merged_value` and the derivation read `rows` (a plugin-only option, as `live-place` was) to give `right-edge` | `RP2` |
@@ -290,7 +289,7 @@ The plan takes that as it is, with no code for it
 | `plugin/src/band.ts` | `bandScoped` takes the place to draw (rows filtered by `place`) and the order with 💳; `sessionRow`'s label bare; `turnRow`, `mainRow` without text; `accountPieces` on `workspacePieces`, then with 🔀 🎨, the user's order, shedding | `RP2`, `RP4`, `RP5` |
 | `plugin/src/receipt.ts` | `turnRow` without its prompt; `sessionRow`'s label bare; no workspace taken | `RP4` |
 | `plugin/src/cells.ts` | `turnLabel` and `mainLabel` without their text pieces; `sessionLabel` the mark alone; `workspacePieces` for 💳 | `RP4` |
-| `spec/layout.jsonc`, `spec.{py,ts}` | `HIDE_GROUPS.chat` without `prompt` and `reply`; `LABEL_MIN` 12 | `RP4` |
+| `spec/layout.yaml`, `spec.{py,ts}` | `HIDE_GROUPS.chat` without `prompt` and `reply`; `LABEL_MIN` 12 | `RP4` |
 | `plugin/hooks/register.tsx`, `plugin/tools/*.ts`, `plugin/plugin-tests/` | the receipt's callers without a workspace | `RP4` |
 | `plugin/tools/draw-figures.ts` | `--part above` and `--part footer` draw by place; `--sticky` becomes `--rows` reading a rows table | `RP2` |
 | `plugin/README.md`, `docs/layout.md`, `docs/options.md` prose | see [Docs](#docs) | `RP6` |
@@ -347,24 +346,23 @@ Each step leaves `bash tests/all.sh` and `npm test` (in `plugin/`) passing.
 The user's own, by hand, as `CM7` was; the plan only reads it. After
 `RP5`, the file that draws the new layout with the user's hiding:
 
-```jsonc
-// coding-agent-usage-line: the band's and the agent panel's settings.
-// The options are in docs/options.md; `coding-agent-usage-line.py
-// --show-config` shows what each layer gives.
-{
-  // The menu-bar app's store.
-  "usage-source": "claude-usage-tracker",
-  // 🔋 the 5-hour limit, 🧠's ٪ of the window and 🎯 the cache hit rate in
-  // every row.
-  "hide": ["*.plan.five_hour", "*.context.share", "*.tokens.cache"]
-}
+```yaml
+# coding-agent-usage-line: the band's and the agent panel's settings.
+# The options are in docs/options.md; `coding-agent-usage-line.py
+# --show-config` shows what each layer gives.
+
+# The menu-bar app's store.
+usage-source: claude-usage-tracker
+# 🔋 the 5-hour limit, 🧠's ٪ of the window and 🎯 the cache hit rate in
+# every row.
+hide: ["*.plan.five_hour", "*.context.share", "*.tokens.cache"]
 ```
 
 - `rows` goes: the defaults are the new layout, with only 🎤 stamped.
 - `account.workspace.project` and `account.workspace.branch` leave
   `hide`: 💳 is now the only row that draws 📦 and 🌿.
 - To keep 🤖 and 🎮 in each receipt, the file keeps
-  `"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}`.
+  `rows: {agent: {transcript: true}, session: {transcript: true}}`.
 - `coding-agent-usage-line.py --show-config` run here shows no warning and
   `right-edge` 5, derived.
 
@@ -436,7 +434,7 @@ a trial, the last two are the user's.
 ## Acceptance
 
 In a session started in this repository, with the user's file as in `RP7`
-and no `config.local.jsonc` setting `rows`:
+and no `config.local.yaml` setting `rows`:
 
 1. `coding-agent-usage-line.py --show-config` shows `rows` from the
    defaults, `right-edge` 5 derived, and no warning; the plugin's log says
@@ -458,8 +456,8 @@ and no `config.local.jsonc` setting `rows`:
    when it is answered.
 8. `[-]` collapses the band; 🎤 and 🎮 are hidden; reopening it shows
    them.
-9. `"rows": {"agent": {"transcript": true}, "session": {"transcript": true}}`
-   in this repository's `config.local.jsonc` puts 🤖 and 🎮 back in the
+9. `rows: {agent: {transcript: true}, session: {transcript: true}}`
+   in this repository's `config.local.yaml` puts 🤖 and 🎮 back in the
    next receipt, within one tick and no `/reload-plugins`.
 
 ## Decided
@@ -515,7 +513,7 @@ them.
 
 ## Files
 
-`spec/options.jsonc`, `plugin/defaults/config.jsonc`, `tools/gen-spec.py`,
+`spec/options.yaml`, `plugin/defaults/config.yaml`, `tools/gen-spec.py`,
 `coding_agent_usage_line/options.py`, `plugin/src/config.ts`,
 `plugin/hooks/register.tsx`, `plugin/src/band.ts`, `plugin/src/receipt.ts`,
 `plugin/tools/draw-figures.ts`, `plugin/plugin-tests/band.test.ts`,

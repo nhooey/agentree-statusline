@@ -18,7 +18,7 @@
 //   derived     {from, field, any, map}: the value worked out from a
 //               table's field when no layer sets this one, the map keyed
 //               by that field's values and naming every value it can
-//               take; its default in plugin/defaults/config.jsonc is null
+//               take; its default in plugin/defaults/config.yaml is null
 //   minimum     an int's least value
 //   distinct    true where a list may not name one string twice
 //   doc-table   the table of docs/options.md it is a row of, or null
@@ -26,7 +26,7 @@
 //   doc         the Effect cell, in Markdown
 //
 // The defaults are not here: every option's is in
-// plugin/defaults/config.jsonc and nowhere else, which the plugin reads at every
+// plugin/defaults/config.yaml and nowhere else, which the plugin reads at every
 // run (config-merge.md, Decided 18).  The plugin's timings (tick, clock,
 // receipt, fold-save and slow-read times) and its caches' version stay
 // constants in plugin/hooks/config.ts, out of this table (config-merge.md,

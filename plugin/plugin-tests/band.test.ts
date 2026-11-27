@@ -24,6 +24,8 @@ import type {
 import { CALIB, NOW, TRACKER } from './fixtures.gen.ts'
 import { partOf, partOfRun } from '../hooks/engine.ts'
 import { merge as mergeConfig, optionsOf } from '../src/config.ts'
+import { yamlFlow, yamlOption } from '../src/yaml.ts'
+import type { Flowable } from '../src/yaml.ts'
 import { DEFAULTS } from './defaults.ts'
 import {
   CWD, HOME, MODEL, NO_GIT_HERE, SESSION, STATE, USER_FILE, USER_SETTINGS,
@@ -398,8 +400,8 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
   'among them, and their kinds are logged once, then as they change',
   async ($, on) => {
     const w = world(on)
-    w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-      encoder.encode('{"usage-source": "native"}'))
+    w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+      encoder.encode('usage-source: native\n'))
     w.usage.rateLimits = [
       { kind: 'five_hour', percentUsed: 15,
         resetsAt: '2026-08-16T05:00:00+00:00' },
@@ -429,7 +431,7 @@ test('the session\'s rate limits reach the 💳 row, the Fable window ' +
  * `config`; and the Opus window's share in its document. */
 async function weeklyOpus($: any, on: On, config: string) {
   const w = world(on)
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
     encoder.encode(config))
   w.usage.rateLimits = [
     { kind: 'seven_day', percentUsed: 87,
@@ -445,8 +447,8 @@ async function weeklyOpus($: any, on: On, config: string) {
 
 test('the other weekly windows reach the document but not the 💳 row, ' +
   'a file\'s own hide replacing the defaults\' list', async ($, on) => {
-    const got = await weeklyOpus($, on, '{"usage-source": "native", ' +
-      '"hide": ["*.plan.five_hour"]}')
+    const got = await weeklyOpus($, on, 'usage-source: native\n' +
+      'hide: ["*.plan.five_hour"]\n')
     expect(String(got.opus)).toMatch(/^30/)
     expect(got.drawn).toContain(spec.E_WEEK)
     expect(got.drawn).not.toContain(spec.E_OPUS)
@@ -454,8 +456,8 @@ test('the other weekly windows reach the document but not the 💳 row, ' +
 
 test('weekly-windows turns one weekly window on beside a file\'s hide, ' +
   'under 🪫\'s 🔜 where they reset together', async ($, on) => {
-    const got = await weeklyOpus($, on, '{"usage-source": "native", ' +
-      '"hide": ["*.plan.five_hour"], "weekly-windows": {"opus": true}}')
+    const got = await weeklyOpus($, on, 'usage-source: native\n' +
+      'hide: ["*.plan.five_hour"]\nweekly-windows:\n  opus: true\n')
     expect(got.drawn).toContain(spec.E_OPUS)
     expect(got.drawn.split(spec.E_RESET).length - 1).toBe(1)
   })
@@ -464,8 +466,8 @@ test('under auto, with no native reading, the plan comes from the usage ' +
   'endpoint, asked as the session, once per 5 minutes for every session ' +
   'on the account, with plan-usage off', async ($, on) => {
     const w = world(on)
-    w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-      encoder.encode('{"usage-source": "auto", "plan-usage": false}'))
+    w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+      encoder.encode('usage-source: auto\nplan-usage: false\n'))
     w.files.set('/claude/.claude.json', encoder.encode(
       '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
     w.oauth.body = JSON.stringify({
@@ -500,11 +502,11 @@ test('under auto, with no native reading, the plan comes from the usage ' +
 
 /** A world under auto whose session names only the plan's week, at 87٪,
  * as Claude Code's does, with the usage endpoint answering `answer`. */
-function planWorld(on: On, answer: Dict | null, settings = '{}'): World {
+function planWorld(on: On, answer: Dict | null,
+  settings: { [option: string]: Flowable } = {}): World {
   const w = world(on)
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-    encoder.encode(JSON.stringify({ 'usage-source': 'auto',
-      ...JSON.parse(settings) })))
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+    encoder.encode(yamlFlow({ 'usage-source': 'auto', ...settings }) + '\n'))
   w.usage.rateLimits = [{ kind: 'seven_day', percentUsed: 87,
     resetsAt: '2026-08-18T01:00:00+00:00' }]
   w.oauth.body = answer === null ? null : JSON.stringify(answer)
@@ -732,7 +734,7 @@ for (const kind of ['none', 'api-key'] as const) {
 
 test('plan-usage off asks nothing, and draws Claude Code\'s own',
   async ($, on) => {
-    const w = planWorld(on, PLAN_ANSWER, '{"plan-usage": false}')
+    const w = planWorld(on, PLAN_ANSWER, { 'plan-usage': false })
     await start($, w, 'terminal', STATUS)
     await w.clock.advance(61_000)
     await settle()
@@ -1144,8 +1146,8 @@ for (const name of ['CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX']) {
  * so 💸 pays. */
 function extraWorld(on: On): World {
   const w = world(on)
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-    encoder.encode('{"usage-source": "native"}'))
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+    encoder.encode('usage-source: native\n'))
   w.files.set('/claude/.claude.json', encoder.encode(
     '{"oauthAccount": {"accountUuid": "0f0f0f0f-test-account"}}'))
   w.oauth.body = JSON.stringify({ extra_usage: { is_enabled: true,
@@ -1333,10 +1335,10 @@ test('each row is drawn in its place: the tree of 🎮, 🧵 and 🎤 above ' +
   expect(await drawnRows(ui.hint)).toEqual(expected([account]))
   // All of them under the footer line, with every place "footer": the
   // band above the prompt is the engine's.
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-    encoder.encode('{"rows": {"turn": {"place": "footer"}, ' +
-      '"agent": {"place": "footer"}, "session": {"place": "footer"}, ' +
-      '"subagents": {"live": "never"}}}'))
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+    encoder.encode('rows:\n  turn: {place: footer}\n' +
+      '  agent: {place: footer}\n  session: {place: footer}\n' +
+      '  subagents: {live: never}\n'))
   await w.clock.advance(CONFIG.tickMs)
   await settle()
   const footed = await mountBand($, 'terminal', { ...BAND, isWorking: true })
@@ -1458,8 +1460,8 @@ test('a shell that closed stays drawn, ended, for finished-within, and ' +
   bytes.set(extra, was.length)
   w.files.set(path, bytes)
   // A window short enough that no tick reads a document before it ends.
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-    encoder.encode('{"finished-within": 5}'))
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+    encoder.encode('finished-within: 5\n'))
   await start($, w, 'terminal', path)
   const agents = lastDoc(w).agents as Dict
   expect(agents.main_background).toEqual([])
@@ -1795,8 +1797,8 @@ test('with no /color the rule is the prompt box\'s border colour',
 
 test('band-rule false draws the band with no rule', async ($, on) => {
   const w = world(on)
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-    encoder.encode('{"band-rule": false}'))
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+    encoder.encode('band-rule: false\n'))
   await start($, w, 'terminal', STATUS)
   const rows = await drawnRows(await bandAbove($))
   expect(rows.length).toBeGreaterThan(0)
@@ -1849,9 +1851,9 @@ const mountList = ($: any, rows: { plugin: string }[]) =>
       rows } })
 
 /** `w`'s project-local file setting band-order to `order`. */
-const bandOrder = (w: World, order: unknown) =>
-  w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-    encoder.encode(JSON.stringify({ 'band-order': order })))
+const bandOrder = (w: World, order: Flowable) =>
+  w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+    encoder.encode(yamlFlow({ 'band-order': order }) + '\n'))
 
 test('the band above the prompt has this plugin\'s row first in the ' +
   'defaults, the others after it in their order', async ($, on) => {
@@ -3202,11 +3204,11 @@ test('a resumed session whose first turn calls no tool draws all three',
 // The project's local file the acceptance check writes
 // (config-merge.md, "Acceptance"): 🎤, 🤖 and 🎮 kept under the footer
 // line between turns, and stamped into the transcript too.
-const LOCAL = CWD + '/.config/agentree-statusline/config.local.jsonc'
-const KEPT_AND_STAMPED = '{"rows": {' +
-  '"turn": {"live": "always", "transcript": true}, ' +
-  '"agent": {"live": "always", "transcript": true}, ' +
-  '"session": {"live": "always", "transcript": true}}}'
+const LOCAL = CWD + '/.config/agentree-statusline/config.local.yaml'
+const KEPT_AND_STAMPED = 'rows:\n' +
+  '  turn:    {live: always, transcript: true}\n' +
+  '  agent:   {live: always, transcript: true}\n' +
+  '  session: {live: always, transcript: true}\n'
 
 test('a project file found on the tick keeps the rows and stamps them, ' +
   'with no reload', async ($, on) => {
@@ -3227,12 +3229,12 @@ test('a project file found on the tick keeps the rows and stamps them, ' +
   expect(logOf(w)).toContain(`config from ${CWD}: project-local ${LOCAL}` +
     ` (rows); user ${USER_FILE} (usage-source, hide, rows)`)
   expect(logOf(w)).toContain('config options: ' +
-    'usage-source "claude-usage-tracker" (user); right-edge 5 (derived); ' +
-    'hide ' + JSON.stringify(HIDE) + ' (user); rows.turn.live "always" (project-local); ' +
+    'usage-source claude-usage-tracker (user); right-edge 5 (derived); ' +
+    'hide ' + yamlOption(HIDE) + ' (user); rows.turn.live always (project-local); ' +
     'rows.turn.transcript true (project-local); ' +
-    'rows.agent.live "always" (project-local); ' +
+    'rows.agent.live always (project-local); ' +
     'rows.agent.transcript true (project-local); ' +
-    'rows.session.live "always" (project-local); ' +
+    'rows.session.live always (project-local); ' +
     'rows.session.transcript true (project-local)')
   await askLive($, w, true)
   await until(w, 5_000)
@@ -3258,13 +3260,12 @@ test('a bad value in a file is logged, noticed once, and its default kept',
   async ($, on) => {
     const w = world(on)
     resumed(w)
-    w.files.set(LOCAL, encoder.encode(
-      '{"rows": {"turn": {"live": "allways"}}}'))
+    w.files.set(LOCAL, encoder.encode('rows:\n  turn:\n    live: allways\n'))
     await $.session.start({ cwd: CWD, surface: 'terminal',
       isInteractive: true })
     await settle()
-    const warning = `${LOCAL}: "rows.turn.live" must be one of "never", ` +
-      '"running", "always" (did you mean "always"?); skipped'
+    const warning = `${LOCAL}: rows.turn.live must be one of never, ` +
+      'running, always (did you mean always?); skipped'
     expect(logOf(w)).toContain('config: ' + warning)
     expect(w.logged).toEqual(['config ' + warning])
     // Another session's start, and a tick: the file is as it was, so no
@@ -3288,21 +3289,20 @@ test('a band-order with an entry not a string, or a name given twice, is ' +
   'logged and the defaults\' order kept', async ($, on) => {
     const w = world(on)
     const seen = stackedRows(on)
-    const bad: [unknown[], string][] = [
-      [['other-band', 1], 'must be a list of strings'],
-      [['other-band', 'agentree-statusline', 'other-band'],
-        'names "other-band" more than once'],
+    const bad: [string, string][] = [
+      ['band-order: [other-band, 1]\n', 'must be a list of strings'],
+      ['band-order:\n  - other-band\n  - agentree-statusline\n' +
+        '  - other-band\n', 'names other-band more than once'],
     ]
-    for (const [i, [order, why]] of bad.entries()) {
-      w.files.set(LOCAL, encoder.encode(JSON.stringify(
-        { 'band-order': order })))
+    for (const [i, [text, why]] of bad.entries()) {
+      w.files.set(LOCAL, encoder.encode(text))
       // A new modification time, so the next start reads the file again.
       w.mtimes.set(LOCAL, NOW * 1000 + i + 1)
       await $.session.start({ cwd: CWD, surface: 'terminal',
         isInteractive: true })
       await settle()
       expect(logOf(w))
-        .toContain(`config: ${LOCAL}: "band-order" ${why}; skipped`)
+        .toContain(`config: ${LOCAL}: band-order ${why}; skipped`)
       await mountList($, ['other-band', 'agentree-statusline'].map(listRow))
       expect(seen.at(-1)).toEqual(['agentree-statusline', 'other-band'])
     }
@@ -3576,8 +3576,8 @@ test('agent-panel-dedupe false keeps every row of the agent panel',
   async ($, on) => {
     const seen = panelRows(on)
     const { w } = clicking(on, [PARENT, KID])
-    w.files.set(CWD + '/.config/agentree-statusline/config.local.jsonc',
-      encoder.encode('{"agent-panel-dedupe": false}'))
+    w.files.set(CWD + '/.config/agentree-statusline/config.local.yaml',
+      encoder.encode('agent-panel-dedupe: false\n'))
     await start($, w, 'terminal', STATUS)
     const { band } = await clickBand($, w)
     expect((await treeRowsOf(band)).some((r) => r.text.includes('Kid')))

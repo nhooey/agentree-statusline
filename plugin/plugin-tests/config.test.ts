@@ -22,8 +22,8 @@ const STATE = '/state'
 const CLAUDE = '/claude'
 const PROJECT = '/work/p'
 const D = '/.config/agentree-statusline/'
-const USER_FILE = HOME + D + 'config.jsonc'
-const PROJECT_FILE = PROJECT + D + 'config.jsonc'
+const USER_FILE = HOME + D + 'config.yaml'
+const PROJECT_FILE = PROJECT + D + 'config.yaml'
 // The only places a path the plugin asks for may be.
 const PLACES = [HOME, STATE, CLAUDE, PROJECT]
 const ENV: { [name: string]: string } = {
@@ -39,8 +39,8 @@ type World = { files: Map<string, string>; asked: string[]; names: string[];
  * text. */
 function world(on: On, defaults = DEFAULTS_TEXT): World {
   const files = new Map<string, string>([
-    [USER_FILE, '{"mark-spacing": "no", "account": "u"}'],
-    [PROJECT_FILE, '{"hide": [], "usage-source": "bogus"}'],
+    [USER_FILE, 'mark-spacing: no\naccount: u\n'],
+    [PROJECT_FILE, 'hide: []\nusage-source: bogus\n'],
   ])
   const dirs = new Set([PROJECT + '/.git'])
   const asked: string[] = []
@@ -140,8 +140,8 @@ test('a session start reads the config files and logs every warning once',
     expect(log).toContain(`config from ${PROJECT}: project ${PROJECT_FILE}` +
       ` (hide); user ${USER_FILE} (account)`)
     const warnings = [
-      `${USER_FILE}: "mark-spacing" must be true or false; skipped`,
-      `${PROJECT_FILE}: "usage-source" "bogus" is no usage source; ` +
+      `${USER_FILE}: mark-spacing must be true or false; skipped`,
+      `${PROJECT_FILE}: usage-source bogus is no usage source; ` +
         'skipped',
     ]
     for (const w of warnings) {
@@ -150,7 +150,7 @@ test('a session start reads the config files and logs every warning once',
   })
 
 // The options with no file, field by field: the defaults file's
-// (plugin/defaults/config.jsonc), the plugin's own layer (hooks/config.ts,
+// (plugin/defaults/config.yaml), the plugin's own layer (hooks/config.ts,
 // SETTINGS) being empty; right-edge is derived from rows.*.place, 5 with
 // 🎤 and 🎮 above the prompt.
 test('with no configuration file the options are the defaults', () => {
@@ -212,7 +212,7 @@ test('a session start logs the options the files gave',
     await settle()
     const log = w.files.get(STATE + '/' + LOG_NAME) ?? ''
     expect(log).toContain('config options: ' +
-      'account "u" (user); right-edge 5 (derived); hide [] (project)\n')
+      'account u (user); right-edge 5 (derived); hide [] (project)\n')
   })
 
 // The plugin's own layer, were SETTINGS to hold any: under every file, over
@@ -233,8 +233,8 @@ test('a non-empty plugin layer merges under the files and is named in the log',
     expect(o.rows.agent).toEqual({ place: 'above', live: 'never',
       transcript: true })
     expect(optionsTable(m)).toBe(
-      'usage-source "claude-usage-tracker" (plugin); right-edge 5 (derived); ' +
-      'hide [] (user); rows.agent.live "never" (user); ' +
+      'usage-source claude-usage-tracker (plugin); right-edge 5 (derived); ' +
+      'hide [] (user); rows.agent.live never (user); ' +
       'rows.agent.transcript true (plugin)')
   })
 
@@ -263,22 +263,22 @@ test('the plugin asks for no path outside the world it is handed',
 // transcript say once.
 test('a wrong defaults file is drawn in the footer and logged once',
   async ($, on) => {
-    const w = world(on, DEFAULTS_TEXT.replace('  "account": "default",\n', ''))
+    const w = world(on, DEFAULTS_TEXT.replace('account: default\n', ''))
     await $.session.start({ cwd: PROJECT, surface: 'terminal',
       isInteractive: true })
     await settle()
     const log = w.files.get(STATE + '/' + LOG_NAME) ?? ''
     expect(log).toContain('config: the defaults file is wrong: ')
-    expect(log).toContain('"account" is missing')
+    expect(log).toContain('account is missing')
     expect(log).not.toContain('config options: ')
-    expect(w.logged.filter((n) => n.includes('"account" is missing')).length)
+    expect(w.logged.filter((n) => n.includes('account is missing')).length)
       .toBe(1)
     const hint = await $.ui.mount({ plugin: 'agentree-statusline',
       surface: 'terminal', component: 'PromptHint', props: { isDraft: false,
         isWorking: false, hint: '-- INSERT --' } })
     const drawn = JSON.stringify(await hint.drawn())
     expect(drawn).toContain('⚠ agentree-statusline:the defaults file is wrong: ')
-    expect(drawn).toContain('\\"account\\" is missing')
+    expect(drawn).toContain('account is missing')
   })
 
 // The defaults file reshaped on disk under a running plugin, as a merge on
@@ -291,7 +291,7 @@ test('a defaults file changed on disk waits for the next load of the plugin',
       isInteractive: true })
     await settle()
     const path = w.asked.find(isDefaults)!
-    w.files.set(path, DEFAULTS_TEXT.replace('  "account": "default",\n', ''))
+    w.files.set(path, DEFAULTS_TEXT.replace('account: default\n', ''))
     w.mtimes.set(path, 2)
     for (let i = 0; i < 2; i++) {
       await $.session.start({ cwd: PROJECT, surface: 'terminal',

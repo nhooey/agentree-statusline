@@ -1,14 +1,14 @@
 # Options
 
 Every option is a key of a [configuration file](#configuration-files), which the plugin reads; there is no command line.
-Every key and its default is in [`plugin/defaults/config.jsonc`](../plugin/defaults/config.jsonc).
+Every key and its default is in [`plugin/defaults/config.yaml`](../plugin/defaults/config.yaml).
 
 | I want to… | Set |
 |---|---|
-| a tighter readout on a narrow terminal | `"mark-spacing": false` |
-| change where plan figures come from | `"usage-source"` — see [Usage sources](usage-sources.md) |
-| leave a column out | `"hide"` — see [Hiding](#hiding) |
-| move a row, or stop drawing it | `"rows"` — see [What a file holds](#what-a-file-holds) |
+| a tighter readout on a narrow terminal | `mark-spacing: false` |
+| change where plan figures come from | `usage-source` — see [Usage sources](usage-sources.md) |
+| leave a column out | `hide` — see [Hiding](#hiding) |
+| move a row, or stop drawing it | `rows` — see [What a file holds](#what-a-file-holds) |
 | set an option for every session, or for one project | a [configuration file](#configuration-files) |
 | see which file set what | the plugin's log, `agentree-statusline.log` in the state directory |
 
@@ -19,16 +19,16 @@ The settings the table below lists apply to every row the plugin draws; the othe
 <!-- options:begin settings -->
 | Key | Default | Effect |
 |---|---|---|
-| `usage-source` | `"auto"` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
-| `account` | `"default"` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
-| `account-period` | `"day"` | The UTC calendar period for organization reports (`anthropic-admin`). Weeks start on Monday. |
+| `usage-source` | `auto` | Where plan/quota figures come from. See [Usage sources](usage-sources.md). |
+| `account` | `default` | A non-secret label that keeps cached readings for different accounts apart. Never put a token here. |
+| `account-period` | `day` | The UTC calendar period for organization reports (`anthropic-admin`). Weeks start on Monday. |
 | `right-edge` | `5` with any of the plugin's rows above the prompt (`rows.*.place`), else `2` | The columns every grid row leaves blank at the terminal's right edge. `2` matches the plugin with its rows under the footer line, whose container stops two columns short of the edge; `5` is the room Claude Code keeps for the plugin's band `[-]` above the prompt. Unset, it follows the plugin's `rows.*.place` from the files: `5` when any row the plugin draws live is placed `above`, else `2`, so every row ends in one column. |
 | `hide` | none | Columns and parts of a row's label left out of the grid, or 🔋 and 🪫 off the turn tag lines (`tag.plan.five_hour`, `tag.plan.week`), each `scope[.group[.metric]]` with `*` for any one part; see [Hiding](#hiding). |
 | `mark-spacing` | `true` | A blank between a mark and its value; `false` closes it. |
 | `subscript-decimals` | `false` | Write fractions as subscript digits: `1.2٪` becomes `1₂٪`. |
 <!-- options:end settings -->
 
-### `"mark-spacing": false`
+### `mark-spacing: false`
 
 Closes the one-column gap between a mark and its value, for terminals too narrow for the full readout:
 
@@ -49,7 +49,7 @@ tight     🧩▴9.6k ▾3.4k  🎯98٪  🧠+ 8.0٪ + 16k  💰+  0.1   🔋+ 0
 The column after 🧠, 💰, 🔋, 🪫, ⌛🤖 and 🔧 holds a `+` on the prompt row and a blank on the totals row beneath it.
 That column is what keeps the two rows stacked digit under digit, so it stays.
 
-### `"subscript-decimals": true`
+### `subscript-decimals: true`
 
 Writes the digits after a decimal point as subscripts (U+2080–U+2089), so the point takes no column:
 
@@ -68,7 +68,7 @@ Ghostty draws the subscript digits one column wide, which is what the plugin ass
 
 ## Hiding
 
-`"hide"` is a list of paths, `scope[.group[.metric]]` with `*` for any one part, each leaving out a column or a label part.
+`hide` is a list of paths, `scope[.group[.metric]]` with `*` for any one part, each leaving out a column or a label part.
 A path names what it hides on rows of that scope; a column hidden on every row that could draw it is removed and the others close up, and one hidden on some rows only is left blank there.
 The band's and the receipt's rows count too, so `agent.state.rate` blanks 🛫 on the agent rows and keeps its place, while `*.state.rate` removes it.
 
@@ -100,29 +100,32 @@ On the turn tag lines, 🔻🔖 under the prompt and the receipt's 🔺🔖 ([do
 | `tag.plan` | both, and 💳 with them |
 | `name.tag` | both tag lines, with the blank rows around the receipt's |
 
+```yaml
+hide:
+  - agent                # every agent row, empty
+  - "*.work"             # 💾 on every row
+  - agent.time.eta       # ⛳ on the agent rows, blank in its column
+  - "*.state.rate"       # 🛫 everywhere
+  - "*.context.share"    # 🧠's ٪ everywhere, its column narrower
 ```
-"agent"                  every agent row, empty
-"*.work"                 💾 on every row
-"agent.time.eta"         ⛳ on the agent rows, blank in its column
-"*.state.rate"           🛫 everywhere
-"*.context.share"        🧠's ٪ everywhere, its column narrower
-```
+
+A path that starts with `*` is quoted, since a plain `*` starts a YAML alias.
 
 ## Configuration files
 
-Every option is in [`plugin/defaults/config.jsonc`](../plugin/defaults/config.jsonc), with its default and a line on what it does.
+Every option is in [`plugin/defaults/config.yaml`](../plugin/defaults/config.yaml), with its default and a line on what it does.
 
 ### Starting from the defaults
 
 That file is the defaults: the plugin reads it at every load, and no default is written anywhere else.
 To change settings, write only the keys you change in your user file, or in a project's; a table such as `rows` takes just the fields you set:
 
-```jsonc
-// ~/.config/agentree-statusline/config.jsonc
-{
-  "mark-spacing": false,
-  "rows": {"turn": {"live": "always"}}
-}
+```yaml
+# ~/.config/agentree-statusline/config.yaml
+mark-spacing: false
+rows:
+  turn:
+    live: always
 ```
 
 Every key the file leaves out keeps the default, so a later change to a default in the repository reaches you.
@@ -136,24 +139,27 @@ Your own files stay lenient, as below, and apply within a tick.
 
 ### What a file holds
 
-A file is JSON with `//` comments and trailing commas allowed, an object of `name: value`:
+A file is YAML, a mapping of `name: value`, with `#` comments:
 
-```jsonc
-{
-  "usage-source": "claude-usage-tracker",
-  "hide": ["*.work"],   // a list replaces the lower layers' whole
-  "mark-spacing": false,
-}
+```yaml
+usage-source: claude-usage-tracker
+hide: ["*.work"]   # a list replaces the lower layers' whole
+mark-spacing: false
 ```
+
+The plugin reads the part of YAML 1.2 a configuration needs: block and flow mappings and lists, plain, single-quoted and double-quoted strings, numbers, `true` and `false`, and `null` or `~`.
+Its words are YAML 1.2's, so `no`, `yes`, `on` and `off` are strings, not booleans.
+Anchors, aliases, tags, `|` and `>` blocks, a second document and a string continued onto another line are refused with the line and column, never read some other way.
+An empty file, or one of comments alone, sets nothing.
 
 A setting comes from the first of these that has it:
 
 | Layer | Where |
 |---|---|
-| `project-local` | `<root>/.config/agentree-statusline/config.local.jsonc`: one person's, not committed |
-| `project` | `<root>/.config/agentree-statusline/config.jsonc`: committed, for everyone |
-| `user` | `$AGENTREE_STATUSLINE_CONFIG_DIR/config.jsonc`, else `$XDG_CONFIG_HOME/agentree-statusline/config.jsonc`, else `~/.config/agentree-statusline/config.jsonc` |
-| `default` | `plugin/defaults/config.jsonc` in the repository, which the plugin carries |
+| `project-local` | `<root>/.config/agentree-statusline/config.local.yaml`: one person's, not committed |
+| `project` | `<root>/.config/agentree-statusline/config.yaml`: committed, for everyone |
+| `user` | `$AGENTREE_STATUSLINE_CONFIG_DIR/config.yaml`, else `$XDG_CONFIG_HOME/agentree-statusline/config.yaml`, else `~/.config/agentree-statusline/config.yaml` |
+| `default` | `plugin/defaults/config.yaml` in the repository, which the plugin carries |
 
 The project `<root>` is found by walking up from the session's root, where the session started or `/cd` took it, to the first directory holding either project file.
 The walk stops at a `.git`, at `$HOME` and at `/`.
@@ -164,7 +170,7 @@ Lists replace and tables merge per field: a project that sets `rows.agent.transc
 
 Nothing in your own files stops a run.
 A key a file leaves out comes from the layer under it, and in the end from the defaults file.
-A file that is not valid JSONC or not an object is skipped whole, and so is a file with an unknown key at any depth (an option, a row of `rows`, a field), so a misspelt key can't go unnoticed.
+A file that is not valid YAML or not a mapping is skipped whole, and so is a file with an unknown key at any depth (an option, a row of `rows`, a field), so a misspelt key can't go unnoticed.
 A value of the wrong type or out of range is skipped alone, the layer under it supplying the value.
 Each is a warning naming the file, and an unknown key's names the nearest known one.
 
@@ -176,7 +182,7 @@ Under the files the plugin has one layer of its own, `plugin`: `SETTINGS` in `pl
 It is empty: a person's own settings go in their user file.
 The plugin's log names it.
 
-`right-edge` follows the places in `rows` when no layer sets it: 5 when any row whose `live` is not `"never"` has `place` `"above"`, as under the defaults, else 2.
+`right-edge` follows the places in `rows` when no layer sets it: 5 when any row whose `live` is not `never` has `place` `above`, as under the defaults, else 2.
 
 `plan-usage` is on in the defaults: the plugin asks `https://api.anthropic.com/api/oauth/usage` for the plan's windows once a minute, and sooner when Claude Code's own week disagrees with the last answer, one request with the session's own credential, which Claude Code sets on the request and the plugin never sees, and only for a signed-in subscription.
 Under `usage-source` `auto` it draws them over Claude Code's own reading, which names only the plan's week, so the weekly Fable window (🦊 on 💳) shows without the Claude Usage Tracker.
@@ -193,13 +199,13 @@ Under `usage-source` `auto` it draws them over Claude Code's own reading, which 
 | `cowork` | `seven_day_cowork` | 🤝 |
 
 A field set `true` draws its window on the 💳 row after 🦊 wherever the source gives it ([The rows](layout.md#the-rows)).
-It is a record, so it merges per field: a file that sets `{"opus": true}` leaves the other four off.
+It is a record, so it merges per field: a file that sets `weekly-windows: {opus: true}` leaves the other four off.
 The windows are kept off here rather than in `hide`, since a file's `hide` replaces the defaults' list whole and would turn them all on.
 `hide` still hides one that is on, `account.plan.opus` and the like.
 A `seven_day_*` window not in the table is kept in the reading and drawn nowhere.
 
-`rows.subagents.live` is `"always"` in the defaults: background subagents keep running between turns, so the band's tree keeps the running and paused ones under 🧵 then, and leaves the ones that ended to the turn's receipt ([Between turns](layout.md#between-turns)).
-`"running"` draws them only while a turn runs.
+`rows.subagents.live` is `always` in the defaults: background subagents keep running between turns, so the band's tree keeps the running and paused ones under 🧵 then, and leaves the ones that ended to the turn's receipt ([Between turns](layout.md#between-turns)).
+`running` draws them only while a turn runs.
 
 `finished-within` is how many seconds a row of the band's tree that finished stays drawn where it stood, ⚫ and its figures as they ended, before it goes: a subagent that ended, and a background shell or Monitor that closed.
 The rows above a finished one stay drawn with it, so it keeps its place in the tree.
@@ -212,8 +218,8 @@ The tree draws every row it holds, however many subagents there are; scroll the 
 `false` leaves it out.
 
 `band-order` is the order the plugins' rows stack in the band above the prompt, by plugin name: the rows of each plugin it names come first, in its order, and every other plugin's follow in the order Claude Code gave them.
-The defaults say `["agentree-statusline"]`, so this plugin's row, and the rule over it, tops the band.
-A file that sets it restates the whole list, since a list replaces the defaults' whole: `["coding-agent-kanban-turns", "agentree-statusline"]` puts that plugin's row over this one's, and the rule then sits between them ([The rule](layout.md#the-rule)).
+The defaults say `[agentree-statusline]`, so this plugin's row, and the rule over it, tops the band.
+A file that sets it restates the whole list, since a list replaces the defaults' whole: `band-order: [coding-agent-kanban-turns, agentree-statusline]` puts that plugin's row over this one's, and the rule then sits between them ([The rule](layout.md#the-rule)).
 A name no plugin draws a row under is passed over, `[]` leaves the rows as they came, and a name given twice, or an entry that is not a string, skips the file's value with a warning.
 
 The log's `config options:` line lists every option a layer above the defaults gave, each with its value and layer.
@@ -225,16 +231,16 @@ The plugin draws the account's dollar credits on the 💳 row, after 🪫, each 
 
 | Field | Value | Effect |
 |---|---|---|
-| `place` | `"account"` or `"none"` | Draw them on the 💳 row, or not at all. |
+| `place` | `account` or `none` | Draw them on the 💳 row, or not at all. |
 | `show` | a list of conditions for each of `cloud` ⛅, `promo` 🎁, `prepaid` 💵, `extra` 💸 and `passes` 🎫 | A credit is drawn when any one condition in its list holds. An empty list never draws it. |
 | `amber`, `red` | a list of conditions | A credit's figure is amber when one of `amber`'s holds, and red when one of `red`'s does. Red wins. |
 | `original` | `true` or `false` | Draw each original amount after the figure: `⛅ $4.4/250`. |
 | `command` | a program's path, or `null` | A program that prints `{"schema_version": 1, "credits": [...]}`, as [the reading's `credits`](usage-sources.md#writing-a-custom-command) has them, run every 5 minutes for the Console's credits. |
 
-A condition is one map of `field`, `op`, `value` and `unit`:
+A condition is one mapping of `field`, `op`, `value` and `unit`:
 
-```jsonc
-{"field": "balance", "op": "<=", "value": 20, "unit": "usd"}
+```yaml
+{field: balance, op: "<=", value: 20, unit: usd}
 ```
 
 | `field` | `unit` | Means |
@@ -243,9 +249,9 @@ A condition is one map of `field`, `op`, `value` and `unit`:
 | `spent` | `usd` | what it has paid for since its period began |
 | `expiry` | `days`, `hours` or `minutes` | the time to its expiry |
 
-`op` is one of `<`, `<=`, `=`, `!=`, `>=` and `>`.
+`op` is one of `<`, `<=`, `=`, `!=`, `>=` and `>`, quoted, since `!` and `>` start other things in YAML.
 A condition whose figure a credit doesn't have doesn't hold, and an expired credit is never drawn.
-To draw a credit always, give it `{"field": "balance", "op": ">=", "value": 0, "unit": "usd"}`.
+To draw a credit always, give it `{field: balance, op: ">=", value: 0, unit: usd}`.
 A list with a condition that is not of this shape is skipped whole, with a warning naming it.
 On a narrow terminal the credits leave the row before 📅 and 🕐.
 
