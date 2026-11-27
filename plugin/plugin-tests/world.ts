@@ -78,6 +78,9 @@ export type World = {
   made: Map<string, number>
   // Each file's mtime in ms where a test set one; NOW otherwise.
   mtimes: Map<string, number>
+  // Files of the plugin's own folder, by their path under it: the
+  // harness loads the plugin from a folder named anew each run.
+  plugin: Map<string, Uint8Array>
 }
 
 export type Run = { argv: readonly string[]; init?: { stdin?: string } }
@@ -137,8 +140,11 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
   const planted = (p: string) => calib &&
     /\/claude-calibration-[0-9a-f]{64}\.cache$/.test(p)
     ? encoder.encode(JSON.stringify(CALIB)) : undefined
+  const plugin = new Map<string, Uint8Array>()
+  const ofPlugin = (p: string) =>
+    [...plugin].find(([rel]) => p.endsWith('/' + rel))?.[1]
   const fileAt = (p: string) => files.get(p) ?? planted(p) ??
-    (isDefaults(p) ? encoder.encode(DEFAULTS_TEXT) : undefined)
+    (isDefaults(p) ? encoder.encode(DEFAULTS_TEXT) : ofPlugin(p))
   const isDir = (p: string) => [...files.keys()].some((f) =>
     f.startsWith(p.endsWith('/') ? p : p + '/'))
   on('fs.stat', ($, e) => {
@@ -269,5 +275,5 @@ export function world(on: On, run: (e: Run) => Ran = () => NO_GIT_HERE,
     return { value: undefined }
   })
   return { files, store, stored, docs, spending, usage, debug, logged, clock, session,
-    oauth, reads, lists, runs, made, mtimes }
+    oauth, reads, lists, runs, made, mtimes, plugin }
 }
